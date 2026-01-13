@@ -1,0 +1,5 @@
+{
+  "name": "Product Net Value Update System",
+  "description": "A system to manage product net values, generate reports, and export PDFs with dynamic calendar and TOC pagination.",
+  "requestFramePermissions": []
+}

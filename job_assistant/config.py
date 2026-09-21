@@ -29,39 +29,19 @@ class Settings:
     # 飞书 API 调用间隔(秒),避免触发限流
     FEISHU_API_INTERVAL: float = float(os.getenv("FEISHU_API_INTERVAL", "0.2"))
 
-    # === 目标机构白名单 ===
-    TARGET_INSTITUTIONS: List[str] = field(default_factory=lambda: [
-        # 内资头部券商
-        "中金公司", "中信证券", "中信建投", "华泰证券", "国泰海通", "广发证券",
-        "招商证券", "申万宏源", "中国银河", "东方证券", "兴业证券", "国信证券",
-        # 内资头部公募/私募
-        "易方达", "华夏基金", "南方基金", "博时基金", "汇添富", "嘉实基金",
-        "富国基金", "鹏华基金", "兴全基金", "东方红", "中欧基金", "景林资产",
-        "高毅资产", "幻方量化", "明汯投资", "九坤投资",
-        # 外资
-        "Goldman Sachs", "JPMorgan", "Morgan Stanley", "HSBC", "Standard Chartered",
-        "UBS", "BlackRock", "Citi", "Deutsche Bank", "BNP Paribas", "Nomura",
-        "Barclays", "Fidelity", "PIMCO", "Vanguard",
-    ])
+    # === 目标机构白名单(已移除,由用户 profile.target_companies 自定义) ===
+    # 全局不再硬编码任何行业机构,保持产品通用性
 
-    # 外资招聘官网域名(用于 site: 搜索 + sitemap 穷举)
-    FOREIGN_DOMAINS: List[str] = field(default_factory=lambda: [
-        "jobs.standardchartered.com",
-        "ajinga.com",          # HSBC 中国
-        "careers.hsbc.com",
-        "careers.gs.com",
-        "careers.jpmorgan.com",
-        "careers.morganstanley.com",
-        "blackrock.com",
-        "ubs.com",
-        "careers.citi.com",
-        "db.com",
-        "careers.bnpparibas.com",
-        "nomura.com",
-        "careers.barclays.com",
-        "careers.fidelity.com",
-        "vanguardjobs.com",
-        "pimco.com",
+    # 通用招聘/求职网站域名(用于搜索时 site: 限定 + sitemap 穷举)
+    # 保留少量通用域名,用户也可通过 profile 自定义
+    JOB_BOARD_DOMAINS: List[str] = field(default_factory=lambda: [
+        # 国内综合招聘
+        "zhipin.com", "liepin.com", "51job.com", "zhaopin.com", "lagou.com",
+        "maimai.cn", "linkedin.com",
+        # 海外综合招聘
+        "indeed.com", "glassdoor.com", "linkedin.com/jobs",
+        # 外资企业招聘页(通用,不限行业)
+        "careers.", "jobs.", "talent.",
     ])
 
 

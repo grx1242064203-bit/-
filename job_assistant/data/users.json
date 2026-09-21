@@ -1,0 +1,37 @@
+{
+  "u1": {
+    "id": "u1",
+    "feishu_tenant_key": "",
+    "feishu_open_id": "",
+    "feishu_base_token": "",
+    "feishu_table_id": "",
+    "feishu_closed_table_id": "",
+    "wxpusher_uid": "",
+    "profile": {
+      "school": "X大",
+      "degree": "本科",
+      "major": "计算机",
+      "experience_years": 0,
+      "current_role": "",
+      "core_skills": [],
+      "direction_keywords": {
+        "产品经理": [
+          "pm",
+          "产品"
+        ]
+      },
+      "target_companies": [
+        "字节"
+      ],
+      "target_industries": [],
+      "target_cities": [
+        "北京"
+      ],
+      "target_certificates": []
+    },
+    "plan": "autumn",
+    "expire_date": "",
+    "created_at": 1789984654.1815794,
+    "last_run_at": 0.0
+  }
+}

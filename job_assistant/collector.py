@@ -137,30 +137,34 @@ class JobCollector:
 
     def _build_queries(self, profile, target_companies: List[str],
                        target_cities: List[str]) -> List[str]:
-        """根据用户画像构建搜索关键词"""
+        """
+        根据用户画像构建搜索关键词(通用化)。
+        从 direction_keywords 取每个方向的关键词组合搜索词。
+        """
         cities = " ".join(target_cities) if target_cities else ""
         companies = target_companies if target_companies else []
+        directions = profile.direction_keywords or {}
 
         queries = []
-        # 按目标方向
-        for direction in profile.target_directions or ["L1", "L2"]:
-            dir_kw = {
-                "L1": "FOF 私募研究 基金筛选",
-                "L2": "资产配置 公募FOF 指数研究",
-                "L3": "机构销售 行业研究 投行",
-            }.get(direction, "FOF 资产配置")
+        # 按用户目标方向构建搜索词
+        for direction, keywords in directions.items():
+            # 取该方向前3个关键词作为搜索核心
+            core_kw = " ".join(keywords[:3])
             for comp in (companies or [""]):
                 for city in (target_cities or [""]):
-                    q = f"{comp} {dir_kw} 招聘 {city}".strip()
+                    q = f"{comp} {core_kw} 招聘 {city}".strip()
                     if len(q) > 5:
                         queries.append(q)
-            # 无特定公司时的通用搜索
             if not companies:
-                queries.append(f"{dir_kw} 招聘 {cities}".strip())
+                queries.append(f"{core_kw} 招聘 {cities}".strip())
 
-        # 外资管培专项
-        queries.append("外资银行 管培生 graduate program 招聘 中国 2026")
-        queries.append("券商 管培生 招聘 2026 资产配置 FOF")
+        # 校招/管培专项(通用,不限行业)
+        queries.append("管培生 校招 招聘 2026")
+        queries.append("graduate program campus hiring 2026 china")
+
+        # 用户专业相关
+        if profile.major:
+            queries.append(f"{profile.major} 招聘 {cities}".strip())
 
         return list(dict.fromkeys(queries))[:15]  # 去重,限 15 条
 
@@ -181,12 +185,14 @@ class JobCollector:
                     continue
                 seen_urls.add(url)
 
-                # 初筛:排除明显不相关的
+                # 初筛:排除明显不相关的(用户方向关键词+通用招聘词)
                 title = r["title"]
-                if not any(kw in title.lower() for kw in
-                           ["fof", "基金", "资产配置", "投资", "研究", "管培",
-                            "graduate", "analyst", "wealth", "asset", "portfolio",
-                            "私募", "量化", "cta", "投行", "机构"]):
+                all_target_kw = []
+                for kws in (profile.direction_keywords or {}).values():
+                    all_target_kw.extend(kws)
+                all_target_kw += ["招聘", "hiring", "job", "position", "校招",
+                                  "社招", "实习", "intern", "管培", "graduate"]
+                if not any(kw.lower() in title.lower() for kw in all_target_kw):
                     continue
 
                 # 抓取 JD

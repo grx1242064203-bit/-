@@ -16,16 +16,20 @@ from config import settings
 
 @dataclass
 class UserProfile:
-    """用户画像 — 用于评分匹配"""
+    """用户画像 — 用于评分匹配(通用化,支持任意专业/职业阶段)"""
     school: str = ""           # 学校
     degree: str = ""           # 学历:本科/硕士/博士
     major: str = ""            # 专业
-    experience_years: float = 0  # 工作年限
-    current_role: str = ""     # 当前岗位
-    core_skills: List[str] = field(default_factory=list)  # 核心技能
-    target_directions: List[str] = field(default_factory=list)  # 目标方向: L1/L2/L3
-    target_companies: List[str] = field(default_factory=list)   # 目标机构(可空=全部)
+    experience_years: float = 0  # 工作年限(0=应届)
+    current_role: str = ""     # 当前岗位/身份(学生/在职)
+    core_skills: List[str] = field(default_factory=list)  # 核心技能/标签
+    # 目标方向 + 关键词(用户自定义,通用化)
+    # 例: {"FOF/基金研究": ["fof","基金筛选","组合管理"], "产品经理": ["产品经理","pm","需求分析"]}
+    direction_keywords: Dict[str, List[str]] = field(default_factory=dict)
+    target_companies: List[str] = field(default_factory=list)   # 目标公司(可空=全部)
+    target_industries: List[str] = field(default_factory=list)  # 目标行业(可空=全部)
     target_cities: List[str] = field(default_factory=list)      # 目标城市(可空=不限)
+    target_certificates: List[str] = field(default_factory=list)  # 已持证书(CFA/CPA/法考等)
 
 
 @dataclass
@@ -62,6 +66,7 @@ class UserStore:
             with open(self.path, "r", encoding="utf-8") as f:
                 raw = json.load(f)
             for uid, data in raw.items():
+                data.pop("id", None)  # 避免与 id=uid 冲突
                 prof_data = data.pop("profile", {})
                 data["profile"] = UserProfile(**prof_data)
                 self._users[uid] = User(id=uid, **data)

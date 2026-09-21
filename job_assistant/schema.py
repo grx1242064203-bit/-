@@ -17,10 +17,8 @@ JOB_FIELDS: List[Dict[str, Any]] = [
     {"name": "JD链接", "type": 1, "style": {"type": "url"}},
     {"name": "抓取日期", "type": 5, "style": {"format": "yyyy-MM-dd"}},  # datetime
     {"name": "发布时间", "type": 1},
-    {"name": "岗位类别", "type": 3, "multiple": False, "options": [
-        {"name": "L1-私募研究FOF自营"}, {"name": "L2-大类资产配置"}, {"name": "L3-其他前台"}]},
-    {"name": "平台层级", "type": 3, "options": [
-        {"name": "三中一华"}, {"name": "头部券商基金"}, {"name": "外资头部"}, {"name": "其他"}]},
+    {"name": "岗位类别", "type": 1},   # 通用文本(由用户direction_keywords决定,不固定选项)
+    {"name": "平台层级", "type": 1},   # 通用文本
     {"name": "相关性评分", "type": 2, "style": {"type": "plain", "precision": 0}},  # number
     {"name": "难度评分", "type": 2, "style": {"type": "plain", "precision": 0}},
     {"name": "综合推荐度", "type": 3, "options": [

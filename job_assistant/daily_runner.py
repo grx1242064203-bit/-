@@ -120,10 +120,11 @@ class DailyRunner:
         """复查主表在招岗位,关闭的归档到已关闭表"""
         closed = []
         try:
+            # 先查在招岗位的ID+URL(只查必要字段)
             records = self.feishu.search_records(
                 self.user.feishu_base_token, self.user.feishu_table_id,
                 'AND(CurrentValue.[是否在招] = "是")',
-                fields=["岗位标题", "公司", "JD链接", "去重hash"],
+                fields=["JD链接"],
             )
         except Exception as e:
             logger.warning(f"查询在招岗位失败: {e}")
@@ -132,21 +133,24 @@ class DailyRunner:
         # 限制每日复查数量,避免请求过多(MVP 最多复查 20 条)
         records = records[:20]
         for r in records:
-            fields = r.get("fields", {})
-            url = fields.get("JD链接", "")
+            rid = r.get("record_id", "")
+            url = r.get("fields", {}).get("JD链接", "")
             if isinstance(url, dict):
                 url = url.get("link", "")
-            if not url:
+            if not url or not rid:
                 continue
             # 复查 JD 是否还在
             from collector import fetch_jd
             jd = fetch_jd(url, timeout=8)
             if not jd or "no longer" in jd.lower() or "已关闭" in jd or "404" in jd:
-                # 归档
-                closed.append(fields)
                 try:
+                    # 拉取完整记录
+                    full_fields = self.feishu.get_record(
+                        self.user.feishu_base_token, self.user.feishu_table_id, rid)
+                    # 归一化字段格式
+                    norm = self.feishu.normalize_fields(full_fields)
                     # 写入已关闭表
-                    archive_record = {**fields, "是否在招": "否",
+                    archive_record = {**norm, "是否在招": "否",
                                       "关闭日期": time.strftime("%Y-%m-%d %H:%M:%S")}
                     self.feishu.batch_create_records(
                         self.user.feishu_base_token, self.user.feishu_closed_table_id,
@@ -154,9 +158,9 @@ class DailyRunner:
                     )
                     # 从主表删除
                     self.feishu.delete_record(
-                        self.user.feishu_base_token, self.user.feishu_table_id,
-                        r["record_id"],
-                    )
+                        self.user.feishu_base_token, self.user.feishu_table_id, rid)
+                    closed.append(norm)
+                    logger.info(f"归档关闭岗位: {norm.get('公司','')} {norm.get('岗位标题','')}")
                 except Exception as e:
                     logger.warning(f"归档岗位失败: {e}")
             time.sleep(0.2)

@@ -160,6 +160,44 @@ class FeishuClient:
             f"/open-apis/bitable/v1/apps/{app_token}/tables/{table_id}/records/{record_id}",
         )
 
+    def get_record(self, app_token: str, table_id: str, record_id: str) -> Dict:
+        """获取单条记录完整字段(用于归档前拉取完整数据)"""
+        return self._request(
+            "GET",
+            f"/open-apis/bitable/v1/apps/{app_token}/tables/{table_id}/records/{record_id}",
+        ).get("record", {}).get("fields", {})
+
+    @staticmethod
+    def normalize_fields(fields: Dict) -> Dict:
+        """
+        将飞书读出的字段值归一化为可写入的格式。
+        读出格式: select=[{name}], url={text,link}, datetime=时间戳
+        写入格式: select="name" 或 [name], url={text,link}, datetime="yyyy-MM-dd HH:mm:ss"
+        """
+        result = {}
+        for k, v in fields.items():
+            if v is None or v == "":
+                continue
+            if isinstance(v, list):
+                # select 多选/单选数组: [{"name": "xxx"}]
+                names = [item.get("name") if isinstance(item, dict) else str(item)
+                         for item in v if item]
+                if len(names) == 1:
+                    result[k] = names[0]
+                elif len(names) > 1:
+                    result[k] = names
+                # 空数组跳过
+            elif isinstance(v, dict):
+                if "link" in v:
+                    # url 字段: {"text": "...", "link": "..."}
+                    result[k] = v
+                else:
+                    # 其他对象转字符串
+                    result[k] = str(v)
+            else:
+                result[k] = v
+        return result
+
     # ---------- 文档 ----------
     def create_doc(self, title: str) -> tuple:
         """创建新版文档,返回 (document_id, url)"""

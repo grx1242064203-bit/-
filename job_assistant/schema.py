@@ -1,0 +1,40 @@
+"""
+多维表格字段定义 — 岗位数据库 schema。
+集中管理,建表和写记录都引用同一套定义,避免不一致。
+"""
+from typing import List, Dict, Any
+
+# 岗位数据库表字段(主表:在招岗位)
+JOB_FIELDS: List[Dict[str, Any]] = [
+    {"name": "岗位标题", "type": 1},   # text
+    {"name": "公司", "type": 1},
+    {"name": "部门", "type": 1},
+    {"name": "地点", "type": 1},
+    {"name": "薪资范围", "type": 1},
+    {"name": "经验要求", "type": 1},
+    {"name": "学历要求", "type": 1},
+    {"name": "JD摘要", "type": 1},
+    {"name": "JD链接", "type": 1, "style": {"type": "url"}},
+    {"name": "抓取日期", "type": 5, "style": {"format": "yyyy-MM-dd"}},  # datetime
+    {"name": "发布时间", "type": 1},
+    {"name": "岗位类别", "type": 3, "multiple": False, "options": [
+        {"name": "L1-私募研究FOF自营"}, {"name": "L2-大类资产配置"}, {"name": "L3-其他前台"}]},
+    {"name": "平台层级", "type": 3, "options": [
+        {"name": "三中一华"}, {"name": "头部券商基金"}, {"name": "外资头部"}, {"name": "其他"}]},
+    {"name": "相关性评分", "type": 2, "style": {"type": "plain", "precision": 0}},  # number
+    {"name": "难度评分", "type": 2, "style": {"type": "plain", "precision": 0}},
+    {"name": "综合推荐度", "type": 3, "options": [
+        {"name": "优先申请"}, {"name": "可申请"}, {"name": "观望"}, {"name": "跳过"}]},
+    {"name": "简评", "type": 1},
+    {"name": "申请建议", "type": 1},
+    {"name": "申请状态", "type": 3, "options": [
+        {"name": "未投递"}, {"name": "已投递"}, {"name": "面试中"}, {"name": "Offer"}, {"name": "拒绝"}]},
+    {"name": "去重hash", "type": 1},
+    {"name": "应届窗口", "type": 3, "options": [{"name": "是"}, {"name": "否"}]},
+    {"name": "是否在招", "type": 3, "options": [{"name": "是"}, {"name": "否"}]},
+]
+
+# 已关闭岗位表(多一个关闭日期)
+CLOSED_JOB_FIELDS: List[Dict[str, Any]] = JOB_FIELDS + [
+    {"name": "关闭日期", "type": 5, "style": {"format": "yyyy-MM-dd"}},
+]

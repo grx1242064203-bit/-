@@ -19,7 +19,7 @@ class Settings:
     WXPUSHER_APP_TOKEN: str = field(default_factory=lambda: os.getenv("WXPUSHER_APP_TOKEN", ""))
 
     # === 数据存储 ===
-    DATA_DIR: str = field(default_factory=lambda: os.getenv("DATA_DIR", "/workspace/job_assistant/data"))
+    DATA_DIR: str = field(default_factory=lambda: os.getenv("DATA_DIR", "/opt/job_assistant/data"))
 
     # === 运行参数 ===
     # 每个用户每日采集岗位数量上限

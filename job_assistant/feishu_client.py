@@ -65,11 +65,14 @@ class FeishuClient:
                  params: dict = None) -> dict:
         """带重试的请求,应对 99991400(限流)等临时错误"""
         url = f"{FEISHU_HOST}{path}"
+        # 手动序列化 JSON(ensure_ascii=False),发送原始 UTF-8 中文
+        # 原因:requests 默认 json= 会把中文转义成 \uXXXX,飞书可能解析异常
+        data = json.dumps(json_body, ensure_ascii=False).encode("utf-8") if json_body else None
         for attempt in range(settings.FEISHU_RETRY):
             try:
                 resp = requests.request(
                     method, url, headers=self._headers(),
-                    json=json_body, params=params, timeout=30,
+                    data=data, params=params, timeout=30,
                 )
                 data = resp.json()
                 code = data.get("code", -1)

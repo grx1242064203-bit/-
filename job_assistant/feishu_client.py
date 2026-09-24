@@ -81,7 +81,7 @@ class FeishuClient:
                     logger.warning(f"飞书 API 临时错误 code={code}, {wait}s 后重试")
                     time.sleep(wait)
                     continue
-                raise RuntimeError(f"飞书 API 错误 code={code} msg={data.get('msg')} path={path}")
+                raise RuntimeError(f"飞书 API 错误 code={code} msg={data.get('msg')} path={path} body={json.dumps(data, ensure_ascii=False)[:500]}")
             except requests.RequestException as e:
                 if attempt < settings.FEISHU_RETRY - 1:
                     time.sleep(2 ** attempt)
@@ -100,7 +100,7 @@ class FeishuClient:
         """在多维表格中创建数据表,返回 table_id"""
         data = self._request(
             "POST", f"/open-apis/bitable/v1/apps/{app_token}/tables",
-            json_body={"table": {"name": name, "default_view_name": "Grid View"}},
+            json_body={"table": {"name": name}},
         )
         return data["table_id"]
 

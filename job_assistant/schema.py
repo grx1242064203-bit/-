@@ -14,11 +14,11 @@ JOB_FIELDS: List[Dict[str, Any]] = [
     {"name": "经验要求", "type": 1},
     {"name": "学历要求", "type": 1},
     {"name": "JD摘要", "type": 1},
-    {"name": "JD链接", "type": 1, "style": {"type": "url"}},
-    {"name": "抓取日期", "type": 5, "style": {"format": "yyyy-MM-dd"}},  # datetime
+    {"name": "JD链接", "type": 15},  # URL(超链接)
+    {"name": "抓取日期", "type": 5, "style": {"date_formatter": "yyyy-MM-dd"}},  # datetime
     {"name": "发布时间", "type": 1},
-    {"name": "岗位类别", "type": 1},   # 通用文本(由用户direction_keywords决定,不固定选项)
-    {"name": "平台层级", "type": 1},   # 通用文本
+    {"name": "岗位类别", "type": 1},
+    {"name": "平台层级", "type": 1},
     {"name": "相关性评分", "type": 2, "style": {"type": "plain", "precision": 0}},  # number
     {"name": "难度评分", "type": 2, "style": {"type": "plain", "precision": 0}},
     {"name": "综合推荐度", "type": 3, "options": [
@@ -34,5 +34,5 @@ JOB_FIELDS: List[Dict[str, Any]] = [
 
 # 已关闭岗位表(多一个关闭日期)
 CLOSED_JOB_FIELDS: List[Dict[str, Any]] = JOB_FIELDS + [
-    {"name": "关闭日期", "type": 5, "style": {"format": "yyyy-MM-dd"}},
+    {"name": "关闭日期", "type": 5, "style": {"date_formatter": "yyyy-MM-dd"}},
 ]

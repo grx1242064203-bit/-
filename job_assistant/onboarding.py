@@ -30,7 +30,7 @@ def setup_user_feishu(tenant_key: str, open_id: str, client: FeishuClient = None
     client = client or FeishuClient()
 
     # 1. 创建多维表格
-    base_token = client.create_bitable("金融招聘情报库")
+    base_token = client.create_bitable("招聘情报库")
     logger.info(f"创建多维表格: {base_token}")
 
     # 2. 创建岗位数据库表
@@ -105,18 +105,30 @@ def onboard_user(user_id: str, tenant_key: str, open_id: str,
 
 def handle_feishu_callback(body: dict) -> dict:
     """
-    处理飞书事件回调(app_open / app_install)。
-    飞书会推送 JSON,需要解密(若开启加密)并校验。
-    MVP:直接从 body 提取 tenant_key + open_id。
+    处理飞书事件回调。
+    支持:
+    - URL 验证(challenge)
+    - v2.0 事件结构(header.tenant_key + event.sender.sender_id.open_id)
+    - 旧版 v1 事件结构(event.tenant_key + event.operator.open_id)
     """
     # 飞书 URL 验证(challenge)
     if "challenge" in body:
         return {"challenge": body["challenge"]}
 
+    # 兼容 v1.0 和 v2.0 事件结构
+    header = body.get("header", {})
     event = body.get("event", {})
-    tenant_key = event.get("tenant_key", "")
-    open_id = event.get("operator", {}).get("open_id", "") or \
-              event.get("open_id", "")
+    event_type = header.get("event_type", "")
+
+    # 提取 tenant_key
+    tenant_key = header.get("tenant_key", "") or event.get("tenant_key", "")
+
+    # 提取 open_id(v2.0: event.sender.sender_id.open_id; v1: event.operator.open_id)
+    open_id = (
+        event.get("sender", {}).get("sender_id", {}).get("open_id", "")
+        or event.get("operator", {}).get("open_id", "")
+        or event.get("open_id", "")
+    )
 
     if not tenant_key or not open_id:
         logger.warning(f"回调缺少 tenant_key/open_id: {body}")
@@ -124,6 +136,15 @@ def handle_feishu_callback(body: dict) -> dict:
 
     # 用 tenant_key+open_id 作为用户 ID
     user_id = f"{tenant_key}_{open_id}"
-    onboard_user(user_id, tenant_key, open_id)
+
+    # 异步执行 onboarding(飞书要求3秒内返回)
+    import threading
+    def _onboard():
+        try:
+            onboard_user(user_id, tenant_key, open_id)
+        except Exception:
+            logger.exception(f"onboarding 失败: user_id={user_id}")
+
+    threading.Thread(target=_onboard, daemon=True).start()
 
     return {"code": 0, "msg": "ok"}

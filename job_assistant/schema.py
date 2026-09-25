@@ -19,8 +19,8 @@ JOB_FIELDS: List[Dict[str, Any]] = [
     {"name": "发布时间", "type": 1},
     {"name": "岗位类别", "type": 1},
     {"name": "平台层级", "type": 1},
-    {"name": "相关性评分", "type": 2, "style": {"type": "plain", "precision": 0}},  # number
-    {"name": "难度评分", "type": 2, "style": {"type": "plain", "precision": 0}},
+    {"name": "相关性评分", "type": 2, "style": {"formatter": "0"}},  # number, 整数
+    {"name": "难度评分", "type": 2, "style": {"formatter": "0"}},
     {"name": "综合推荐度", "type": 3, "options": [
         {"name": "优先申请"}, {"name": "可申请"}, {"name": "观望"}, {"name": "跳过"}]},
     {"name": "简评", "type": 1},

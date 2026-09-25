@@ -31,6 +31,8 @@ def setup_user_feishu(tenant_key: str, open_id: str, client: FeishuClient = None
 
     # 1. 创建多维表格
     base_token = client.create_bitable("招聘情报库")
+    # 防御性解析:若 create_bitable 返回的是 wiki node_token,解析为真实 obj_token
+    base_token = client.resolve_app_token(base_token)
     logger.info(f"创建多维表格: {base_token}")
 
     # 2. 创建岗位数据库表
@@ -148,3 +150,43 @@ def handle_feishu_callback(body: dict) -> dict:
     threading.Thread(target=_onboard, daemon=True).start()
 
     return {"code": 0, "msg": "ok"}
+
+
+def migrate_user_tokens(store: UserStore = None, client: FeishuClient = None) -> dict:
+    """
+    迁移:将用户存储的 base_token 解析为真实 obj_token。
+
+    解决历史问题:如果用户的多维表格挂在知识库(wiki)下,
+    存储的 base_token 可能是 wiki node_token,直接调用 bitable API
+    会返回 91402 NOTEXIST。此函数将所有用户的 base_token 解析为真实 obj_token。
+    """
+    store = store or UserStore()
+    client = client or FeishuClient()
+
+    migrated = 0
+    unchanged = 0
+    failed = []
+
+    for user in store._users.values():
+        if not user.feishu_base_token:
+            unchanged += 1
+            continue
+        try:
+            resolved = client.resolve_app_token(user.feishu_base_token)
+            if resolved != user.feishu_base_token:
+                logger.info(
+                    f"用户 {user.id} token 已迁移: "
+                    f"{user.feishu_base_token} -> {resolved}"
+                )
+                user.feishu_base_token = resolved
+                store.upsert(user)
+                migrated += 1
+            else:
+                unchanged += 1
+        except Exception as e:
+            logger.error(f"用户 {user.id} token 迁移失败: {e}")
+            failed.append({"user_id": user.id, "error": str(e)})
+
+    summary = {"migrated": migrated, "unchanged": unchanged, "failed": failed}
+    logger.info(f"token 迁移完成: {summary}")
+    return summary

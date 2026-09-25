@@ -36,6 +36,8 @@ class FeishuClient:
         self.app_secret = app_secret or settings.FEISHU_APP_SECRET
         self._token: Optional[str] = None
         self._token_expire: float = 0
+        # wiki node_token -> 实际 obj_token 解析缓存
+        self._resolved_tokens: Dict[str, str] = {}
 
     # ---------- Token 管理 ----------
     def _get_tenant_token(self) -> str:
@@ -84,6 +86,16 @@ class FeishuClient:
                     logger.warning(f"飞书 API 临时错误 code={code}, {wait}s 后重试")
                     time.sleep(wait)
                     continue
+                # 91402 NOTEXIST: token 不存在,常见原因是用了 wiki node_token
+                if code == 91402:
+                    hint = (
+                        f"飞书 API 错误 code=91402 NOTEXIST path={path}。"
+                        f"可能原因:使用了知识库(wiki)的 node_token 而非实际 obj_token。"
+                        f"请确认 token 是否来自 feishu.cn/wiki/ 开头的 URL,"
+                        f"若是,需调用 wiki get_node 接口解析为 obj_token。"
+                        f"原始响应: {json.dumps(data, ensure_ascii=False)[:500]}"
+                    )
+                    raise RuntimeError(hint)
                 raise RuntimeError(f"飞书 API 错误 code={code} msg={data.get('msg')} path={path} body={json.dumps(data, ensure_ascii=False)[:500]}")
             except requests.RequestException as e:
                 if attempt < settings.FEISHU_RETRY - 1:
@@ -91,6 +103,52 @@ class FeishuClient:
                     continue
                 raise
         raise RuntimeError(f"飞书 API 重试耗尽: {path}")
+
+    # ---------- Wiki 节点 token 解析 ----------
+    def resolve_app_token(self, token: str) -> str:
+        """
+        将可能的 wiki node_token 解析为实际的 obj_token。
+
+        背景:
+        如果文档/多维表格挂在知识库(wiki)下,URL 中 token 段是 node_token,
+        直接用于 bitable/drive API 会返回 91402 NOTEXIST。需要调用
+        获取知识空间节点信息接口拿到真实 obj_token。
+
+        策略:
+        1. 命中缓存直接返回
+        2. 调用 wiki get_node 接口
+        3. 返回 obj_token(适用于 bitable / docx / sheet 等所有类型)
+        4. 若接口报错(说明不是 wiki 节点),原样返回 token
+        """
+        if not token:
+            return token
+        if token in self._resolved_tokens:
+            return self._resolved_tokens[token]
+
+        try:
+            data = self._request(
+                "GET", "/open-apis/wiki/v2/spaces/get_node",
+                params={"token": token},
+            )
+            node = data.get("node", {})
+            obj_type = node.get("obj_type", "")
+            obj_token = node.get("obj_token", "")
+            if obj_token:
+                logger.info(
+                    f"wiki node_token 解析为 obj_token({obj_type}): "
+                    f"{token} -> {obj_token}"
+                )
+                self._resolved_tokens[token] = obj_token
+                return obj_token
+            # 是 wiki 节点但没有 obj_token,异常情况,原样返回
+            logger.warning(f"token {token} 是 wiki 节点但无 obj_token")
+            self._resolved_tokens[token] = token
+            return token
+        except RuntimeError as e:
+            # 不是 wiki 节点(token 本身就是真实 token),原样返回
+            logger.info(f"token {token} 非 wiki 节点,直接使用: {e}")
+            self._resolved_tokens[token] = token
+            return token
 
     # ---------- 多维表格 ----------
     def create_bitable(self, name: str) -> str:
@@ -101,6 +159,7 @@ class FeishuClient:
 
     def create_table(self, app_token: str, name: str) -> str:
         """在多维表格中创建数据表,返回 table_id"""
+        app_token = self.resolve_app_token(app_token)
         data = self._request(
             "POST", f"/open-apis/bitable/v1/apps/{app_token}/tables",
             json_body={"table": {"name": name}},
@@ -110,6 +169,7 @@ class FeishuClient:
     def create_field(self, app_token: str, table_id: str, field_name: str,
                      field_type: int, **kwargs) -> str:
         """创建字段"""
+        app_token = self.resolve_app_token(app_token)
         body = {"field_name": field_name, "type": field_type}
         body.update(kwargs)
         data = self._request(
@@ -122,6 +182,7 @@ class FeishuClient:
     def batch_create_records(self, app_token: str, table_id: str,
                              records: List[Dict]) -> List[str]:
         """批量写入记录,每批最多 500 条,返回 record_id 列表"""
+        app_token = self.resolve_app_token(app_token)
         ids = []
         for i in range(0, len(records), 500):
             batch = records[i:i + 500]
@@ -137,6 +198,7 @@ class FeishuClient:
     def search_records(self, app_token: str, table_id: str,
                        filter_expr: str, fields: List[str] = None) -> List[Dict]:
         """按条件查询记录(用于去重 hash 查询)"""
+        app_token = self.resolve_app_token(app_token)
         all_records = []
         page_token = None
         while True:
@@ -158,6 +220,7 @@ class FeishuClient:
 
     def delete_record(self, app_token: str, table_id: str, record_id: str):
         """删除单条记录"""
+        app_token = self.resolve_app_token(app_token)
         self._request(
             "DELETE",
             f"/open-apis/bitable/v1/apps/{app_token}/tables/{table_id}/records/{record_id}",
@@ -165,6 +228,7 @@ class FeishuClient:
 
     def get_record(self, app_token: str, table_id: str, record_id: str) -> Dict:
         """获取单条记录完整字段(用于归档前拉取完整数据)"""
+        app_token = self.resolve_app_token(app_token)
         return self._request(
             "GET",
             f"/open-apis/bitable/v1/apps/{app_token}/tables/{table_id}/records/{record_id}",
@@ -223,6 +287,7 @@ class FeishuClient:
     def share_with_user(self, token: str, doc_type: str,
                         open_id: str, perm: str = "full_access"):
         """将文档/表格分享给用户,perm: view/edit/full_access"""
+        token = self.resolve_app_token(token)
         self._request(
             "POST",
             f"/open-apis/drive/v1/permissions/{token}/members?type={doc_type}",
@@ -235,6 +300,7 @@ class FeishuClient:
 
     def transfer_owner(self, token: str, doc_type: str, open_id: str):
         """将文档/表格所有权转移给用户(用户真正拥有数据)"""
+        token = self.resolve_app_token(token)
         try:
             self._request(
                 "POST",

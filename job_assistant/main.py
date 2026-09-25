@@ -27,6 +27,7 @@ if os.path.exists(_env_path):
 
 from models import UserStore
 from daily_runner import DailyRunner
+from onboarding import migrate_user_tokens
 
 logging.basicConfig(
     level=logging.INFO,
@@ -81,15 +82,23 @@ def run_single(user_id: str):
     print(json.dumps(result, ensure_ascii=False, indent=2))
 
 
+def run_migrate_tokens():
+    """将所有用户的 wiki node_token 解析为真实 obj_token"""
+    summary = migrate_user_tokens()
+    print(json.dumps(summary, ensure_ascii=False, indent=2))
+
+
 if __name__ == "__main__":
     if len(sys.argv) < 2:
-        print("用法: python main.py [daily|single <user_id>]")
+        print("用法: python main.py [daily|single <user_id>|migrate-tokens]")
         sys.exit(1)
     cmd = sys.argv[1]
     if cmd == "daily":
         run_daily_all()
     elif cmd == "single" and len(sys.argv) > 2:
         run_single(sys.argv[2])
+    elif cmd == "migrate-tokens":
+        run_migrate_tokens()
     else:
         print(f"未知命令: {cmd}")
         sys.exit(1)

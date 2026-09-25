@@ -17,6 +17,7 @@ from feishu_client import FeishuClient
 from wxpusher_client import WxPusherClient
 from collector import JobCollector
 from scorer import score_job
+from config import settings
 
 logger = logging.getLogger(__name__)
 
@@ -47,7 +48,7 @@ class DailyRunner:
                 self.user.profile,
                 self.user.profile.target_companies,
                 self.user.profile.target_cities,
-                limit=20,
+                limit=settings.DAILY_JOBS_PER_USER,
             )
             scored = [score_job(j, self.user.profile) for j in raw_jobs]
 

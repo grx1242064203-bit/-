@@ -8,9 +8,15 @@
 飞书事件订阅配置:
 - 请求地址: https://your-domain.com/feishu/callback
 - 订阅事件: app_open, app_install
+
+安全加固:
+- 请求体大小限制 1MB,防止恶意大包耗尽内存
+-  malformed JSON 返回 400,不崩溃
+- GET /health 健康检查端点,供监控探活
 """
 import json
 import logging
+import time
 from http.server import HTTPServer, BaseHTTPRequestHandler
 
 from onboarding import handle_feishu_callback
@@ -18,28 +24,84 @@ from onboarding import handle_feishu_callback
 logging.basicConfig(level=logging.INFO)
 logger = logging.getLogger(__name__)
 
+# 请求体大小上限:1MB(飞书事件回调体通常 < 10KB)
+MAX_BODY_SIZE = 1 * 1024 * 1024
+
+# 服务启动时间,用于健康检查
+_SERVICE_START_TIME = time.time()
+
 
 class CallbackHandler(BaseHTTPRequestHandler):
+    # 超时设置,防止慢连接占用资源
+    timeout = 10
+
+    def do_GET(self):
+        """健康检查端点"""
+        if self.path == "/health" or self.path == "/healthz":
+            uptime = int(time.time() - _SERVICE_START_TIME)
+            body = json.dumps({
+                "status": "ok",
+                "uptime_seconds": uptime,
+                "service": "job-callback",
+            })
+            self.send_response(200)
+            self.send_header("Content-Type", "application/json")
+            self.send_header("Content-Length", str(len(body)))
+            self.end_headers()
+            self.wfile.write(body.encode())
+        else:
+            self.send_response(404)
+            self.end_headers()
+
     def do_POST(self):
         if self.path != "/feishu/callback":
             self.send_response(404)
             self.end_headers()
             return
 
-        length = int(self.headers.get("Content-Length", 0))
-        body = json.loads(self.rfile.read(length).decode("utf-8"))
+        # 1. 限制请求体大小
+        try:
+            length = int(self.headers.get("Content-Length", 0))
+        except (ValueError, TypeError):
+            self._send_error(400, "invalid Content-Length")
+            return
 
+        if length <= 0:
+            self._send_error(400, "empty body")
+            return
+        if length > MAX_BODY_SIZE:
+            self._send_error(413, "body too large")
+            return
+
+        # 2. 解析 JSON(容错)
+        try:
+            raw = self.rfile.read(length)
+            body = json.loads(raw.decode("utf-8"))
+        except (json.JSONDecodeError, UnicodeDecodeError) as e:
+            logger.warning(f"回调 JSON 解析失败: {e}")
+            self._send_error(400, "invalid JSON")
+            return
+
+        # 3. 处理回调
         try:
             result = handle_feishu_callback(body)
+            resp_body = json.dumps(result, ensure_ascii=False)
             self.send_response(200)
-            self.send_header("Content-Type", "application/json")
+            self.send_header("Content-Type", "application/json; charset=utf-8")
+            self.send_header("Content-Length", str(len(resp_body.encode("utf-8"))))
             self.end_headers()
-            self.wfile.write(json.dumps(result).encode())
-        except Exception as e:
+            self.wfile.write(resp_body.encode("utf-8"))
+        except Exception:
             logger.exception("回调处理失败")
-            self.send_response(500)
-            self.end_headers()
-            self.wfile.write(b'{"code":-1,"msg":"error"}')
+            self._send_error(500, "internal error")
+
+    def _send_error(self, code: int, msg: str):
+        body = json.dumps({"code": -1, "msg": msg})
+        self.send_response(code)
+        self.send_header("Content-Type", "application/json")
+        self.send_header("Content-Length", str(len(body)))
+        self.end_headers()
+        self.wfile.write(body.encode())
 
     def log_message(self, format, *args):
         logger.info(format % args)
@@ -48,6 +110,7 @@ class CallbackHandler(BaseHTTPRequestHandler):
 def run(host="0.0.0.0", port=8080):
     server = HTTPServer((host, port), CallbackHandler)
     logger.info(f"回调服务启动: http://{host}:{port}/feishu/callback")
+    logger.info(f"健康检查: http://{host}:{port}/health")
     server.serve_forever()
 
 

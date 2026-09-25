@@ -157,6 +157,27 @@ class FeishuClient:
                              json_body={"name": name})
         return data["app"]["app_token"]
 
+    def list_tables(self, app_token: str) -> List[Dict]:
+        """列出多维表格下的数据表,用于验证 app_token 是否有效且可访问"""
+        app_token = self.resolve_app_token(app_token)
+        data = self._request(
+            "GET", f"/open-apis/bitable/v1/apps/{app_token}/tables",
+        )
+        return data.get("items", [])
+
+    def verify_bitable_access(self, app_token: str) -> bool:
+        """
+        验证多维表格 token 是否有效且应用有访问权限。
+        通过调用 list_tables 接口确认。成功返回 True,失败抛异常。
+        """
+        try:
+            tables = self.list_tables(app_token)
+            logger.info(f"多维表格验证通过,共 {len(tables)} 张表: {app_token}")
+            return True
+        except RuntimeError as e:
+            logger.error(f"多维表格验证失败 {app_token}: {e}")
+            raise
+
     def create_table(self, app_token: str, name: str) -> str:
         """在多维表格中创建数据表,返回 table_id"""
         app_token = self.resolve_app_token(app_token)

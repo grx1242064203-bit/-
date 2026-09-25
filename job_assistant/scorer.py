@@ -9,9 +9,21 @@
 第一原则:评分必须可解释,每个分数项有明确依据。
 """
 import re
+import hashlib
 from typing import Dict, Any, List
 
 from models import UserProfile
+
+
+def _make_hash(company: str, title: str, location: str, jd_url: str = "") -> str:
+    """
+    生成岗位去重 hash。
+    包含 公司+标题+地点+JD链接,确保同一岗位的不同抓取不会重复入库,
+    同时不同岗位(即使同公司同城市)也不会误判为重复。
+    使用 MD5 截断为 16 位,兼顾唯一性和存储长度。
+    """
+    raw = f"{company}|{title}|{location}|{jd_url}".lower().strip()
+    return hashlib.md5(raw.encode("utf-8")).hexdigest()[:16]
 
 
 def _has(text: str, keywords: List[str]) -> bool:
@@ -260,7 +272,7 @@ def score_job(job: Dict[str, str], profile: UserProfile) -> Dict[str, Any]:
         "简评": summary,
         "申请建议": advice,
         "申请状态": "未投递",
-        "去重hash": f"{company}{title}{location}".replace(" ", ""),
+        "去重hash": _make_hash(company, title, location, jd_url),
         "应届窗口": "是" if in_window else "否",
         "是否在招": "是",
     }

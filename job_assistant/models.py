@@ -4,10 +4,16 @@
 第一原则:用户数据与岗位数据分离存储。
 - 用户配置:data/users.json (少量,全量加载)
 - 岗位去重哈希:data/hashes/{user_id}.json (避免重复写入已关闭岗位)
+
+并发安全:
+- 写操作通过 fcntl.flock 获取排他锁,防止文件损坏
+- upsert/delete 前从磁盘重新加载,合并后写回,防止 lost-update
 """
 import json
 import os
 import time
+import fcntl
+from contextlib import contextmanager
 from dataclasses import dataclass, field, asdict
 from typing import Dict, List, Optional, Any
 
@@ -58,8 +64,20 @@ class UserStore:
     def __init__(self, path: str = None):
         self.path = path or os.path.join(settings.DATA_DIR, "users.json")
         os.makedirs(os.path.dirname(self.path), exist_ok=True)
+        self._lock_path = self.path + ".lock"
         self._users: Dict[str, User] = {}
         self._load()
+
+    @contextmanager
+    def _file_lock(self):
+        """获取排他文件锁,防止并发写导致数据损坏"""
+        lock_fd = open(self._lock_path, "w")
+        try:
+            fcntl.flock(lock_fd.fileno(), fcntl.LOCK_EX)
+            yield
+        finally:
+            fcntl.flock(lock_fd.fileno(), fcntl.LOCK_UN)
+            lock_fd.close()
 
     def _load(self):
         if os.path.exists(self.path):
@@ -72,6 +90,7 @@ class UserStore:
                 self._users[uid] = User(id=uid, **data)
 
     def _save(self):
+        """写回磁盘(调用方需持有文件锁)"""
         raw = {}
         for uid, u in self._users.items():
             d = asdict(u)
@@ -80,6 +99,21 @@ class UserStore:
         with open(tmp, "w", encoding="utf-8") as f:
             json.dump(raw, f, ensure_ascii=False, indent=2)
         os.replace(tmp, self.path)  # 原子写入
+
+    def _reload_from_disk(self):
+        """从磁盘重新加载,合并到内存中(防止 lost-update)。
+        磁盘上的版本优先,内存中未持久化的修改会被覆盖 —
+        因此调用方应在持锁期间先修改内存再调用此方法。"""
+        if os.path.exists(self.path):
+            with open(self.path, "r", encoding="utf-8") as f:
+                raw = json.load(f)
+            for uid, data in raw.items():
+                # 只加载内存中不存在的用户,避免覆盖当前正在修改的用户
+                if uid not in self._users:
+                    data.pop("id", None)
+                    prof_data = data.pop("profile", {})
+                    data["profile"] = UserProfile(**prof_data)
+                    self._users[uid] = User(id=uid, **data)
 
     def get(self, user_id: str) -> Optional[User]:
         return self._users.get(user_id)
@@ -91,12 +125,18 @@ class UserStore:
                 if not u.expire_date or u.expire_date >= now]
 
     def upsert(self, user: User):
-        self._users[user.id] = user
-        self._save()
+        """插入或更新用户。持锁 → 重载磁盘 → 写回,防止并发覆盖。"""
+        with self._file_lock():
+            self._reload_from_disk()
+            self._users[user.id] = user
+            self._save()
 
     def delete(self, user_id: str):
-        self._users.pop(user_id, None)
-        self._save()
+        """删除用户。持锁 → 重载磁盘 → 写回。"""
+        with self._file_lock():
+            self._reload_from_disk()
+            self._users.pop(user_id, None)
+            self._save()
 
 
 class HashStore:

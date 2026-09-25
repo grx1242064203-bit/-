@@ -35,6 +35,9 @@ def setup_user_feishu(tenant_key: str, open_id: str, client: FeishuClient = None
     base_token = client.resolve_app_token(base_token)
     logger.info(f"创建多维表格: {base_token}")
 
+    # 1.5 验证 token 有效且应用有访问权限(防止 91402 NOTEXIST 等问题)
+    client.verify_bitable_access(base_token)
+
     # 2. 创建岗位数据库表
     table_id = client.create_table(base_token, "岗位数据库")
     # 批量创建字段

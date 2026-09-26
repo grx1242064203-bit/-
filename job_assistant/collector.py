@@ -25,7 +25,8 @@ logger = logging.getLogger(__name__)
 class SearchProvider(ABC):
     @abstractmethod
     def search(self, query: str, max_results: int = 10,
-               include_domains: List[str] = None) -> List[Dict]:
+               include_domains: List[str] = None,
+               exclude_domains: List[str] = None) -> List[Dict]:
         """返回 [{title, url, snippet}]"""
         ...
 
@@ -37,7 +38,8 @@ class TavilySearchProvider(SearchProvider):
         self.api_key = api_key or os.getenv("TAVILY_API_KEY", "")
 
     def search(self, query: str, max_results: int = 10,
-               include_domains: List[str] = None) -> List[Dict]:
+               include_domains: List[str] = None,
+               exclude_domains: List[str] = None) -> List[Dict]:
         if not self.api_key:
             logger.warning("TAVILY_API_KEY 未设置,跳过搜索")
             return []
@@ -51,6 +53,8 @@ class TavilySearchProvider(SearchProvider):
             }
             if include_domains:
                 body["include_domains"] = include_domains
+            if exclude_domains:
+                body["exclude_domains"] = exclude_domains
             resp = requests.post(
                 "https://api.tavily.com/search",
                 json=body,
@@ -77,15 +81,20 @@ class SerpApiSearchProvider(SearchProvider):
         self.api_key = api_key or os.getenv("SERPAPI_KEY", "")
 
     def search(self, query: str, max_results: int = 10,
-               include_domains: List[str] = None) -> List[Dict]:
+               include_domains: List[str] = None,
+               exclude_domains: List[str] = None) -> List[Dict]:
         if not self.api_key:
             return []
         try:
-            params = {"q": query, "api_key": self.api_key, "num": max_results,
-                      "engine": "google", "hl": "zh-cn"}
+            q = query
             if include_domains:
                 # Google site: 操作符
-                params["q"] = query + " " + " OR ".join(f"site:{d}" for d in include_domains)
+                q = query + " " + " OR ".join(f"site:{d}" for d in include_domains)
+            if exclude_domains:
+                # Google -site: 排除域名
+                q = q + " " + " ".join(f"-site:{d}" for d in exclude_domains)
+            params = {"q": q, "api_key": self.api_key, "num": max_results,
+                      "engine": "google", "hl": "zh-cn"}
             resp = requests.get("https://serpapi.com/search", params=params, timeout=30)
             data = resp.json()
             results = []
@@ -374,6 +383,85 @@ def _is_search_listing_url(url: str) -> bool:
             return True
     if "51job.com" in url_lower and "search" in url_lower:
         return True
+    return False
+
+
+# 校招用户禁用的招聘平台域名(这些平台信息质量差、非官方一手信息)
+CAMPUS_BLOCKED_DOMAINS = [
+    # 领英及短链变体
+    "linkedin.com", "linkedin.cn", "lnkd.in",
+    # 国内招聘平台
+    "zhipin.com", "liepin.com", "51job.com", "zhaopin.com",
+    "lagou.com", "maimai.cn", "kanzhun.com",
+    # 国际招聘平台
+    "indeed.com", "glassdoor.com", "monster.com", "careerbuilder.com",
+    # 中文关键词兜底(搜索结果标题中可能出现)
+    "boss直聘", "智联", "猎聘", "前程无忧",
+]
+
+
+def _is_allowed_campus_source(url: str) -> bool:
+    """
+    校招用户严格来源过滤:只允许三类来源
+    1. 微信公众号文章(mp.weixin.qq.com)
+    2. 公司官方招聘官网(COMPANY_CAREER_SITES + FOREIGN_CAREER_SITES)
+    3. 高校就业指导中心网站(.edu.cn 且含 job/career/zhaopin/jiuye)
+
+    其他来源(领英/Boss/智联/猎聘/51job/脉脉等)一律排除。
+    """
+    if not url:
+        return False
+    from urllib.parse import urlparse
+    url_lower = url.lower()
+    try:
+        domain = urlparse(url).netloc.lower()
+    except Exception:
+        return False
+
+    # 0. 硬黑名单:领英/Boss/智联/猎聘等招聘平台一律排除(防御性检查)
+    for bd in CAMPUS_BLOCKED_DOMAINS:
+        if bd in domain or bd in url_lower:
+            return False
+
+    # 1. 微信公众号文章(官方招聘公众号 + 求职号 + 学校就业号)
+    if "mp.weixin.qq.com" in domain:
+        return True
+
+    # 2. 公司官方招聘官网
+    company_domains = set()
+    for cs in settings.COMPANY_CAREER_SITES:
+        company_domains.add(cs["domain"])
+        if cs.get("campus_domain"):
+            company_domains.add(cs["campus_domain"])
+    for fs in settings.FOREIGN_CAREER_SITES:
+        company_domains.add(fs["domain"])
+    for cd in company_domains:
+        if cd in domain or domain.endswith(cd):
+            return True
+
+    # 2.5 匹配外资公司英文名到域名(如 goldmansachs.com 匹配 Goldman Sachs)
+    try:
+        for fs in settings.FOREIGN_CAREER_SITES:
+            # 从 name 中提取英文关键词,如 "Goldman Sachs" → "goldmansachs"
+            en_name = fs["name"].lower().replace(" ", "").replace(".", "")
+            if en_name and en_name in domain:
+                return True
+            # 也匹配 name 中的每个单词
+            for word in fs["name"].lower().split():
+                if len(word) > 3 and word in domain:
+                    return True
+    except Exception:
+        pass
+
+    # 3. 高校就业指导中心网站
+    if ".edu.cn" in domain:
+        edu_kw = ["job", "career", "zhaopin", "jiuye", "employment", "bys"]
+        if any(kw in url_lower for kw in edu_kw):
+            return True
+        # 学校官网也允许(可能有招聘公告),如 www.tsinghua.edu.cn
+        if domain.count(".") <= 3:
+            return True
+
     return False
 
 
@@ -697,21 +785,24 @@ class JobCollector:
                 _yr = _dt.now().year
                 queries.append(f"{cs['name']} 校招 {_yr} site:{domain}")
 
-        # === 优先级6:外资官网管培专项(仅校招用户) ===
+        # === 优先级6:外资官网管培专项(仅校招用户,限定到公司官网) ===
         if role == "campus":
             for fs in settings.FOREIGN_CAREER_SITES[:6]:
                 for fg in settings.FOREIGN_GRADUATE_KEYWORDS[:3]:
-                    queries.append(f"{fs['name']} {fg}")
+                    queries.append(f"{fs['name']} {fg} site:{fs['domain']}")
 
-        # === 优先级7:社区渠道 ===
-        for cs in settings.COMMUNITY_SITES[:5]:
-            for direction, keywords in directions.items():
-                if not keywords:
-                    continue
-                core_kw = " ".join(keywords[:2])
-                queries.append(f"{core_kw} 内推 site:{cs['domain']}")
+        # === 优先级7:社区渠道(校招用户跳过,只保留官方来源) ===
+        if role != "campus":
+            for cs in settings.COMMUNITY_SITES[:5]:
+                for direction, keywords in directions.items():
+                    if not keywords:
+                        continue
+                    core_kw = " ".join(keywords[:2])
+                    queries.append(f"{core_kw} 内推 site:{cs['domain']}")
 
-        return list(dict.fromkeys(queries))[:30]
+        # 校招用户查询量大(企业清单),上限放宽到 80 条
+        max_queries = 80 if role == "campus" else 30
+        return list(dict.fromkeys(queries))[:max_queries]
 
     @staticmethod
     def _match_wechat_accounts(directions: Dict[str, List[str]]) -> List[str]:
@@ -786,6 +877,9 @@ class JobCollector:
         seen_urls = set()
         jobs = []
 
+        # 来源过滤统计(便于排查领英等黑名单域名是否漏过)
+        source_filter_stats = {"blocked": 0, "allowed": 0}
+
         role = getattr(profile, "role", "") or ""
         if not role:
             exp = getattr(profile, "experience_years", 0) or 0
@@ -803,13 +897,28 @@ class JobCollector:
                 q = q.replace(f" site:{settings.WECHAT_MP_DOMAIN}", "")
                 include_domains = [settings.WECHAT_MP_DOMAIN]
 
-            results = self.provider.search(q, max_results=8, include_domains=include_domains)
+            # 校招用户:在搜索 API 层排除领英/Boss/智联等低质量平台
+            # (双重保险:搜索层排除 + 结果层白名单过滤)
+            exclude_domains = CAMPUS_BLOCKED_DOMAINS if role == "campus" else None
+
+            results = self.provider.search(
+                q, max_results=8,
+                include_domains=include_domains,
+                exclude_domains=exclude_domains,
+            )
             for r in results:
                 if len(jobs) >= limit:
                     break
                 url = r["url"]
                 if not url or url in seen_urls:
                     continue
+
+                # 过滤0:校招用户严格来源白名单(只允许官网/公众号/高校就业网)
+                if role == "campus" and not _is_allowed_campus_source(url):
+                    source_filter_stats["blocked"] += 1
+                    logger.debug(f"[校招来源过滤] 跳过非允许来源: {url}")
+                    continue
+                source_filter_stats["allowed"] += 1
 
                 # 过滤1:排除搜索/列表页 URL
                 if _is_search_listing_url(url):
@@ -872,8 +981,12 @@ class JobCollector:
 
                 # 来源标记
                 is_wechat = settings.WECHAT_MP_DOMAIN in url
+                is_company_site = any(cs["domain"] in url for cs in settings.COMPANY_CAREER_SITES) or \
+                                  any(fs["domain"] in url for fs in settings.FOREIGN_CAREER_SITES)
+                is_edu_site = ".edu.cn" in url
                 source = "微信公众号" if is_wechat else (
-                    "公司官网" if any(cs["domain"] in url for cs in settings.COMPANY_CAREER_SITES) else
+                    "公司官网" if is_company_site else
+                    "高校就业网" if is_edu_site else
                     "社区" if any(cs["domain"] in url for cs in settings.COMMUNITY_SITES) else "搜索"
                 )
 
@@ -892,6 +1005,29 @@ class JobCollector:
                     "is_open": is_open,
                 })
             time.sleep(0.3)
+
+        # 校招用户:打印来源过滤统计,便于排查领英等黑名单域名
+        if role == "campus":
+            logger.info(
+                f"[校招来源统计] 允许来源: {source_filter_stats['allowed']}, "
+                f"拦截黑名单: {source_filter_stats['blocked']}, "
+                f"最终入库: {len(jobs)}"
+            )
+            # 二次校验:确保最终结果中没有黑名单域名(防御性检查)
+            from urllib.parse import urlparse
+            leaked = []
+            for j in jobs:
+                jurl = j.get("jd_url", "")
+                jdom = urlparse(jurl).netloc.lower() if jurl else ""
+                if any(bd in jdom or bd in jurl.lower() for bd in CAMPUS_BLOCKED_DOMAINS):
+                    leaked.append(jurl)
+            if leaked:
+                logger.error(
+                    f"[校招来源告警] 发现 {len(leaked)} 条黑名单域名漏过过滤! "
+                    f"URLs: {leaked[:5]}"
+                )
+            else:
+                logger.info("[校招来源校验] 最终结果中无黑名单域名 ✓")
 
         return jobs
 

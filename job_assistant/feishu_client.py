@@ -160,9 +160,10 @@ class FeishuClient:
             logger.warning(f"token {token} 是 wiki 节点但无 obj_token")
             self._resolved_tokens[token] = token
             return token
-        except RuntimeError as e:
-            # 不是 wiki 节点(token 本身就是真实 token),原样返回
-            logger.info(f"token {token} 非 wiki 节点,直接使用: {e}")
+        except RuntimeError:
+            # 不是 wiki 节点(token 本身就是真实 token),原样返回。
+            # 这是预期行为(绝大多数 token 都不是 wiki 节点),降级为 debug 避免噪音。
+            logger.debug(f"token {token[:8]}... 非 wiki 节点,直接使用")
             self._resolved_tokens[token] = token
             return token
 
@@ -293,7 +294,7 @@ class FeishuClient:
                 f"/open-apis/bitable/v1/apps/{app_token}/tables/{table_id}/records",
                 params=params,
             )
-            all_records.extend(data.get("items", []))
+            all_records.extend(data.get("items") or [])
             if not data.get("has_more"):
                 break
             page_token = data.get("page_token")

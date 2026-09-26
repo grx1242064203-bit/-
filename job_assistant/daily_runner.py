@@ -203,7 +203,7 @@ class DailyRunner:
 
         # TOP 推荐
         if new_jobs:
-            blocks.append({"block_type": 3, "heading2": {
+            blocks.append({"block_type": 4, "heading2": {
                 "elements": [{"text_run": {"content": "TOP 推荐"}}], "style": {}}})
             top = sorted(new_jobs, key=lambda x: x.get("相关性评分", 0), reverse=True)[:5]
             for j in top:
@@ -217,7 +217,7 @@ class DailyRunner:
 
         # 已关闭岗位
         if closed:
-            blocks.append({"block_type": 3, "heading2": {
+            blocks.append({"block_type": 4, "heading2": {
                 "elements": [{"text_run": {"content": "今日关闭岗位"}}], "style": {}}})
             for c in closed[:10]:
                 blocks.append({"block_type": 2, "text": {

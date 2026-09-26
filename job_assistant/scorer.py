@@ -310,8 +310,9 @@ def score_job(job: Dict[str, str], profile: UserProfile) -> Dict[str, Any]:
         "发布时间": posted,
         "岗位类别": direction,
         "平台层级": platform,
-        "相关性评分": relevance,
-        "难度评分": min(diff, 100),
+        # 数字字段必须传 int,否则飞书返回 1254061 NumberFieldConvFail
+        "相关性评分": int(relevance),
+        "难度评分": int(min(diff, 100)),
         "综合推荐度": recommend,
         "简评": summary,
         "申请建议": advice,

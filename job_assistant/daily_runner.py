@@ -86,6 +86,24 @@ class DailyRunner:
                     major=self.user.profile.major,
                 )
 
+            # 6. 飞书机器人消息推送(日报摘要+链接)
+            if self.user.feishu_open_id:
+                try:
+                    major = self.user.profile.major.strip()
+                    title = f"{major}招聘日报" if major else "招聘日报"
+                    priority = sum(1 for j in new_jobs if j.get("综合推荐度") == "优先申请")
+                    msg = (
+                        f"📋 {title} {date_str}\n\n"
+                        f"今日新增 {len(new_jobs)} 条岗位"
+                        + (f"，归档关闭 {len(closed)} 条" if closed else "")
+                        + f"。\n优先申请 {priority} 条。\n\n"
+                        f"📄 完整日报：{doc_url}"
+                    )
+                    self.feishu.send_message(self.user.feishu_open_id, msg)
+                    logger.info(f"飞书日报消息已发送: user_id={self.user.id}")
+                except Exception as e:
+                    logger.warning(f"飞书日报消息发送失败: {e}")
+
         except Exception as e:
             logger.exception(f"用户 {self.user.id} 每日任务失败")
             result["errors"].append(str(e))

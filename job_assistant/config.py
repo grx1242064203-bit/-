@@ -53,18 +53,30 @@ class Settings:
     ])
 
     # === 拓展抓取源:微信公众号 ===
-    # 通过 site:mp.weixin.qq.com 搜索招聘类公众号文章
-    # 重点公众号类型:校招汇总、内推、行业招聘
+    # 微信公众号是高质量招聘信息源(垃圾信息少),优先采集
     WECHAT_MP_DOMAIN: str = "mp.weixin.qq.com"
     # 招聘类公众号关键词(用于搜索时限定主题)
     WECHAT_RECRUIT_KEYWORDS: List[str] = field(default_factory=lambda: [
         "校招", "内推", "招聘", "春招", "秋招", "实习", "管培",
+        "社招", "应届", "补录", "提前批",
     ])
     # 重点招聘类公众号账号名(用于 intitle: 精确搜索,覆盖一手校招/内推信息)
+    # 按行业分组,确保覆盖不同求职方向
     WECHAT_MP_ACCOUNTS: List[str] = field(default_factory=lambda: [
+        # 综合校招/实习
         "应届生求职", "校招薪水", "互联派", "职业僧", "offer先生",
         "实习僧", "牛客网", "面包求职", "一起求职", "海归求职",
-        "金融求职", "咨询求职", "快消求职", "国企招聘", "事业单位招聘",
+        "刺猬实习", "白熊求职", "求职奶爸", "校招管家",
+        # 金融/券商/基金
+        "金融求职", "金融求职招聘", "券商招聘", "基金招聘",
+        "投行PEVC求职", "金融小伙伴", "券业星球", "Bank资管Street",
+        # 互联网/科技
+        "互联网招聘", "Tech求职", "程序员工厂", "后端技术",
+        # 咨询/快消/外企
+        "咨询求职", "快消求职", "外企招聘", "四大求职",
+        "Consulting-Case",
+        # 国企/央企/事业单位
+        "国企招聘", "事业单位招聘", "央企招聘", "选调生",
     ])
 
     # === 拓展抓取源:主要公司招聘官网 ===
@@ -114,6 +126,34 @@ class Settings:
         {"name": "国家电网", "domain": "zhaopin.sgcc.com.cn", "campus_domain": "zhaopin.sgcc.com.cn"},
         {"name": "中石油", "domain": "zhaopin.cnpc.com.cn", "campus_domain": "zhaopin.cnpc.com.cn"},
         {"name": "中石化", "domain": "job.sinopec.com", "campus_domain": "job.sinopec.com"},
+    ])
+
+    # === 外资公司招聘官网(sitemap 直采,覆盖 China+HK 岗位) ===
+    # 外资官网 JD 质量高,通过 sitemap.xml 穷举 + site: 搜索兜底
+    FOREIGN_CAREER_SITES: List[Dict[str, str]] = field(default_factory=lambda: [
+        {"name": "Goldman Sachs", "domain": "careers.gs.com", "sitemap": True},
+        {"name": "JPMorgan", "domain": "careers.jpmorgan.com", "sitemap": True},
+        {"name": "Morgan Stanley", "domain": "careers.morganstanley.com", "sitemap": True},
+        {"name": "HSBC", "domain": "careers.hsbc.com", "sitemap": True},
+        {"name": "Standard Chartered", "domain": "jobs.standardchartered.com", "sitemap": True},
+        {"name": "UBS", "domain": "ubs.com", "sitemap": True},
+        {"name": "BlackRock", "domain": "blackrock.com", "sitemap": True},
+        {"name": "Citi", "domain": "careers.citi.com", "sitemap": True},
+        {"name": "Deutsche Bank", "domain": "db.com", "sitemap": True},
+        {"name": "BNP Paribas", "domain": "careers.bnpparibas.com", "sitemap": True},
+        {"name": "Nomura", "domain": "nomura.com", "sitemap": True},
+        {"name": "Barclays", "domain": "careers.barclays.com", "sitemap": True},
+        {"name": "Fidelity", "domain": "careers.fidelity.com", "sitemap": True},
+        {"name": "Vanguard", "domain": "vanguardjobs.com", "sitemap": True},
+        {"name": "PIMCO", "domain": "pimco.com", "sitemap": True},
+    ])
+
+    # 外资管培/ Graduate Program 专项搜索关键词
+    FOREIGN_GRADUATE_KEYWORDS: List[str] = field(default_factory=lambda: [
+        "graduate program", "analyst program", "management trainee",
+        "graduate scheme", "rotational program", "early careers",
+        "campus recruiting", "graduate opportunity", "full-time analyst",
+        "new analyst program", "graduate talent program",
     ])
 
     # === 拓展抓取源:社区渠道 ===

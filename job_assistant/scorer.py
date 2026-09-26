@@ -224,11 +224,13 @@ def is_graduate_window(jd_text: str, title: str = "") -> tuple:
     return False, "社招岗位"
 
 
-def score_job(job: Dict[str, str], profile: UserProfile) -> Dict[str, Any]:
+def score_job(job: Dict[str, str], profile: UserProfile,
+              llm_client=None) -> Dict[str, Any]:
     """
     对单条岗位评分(通用版)。
     job 需含: title, company, jd_text, location, salary, jd_url
     profile: 用户画像(direction_keywords 驱动分类)
+    llm_client: 可选,传入则用 LLM 深度分析 JD 正文生成摘要和建议
     """
     title = job.get("title", "")
     company = job.get("company", "")
@@ -332,23 +334,47 @@ def score_job(job: Dict[str, str], profile: UserProfile) -> Dict[str, Any]:
     # 应届窗口
     in_window, window_note = is_graduate_window(jd_text, title)
 
-    # 简评
-    hit_desc = "、".join(skill_hits) if skill_hits else "无直接技能命中"
-    summary = (f"岗位类别:{direction},平台:{platform}。"
-               f"JD与用户匹配点: {hit_desc}。"
-               f"经验要求:{exp}(用户{user_exp}年),学历要求:{edu}。")
-    if in_window:
-        summary += f" {window_note}。"
+    # JD 深度分析:优先用 LLM(基于 JD 正文),降级用正则
+    jd_summary = job.get("jd_summary", "") or ""
+    llm_summary = ""
+    llm_advice = ""
+    if llm_client and jd_text and len(jd_text.strip()) >= 50:
+        try:
+            from dataclasses import asdict
+            profile_dict = asdict(profile) if hasattr(profile, "__dataclass_fields__") else {}
+            analysis = llm_client.analyze_jd(jd_text, title, profile_dict)
+            if analysis.get("jd_summary"):
+                llm_summary = analysis["jd_summary"]
+            if analysis.get("application_advice"):
+                llm_advice = analysis["application_advice"]
+        except Exception as e:
+            logger.debug(f"LLM JD 分析失败,使用降级方案: {e}")
 
-    # 申请建议
-    advice_parts = []
-    if skill_hits:
-        advice_parts.append(f"突出以下匹配技能: {'、'.join(skill_hits[:3])}")
-    if profile.school:
-        advice_parts.append(f"强调{profile.school}{profile.degree}背景")
-    if not advice_parts:
-        advice_parts.append("结合自身背景挖掘与JD的交集")
-    advice = "建议投递," + ";".join(advice_parts) + "。"
+    # 简评:优先 LLM 深度分析,降级用正则匹配
+    if llm_summary:
+        summary = llm_summary
+        if in_window:
+            summary += f" (应届窗口:{window_note})"
+    else:
+        hit_desc = "、".join(skill_hits) if skill_hits else "无直接技能命中"
+        summary = (f"岗位类别:{direction},平台:{platform}。"
+                   f"JD与用户匹配点: {hit_desc}。"
+                   f"经验要求:{exp}(用户{user_exp}年),学历要求:{edu}。")
+        if in_window:
+            summary += f" {window_note}。"
+
+    # 申请建议:优先 LLM,降级用通用建议
+    if llm_advice:
+        advice = llm_advice
+    else:
+        advice_parts = []
+        if skill_hits:
+            advice_parts.append(f"突出以下匹配技能: {'、'.join(skill_hits[:3])}")
+        if profile.school:
+            advice_parts.append(f"强调{profile.school}{profile.degree}背景")
+        if not advice_parts:
+            advice_parts.append("结合自身背景挖掘与JD的交集")
+        advice = "建议投递," + ";".join(advice_parts) + "。"
 
     # 截止日期(校招岗位常用,正则提取;失败则为空)
     deadline = extract_deadline_from_jd(jd_text)
@@ -362,7 +388,7 @@ def score_job(job: Dict[str, str], profile: UserProfile) -> Dict[str, Any]:
         "薪资范围": salary,
         "经验要求": exp,
         "学历要求": edu,
-        "JD摘要": (job.get("jd_summary", "")[:200] + ("..." if len(job.get("jd_summary", "")) > 200 else "")),
+        "JD摘要": (llm_summary or job.get("jd_summary", "") or "")[:300],
         # JD链接 是飞书 URL 字段(type=15),必须传 {"text","link"} 对象。
         # 空字符串会触发 1254068 URLFieldDetailFail,所以空值时省略该字段。
         "JD链接": _build_url_field(jd_url),

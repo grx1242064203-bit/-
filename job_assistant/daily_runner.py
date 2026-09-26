@@ -63,6 +63,8 @@ class DailyRunner:
         self.wxpusher = WxPusherClient()
         self.collector = JobCollector()
         self.hash_store = HashStore(user.id)
+        from llm_client import LLMClient
+        self.llm = LLMClient()
 
     def run(self) -> Dict:
         """执行完整流程,返回执行结果摘要"""
@@ -107,7 +109,7 @@ class DailyRunner:
                 self.user.profile.target_cities,
                 limit=settings.DAILY_JOBS_PER_USER,
             )
-            scored = [score_job(j, self.user.profile) for j in raw_jobs]
+            scored = [score_job(j, self.user.profile, llm_client=self.llm) for j in raw_jobs]
 
             # 2. 去重 + 入库
             new_jobs = self._dedupe_and_write(scored)

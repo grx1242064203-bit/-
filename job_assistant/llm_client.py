@@ -220,3 +220,62 @@ class LLMClient:
         if m:
             return f"{m.group(1)}-{int(m.group(2)):02d}-{int(m.group(3)):02d}"
         return ""
+
+    def analyze_jd(self, jd_text: str, title: str, profile: Dict) -> Dict[str, str]:
+        """
+        基于 JD 正文深度分析,生成高质量摘要和申请建议。
+
+        核心改进(对标参考提示词):
+        - 必须基于 JD 正文(职责+要求)分析,严禁只看 title
+        - 简评引用 JD 职责要点
+        - 申请建议针对 JD 要求具体化
+
+        返回: {jd_summary, match_analysis, application_advice}
+        """
+        if not jd_text or len(jd_text.strip()) < 50:
+            return {
+                "jd_summary": title,
+                "match_analysis": "JD 正文信息不足",
+                "application_advice": "请查看 JD 详情了解具体要求",
+            }
+
+        # 用户画像摘要(用于匹配分析)
+        profile_summary = (
+            f"学校:{profile.get('school','')},学历:{profile.get('degree','')},"
+            f"专业:{profile.get('major','')},工作年限:{profile.get('experience_years',0)}年,"
+            f"核心技能:{','.join(profile.get('core_skills',[])[:8])}"
+        )
+
+        prompt = f"""你是资深招聘顾问。请基于以下 JD 正文(而非仅标题)进行深度分析。
+
+用户画像: {profile_summary}
+
+JD 标题: {title}
+
+JD 正文:
+\"\"\"{jd_text[:4000]}\"\"\"
+
+请输出 JSON(不要输出其他文字):
+{{
+  "jd_summary": "JD 核心摘要(100字内):提炼岗位职责和核心要求,引用JD原文要点",
+  "match_analysis": "与用户画像的匹配分析(80字内):指出匹配点和差距",
+  "application_advice": "申请建议(80字内):针对JD要求,说明简历应突出的具体经验"
+}}
+"""
+        content = self._chat(
+            [{"role": "user", "content": prompt}],
+            temperature=0.3, max_tokens=600,
+        )
+        parsed = self._extract_json(content) if content else None
+        if not parsed:
+            # 降级:用前 200 字作为摘要
+            return {
+                "jd_summary": jd_text[:200].replace("\n", " "),
+                "match_analysis": "",
+                "application_advice": "",
+            }
+        return {
+            "jd_summary": str(parsed.get("jd_summary", "")).strip(),
+            "match_analysis": str(parsed.get("match_analysis", "")).strip(),
+            "application_advice": str(parsed.get("application_advice", "")).strip(),
+        }

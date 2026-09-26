@@ -66,6 +66,33 @@ def _verify_feishu_token(body: dict) -> bool:
     return token == expected
 
 
+def _extract_text_from_file(filename: str, data: bytes) -> str:
+    """从简历文件(PDF/DOC/DOCX)中提取纯文本"""
+    ext = filename.rsplit(".", 1)[-1].lower() if "." in filename else ""
+    try:
+        if ext == "pdf":
+            try:
+                from pypdf import PdfReader
+            except ImportError:
+                from PyPDF2 import PdfReader
+            import io
+            reader = PdfReader(io.BytesIO(data))
+            return "\n".join(page.extract_text() or "" for page in reader.pages)
+        elif ext in ("doc", "docx"):
+            try:
+                from docx import Document
+            except ImportError:
+                return ""
+            import io
+            doc = Document(io.BytesIO(data))
+            return "\n".join(p.text for p in doc.paragraphs)
+        else:
+            return data.decode("utf-8", errors="ignore")
+    except Exception as e:
+        logger.warning(f"提取简历文本失败 {filename}: {e}")
+        return ""
+
+
 class CallbackHandler(BaseHTTPRequestHandler):
     # 超时设置,防止慢连接占用资源
     timeout = 10
@@ -232,22 +259,50 @@ class CallbackHandler(BaseHTTPRequestHandler):
         self._send_json(200, json.dumps({"code": 0, "msg": "ok"}, ensure_ascii=False))
 
     def _handle_parse_resume(self):
-        """调用 LLM 解析简历文本,返回结构化画像"""
+        """接收简历文件(PDF/DOCX),提取文本后调用 LLM 解析"""
+        content_type = self.headers.get("Content-Type", "")
+        if "multipart/form-data" not in content_type:
+            self._send_error(400, "expected multipart/form-data")
+            return
+
         try:
             length = int(self.headers.get("Content-Length", 0))
             raw = self.rfile.read(length)
-            data = json.loads(raw.decode("utf-8"))
-        except (ValueError, json.JSONDecodeError):
-            self._send_error(400, "invalid JSON")
+        except (ValueError, TypeError):
+            self._send_error(400, "invalid Content-Length")
             return
 
-        user_id = data.get("user_id", "")
-        resume_text = data.get("resume_text", "")
+        # 解析 multipart/form-data
+        import email
+        boundary = content_type.split("boundary=")[-1].encode()
+        msg = email.message_from_bytes(
+            b"Content-Type: multipart/form-data; boundary=" + boundary + b"\r\n\r\n" + raw
+        )
+
+        user_id = ""
+        file_data = None
+        file_name = ""
+        for part in msg.walk():
+            if part.is_multipart():
+                continue
+            name = part.get_param("name", header="content-disposition")
+            if name == "user_id":
+                user_id = part.get_payload(decode=True).decode("utf-8", errors="ignore")
+            elif name == "resume":
+                file_data = part.get_payload(decode=True)
+                file_name = part.get_filename() or "resume"
+
         if not user_id:
             self._send_error(400, "missing user_id")
             return
-        if not resume_text or not resume_text.strip():
-            self._send_error(400, "missing resume_text")
+        if not file_data:
+            self._send_error(400, "missing resume file")
+            return
+
+        # 提取文本
+        resume_text = _extract_text_from_file(file_name, file_data)
+        if not resume_text or len(resume_text.strip()) < 10:
+            self._send_error(400, "无法从简历中提取文本，请检查文件格式")
             return
 
         store = UserStore()
@@ -261,32 +316,14 @@ class CallbackHandler(BaseHTTPRequestHandler):
         llm = LLMClient()
         parsed = llm.parse_resume(resume_text)
 
-        # 将解析结果回填到用户画像(用户可在表单中修改)
-        if parsed.get("school"):
-            user.profile.school = parsed["school"]
-        if parsed.get("degree"):
-            user.profile.degree = parsed["degree"]
-        if parsed.get("major"):
-            user.profile.major = parsed["major"]
-        if parsed.get("graduation_year"):
-            user.profile.graduation_year = parsed["graduation_year"]
-        if parsed.get("experience_years"):
-            user.profile.experience_years = parsed["experience_years"]
-        if parsed.get("core_skills"):
-            user.profile.core_skills = parsed["core_skills"]
-        if parsed.get("direction_keywords"):
-            user.profile.direction_keywords = parsed["direction_keywords"]
-        if parsed.get("target_cities"):
-            user.profile.target_cities = parsed["target_cities"]
-        if parsed.get("target_industries"):
-            user.profile.target_industries = parsed["target_industries"]
-        if parsed.get("target_certificates"):
-            user.profile.target_certificates = parsed["target_certificates"]
-        if parsed.get("current_role"):
-            user.profile.current_role = parsed["current_role"]
-        if parsed.get("summary"):
-            user.profile.summary = parsed["summary"]
-        # 留档原始简历文本
+        # 将解析结果回填到用户画像
+        for key in ["school", "degree", "major", "graduation_year",
+                    "experience_years", "core_skills", "direction_keywords",
+                    "target_cities", "target_industries", "target_certificates",
+                    "current_role", "summary"]:
+            val = parsed.get(key)
+            if val:
+                setattr(user.profile, key, val)
         user.profile.resume_text = resume_text[:5000]
         store.upsert(user)
 

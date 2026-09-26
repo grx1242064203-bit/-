@@ -8,10 +8,10 @@
   * { box-sizing: border-box; margin: 0; padding: 0; }
   body {
     font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", "PingFang SC", "Hiragino Sans GB", "Microsoft YaHei", sans-serif;
-    background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+    background: linear-gradient(135deg, #e0f2fe 0%, #f0f9ff 50%, #ffffff 100%);
     min-height: 100vh;
     padding: 20px;
-    color: #333;
+    color: #1e3a5f;
   }
   .container {
     max-width: 600px;
@@ -26,7 +26,7 @@
   }
   h1 {
     font-size: 22px;
-    color: #1a1a2e;
+    color: #1e3a5f;
     margin-bottom: 6px;
   }
   .subtitle {
@@ -36,10 +36,10 @@
   }
   h2 {
     font-size: 17px;
-    color: #1a1a2e;
+    color: #1e3a5f;
     margin-bottom: 16px;
     padding-left: 10px;
-    border-left: 4px solid #667eea;
+    border-left: 4px solid #4A90D9;
   }
   .form-group {
     margin-bottom: 16px;
@@ -67,7 +67,8 @@
   }
   input:focus, select:focus, textarea:focus {
     outline: none;
-    border-color: #667eea;
+    border-color: #4A90D9;
+    box-shadow: 0 0 0 3px rgba(74, 144, 217, 0.15);
   }
   .direction-row {
     display: flex;
@@ -88,7 +89,7 @@
     font-family: inherit;
   }
   .btn-primary {
-    background: linear-gradient(135deg, #667eea, #764ba2);
+    background: linear-gradient(135deg, #4A90D9, #357ABD);
     color: #fff;
     width: 100%;
     padding: 14px;
@@ -159,7 +160,7 @@
     font-size: 13px;
     font-weight: 600;
   }
-  .step.active { background: #667eea; color: #fff; }
+  .step.active { background: #4A90D9; color: #fff; }
   .step.done { background: #d4edda; color: #155724; }
   .step.todo { background: #f0f0f0; color: #999; }
   .grid-2 { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; }
@@ -197,8 +198,8 @@
   }
   .role-option input { display: none; }
   .role-option:has(input:checked) {
-    border-color: #667eea;
-    background: #f0f0ff;
+    border-color: #4A90D9;
+    background: #e8f4fd;
   }
   .role-label {
     font-size: 15px;
@@ -217,6 +218,37 @@
     font-size: 13px;
     font-family: inherit;
     resize: vertical;
+  }
+  .upload-area {
+    border: 2px dashed #b8d8f0;
+    border-radius: 12px;
+    padding: 24px;
+    text-align: center;
+    cursor: pointer;
+    transition: all 0.2s;
+    background: #f8fbfe;
+  }
+  .upload-area:hover {
+    border-color: #4A90D9;
+    background: #eef6fd;
+  }
+  .upload-area.dragover {
+    border-color: #4A90D9;
+    background: #e0f2fe;
+  }
+  .upload-icon { font-size: 36px; margin-bottom: 8px; }
+  .upload-text { color: #4A90D9; font-weight: 600; font-size: 14px; }
+  .upload-hint { color: #999; font-size: 12px; margin-top: 4px; }
+  .file-info {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    padding: 10px 14px;
+    background: #e8f4fd;
+    border-radius: 8px;
+    margin-top: 8px;
+    font-size: 13px;
+    color: #1e3a5f;
   }
   @media (max-width: 480px) { .role-selector { grid-template-columns: 1fr; } }
 </style>
@@ -259,8 +291,20 @@
 
     <!-- 简历解析 -->
     <div class="form-group">
-      <label>简历智能解析 <span class="hint">（粘贴简历文本，AI 自动提取信息）</span></label>
-      <textarea id="resumeText" rows="6" placeholder="粘贴您的简历文本（支持从 PDF/Word 复制），点击下方按钮自动解析..."></textarea>
+      <label>简历智能解析 <span class="hint">（上传 PDF/Word 简历，AI 自动提取信息）</span></label>
+      <div class="upload-area" id="uploadArea" onclick="document.getElementById('resumeFile').click()">
+        <div class="upload-icon">📄</div>
+        <div class="upload-text">点击或拖拽上传简历</div>
+        <div class="upload-hint">支持 PDF、DOC、DOCX 格式，最大 10MB</div>
+      </div>
+      <input type="file" id="resumeFile" accept=".pdf,.doc,.docx" style="display:none;" onchange="handleFileSelect(event)">
+      <div id="fileInfo" style="display:none;">
+        <div class="file-info">
+          <span>📎</span>
+          <span id="fileName" style="flex:1;"></span>
+          <button class="btn btn-danger btn-small" onclick="clearFile()">删除</button>
+        </div>
+      </div>
       <button class="btn btn-secondary btn-small" style="margin-top:8px;" onclick="parseResume()">✨ AI 解析简历</button>
       <div id="parseStatus" style="margin-top:8px;font-size:13px;color:#666;"></div>
     </div>
@@ -406,32 +450,70 @@ function getRole() {
   return checked ? checked.value : '';
 }
 
-// 简历解析
-async function parseResume() {
-  const text = document.getElementById('resumeText').value.trim();
-  if (!text) {
-    showToast('请先粘贴简历文本', 'error');
+// 简历文件处理
+let selectedFile = null;
+
+function handleFileSelect(event) {
+  const file = event.target.files[0];
+  if (file) setFile(file);
+}
+
+function setFile(file) {
+  if (file.size > 10 * 1024 * 1024) {
+    showToast('文件不能超过 10MB', 'error');
     return;
   }
-  if (text.length < 20) {
-    showToast('简历文本过短，请粘贴完整简历', 'error');
+  const ext = file.name.split('.').pop().toLowerCase();
+  if (!['pdf', 'doc', 'docx'].includes(ext)) {
+    showToast('仅支持 PDF、DOC、DOCX 格式', 'error');
+    return;
+  }
+  selectedFile = file;
+  document.getElementById('fileName').textContent = file.name;
+  document.getElementById('fileInfo').style.display = 'block';
+}
+
+function clearFile() {
+  selectedFile = null;
+  document.getElementById('resumeFile').value = '';
+  document.getElementById('fileInfo').style.display = 'none';
+}
+
+// 拖拽上传
+const uploadArea = document.getElementById('uploadArea');
+uploadArea.addEventListener('dragover', e => {
+  e.preventDefault();
+  uploadArea.classList.add('dragover');
+});
+uploadArea.addEventListener('dragleave', () => uploadArea.classList.remove('dragover'));
+uploadArea.addEventListener('drop', e => {
+  e.preventDefault();
+  uploadArea.classList.remove('dragover');
+  if (e.dataTransfer.files[0]) setFile(e.dataTransfer.files[0]);
+});
+
+// 简历解析
+async function parseResume() {
+  if (!selectedFile) {
+    showToast('请先上传简历文件', 'error');
     return;
   }
   const statusEl = document.getElementById('parseStatus');
-  statusEl.style.color = '#667eea';
+  statusEl.style.color = '#4A90D9';
   statusEl.textContent = '⏳ AI 正在解析简历，请稍候...';
+
+  const formData = new FormData();
+  formData.append('user_id', userId);
+  formData.append('resume', selectedFile);
 
   try {
     const resp = await fetch('/api/parse-resume', {
       method: 'POST',
-      headers: {'Content-Type': 'application/json'},
-      body: JSON.stringify({user_id: userId, resume_text: text})
+      body: formData
     });
     const data = await resp.json();
     if (data.code === 0 && data.profile) {
       const p = data.profile;
-      // 回填表单
-      if (p.school) document.getElementById('major').parentElement; // no school field, skip
       if (p.degree) document.getElementById('degree').value = p.degree;
       if (p.major) document.getElementById('major').value = p.major;
       if (p.experience_years) document.getElementById('experienceYears').value = p.experience_years;

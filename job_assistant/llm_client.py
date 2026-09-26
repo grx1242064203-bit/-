@@ -34,10 +34,11 @@ RESUME_PARSE_PROMPT = """你是一位有 10 年经验的资深 HR 专家,擅长�
 2. degree: 学历(本科/硕士/博士/大专/高中)。
 3. major: 专业全称(如"计算机科学与技术")。
 4. graduation_year: 毕业年份(4位数字,如 2026)。在读则填预计毕业年份。
-5. experience_years: 工作年限(数字,应届/在校填 0,实习经历不算正式工作年限)。
-6. core_skills: 核心技能列表(硬技能优先,如 Python/SQL/Excel/数据分析/项目管理等,提取 5-15 个)。
-7. target_roles: 目标岗位方向列表(从简历求职意向/经历推断,如 ["产品经理","数据分析"])。每个方向需精炼为 2-6 字的岗位名称。
-8. direction_keywords: 每个目标方向对应的搜索关键词数组。这是最关键的字段!
+5. graduation_date: 毕业年月(格式 YYYY-MM,如 "2026-06")。在读则填预计毕业年月。校招投递需严格匹配届数,此字段非常重要。
+6. experience_years: 工作年限(数字,应届/在校填 0,实习经历不算正式工作年限)。校招用户此值应为 0。
+7. core_skills: 核心技能列表(硬技能优先,如 Python/SQL/Excel/数据分析/项目管理等,提取 5-15 个)。
+8. target_roles: 目标岗位方向列表(从简历求职意向/经历推断,如 ["产品经理","数据分析"])。每个方向需精炼为 2-6 字的岗位名称。
+9. direction_keywords: 每个目标方向对应的搜索关键词数组。这是最关键的字段!
    格式: [{{"direction": "方向名", "keywords": ["关键词1","关键词2",...]}}]
    要求: 每个方向生成 5-8 个搜索关键词,必须包含:
      - 方向名本身(如 "FOF投资经理")
@@ -46,18 +47,21 @@ RESUME_PARSE_PROMPT = """你是一位有 10 年经验的资深 HR 专家,擅长�
      - 英文常用缩写(如 "FOF"、"portfolio")
      - 相关技能/工具词(如 "资产配置"、"量化")
    这些关键词将直接用于搜索引擎抓取岗位,必须精准、专业、覆盖全面。
-9. target_cities: 目标城市列表(从简历期望地点推断,不确定则为空数组)。
-10. target_industries: 目标行业列表(从经历推断,如 ["互联网","金融"])。
-11. certificates: 已获证书列表(如 CFA/CPA/法考/PMP/四六级等)。
-12. current_role: 当前身份("学生"/"在职"/"待业")。
-13. summary: 候选人一句话画像(学校+学历+核心亮点,不超过 50 字)。
-14. highlights: 简历亮点列表(3-5 条,每条不超过 30 字,如 "某券商行研实习经历"、"CFA二级通过")。
+10. target_cities: 目标城市列表(从简历期望地点推断,不确定则为空数组)。
+11. target_industries: 目标行业列表(从经历推断,如 ["互联网","金融"])。
+12. preferred_company_types: 偏好的公司类型(从简历背景和目标推断,可选值:["国央企","民企","外企"],可多选)。如金融背景且求稳可推荐"国央企",技术背景可推荐"民企"。
+13. preferred_difficulties: 偏好的申请难度(根据学校层次和经历推荐,可选值:["最激烈","较为激烈","中等难度","较低难度"],可多选)。顶尖院校+强实习推荐"最激烈"+"较为激烈"。
+14. certificates: 已获证书列表(如 CFA/CPA/法考/PMP/四六级等)。
+15. current_role: 当前身份("学生"/"在职"/"待业")。
+16. summary: 候选人一句话画像(学校+学历+核心亮点,不超过 50 字)。
+17. highlights: 简历亮点列表(3-5 条,每条不超过 30 字,如 "某券商行研实习经历"、"CFA二级通过")。
 
 注意:
 - 缺失的信息填""(字符串)或 [](数组),不要编造
 - experience_years 必须是数字
 - direction_keywords 的 keywords 必须是搜索友好的关键词,不要用完整句子
 - 只输出 JSON 对象,不要 markdown 代码块标记
+- graduation_date 必须是 YYYY-MM 格式
 
 简历文本:
 \"\"\"{resume_text}\"\"\"
@@ -211,6 +215,7 @@ class LLMClient:
         profile["degree"] = str(parsed.get("degree", "")).strip()
         profile["major"] = str(parsed.get("major", "")).strip()
         profile["graduation_year"] = str(parsed.get("graduation_year", "")).strip()
+        profile["graduation_date"] = str(parsed.get("graduation_date", "")).strip()
         profile["current_role"] = str(parsed.get("current_role", "")).strip()
         profile["summary"] = str(parsed.get("summary", "")).strip()
 
@@ -225,6 +230,8 @@ class LLMClient:
         profile["target_cities"] = self._to_list(parsed.get("target_cities"))
         profile["target_industries"] = self._to_list(parsed.get("target_industries"))
         profile["target_certificates"] = self._to_list(parsed.get("certificates"))
+        profile["preferred_company_types"] = self._to_list(parsed.get("preferred_company_types"))
+        profile["preferred_difficulties"] = self._to_list(parsed.get("preferred_difficulties"))
 
         # 亮点(用于丰富画像展示)
         profile["highlights"] = self._to_list(parsed.get("highlights"))
@@ -276,12 +283,15 @@ class LLMClient:
             "degree": "",
             "major": "",
             "graduation_year": "",
+            "graduation_date": "",
             "experience_years": 0.0,
             "core_skills": [],
             "direction_keywords": {},
             "target_cities": [],
             "target_industries": [],
             "target_certificates": [],
+            "preferred_company_types": [],
+            "preferred_difficulties": [],
             "current_role": "",
             "summary": "",
             "highlights": [],

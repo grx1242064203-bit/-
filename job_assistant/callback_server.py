@@ -111,7 +111,6 @@ class CallbackHandler(BaseHTTPRequestHandler):
             resp = {
                 "code": 0,
                 "profile": asdict(user.profile),
-                "wxpusher_bound": bool(user.wxpusher_uid),
             }
             self._send_json(200, json.dumps(resp, ensure_ascii=False))
             return

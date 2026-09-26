@@ -46,11 +46,22 @@ pip install -r requirements.txt
 
 ```bash
 cat > /opt/job_assistant/.env << 'EOF'
+# 飞书应用凭证(open.feishu.cn 创建后获取)
 FEISHU_APP_ID=cli_xxx
 FEISHU_APP_SECRET=xxx
-WXPUSHER_APP_TOKEN=AT_xxx
+FEISHU_VERIFICATION_TOKEN=xxx
+
+# 搜索 API(二选一,Tavily 有免费额度)
 TAVILY_API_KEY=tvly-xxx
+
+# LLM 配置(DeepSeek,用于简历解析)
+DEEPSEEK_API_KEY=sk-xxx
+
+# 数据存储目录
 DATA_DIR=/opt/job_assistant/data
+
+# 服务域名(用于生成客户配置页链接)
+SERVICE_BASE_URL=https://zhaopin-helper.xyz
 EOF
 
 # 限制 .env 权限
@@ -205,7 +216,7 @@ python verify_fix.py
 1. **飞书回调**：在飞书中打开应用，检查 `users.json` 是否新增用户
 2. **多维表格**：确认用户专属多维表格已创建，字段完整
 3. **每日任务**：`python main.py single <user_id>`，确认岗位写入飞书表格
-4. **微信推送**：确认用户收到 WxPusher 日报推送
+4. **飞书消息推送**：确认用户收到飞书日报卡片消息
 
 ---
 

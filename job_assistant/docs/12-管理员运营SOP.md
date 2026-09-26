@@ -1,13 +1,16 @@
 # 12. 管理员运营 SOP
 
-> 本文档面向运营人员，指导如何为付费客户完成开户、配置偏好、绑定微信、验证服务。
+> 本文档面向运营人员，指导如何为付费客户完成开户、配置偏好、验证服务。
+>
+> **重要变更**：已移除 WxPusher 微信绑定步骤，主推送渠道统一为飞书消息。
+> 客户通过飞书应用内的自助配置页面完成求职偏好设置。
 
 ---
 
 ## 一、客户开户完整流程
 
 ```
-客户付费 → 发送安装链接 → 客户安装飞书应用 → 配置求职偏好 → 绑定微信 → 触发测试 → 交付
+客户付费 → 发送安装链接 → 客户安装飞书应用 → 客户自助配置求职偏好 → 触发测试 → 交付
 ```
 
 ---
@@ -28,7 +31,8 @@
 请按以下步骤操作：
 1. 点击下方链接安装飞书应用
 2. 安装后请"打开应用一次"（系统会自动为您创建岗位库）
-3. 完成后请回复"已安装"
+3. 打开应用后，点击飞书消息中的配置链接，填写求职偏好（支持简历智能解析）
+4. 保存偏好后系统会立即为您采集第一批岗位
 
 安装链接：[飞书应用安装链接]
 ```
@@ -41,6 +45,7 @@
 - 创建「岗位数据库」和「已关闭岗位」两张表
 - 创建字段
 - 将多维表格所有权转移给客户
+- 发送飞书消息，附带自助配置页面链接
 
 **验证用户已创建**：
 
@@ -56,93 +61,33 @@ cat data/users.json | python3 -c "import json,sys; d=json.load(sys.stdin); print
 > sudo journalctl -u job-callback -n 100 --no-pager | grep -i error
 > ```
 
-### 步骤 4：配置客户求职偏好
+### 步骤 4：确认客户已配置求职偏好
 
-**当前方式**：手动编辑 `data/users.json`（⚠️ 尚无客户自助配置界面）
+客户通过飞书消息中的链接打开自助配置页面，可：
+- 选择求职角色（实习/校招/社招）
+- 粘贴简历文本，AI 自动解析提取学校、学历、专业、技能等
+- 手动填写/调整目标岗位方向、专业、学历、技能、目标公司、目标城市
+- 保存后系统立即触发首次采集
 
-1. 向客户收集求职偏好信息（见下方模板）
-2. 编辑 `data/users.json`，对应用户的 `profile` 字段
-
-**客户信息收集模板**（发给客户填写）：
-
-```
-请提供以下信息，我们将为您配置精准的岗位匹配：
-
-1. 目标岗位方向（可多个，每个方向给2-3个关键词）：
-   例：产品经理: 产品, PM；数据分析: 数据分析, SQL
-
-2. 专业：
-   例：计算机科学与技术
-
-3. 学历：本科/硕士/博士
-
-4. 工作年限：0（应届）/ 1 / 2 / ...
-
-5. 核心技能（逗号分隔）：
-   例：Python, SQL, Excel
-
-6. 目标公司（逗号分隔，可填简称）：
-   例：字节, 腾讯, 阿里
-
-7. 目标城市（逗号分隔）：
-   例：北京, 上海
-
-8. 目标行业（可选，逗号分隔）：
-   例：互联网, 金融
-```
-
-**编辑 users.json 示例**：
-
-```json
-{
-  "用户user_id": {
-    ...
-    "profile": {
-      "school": "",
-      "degree": "本科",
-      "major": "计算机科学与技术",
-      "experience_years": 0,
-      "current_role": "",
-      "core_skills": ["Python", "SQL"],
-      "direction_keywords": {
-        "产品经理": ["产品", "PM"]
-      },
-      "target_companies": ["字节", "腾讯"],
-      "target_industries": [],
-      "target_cities": ["北京", "上海"],
-      "target_certificates": []
-    },
-    "plan": "autumn",
-    "expire_date": "2026-11-30",
-    ...
-  }
-}
-```
-
-> ⚠️ 编辑前先备份：`cp data/users.json data/users.json.bak`
-> ⚠️ 编辑后重启服务：`sudo systemctl restart job-callback`
-
-### 步骤 5：绑定微信推送（WxPusher）
-
-1. 向客户发送 **WxPusher 关注二维码**
-   - 登录 [WxPusher 后台](https://wxpusher.zjiecode.com/admin/)
-   - 进入「应用」→「关注二维码」，下载二维码图片发给客户
-2. 客户微信扫码关注「WxPusher」公众号
-3. 客户在公众号菜单「我的」→「我的UID」中查看自己的 UID（格式 `UID_xxx`）
-4. 客户将 UID 发给管理员
-5. 管理员执行绑定：
+**验证客户已配置**：
 
 ```bash
 cd /opt/job_assistant
-venv/bin/python bind_wxpusher.py <user_id> <wxpusher_uid>
+venv/bin/python -c "
+from models import UserStore
+store = UserStore()
+u = store.get('<user_id>')
+if u:
+    p = u.profile
+    print(f'role={p.role}, major={p.major}, directions={list(p.direction_keywords.keys())}')
+"
 ```
 
-验证绑定：
-```bash
-grep -A2 '"wxpusher_uid"' data/users.json | head -5
-```
+如果客户未配置或配置不完整，`direction_keywords` 为空，则无法采集到匹配岗位。
 
-### 步骤 6：触发测试运行
+> ⚠️ 如需手动为客户配置偏好，可编辑 `data/users.json`（编辑前备份，编辑后重启服务）。
+
+### 步骤 5：触发测试运行
 
 ```bash
 cd /opt/job_assistant
@@ -152,9 +97,9 @@ venv/bin/python main.py single <user_id>
 **预期结果**：
 - 日志显示"写入 N 条新岗位"
 - 客户的飞书多维表格中出现岗位记录
-- 客户收到 WxPusher 微信推送
+- 客户收到飞书消息通知（岗位日报卡片）
 
-### 步骤 7：交付确认
+### 步骤 6：交付确认
 
 向客户发送确认消息：
 
@@ -162,9 +107,9 @@ venv/bin/python main.py single <user_id>
 您好！您的招聘情报助手已配置完成。
 ✅ 已为您创建专属岗位库（飞书云空间 → 招聘情报库）
 ✅ 已配置您的求职偏好
-✅ 已绑定微信推送
+✅ 已启动岗位采集
 
-明天早上 9:00 您将收到第一份岗位日报。
+每天早上 9:00 您将收到岗位日报推送（飞书消息）。
 如有问题请随时联系。
 
 使用手册：[客户使用手册链接]
@@ -254,19 +199,19 @@ venv/bin/python main.py single <user_id> 2>&1 | tail -50
 # 3. 所有岗位已推送过（去重）
 ```
 
-### 4.3 微信推送失败
+### 4.3 飞书消息推送失败
 
 ```bash
-# 检查 WxPusher 配置
-grep WXPUSHER /opt/job_assistant/.env
+# 检查飞书凭证配置
+grep FEISHU /opt/job_assistant/.env
 
-# 检查用户是否绑定 wxpusher_uid
-grep -A2 '"wxpusher_uid"' data/users.json
+# 检查用户是否有 feishu_open_id
+grep -A2 '"feishu_open_id"' data/users.json
 
 # 常见原因：
-# 1. WXPUSHER_APP_TOKEN 过期
-# 2. 客户未关注 WxPusher 公众号
-# 3. 客户 wxpusher_uid 错误
+# 1. FEISHU_APP_SECRET 错误或过期
+# 2. 飞书应用缺少消息发送权限（im:message）
+# 3. 应用未发布或用户未安装
 ```
 
 ### 4.4 飞书写入失败（91402）

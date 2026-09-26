@@ -52,5 +52,86 @@ class Settings:
         "careers.", "jobs.", "talent.",
     ])
 
+    # === 拓展抓取源:微信公众号 ===
+    # 通过 site:mp.weixin.qq.com 搜索招聘类公众号文章
+    # 重点公众号类型:校招汇总、内推、行业招聘
+    WECHAT_MP_DOMAIN: str = "mp.weixin.qq.com"
+    # 招聘类公众号关键词(用于搜索时限定主题)
+    WECHAT_RECRUIT_KEYWORDS: List[str] = field(default_factory=lambda: [
+        "校招", "内推", "招聘", "春招", "秋招", "实习", "管培",
+    ])
+    # 重点招聘类公众号账号名(用于 intitle: 精确搜索,覆盖一手校招/内推信息)
+    WECHAT_MP_ACCOUNTS: List[str] = field(default_factory=lambda: [
+        "应届生求职", "校招薪水", "互联派", "职业僧", "offer先生",
+        "实习僧", "牛客网", "面包求职", "一起求职", "海归求职",
+        "金融求职", "咨询求职", "快消求职", "国企招聘", "事业单位招聘",
+    ])
+
+    # === 拓展抓取源:主要公司招聘官网 ===
+    # 直接抓取公司 career 页面,覆盖互联网/金融/快消等行业头部公司
+    COMPANY_CAREER_SITES: List[Dict[str, str]] = field(default_factory=lambda: [
+        # 互联网
+        {"name": "字节跳动", "domain": "jobs.bytedance.com", "campus_domain": "campus.bytedance.com"},
+        {"name": "腾讯", "domain": "careers.tencent.com", "campus_domain": "join.qq.com"},
+        {"name": "阿里巴巴", "domain": "talent.alibaba.com", "campus_domain": "campus.alibaba.com"},
+        {"name": "百度", "domain": "talent.baidu.com", "campus_domain": "campus.baidu.com"},
+        {"name": "美团", "domain": "zhaopin.meituan.com", "campus_domain": "campus.meituan.com"},
+        {"name": "京东", "domain": "zhaopin.jd.com", "campus_domain": "campus.jd.com"},
+        {"name": "网易", "domain": "hr.163.com", "campus_domain": "campus.163.com"},
+        {"name": "快手", "domain": "zhaopin.kuaishou.cn", "campus_domain": "campus.kuaishou.cn"},
+        {"name": "小米", "domain": "hr.xiaomi.com", "campus_domain": "campus.hr.xiaomi.com"},
+        {"name": "滴滴", "domain": "talent.didiglobal.com", "campus_domain": "campus.didiglobal.com"},
+        {"name": "拼多多", "domain": "careers.pinduoduo.com", "campus_domain": "careers.pinduoduo.com"},
+        {"name": "B站", "domain": "jobs.bilibili.com", "campus_domain": "campus.bilibili.com"},
+        {"name": "携程", "domain": "job.ctrip.com", "campus_domain": "campus.ctrip.com"},
+        {"name": "华为", "domain": "career.huawei.com", "campus_domain": "career.huawei.com"},
+        {"name": "OPPO", "domain": "career.oppo.com", "campus_domain": "career.oppo.com"},
+        {"name": "vivo", "domain": "hr.vivo.com", "campus_domain": "hr.vivo.com"},
+        {"name": "大疆", "domain": "we.dji.com", "campus_domain": "we.dji.com"},
+        {"name": "小红书", "domain": "job.xiaohongshu.com", "campus_domain": "job.xiaohongshu.com"},
+        # 金融
+        {"name": "招商银行", "domain": "career.cmbchina.com", "campus_domain": "career.cmbchina.com"},
+        {"name": "中信证券", "domain": "career.cs.ecitic.com", "campus_domain": "career.cs.ecitic.com"},
+        {"name": "中金公司", "domain": "cicc.zhiye.com", "campus_domain": "cicc.zhiye.com"},
+        {"name": "华泰证券", "domain": "job.htsc.com.cn", "campus_domain": "job.htsc.com.cn"},
+        {"name": "工商银行", "domain": "job.icbc.com.cn", "campus_domain": "job.icbc.com.cn"},
+        {"name": "建设银行", "domain": "job.ccb.com", "campus_domain": "job.ccb.com"},
+        {"name": "平安集团", "domain": "talent.pingan.com", "campus_domain": "campus.pingan.com"},
+        {"name": "高盛", "domain": "goldmansachs.com/careers", "campus_domain": "goldmansachs.com/careers"},
+        {"name": "摩根士丹利", "domain": "morganstanley.com/careers", "campus_domain": "morganstanley.com/careers"},
+        # 快消/外企
+        {"name": "宝洁", "domain": "pg.com.cn", "campus_domain": "pg.com.cn"},
+        {"name": "联合利华", "domain": "unilever.com.cn", "campus_domain": "unilever.com.cn"},
+        {"name": "欧莱雅", "domain": "loreal.com.cn", "campus_domain": "loreal.com.cn"},
+        {"name": "玛氏", "domain": "mars.com", "campus_domain": "mars.com"},
+        {"name": "雀巢", "domain": "nestle.com.cn", "campus_domain": "nestle.com.cn"},
+        {"name": "可口可乐", "domain": "coca-cola.com.cn", "campus_domain": "coca-cola.com.cn"},
+        # 咨询
+        {"name": "麦肯锡", "domain": "mckinsey.com/careers", "campus_domain": "mckinsey.com/careers"},
+        {"name": "波士顿咨询", "domain": "bcg.com/careers", "campus_domain": "bcg.com/careers"},
+        {"name": "贝恩咨询", "domain": "bain.com/careers", "campus_domain": "bain.com/careers"},
+        # 国企/央企
+        {"name": "国家电网", "domain": "zhaopin.sgcc.com.cn", "campus_domain": "zhaopin.sgcc.com.cn"},
+        {"name": "中石油", "domain": "zhaopin.cnpc.com.cn", "campus_domain": "zhaopin.cnpc.com.cn"},
+        {"name": "中石化", "domain": "job.sinopec.com", "campus_domain": "job.sinopec.com"},
+    ])
+
+    # === 拓展抓取源:社区渠道 ===
+    # 通过 site: 限定搜索招聘相关帖子
+    COMMUNITY_SITES: List[Dict[str, str]] = field(default_factory=lambda: [
+        {"name": "脉脉", "domain": "maimai.cn", "type": "职场社交"},
+        {"name": "知乎", "domain": "zhihu.com", "type": "问答社区"},
+        {"name": "小红书", "domain": "xiaohongshu.com", "type": "生活分享"},
+        {"name": "V2EX", "domain": "v2ex.com", "type": "技术社区"},
+        {"name": "豆瓣", "domain": "douban.com", "type": "小组讨论"},
+        {"name": "即刻", "domain": "okjike.com", "type": "兴趣社交"},
+        {"name": "牛客网", "domain": "nowcoder.com", "type": "求职社区"},
+        {"name": "应届生求职网", "domain": "yingjiesheng.com", "type": "校招平台"},
+        {"name": "看准网", "domain": "kanzhun.com", "type": "公司评价"},
+        {"name": "一亩三分地", "domain": "1point3acres.com", "type": "留学求职"},
+        {"name": "Boss直聘社区", "domain": "zhipin.com", "type": "招聘平台"},
+        {"name": "猎聘", "domain": "liepin.com", "type": "中高端招聘"},
+    ])
+
 
 settings = Settings()

@@ -5,7 +5,7 @@
 1. 用户安装商店应用 → 飞书回调推送 app_open 事件(含 tenant_key + open_id)
 2. 本脚本接收回调,创建用户专属多维表格(岗位数据库 + 已关闭岗位)
 3. 分享+转所有权给用户
-4. 返回安装完成页(含 WxPusher 绑定二维码 + 背景表单)
+4. 返回安装完成页(配置求职偏好,支持简历智能解析)
 
 注意:飞书商店应用的事件回调需要公网可访问的 HTTPS 地址。
 MVP 阶段可用 ngrok/cloudflared 做内网穿透,或用云函数接收回调。
@@ -178,9 +178,9 @@ def onboard_user(user_id: str, tenant_key: str, open_id: str,
             onboarding_url = f"{settings.SERVICE_BASE_URL}/onboarding?user_id={user_id}"
             msg = (
                 "🎉 招聘情报助手已为您创建专属岗位库！\n\n"
-                "请点击下方链接配置您的求职偏好并绑定微信推送：\n"
+                "请点击下方链接配置您的求职偏好（支持简历智能解析）：\n"
                 f"{onboarding_url}\n\n"
-                "配置完成后，每天早上 9:00 您将收到岗位日报推送。"
+                "配置完成后将立即为您采集第一批岗位，此后每天早上 9:00 推送岗位日报。"
             )
             client.send_message(open_id, msg)
         except Exception:

@@ -231,7 +231,6 @@
       <div class="step todo" id="step2">2. 完成</div>
     </div>
   </div>
-
   <!-- 配置表单 -->
   <div class="card" id="profileCard">
     <h2>求职偏好</h2>
@@ -310,26 +309,6 @@
     </div>
 
     <button class="btn btn-primary" onclick="saveProfile()">保存偏好配置</button>
-  </div>
-
-  <!-- 微信推送(可选辅助通道) -->
-  <div class="card" id="wxpusherCard" style="display:none;">
-    <h2>📱 微信推送（可选）</h2>
-    <p style="color:#666;font-size:14px;margin-bottom:16px;">
-      ⚠️ 由于微信政策调整，WxPusher 消息目前只能送达 WxPusher App，无法直接推送至微信。<br>
-      <strong>飞书消息是主推送渠道</strong>，您每天将在飞书收到岗位日报卡片。<br>
-      如仍需微信辅助通知，可绑定 WxPusher（需下载 WxPusher App 接收）。
-    </p>
-    <div class="qrcode-area">
-      <img id="qrcodeImg" src="" alt="WxPusher 二维码">
-      <p style="margin-top:12px;font-size:14px;color:#666;">微信扫码关注「WxPusher」公众号</p>
-    </div>
-    <div class="form-group">
-      <label>您的 WxPusher UID <span class="hint">（在公众号菜单「我的」→「我的UID」查看，格式 UID_xxx）</span></label>
-      <input type="text" id="wxpusherUid" placeholder="如：UID_abc123def456">
-    </div>
-    <button class="btn btn-secondary" onclick="bindWxpusher()">绑定并发送测试消息</button>
-    <button class="btn btn-primary" style="margin-top:10px;" onclick="skipWxpusher()">跳过，直接完成</button>
   </div>
 
   <!-- 完成 -->
@@ -526,8 +505,6 @@ async function saveProfile() {
     if (data.code === 0) {
       showToast('偏好配置已保存！正在为您采集岗位...');
       setStep(2);
-      // 加载微信绑定二维码(可选)
-      loadQrcode();
     } else {
       showToast(data.msg || '保存失败', 'error');
     }
@@ -536,59 +513,15 @@ async function saveProfile() {
   }
 }
 
-async function loadQrcode() {
-  try {
-    const resp = await fetch('/api/wxpusher-qrcode');
-    const data = await resp.json();
-    if (data.url) {
-      document.getElementById('qrcodeImg').src = data.url;
-    } else {
-      document.getElementById('qrcodeImg').src = 
-        'data:image/svg+xml;base64,' + btoa('<svg xmlns="http://www.w3.org/2000/svg" width="200" height="200"><rect width="200" height="200" fill="#f0f0f0"/><text x="100" y="110" text-anchor="middle" fill="#999" font-size="14">二维码加载失败</text></svg>');
-    }
-  } catch(e) {
-    console.error(e);
-  }
-}
-
-async function bindWxpusher() {
-  const uid = document.getElementById('wxpusherUid').value.trim();
-  if (!uid.startsWith('UID_')) {
-    showToast('UID 格式错误，应以 UID_ 开头', 'error');
-    return;
-  }
-  try {
-    const resp = await fetch('/api/bind-wxpusher', {
-      method: 'POST',
-      headers: {'Content-Type': 'application/json'},
-      body: JSON.stringify({user_id: userId, wxpusher_uid: uid})
-    });
-    const data = await resp.json();
-    if (data.code === 0) {
-      showToast('微信绑定成功！测试消息已发送（请在 WxPusher App 查看）');
-      setStep(3);
-    } else {
-      showToast(data.msg || '绑定失败', 'error');
-    }
-  } catch(e) {
-    showToast('网络错误，请重试', 'error');
-  }
-}
-
-function skipWxpusher() {
-  setStep(3);
-}
-
 function setStep(n) {
-  [1,2,3].forEach(i => {
+  [1,2].forEach(i => {
     const el = document.getElementById('step'+i);
     if (el) {
       el.className = 'step ' + (i < n ? 'done' : i === n ? 'active' : 'todo');
     }
   });
   document.getElementById('profileCard').style.display = n <= 1 ? 'block' : 'none';
-  document.getElementById('wxpusherCard').style.display = n === 2 ? 'block' : 'none';
-  document.getElementById('successCard').style.display = n === 3 ? 'block' : 'none';
+  document.getElementById('successCard').style.display = n === 2 ? 'block' : 'none';
 }
 
 // 初始化

@@ -352,8 +352,8 @@ class DailyRunner:
             if not url or not rid:
                 continue
             # 复查 JD 是否还在
-            from collector import fetch_jd
-            jd = fetch_jd(url, timeout=8)
+            from collector import fetch_jd_by_source
+            jd = fetch_jd_by_source(url, timeout=8)
             if not jd or "no longer" in jd.lower() or "已关闭" in jd or "404" in jd:
                 closed_applied.append({
                     "title": fields.get("岗位标题", ""),
@@ -454,8 +454,8 @@ class DailyRunner:
             if not url or not rid:
                 continue
             # 复查 JD 是否还在
-            from collector import fetch_jd
-            jd = fetch_jd(url, timeout=8)
+            from collector import fetch_jd_by_source
+            jd = fetch_jd_by_source(url, timeout=8)
             if not jd or "no longer" in jd.lower() or "已关闭" in jd or "404" in jd:
                 try:
                     # 拉取完整记录

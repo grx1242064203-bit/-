@@ -74,57 +74,68 @@ def _create_optimized_views(client: FeishuClient, base_token: str, table_id: str
                        view_type="grid", property_=campus_property)
 
 
+def _create_fields_and_views(client: FeishuClient, base_token: str,
+                             table_id: str, closed_table_id: str):
+    """后台创建字段和视图(耗时操作,不阻塞用户拿到消息)"""
+    try:
+        for f in JOB_FIELDS:
+            kwargs = {}
+            if "options" in f:
+                kwargs["property"] = {"options": f["options"]}
+            if "style" in f:
+                kwargs["property"] = {**kwargs.get("property", {}), **f["style"]}
+            if "multiple" in f:
+                kwargs["property"] = {**kwargs.get("property", {}), "multiple": f["multiple"]}
+            try:
+                client.create_field(base_token, table_id, f["name"], f["type"], **kwargs)
+                time.sleep(0.1)
+            except Exception as e:
+                logger.warning(f"创建字段失败 {f['name']}: {e}")
+
+        for f in CLOSED_JOB_FIELDS:
+            kwargs = {}
+            if "options" in f:
+                kwargs["property"] = {"options": f["options"]}
+            if "style" in f:
+                kwargs["property"] = {**kwargs.get("property", {}), **f["style"]}
+            if "multiple" in f:
+                kwargs["property"] = {**kwargs.get("property", {}), "multiple": f["multiple"]}
+            try:
+                client.create_field(base_token, closed_table_id, f["name"], f["type"], **kwargs)
+                time.sleep(0.1)
+            except Exception as e:
+                logger.warning(f"创建字段失败 {f['name']}: {e}")
+
+        try:
+            _create_optimized_views(client, base_token, table_id)
+        except Exception as e:
+            logger.warning(f"创建优化视图失败(不影响使用): {e}")
+
+        logger.info(f"后台字段/视图创建完成: base={base_token}")
+    except Exception:
+        logger.exception("后台字段/视图创建异常")
+
+
 def setup_user_feishu(tenant_key: str, open_id: str, client: FeishuClient = None) -> dict:
     """
     为用户创建专属飞书空间(多维表格+两个数据表)。
+    只创建表格骨架,字段和视图放后台异步创建,确保用户快速收到消息。
     返回 {base_token, table_id, closed_table_id}
     """
     client = client or FeishuClient()
 
     # 1. 创建多维表格
     base_token = client.create_bitable("招聘情报库")
-    # 防御性解析:若 create_bitable 返回的是 wiki node_token,解析为真实 obj_token
     base_token = client.resolve_app_token(base_token)
     logger.info(f"创建多维表格: {base_token}")
 
-    # 1.5 验证 token 有效且应用有访问权限(防止 91402 NOTEXIST 等问题)
+    # 2. 验证 token 有效
     client.verify_bitable_access(base_token)
 
-    # 2. 创建岗位数据库表
+    # 3. 创建两个数据表(骨架,字段后台创建)
     table_id = client.create_table(base_token, "岗位数据库")
-    # 批量创建字段
-    for f in JOB_FIELDS:
-        kwargs = {}
-        if "options" in f:
-            kwargs["property"] = {"options": f["options"]}
-        if "style" in f:
-            kwargs["property"] = {**kwargs.get("property", {}), **f["style"]}
-        if "multiple" in f:
-            kwargs["property"] = {**kwargs.get("property", {}), "multiple": f["multiple"]}
-        client.create_field(base_token, table_id, f["name"], f["type"], **kwargs)
-        time.sleep(0.1)
-
-    # 3. 创建已关闭岗位表
     closed_table_id = client.create_table(base_token, "已关闭岗位")
-    for f in CLOSED_JOB_FIELDS:
-        kwargs = {}
-        if "options" in f:
-            kwargs["property"] = {"options": f["options"]}
-        if "style" in f:
-            kwargs["property"] = {**kwargs.get("property", {}), **f["style"]}
-        if "multiple" in f:
-            kwargs["property"] = {**kwargs.get("property", {}), "multiple": f["multiple"]}
-        client.create_field(base_token, closed_table_id, f["name"], f["type"], **kwargs)
-        time.sleep(0.1)
 
-    # 3.5 创建优化视图(按推荐度排序、按城市筛选)
-    # 视图创建失败不阻塞 onboarding,用户可手动创建
-    try:
-        _create_optimized_views(client, base_token, table_id)
-    except Exception as e:
-        logger.warning(f"创建优化视图失败(不影响使用): {e}")
-
-    # 注意:所有权转移放到 onboard_user 中异步执行,避免阻塞消息发送
     return {
         "base_token": base_token,
         "table_id": table_id,
@@ -203,14 +214,18 @@ def onboard_user(user_id: str, tenant_key: str, open_id: str,
         except Exception:
             logger.exception(f"发送 onboarding 卡片消息失败: user_id={user_id}")
 
-        # 所有权转移放后台线程执行(可能耗时,不阻塞用户)
-        def _transfer():
+        # 后台异步:创建字段/视图 + 转移所有权(耗时操作,不阻塞用户)
+        def _post_setup():
+            _create_fields_and_views(
+                client, feishu_info["base_token"],
+                feishu_info["table_id"], feishu_info["closed_table_id"],
+            )
             try:
                 client.transfer_owner(feishu_info["base_token"], "bitable", open_id)
             except Exception as e:
                 logger.warning(f"所有权转移失败(已降级为分享): {e}")
 
-        threading.Thread(target=_transfer, daemon=True).start()
+        threading.Thread(target=_post_setup, daemon=True).start()
 
         return user
 

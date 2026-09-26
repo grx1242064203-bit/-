@@ -21,6 +21,7 @@ logger = logging.getLogger(__name__)
 
 DEEPSEEK_API_URL = "https://api.deepseek.com/chat/completions"
 DEEPSEEK_MODEL = "deepseek-chat"
+DEEPSEEK_VL_MODEL = "deepseek-vl"  # 视觉模型,用于图片简历 OCR
 
 
 # ========== 简历解析 Prompt ==========
@@ -122,6 +123,66 @@ class LLMClient:
         except json.JSONDecodeError as e:
             logger.warning(f"LLM 输出 JSON 解析失败: {e}; raw={text[:300]}")
             return None
+
+    def ocr_image(self, image_bytes: bytes, ext: str = "png") -> str:
+        """
+        使用 DeepSeek-VL 视觉模型对图片简历做 OCR,提取纯文本。
+
+        输入: 图片二进制数据 + 扩展名(png/jpg/jpeg/webp/bmp)
+        输出: 图片中的文字内容(纯文本)
+
+        失败返回空字符串,不阻塞主流程。
+        """
+        if not self.api_key:
+            logger.warning("DEEPSEEK_API_KEY 未配置,跳过图片 OCR")
+            return ""
+
+        import base64
+        b64 = base64.b64encode(image_bytes).decode("utf-8")
+        mime_map = {
+            "png": "image/png", "jpg": "image/jpeg", "jpeg": "image/jpeg",
+            "webp": "image/webp", "bmp": "image/bmp", "gif": "image/gif",
+        }
+        mime = mime_map.get(ext.lower(), "image/png")
+        data_url = f"data:{mime};base64,{b64}"
+
+        prompt = """请识别这张简历图片中的所有文字内容,按原文顺序输出纯文本。
+要求:
+1. 完整提取所有文字(姓名、联系方式、教育经历、工作/实习经历、项目经历、技能、证书等)
+2. 保留换行和段落结构,不要总结、不要添加解释
+3. 直接输出文字内容,不要用 markdown 包裹"""
+
+        try:
+            resp = requests.post(
+                DEEPSEEK_API_URL,
+                headers={
+                    "Authorization": f"Bearer {self.api_key}",
+                    "Content-Type": "application/json",
+                },
+                json={
+                    "model": DEEPSEEK_VL_MODEL,
+                    "messages": [
+                        {
+                            "role": "user",
+                            "content": [
+                                {"type": "text", "text": prompt},
+                                {"type": "image_url", "image_url": {"url": data_url}},
+                            ],
+                        }
+                    ],
+                    "temperature": 0.1,
+                    "max_tokens": 4000,
+                },
+                timeout=90,
+            )
+            resp.raise_for_status()
+            data = resp.json()
+            content = data["choices"][0]["message"]["content"]
+            logger.info(f"图片 OCR 成功,提取 {len(content)} 字符")
+            return content.strip()
+        except Exception as e:
+            logger.error(f"DeepSeek-VL OCR 失败: {e}")
+            return ""
 
     def parse_resume(self, resume_text: str) -> Dict[str, Any]:
         """

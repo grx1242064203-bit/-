@@ -67,7 +67,7 @@ def _verify_feishu_token(body: dict) -> bool:
 
 
 def _extract_text_from_file(filename: str, data: bytes) -> str:
-    """从简历文件(PDF/DOC/DOCX)中提取纯文本"""
+    """从简历文件(PDF/DOC/DOCX/图片)中提取纯文本。图片用 DeepSeek-VL 做 OCR。"""
     ext = filename.rsplit(".", 1)[-1].lower() if "." in filename else ""
     try:
         if ext == "pdf":
@@ -86,6 +86,11 @@ def _extract_text_from_file(filename: str, data: bytes) -> str:
             import io
             doc = Document(io.BytesIO(data))
             return "\n".join(p.text for p in doc.paragraphs)
+        elif ext in ("png", "jpg", "jpeg", "webp", "bmp", "gif"):
+            # 图片简历:用 DeepSeek-VL 视觉模型 OCR
+            from llm_client import LLMClient
+            llm = LLMClient()
+            return llm.ocr_image(data, ext=ext)
         else:
             return data.decode("utf-8", errors="ignore")
     except Exception as e:
@@ -94,8 +99,8 @@ def _extract_text_from_file(filename: str, data: bytes) -> str:
 
 
 class CallbackHandler(BaseHTTPRequestHandler):
-    # 超时设置,防止慢连接占用资源
-    timeout = 10
+    # 超时设置:图片 OCR 可能需要 60-90 秒,设为 120 秒
+    timeout = 120
 
     def do_GET(self):
         parsed = urlparse(self.path)

@@ -303,13 +303,13 @@
 
     <!-- 简历解析 -->
     <div class="form-group">
-      <label>简历智能解析 <span class="hint">（上传 PDF/Word 简历，AI 自动提取信息）</span></label>
+      <label>简历智能解析 <span class="hint">（上传 PDF/Word/图片 简历，AI 自动提取信息）</span></label>
       <div class="upload-area" id="uploadArea" onclick="document.getElementById('resumeFile').click()">
         <div class="upload-icon">📄</div>
         <div class="upload-text">点击或拖拽上传简历</div>
-        <div class="upload-hint">支持 PDF、DOC、DOCX 格式，最大 10MB</div>
+        <div class="upload-hint">支持 PDF、DOC、DOCX、PNG、JPG 格式，最大 10MB</div>
       </div>
-      <input type="file" id="resumeFile" accept=".pdf,.doc,.docx" style="display:none;" onchange="handleFileSelect(event)">
+      <input type="file" id="resumeFile" accept=".pdf,.doc,.docx,.png,.jpg,.jpeg,.webp,.bmp" style="display:none;" onchange="handleFileSelect(event)">
       <div id="fileInfo" style="display:none;">
         <div class="file-info">
           <span>📎</span>
@@ -534,8 +534,8 @@ function setFile(file) {
     return;
   }
   const ext = file.name.split('.').pop().toLowerCase();
-  if (!['pdf', 'doc', 'docx'].includes(ext)) {
-    showToast('仅支持 PDF、DOC、DOCX 格式', 'error');
+  if (!['pdf', 'doc', 'docx', 'png', 'jpg', 'jpeg', 'webp', 'bmp'].includes(ext)) {
+    showToast('仅支持 PDF、DOC、DOCX、PNG、JPG 格式', 'error');
     return;
   }
   selectedFile = file;
@@ -570,7 +570,10 @@ async function parseResume() {
   }
   const statusEl = document.getElementById('parseStatus');
   statusEl.style.color = '#4A90D9';
-  statusEl.textContent = '⏳ AI 正在解析简历，请稍候...';
+  const isImage = /\.(png|jpg|jpeg|webp|bmp|gif)$/i.test(selectedFile.name);
+  statusEl.textContent = isImage
+    ? '⏳ 正在识别图片简历（OCR），请稍候...'
+    : '⏳ AI 正在解析简历，请稍候...';
 
   const formData = new FormData();
   formData.append('user_id', userId);

@@ -77,7 +77,22 @@ class FeishuClient:
                     method, url, headers=self._headers(),
                     data=data, params=params, timeout=30,
                 )
-                data = resp.json()
+                # 解析 JSON,容错:若响应不是合法 JSON,记录原始响应体并重试/报错
+                try:
+                    data = resp.json()
+                except (json.JSONDecodeError, ValueError) as e:
+                    raw = resp.text[:500]
+                    logger.error(
+                        f"飞书 API 响应非 JSON: path={path} status={resp.status_code} "
+                        f"body={raw!r} error={e}"
+                    )
+                    if attempt < settings.FEISHU_RETRY - 1:
+                        time.sleep(2 ** attempt)
+                        continue
+                    raise RuntimeError(
+                        f"飞书 API 返回非 JSON 响应: path={path} "
+                        f"status={resp.status_code} body={raw!r}"
+                    )
                 code = data.get("code", -1)
                 if code == 0:
                     return data.get("data", {})

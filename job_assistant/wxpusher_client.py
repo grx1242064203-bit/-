@@ -29,6 +29,7 @@ class WxPusherClient:
     def get_qrcode(self) -> Optional[str]:
         """获取关注二维码 URL,用于引导用户扫码绑定"""
         if not self.app_token:
+            logger.warning("WXPUSHER_APP_TOKEN 未配置,无法获取二维码")
             return None
         try:
             resp = requests.post(

@@ -43,7 +43,8 @@
 - 创建用户记录（user_id = `{tenant_key}_{open_id}`）
 - 创建「招聘情报库」多维表格
 - 创建「岗位数据库」和「已关闭岗位」两张表
-- 创建字段
+- 校招用户额外创建「管培生项目」表
+- 创建字段（含行业/公司类型/难度等）
 - 将多维表格所有权转移给客户
 - 发送飞书消息，附带自助配置页面链接
 
@@ -64,9 +65,10 @@ cat data/users.json | python3 -c "import json,sys; d=json.load(sys.stdin); print
 ### 步骤 4：确认客户已配置求职偏好
 
 客户通过飞书消息中的链接打开自助配置页面，可：
-- 选择求职角色（实习/校招/社招）
+- 选择求职角色（校招/社招；实习功能已下线）
 - 粘贴简历文本，AI 自动解析提取学校、学历、专业、技能等
 - 手动填写/调整目标岗位方向、专业、学历、技能、目标公司、目标城市
+- 校招用户额外配置：偏好公司类型、可接受难度、是否偏好管培项目
 - 保存后系统立即触发首次采集
 
 **验证客户已配置**：
@@ -170,6 +172,85 @@ for u in store.list_active():
 "
 ```
 
+### 3.6 校招总数据库管理
+
+> 总数据库（`data/jobs.db`）是校招岗位的中心化存储，所有校招用户共享。
+
+```bash
+cd /opt/job_assistant
+source venv/bin/activate
+
+# 查看总数据库统计
+venv/bin/python -c "
+from job_db import get_stats
+stats = get_stats()
+print(f'总岗位数: {stats[\"total\"]}')
+print(f'在招岗位: {stats[\"active\"]}')
+print(f'AI 已验证: {stats[\"verified\"]}')
+print(f'已关闭: {stats[\"closed\"]}')
+"
+
+# 手动触发增量采集（只扫未发 2027 公告的公司）
+venv/bin/python -c "from company_crawler import CompanyCrawler; CompanyCrawler().run_daily_crawl()"
+
+# 手动触发全量采集（重新扫所有公司，用于修复遗漏）
+# venv/bin/python -c "from company_crawler import CompanyCrawler; CompanyCrawler().run_initial_crawl()"
+
+# 按公司查询岗位
+venv/bin/python -c "
+from job_db import get_jobs_by_company
+jobs = get_jobs_by_company('字节跳动')
+for j in jobs:
+    print(f'{j[\"job_title\"]} | {j[\"status\"]} | {j[\"deadline\"]}')
+"
+```
+
+**总数据库为空排查**：
+```bash
+# 1. 确认 jobs.db 文件存在
+ls -la /opt/job_assistant/data/jobs.db
+
+# 2. 若不存在，初始化
+venv/bin/python -c "from job_db import init_db; init_db()"
+
+# 3. 执行首次全量采集（耗时 30-60 分钟）
+nohup venv/bin/python -c "from company_crawler import CompanyCrawler; CompanyCrawler().run_initial_crawl()" >> /var/log/job_crawler_initial.log 2>&1 &
+```
+
+### 3.7 校招公司库维护
+
+> 公司库（`campus_companies.py`）定义了采集范围，当前 488 家企业，目标覆盖 2024-2026 校招企业的 95%。
+
+```bash
+# 查看公司库统计
+cd /opt/job_assistant
+venv/bin/python -c "
+from campus_companies import CAMPUS_COMPANIES
+from collections import Counter
+print(f'公司总数: {len(CAMPUS_COMPANIES)}')
+print(f'行业分布: {Counter(c[\"industry\"] for c in CAMPUS_COMPANIES)}')
+print(f'类型分布: {Counter(c[\"type\"] for c in CAMPUS_COMPANIES)}')
+print(f'有 career_domain: {sum(1 for c in CAMPUS_COMPANIES if c.get(\"career_domain\"))}')
+print(f'已发 2027 公告: {sum(1 for c in CAMPUS_COMPANIES if c.get(\"has_2027_announcement\"))}')
+"
+```
+
+**新增公司到公司库**：
+1. 编辑 `campus_companies.py`，在 `CAMPUS_COMPANIES` 列表中添加：
+```python
+{
+    "name": "新公司名",
+    "type": "民企",           # 国央企/民企/外企
+    "difficulty": "普通",      # 最激烈/激烈/普通/轻松
+    "industry": "互联网",
+    "career_domain": "jobs.example.com",  # 可选，官网招聘域名
+    "wechat_account": "新公司招聘",       # 可选，官方公众号
+},
+```
+2. 上传到服务器：`scp campus_companies.py prod:/opt/job_assistant/`
+3. 重启服务：`sudo systemctl restart job-callback`
+4. 下次采集时新公司会被扫描
+
 ---
 
 ## 四、故障排查
@@ -193,10 +274,14 @@ sudo journalctl -u job-callback -n 100 --no-pager
 cd /opt/job_assistant
 venv/bin/python main.py single <user_id> 2>&1 | tail -50
 
+# 校招用户额外检查：总数据库是否有数据
+venv/bin/python -c "from job_db import get_stats; print(get_stats())"
+
 # 常见原因：
 # 1. 搜索 API 配额耗尽（检查 TAVILY_API_KEY 额度）
 # 2. 用户 direction_keywords 为空（需配置偏好）
 # 3. 所有岗位已推送过（去重）
+# 4. 校招用户：总数据库为空（需执行 run_initial_crawl，见 3.6 节）
 ```
 
 ### 4.3 飞书消息推送失败
@@ -232,9 +317,11 @@ venv/bin/python main.py single <user_id> 2>&1 | grep -i error
 ```bash
 # 手动备份
 cp /opt/job_assistant/data/users.json /opt/job_assistant/backups/users_$(date +%Y%m%d).json
+cp /opt/job_assistant/data/jobs.db /opt/job_assistant/backups/jobs_$(date +%Y%m%d).db
 
 # 恢复备份
 cp /opt/job_assistant/backups/users_YYYYMMDD.json /opt/job_assistant/data/users.json
+cp /opt/job_assistant/backups/jobs_YYYYMMDD.db /opt/job_assistant/data/jobs.db
 sudo systemctl restart job-callback
 ```
 

@@ -34,13 +34,15 @@ sudo chown $USER:$USER /opt/job_assistant
 ```bash
 cd /opt/job_assistant
 git clone <repo_url> .
-git checkout trae/agent-ooAq84
+git checkout main
 
 # 创建虚拟环境
 python3 -m venv venv
 source venv/bin/activate
 pip install -r requirements.txt
 ```
+
+> 注意：`trae/agent-ooAq84` 分支已合并到 `main`，生产部署统一使用 `main` 分支。
 
 ### 2.3 配置环境变量
 
@@ -126,11 +128,58 @@ sudo systemctl start job-callback
 
 ```bash
 crontab -e
-# 每日 9:00 执行每日任务（北京时间）
+# 每日 8:00 执行校招总数据库增量采集（中心化，先于用户分发）
+0 8 * * * cd /opt/job_assistant && /opt/job_assistant/venv/bin/python -c "from company_crawler import CompanyCrawler; CompanyCrawler().run_daily_crawl()" >> /var/log/job_crawler.log 2>&1
+# 每日 9:00 执行用户每日任务（分发）
 0 9 * * * cd /opt/job_assistant && /opt/job_assistant/venv/bin/python main.py daily >> /var/log/job_assistant.log 2>&1
 # 每周一 9:30 执行校招投递热度榜
 30 9 * * 1 cd /opt/job_assistant && /opt/job_assistant/venv/bin/python main.py weekly-ranking >> /var/log/job_assistant_weekly.log 2>&1
 ```
+
+> **时序说明**：总数据库采集（8:00）必须早于用户分发（9:00），确保用户拿到的是当天最新岗位。
+
+### 2.8 校招总数据库初始化（首次部署必做）
+
+首次部署或更新到含总数据库架构的版本后，必须执行以下步骤初始化总数据库并完成首次全量采集：
+
+```bash
+cd /opt/job_assistant
+source venv/bin/activate
+
+# 1. 初始化数据库表结构（若已存在则跳过）
+python -c "from job_db import init_db; init_db(); print('数据库初始化完成')"
+
+# 2. 验证数据库表已创建
+python -c "
+import sqlite3
+conn = sqlite3.connect('data/jobs.db')
+cur = conn.execute(\"SELECT name FROM sqlite_master WHERE type='table'\")
+print('表:', [r[0] for r in cur.fetchall()])
+conn.close()
+"
+
+# 3. 首次全量采集（遍历全部 488 家公司，耗时较长，建议后台运行）
+nohup python -c "from company_crawler import CompanyCrawler; CompanyCrawler().run_initial_crawl()" >> /var/log/job_crawler_initial.log 2>&1 &
+
+# 4. 查看采集进度
+tail -f /var/log/job_crawler_initial.log
+
+# 5. 采集完成后验证总数据库统计
+python -c "
+from job_db import get_stats
+print(get_stats())
+"
+```
+
+**预期结果**：
+- `jobs.db` 文件存在于 `data/` 目录
+- `get_stats()` 返回总岗位数 > 0、在招岗位数 > 0
+- 校招用户执行 `main.py single <user_id>` 能从总库匹配到岗位
+
+> ⚠️ **首次全量采集注意事项**：
+> - 488 家公司全量扫描预计耗时 30-60 分钟（受 Tavily 速率限制）
+> - 采集过程中 AI 检视会消耗 DeepSeek API 配额
+> - 若中途中断，可重新执行 `run_initial_crawl()`，已入库的岗位不会重复（dedup_hash 去重）
 
 ---
 
@@ -210,7 +259,10 @@ print(\"过滤逻辑已生效\")
 # 1. 上传修改的文件到服务器（按需指定文件）
 scp /workspace/job_assistant/collector.py prod:/opt/job_assistant/
 # 如需上传多个文件：
-# scp collector.py config.py scorer.py prod:/opt/job_assistant/
+# scp collector.py config.py scorer.py job_db.py company_crawler.py user_matcher.py campus_companies.py prod:/opt/job_assistant/
+
+# 若新增了总数据库相关文件，需一并上传：
+# scp job_db.py company_crawler.py user_matcher.py campus_companies.py prod:/opt/job_assistant/
 
 # === 服务器侧 ===
 ssh prod << 'EOF'
@@ -258,6 +310,7 @@ EOF
 - [ ] `systemctl restart job-callback` 执行完成
 - [ ] `/health` 返回 `status: ok`
 - [ ] 生产环境验证修改生效（如领英过滤等）
+- [ ] 若涉及总数据库变更：`jobs.db` 存在且 `get_stats()` 正常
 
 ---
 
@@ -384,9 +437,11 @@ mkdir -p $BACKUP_DIR
 
 cp /opt/job_assistant/data/users.json $BACKUP_DIR/users_$DATE.json
 cp -r /opt/job_assistant/data/hashes $BACKUP_DIR/hashes_$DATE
+cp /opt/job_assistant/data/jobs.db $BACKUP_DIR/jobs_$DATE.db
 
 # 保留最近 30 天
 find $BACKUP_DIR -name "*.json" -mtime +30 -delete
+find $BACKUP_DIR -name "*.db" -mtime +30 -delete
 ```
 
 ```bash
@@ -398,5 +453,6 @@ find $BACKUP_DIR -name "*.json" -mtime +30 -delete
 
 ```bash
 cp /opt/job_assistant/backups/users_YYYYMMDD_HHMMSS.json /opt/job_assistant/data/users.json
+cp /opt/job_assistant/backups/jobs_YYYYMMDD_HHMMSS.db /opt/job_assistant/data/jobs.db
 sudo systemctl restart job-callback
 ```

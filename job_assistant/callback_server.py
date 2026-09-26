@@ -492,19 +492,26 @@ def _trigger_immediate_collect(user_id: str):
                 logger.warning(f"即时采集:用户未完成 onboarding {user_id}")
                 return
 
-            # 先发送"开始采集"通知
             feishu = FeishuClient()
-            try:
-                feishu.send_message(
-                    user.feishu_open_id,
-                    "🚀 已为您启动首次岗位采集,请稍候...\n"
-                    "采集完成后将第一时间通知您结果。"
-                )
-            except Exception:
-                pass
+
+            # "开始采集"通知在锁获取成功后才发送,避免重复通知
+            def _notify_start():
+                try:
+                    feishu.send_message(
+                        user.feishu_open_id,
+                        "🚀 已为您启动首次岗位采集,请稍候...\n"
+                        "采集完成后将第一时间通知您结果。"
+                    )
+                except Exception:
+                    pass
 
             runner = DailyRunner(user)
-            result = runner.run()
+            result = runner.run(on_start=_notify_start)
+
+            # 如果是锁冲突导致跳过,不发送结果通知(已有其他采集在运行)
+            if any("采集任务正在执行中" in e for e in result.get("errors", [])):
+                logger.info(f"即时采集:锁冲突,跳过通知 {user_id}")
+                return
 
             # 发送采集结果通知
             new_count = result.get("new_jobs", 0)

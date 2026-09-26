@@ -627,9 +627,18 @@ async function parseResume() {
 }
 
 async function saveProfile() {
+  // 防止重复提交
+  const saveBtn = event.target;
+  if (saveBtn.disabled) return;
+  saveBtn.disabled = true;
+  const originalText = saveBtn.textContent;
+  saveBtn.textContent = '保存中...';
+
   const role = getRole();
   if (!role) {
     showToast('请选择求职角色', 'error');
+    saveBtn.disabled = false;
+    saveBtn.textContent = originalText;
     return;
   }
   const direction_keywords = {};
@@ -682,6 +691,8 @@ async function saveProfile() {
     }
   } catch(e) {
     showToast('网络错误，请重试', 'error');
+    saveBtn.disabled = false;
+    saveBtn.textContent = originalText;
   }
 }
 

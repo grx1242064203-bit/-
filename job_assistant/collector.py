@@ -414,12 +414,17 @@ def _is_role_mismatch(title: str, text: str, role: str) -> bool:
         social_exp_patterns = [
             r"(\d+)\s*年以上工作经验", r"(\d+)\s*年工作经验",
             r"(\d+)\s*年以上相关经验", r"at least (\d+) years",
-            r"(\d+)\+\s*years", r"5\s*年", r"8\s*年", r"10\s*年",
+            r"(\d+)\+\s*years",
         ]
         for p in social_exp_patterns:
             m = re.search(p, combined)
             if m and int(m.group(1)) >= 3:
                 return True
+        # 硬编码的多年经验关键词(无捕获组,直接判定)
+        hard_exp_kw = ["5年", "8年", "10年", "5 年", "8 年", "10 年",
+                       "五年", "八年", "十年", "5+ years", "8+ years", "10+ years"]
+        if any(kw in combined for kw in hard_exp_kw):
+            return True
         # 明确标注"社招"且无应届字样
         if "社招" in combined and "应届" not in combined and "校招" not in combined:
             return True

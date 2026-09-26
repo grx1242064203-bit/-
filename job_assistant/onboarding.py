@@ -183,6 +183,20 @@ def ensure_mt_table(user: User, client: FeishuClient = None) -> str:
         return ""
 
     try:
+        # 先查找是否已存在"管培生项目"表(避免重复创建)
+        existing_tables = client.list_tables(base_token)
+        for t in existing_tables:
+            if t.get("name") == "管培生项目":
+                mt_table_id = t.get("table_id", "")
+                if mt_table_id:
+                    logger.info(f"管培项目表已存在,复用: {mt_table_id}")
+                    # 保存 mt_table_id 到用户
+                    from store import UserStore
+                    store = UserStore()
+                    user.feishu_mt_table_id = mt_table_id
+                    store.upsert(user)
+                    return mt_table_id
+
         # 创建管培项目表
         mt_table_id = client.create_table(base_token, "管培生项目")
         logger.info(f"创建管培项目表: {mt_table_id}")

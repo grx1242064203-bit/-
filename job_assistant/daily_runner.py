@@ -32,6 +32,7 @@ class UserRunLock:
     """
 
     def __init__(self, user_id: str):
+        self.user_id = user_id
         lock_dir = os.path.join(settings.DATA_DIR, "locks")
         os.makedirs(lock_dir, exist_ok=True)
         self.lock_path = os.path.join(lock_dir, f"{user_id}.lock")
@@ -44,7 +45,7 @@ class UserRunLock:
         except (OSError, BlockingIOError):
             self.lock_fd.close()
             self.lock_fd = None
-            raise RuntimeError(f"用户 {user_id} 的采集任务正在执行中,跳过本次")
+            raise RuntimeError(f"用户 {self.user_id} 的采集任务正在执行中,跳过本次")
         return self
 
     def __exit__(self, exc_type, exc_val, exc_tb):
@@ -66,8 +67,10 @@ class DailyRunner:
         from llm_client import LLMClient
         self.llm = LLMClient()
 
-    def run(self) -> Dict:
-        """执行完整流程,返回执行结果摘要"""
+    def run(self, on_start=None) -> Dict:
+        """执行完整流程,返回执行结果摘要。
+        on_start: 可选回调,在成功获取锁后调用(用于发送"开始采集"通知)。
+        """
         result = {
             "user_id": self.user.id,
             "new_jobs": 0,
@@ -79,6 +82,12 @@ class DailyRunner:
         # 用户级采集锁:防止即时采集与每日定时任务并发写同一用户数据
         try:
             with UserRunLock(self.user.id):
+                # 锁获取成功后才发送"开始采集"通知,避免重复通知
+                if on_start:
+                    try:
+                        on_start()
+                    except Exception:
+                        pass
                 return self._run_with_lock(result)
         except RuntimeError as e:
             # 锁被持有:另一采集任务正在执行,跳过本次

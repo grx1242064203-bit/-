@@ -42,6 +42,19 @@ class DailyRunner:
             "push_ok": False,
             "errors": [],
         }
+        # 前置校验:用户必须完成 onboarding(有飞书多维表格 token)
+        missing = []
+        if not self.user.feishu_base_token:
+            missing.append("feishu_base_token")
+        if not self.user.feishu_table_id:
+            missing.append("feishu_table_id")
+        if not self.user.feishu_closed_table_id:
+            missing.append("feishu_closed_table_id")
+        if missing:
+            msg = f"用户 {self.user.id} 未完成 onboarding,缺少飞书配置: {', '.join(missing)}。请先完成飞书应用安装流程。"
+            logger.error(msg)
+            result["errors"].append(msg)
+            return result
         try:
             # 1. 采集 + 评分
             raw_jobs = self.collector.collect(
@@ -214,8 +227,11 @@ class DailyRunner:
 
         try:
             self.feishu.append_doc_blocks(doc_id, blocks)
-            # 分享给用户
-            self.feishu.share_with_user(doc_id, "docx", self.user.feishu_open_id)
+            # 分享给用户(仅当用户有 feishu_open_id 时)
+            if self.user.feishu_open_id:
+                self.feishu.share_with_user(doc_id, "docx", self.user.feishu_open_id)
+            else:
+                logger.warning("用户无 feishu_open_id,跳过日报文档分享")
         except Exception as e:
             logger.warning(f"写入日报文档失败: {e}")
 

@@ -209,18 +209,27 @@ def is_graduate_window(jd_text: str, title: str = "") -> tuple:
     严格判断:必须在 JD 正文(含标题)中找到明确的"接受/要求应届生"的表述,
     不能仅因为出现"graduate"等英文词就判定。
 
+    年份动态计算:当前年份和下一年份(如 2026年→匹配 2026届/2027届)。
+
     返回 (是否窗口, 窗口说明)。
     """
+    from datetime import datetime
+    cur_year = datetime.now().year
+    next_year = cur_year + 1
+    cur_year_short = str(cur_year)[2:]  # 26
+    next_year_short = str(next_year)[2:]  # 27
+
     combined = (title + "\n" + jd_text)
     combined_lower = combined.lower()
 
     # 明确的应届/校招/管培信号(中文优先,最可靠)
     explicit_campus_kw = [
-        "应届毕业生", "应届生", "2025届", "2026届", "2024届",
-        "校园招聘", "校招", "管培生", "管理培训生",
+        "应届毕业生", "应届生", "校园招聘", "校招", "管培生", "管理培训生",
         "接受应届生", "招收应届", "面向应届", "仅限应届",
         "应届可投", "应届生优先",
         "秋招", "春招", "提前批",
+        # 动态年份届数
+        f"{cur_year}届", f"{next_year}届",
     ]
     for kw in explicit_campus_kw:
         if kw in combined:
@@ -231,14 +240,16 @@ def is_graduate_window(jd_text: str, title: str = "") -> tuple:
         "graduate program", "management trainee", "analyst program",
         "campus recruiting", "early career", "rotational program",
         "fresh graduate", "entry level", "new graduate",
+        f"class of {cur_year}", f"class of {next_year}",
     ]
     for kw in explicit_english_kw:
         if kw in combined_lower:
             return True, f"窗口标识: {kw}"
 
-    # 明确只限下一届的,不算窗口(已经毕业的用户不符合)
-    if re.search(r"class of 2026|2027届|2026届", combined_lower):
-        return False, "只限2026/2027届"
+    # 明确只限更远届的,不算窗口(如现在 2026 年,只限 2028 届的不算)
+    far_year = next_year + 1
+    if re.search(rf"{far_year}届|class of {far_year}", combined_lower):
+        return False, f"只限{far_year}届"
 
     return False, "社招岗位"
 

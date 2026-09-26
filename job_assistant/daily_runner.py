@@ -102,20 +102,37 @@ class DailyRunner:
             result["errors"].append(msg)
             return result
         try:
-            # 1. 采集 + 评分
+            # 1. 采集
             raw_jobs = self.collector.collect(
                 self.user.profile,
                 self.user.profile.target_companies,
                 self.user.profile.target_cities,
                 limit=settings.DAILY_JOBS_PER_USER,
             )
+
+            # 1.5 AI 质量筛选层:过滤垃圾信息(搜索页、不匹配、过期等)
+            if self.llm and raw_jobs:
+                try:
+                    profile_dict = self.user.profile.__dict__
+                    raw_jobs = self.llm.quality_screen_jobs(raw_jobs, profile_dict)
+                except Exception as e:
+                    logger.warning(f"AI质量筛选失败,跳过: {e}")
+
+            # 2. 评分
             scored = [score_job(j, self.user.profile, llm_client=self.llm) for j in raw_jobs]
 
-            # 2. 去重 + 入库
-            new_jobs = self._dedupe_and_write(scored)
+            # 2. 分离管培岗位到独立表格(校招用户)
+            mt_jobs = [j for j in scored if j.get("管培项目")]
+            regular_jobs = [j for j in scored if not j.get("管培项目")]
+            if mt_jobs and self.user.feishu_mt_table_id:
+                self._write_mt_jobs(mt_jobs)
+                result["mt_jobs"] = len(mt_jobs)
+
+            # 3. 去重 + 入库(普通岗位)
+            new_jobs = self._dedupe_and_write(regular_jobs)
             result["new_jobs"] = len(new_jobs)
 
-            # 3. 复查已有岗位在招状态,归档已关闭
+            # 4. 复查已有岗位在招状态,归档已关闭
             closed = self._recheck_and_archive()
             result["closed_jobs"] = len(closed)
 
@@ -431,6 +448,68 @@ class DailyRunner:
                 logger.error(f"写入岗位失败: {e}")
                 return []
         return new_jobs
+
+    def _write_mt_jobs(self, mt_jobs: List[Dict]):
+        """将管培岗位写入管培项目独立表格"""
+        from datetime import datetime
+        cur_year = datetime.now().year
+        next_year = cur_year + 1
+
+        # 管培类型映射
+        mt_type_map = {
+            "finance": "金融管培",
+            "internet": "互联网管培",
+            "consulting_fmcg": "快消管培",  # 简化映射
+            "soe": "国企管培",
+            "all": "综合管培",
+        }
+        mt_pref = getattr(self.user.profile, "mt_program_preference", "all") or "all"
+        default_mt_type = mt_type_map.get(mt_pref, "综合管培")
+
+        mt_records = []
+        for j in mt_jobs:
+            company = j.get("公司", "未知")
+            title = j.get("岗位标题", "")
+            # 项目名称 = 公司 + 管培项目名
+            project_name = f"{company} · {title}" if company != "未知" else title
+
+            # 推断届数
+            cohort = f"{next_year}届"
+            for y in (cur_year, next_year):
+                if f"{y}届" in j.get("JD摘要", "") or f"{y}届" in title:
+                    cohort = f"{y}届"
+                    break
+
+            mt_records.append({
+                "项目名称": project_name,
+                "公司": company,
+                "管培类型": default_mt_type,
+                "届数": cohort,
+                "招聘阶段": "网申中",  # 默认网申中,后续可更新
+                "地点": j.get("地点", ""),
+                "项目介绍": j.get("JD摘要", "")[:500],
+                "申请要求": j.get("经验要求", "") + " " + j.get("学历要求", ""),
+                "网申链接": j.get("JD链接", ""),
+                "截止日期": j.get("投递截止日期", ""),
+                "综合推荐度": j.get("综合推荐度", "可申请"),
+                "相关性评分": j.get("相关性评分", 0),
+                "申请状态": "未投递",
+                "去重hash": j.get("去重hash", ""),
+                "来源": j.get("来源", "搜索"),
+                "抓取日期": int(time.time() * 1000),
+            })
+
+        if not mt_records:
+            return
+
+        try:
+            self.feishu.batch_create_records(
+                self.user.feishu_base_token, self.user.feishu_mt_table_id,
+                mt_records,
+            )
+            logger.info(f"写入 {len(mt_records)} 条管培项目到独立表格")
+        except Exception as e:
+            logger.error(f"写入管培项目失败: {e}")
 
     def _recheck_and_archive(self) -> List[Dict]:
         """复查主表在招岗位,关闭的归档到已关闭表"""

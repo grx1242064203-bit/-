@@ -384,3 +384,105 @@ JD 正文:
             "match_analysis": str(parsed.get("match_analysis", "")).strip(),
             "application_advice": str(parsed.get("application_advice", "")).strip(),
         }
+
+    def quality_screen_jobs(self, jobs: List[Dict], profile: Dict,
+                            batch_size: int = 10) -> List[Dict]:
+        """
+        AI 质量筛选层:对采集到的原始岗位做 LLM 质量过滤。
+
+        评估维度:
+        1. 匹配度:岗位是否与用户求职方向相关
+        2. 准确性:是否为真实招聘信息(非搜索页/聚合页/广告)
+        3. 及时性:是否为近期发布的岗位
+        4. 非垃圾:排除标题党、无关内容、重复信息
+
+        输入: jobs = [{title, company, snippet, url, posted, ...}]
+        输出: 通过质量筛选的岗位列表(可能少于输入)
+
+        LLM 不可用时返回原列表(不阻塞主流程)。
+        """
+        if not jobs:
+            return []
+
+        # 构造用户方向关键词,用于匹配度评估
+        all_directions = []
+        direction_keywords = profile.get("direction_keywords") or {}
+        if isinstance(direction_keywords, dict):
+            for direction, kws in direction_keywords.items():
+                all_directions.append(direction)
+                all_directions.extend(kws if isinstance(kws, list) else [])
+        direction_str = "、".join(all_directions[:20]) if all_directions else "未指定"
+        role = profile.get("role", "") or ""
+        role_label = {"internship": "实习", "campus": "校招",
+                      "social": "社招"}.get(role, "未知")
+
+        passed = []
+        for i in range(0, len(jobs), batch_size):
+            batch = jobs[i:i + batch_size]
+            # 构造岗位列表(JSON 格式,便于 LLM 解析)
+            job_list = []
+            for idx, j in enumerate(batch):
+                job_list.append({
+                    "idx": idx,
+                    "title": j.get("title", "")[:100],
+                    "company": j.get("company", "")[:50],
+                    "snippet": j.get("snippet", "")[:300],
+                    "url": j.get("url", "")[:100],
+                    "posted": j.get("posted", ""),
+                })
+
+            prompt = f"""你是招聘信息质量审核专家。请对以下岗位信息进行质量筛选。
+
+用户求职方向: {direction_str}
+用户角色: {role_label}
+
+岗位列表(JSON):
+{json.dumps(job_list, ensure_ascii=False)}
+
+请对每个岗位评估并输出 JSON 数组(不要输出其他文字):
+[
+  {{
+    "idx": 0,
+    "pass": true/false,
+    "reason": "筛选理由(30字内)"
+  }}
+]
+
+筛选标准(pass=true 需同时满足):
+1. 匹配度:岗位与用户求职方向相关(或为通用管培/校招)
+2. 准确性:是真实招聘岗位,非搜索结果页、招聘平台列表页、广告、新闻
+3. 非垃圾:非标题党、非无关内容、岗位描述完整
+4. 及时性:发布时间在合理范围内(未知不扣分,但明确标注"已结束"/"过期"的排除)
+
+注意:
+- 社招用户:校招/应届/管培岗位 pass=false
+- 校招用户:要求3年以上工作经验的社招岗位 pass=false
+- URL 明显是搜索页(含/search、/list、?q=等)的 pass=false
+"""
+            content = self._chat(
+                [{"role": "user", "content": prompt}],
+                temperature=0.1, max_tokens=1500,
+            )
+            if not content:
+                # LLM 不可用,本批全部通过(不阻塞)
+                passed.extend(batch)
+                continue
+
+            parsed = self._extract_json(content)
+            if not parsed or not isinstance(parsed, list):
+                # 解析失败,本批全部通过
+                passed.extend(batch)
+                continue
+
+            # 建立 idx -> pass 映射
+            pass_map = {}
+            for item in parsed:
+                if isinstance(item, dict) and "idx" in item:
+                    pass_map[item["idx"]] = bool(item.get("pass", True))
+
+            for idx, j in enumerate(batch):
+                if pass_map.get(idx, True):
+                    passed.append(j)
+
+        logger.info(f"AI质量筛选: 输入 {len(jobs)} 条,通过 {len(passed)} 条")
+        return passed

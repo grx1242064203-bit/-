@@ -39,3 +39,29 @@ JOB_FIELDS: List[Dict[str, Any]] = [
 CLOSED_JOB_FIELDS: List[Dict[str, Any]] = JOB_FIELDS + [
     {"name": "关闭日期", "type": 5, "style": {"date_formatter": "yyyy-MM-dd"}},
 ]
+
+# 管培生项目表(校招用户专项,独立跟踪管培项目全流程)
+MT_TABLE_FIELDS: List[Dict[str, Any]] = [
+    {"name": "项目名称", "type": 1},   # 主字段:公司+管培项目名
+    {"name": "公司", "type": 1},
+    {"name": "管培类型", "type": 3, "options": [
+        {"name": "综合管培"}, {"name": "金融管培"}, {"name": "互联网管培"},
+        {"name": "快消管培"}, {"name": "咨询管培"}, {"name": "国企管培"}, {"name": "其他"}]},
+    {"name": "届数", "type": 1},  # 如 2027届
+    {"name": "招聘阶段", "type": 3, "options": [
+        {"name": "网申中"}, {"name": "笔试中"}, {"name": "面试中"}, {"name": "Offer发放"}, {"name": "已截止"}]},
+    {"name": "地点", "type": 1},
+    {"name": "项目介绍", "type": 1},  # 管培项目特色、轮岗机制等
+    {"name": "申请要求", "type": 1},
+    {"name": "网申链接", "type": 15},
+    {"name": "截止日期", "type": 5, "style": {"date_formatter": "yyyy-MM-dd"}},
+    {"name": "综合推荐度", "type": 3, "options": [
+        {"name": "优先申请"}, {"name": "可申请"}, {"name": "观望"}, {"name": "跳过"}]},
+    {"name": "相关性评分", "type": 2, "style": {"formatter": "0"}},
+    {"name": "申请状态", "type": 3, "options": [
+        {"name": "未投递"}, {"name": "已投递"}, {"name": "面试中"}, {"name": "Offer"}, {"name": "拒绝"}]},
+    {"name": "投递日期", "type": 5, "style": {"date_formatter": "yyyy-MM-dd"}},
+    {"name": "去重hash", "type": 1},
+    {"name": "来源", "type": 1},
+    {"name": "抓取日期", "type": 5, "style": {"date_formatter": "yyyy-MM-dd"}},
+]

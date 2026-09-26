@@ -256,6 +256,14 @@ class CallbackHandler(BaseHTTPRequestHandler):
         store.upsert(user)
         logger.info(f"用户 {user_id} 画像已更新")
 
+        # 校招用户:确保管培项目表存在
+        if user.profile.role == "campus":
+            try:
+                from onboarding import ensure_mt_table
+                ensure_mt_table(user)
+            except Exception:
+                logger.exception(f"创建管培表失败: user_id={user_id}")
+
         # 保存成功后立即触发一次采集(后台线程,不阻塞响应)
         try:
             _trigger_immediate_collect(user_id)

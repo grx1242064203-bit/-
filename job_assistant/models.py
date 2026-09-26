@@ -56,6 +56,7 @@ class User:
     feishu_base_token: str = ""      # 用户专属多维表格
     feishu_table_id: str = ""        # 岗位表ID
     feishu_closed_table_id: str = "" # 已关闭岗位表ID
+    feishu_mt_table_id: str = ""     # 管培生项目表ID(校招用户专项)
     # 微信推送
     wxpusher_uid: str = ""
     # 画像

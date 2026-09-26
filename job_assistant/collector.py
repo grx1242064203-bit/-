@@ -400,10 +400,13 @@ def _is_role_mismatch(title: str, text: str, role: str) -> bool:
     combined = (title + " " + text).lower()
 
     if role == "social":
-        # 社招用户:排除校招/应届/管培
+        # 社招用户:排除校招/应届/管培(年份动态)
+        from datetime import datetime as _dt
+        _yr = _dt.now().year
         campus_kw = ["校招", "校园招聘", "应届", "应届生", "管培", "管培生",
                      "graduate program", "campus", "秋招", "春招",
-                     "2025届", "2026届", "class of 2025", "class of 2026"]
+                     f"{_yr}届", f"{_yr+1}届",
+                     f"class of {_yr}", f"class of {_yr+1}"]
         return any(kw in combined for kw in campus_kw)
 
     elif role == "campus":
@@ -531,30 +534,34 @@ class JobCollector:
 
         # === 优先级4:角色专项(仅在 role 明确时注入,避免无关通用查询) ===
         if role == "internship":
-            queries.append("实习生 招聘 2026")
-            queries.append("internship hiring 2026 china")
+            from datetime import datetime as _dt
+            _yr = _dt.now().year
+            queries.append(f"实习生 招聘 {_yr}")
+            queries.append(f"internship hiring {_yr} china")
             for direction in directions:
                 queries.append(f"{direction} 实习 招聘")
         elif role == "campus":
-            queries.append("管培生 校招 招聘 2026")
+            from datetime import datetime as _dt
+            _yr = _dt.now().year
+            queries.append(f"管培生 校招 招聘 {_yr}")
             queries.append("应届生 校招 招聘")
             # 外资管培专项(校招用户重点)
             for fg in settings.FOREIGN_GRADUATE_KEYWORDS[:5]:
-                queries.append(f"{fg} China 2026")
+                queries.append(f"{fg} China {_yr}")
             # === 管培生项目专项(根据用户偏好 mt_program_preference) ===
             mt_pref = getattr(profile, "mt_program_preference", "all") or "all"
             mt_queries_by_pref = {
                 "all": [
-                    "管培生 招聘 2026", "管理培训生 校招",
-                    "MT program 2026 China", "graduate trainee program",
+                    f"管培生 招聘 {_yr}", "管理培训生 校招",
+                    f"MT program {_yr} China", "graduate trainee program",
                 ],
                 "finance": [
                     "银行管培生 校招", "券商管培生 招聘", "基金管培生",
-                    "金融管培生 2026", "bank management trainee",
+                    f"金融管培生 {_yr}", "bank management trainee",
                 ],
                 "internet": [
                     "互联网管培生 校招", "产品管培生 招聘", "运营管培生",
-                    "技术管培生 2026", "tech management trainee program",
+                    f"技术管培生 {_yr}", "tech management trainee program",
                 ],
                 "consulting_fmcg": [
                     "咨询管培生 校招", "快消管培生 招聘",
@@ -562,14 +569,16 @@ class JobCollector:
                 ],
                 "soe": [
                     "国企管培生 校招", "央企管培生 招聘",
-                    "国企 管理培训生 2026",
+                    f"国企 管理培训生 {_yr}",
                 ],
             }
             for mq in mt_queries_by_pref.get(mt_pref, mt_queries_by_pref["all"]):
                 queries.append(mq)
         elif role == "social":
-            queries.append("社招 招聘 2026")
-            queries.append("experienced hire 2026 china")
+            from datetime import datetime as _dt
+            _yr = _dt.now().year
+            queries.append(f"社招 招聘 {_yr}")
+            queries.append(f"experienced hire {_yr} china")
 
         # 用户专业相关
         if profile.major:
@@ -592,7 +601,9 @@ class JobCollector:
                 core_kw = " ".join(keywords[:2])
                 queries.append(f"{core_kw} 招聘 site:{domain}")
             if role == "campus":
-                queries.append(f"{cs['name']} 校招 2026 site:{domain}")
+                from datetime import datetime as _dt
+                _yr = _dt.now().year
+                queries.append(f"{cs['name']} 校招 {_yr} site:{domain}")
 
         # === 优先级6:外资官网管培专项(仅校招用户) ===
         if role == "campus":

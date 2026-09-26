@@ -18,7 +18,7 @@ from typing import Optional
 
 from models import User, UserProfile, UserStore
 from feishu_client import FeishuClient
-from schema import JOB_FIELDS, CLOSED_JOB_FIELDS
+from schema import JOB_FIELDS, CLOSED_JOB_FIELDS, MT_TABLE_FIELDS
 from config import settings
 
 logger = logging.getLogger(__name__)
@@ -159,6 +159,73 @@ def setup_user_feishu(tenant_key: str, open_id: str, client: FeishuClient = None
         "table_id": table_id,
         "closed_table_id": closed_table_id,
     }
+
+
+def ensure_mt_table(user: User, client: FeishuClient = None) -> str:
+    """
+    为校招用户确保管培生项目表存在。
+    如果用户已有 mt_table_id 则直接返回;否则创建新表+字段。
+    返回 mt_table_id。
+    """
+    client = client or FeishuClient()
+    base_token = user.feishu_base_token
+    if not base_token:
+        return ""
+
+    # 已有管培表,直接返回
+    if user.feishu_mt_table_id:
+        return user.feishu_mt_table_id
+
+    # 仅校招用户创建管培表
+    profile = getattr(user, "profile", None)
+    role = getattr(profile, "role", "") or ""
+    if role != "campus":
+        return ""
+
+    try:
+        # 创建管培项目表
+        mt_table_id = client.create_table(base_token, "管培生项目")
+        logger.info(f"创建管培项目表: {mt_table_id}")
+
+        # 重命名主字段为"项目名称"
+        try:
+            fields = client.list_fields(base_token, mt_table_id)
+            for f in fields:
+                if f.get("is_primary"):
+                    client.update_field(base_token, mt_table_id, f["field_id"],
+                                        field_name="项目名称")
+                    break
+        except Exception as e:
+            logger.warning(f"重命名管培表主字段失败: {e}")
+
+        # 创建管培表字段(跳过"项目名称"主字段)
+        for f in MT_TABLE_FIELDS:
+            if f["name"] == "项目名称":
+                continue
+            kwargs = {}
+            if "options" in f:
+                kwargs["property"] = {"options": f["options"]}
+            if "style" in f:
+                kwargs["property"] = {**kwargs.get("property", {}), **f["style"]}
+            if "multiple" in f:
+                kwargs["property"] = {**kwargs.get("property", {}), "multiple": f["multiple"]}
+            try:
+                client.create_field(base_token, mt_table_id, f["name"], f["type"], **kwargs)
+                time.sleep(0.1)
+            except Exception as e:
+                logger.warning(f"创建管培表字段失败 {f['name']}: {e}")
+
+        # 保存 mt_table_id 到用户
+        from store import UserStore
+        store = UserStore()
+        user.feishu_mt_table_id = mt_table_id
+        store.upsert(user)
+        logger.info(f"管培项目表创建完成: user={user.id} mt_table={mt_table_id}")
+        return mt_table_id
+
+    except Exception as e:
+        logger.exception(f"创建管培项目表失败: {e}")
+        return ""
 
 
 def onboard_user(user_id: str, tenant_key: str, open_id: str,

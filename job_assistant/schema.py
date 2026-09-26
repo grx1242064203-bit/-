@@ -32,6 +32,7 @@ JOB_FIELDS: List[Dict[str, Any]] = [
     {"name": "去重hash", "type": 1},
     {"name": "应届窗口", "type": 3, "options": [{"name": "是"}, {"name": "否"}]},
     {"name": "是否在招", "type": 3, "options": [{"name": "是"}, {"name": "否"}]},
+    {"name": "管培项目", "type": 1},  # 管培生项目标记(校招用户专项)
 ]
 
 # 已关闭岗位表(多一个关闭日期)

@@ -247,7 +247,8 @@ class CallbackHandler(BaseHTTPRequestHandler):
         allowed_fields = {"major", "degree", "experience_years", "core_skills",
                           "direction_keywords", "target_companies", "target_industries",
                           "target_cities", "target_certificates", "school", "current_role",
-                          "role", "graduation_year", "resume_text", "summary", "highlights"}
+                          "role", "graduation_year", "resume_text", "summary", "highlights",
+                          "mt_program_preference"}
         for key in allowed_fields:
             if key in profile_data:
                 setattr(user.profile, key, profile_data[key])

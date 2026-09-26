@@ -289,6 +289,18 @@
       </div>
     </div>
 
+    <!-- 管培项目选择(仅校招用户显示) -->
+    <div class="form-group" id="mtProgramGroup" style="display:none;">
+      <label>管培项目选择 <span class="hint">（针对性采集管培生岗位，仅校招有效）</span></label>
+      <select id="mtProgram" class="input">
+        <option value="all">全部管培生项目</option>
+        <option value="finance">金融管培(银行/券商/基金)</option>
+        <option value="internet">互联网管培(产品/运营/技术)</option>
+        <option value="consulting_fmcg">咨询快消管培</option>
+        <option value="soe">国企央企管培</option>
+      </select>
+    </div>
+
     <!-- 简历解析 -->
     <div class="form-group">
       <label>简历智能解析 <span class="hint">（上传 PDF/Word 简历，AI 自动提取信息）</span></label>
@@ -467,6 +479,12 @@ async function loadProfile() {
         const rb = document.querySelector(`input[name="role"][value="${p.role}"]`);
         if (rb) rb.checked = true;
       }
+      toggleMtProgram();
+      // 管培项目偏好
+      if (p.mt_program_preference) {
+        const mtSel = document.getElementById('mtProgram');
+        if (mtSel) mtSel.value = p.mt_program_preference;
+      }
       document.getElementById('major').value = p.major || '';
       document.getElementById('degree').value = p.degree || '';
       document.getElementById('experienceYears').value = p.experience_years || 0;
@@ -488,6 +506,19 @@ function getRole() {
   const checked = document.querySelector('input[name="role"]:checked');
   return checked ? checked.value : '';
 }
+
+// 根据角色显示/隐藏管培项目选择
+function toggleMtProgram() {
+  const role = getRole();
+  const mtGroup = document.getElementById('mtProgramGroup');
+  if (mtGroup) {
+    mtGroup.style.display = (role === 'campus') ? 'block' : 'none';
+  }
+}
+// 监听角色切换
+document.querySelectorAll('input[name="role"]').forEach(rb => {
+  rb.addEventListener('change', toggleMtProgram);
+});
 
 // 简历文件处理
 let selectedFile = null;
@@ -609,6 +640,7 @@ async function saveProfile() {
     user_id: userId,
     profile: {
       role: role,
+      mt_program_preference: (role === 'campus') ? (document.getElementById('mtProgram').value || 'all') : 'all',
       major: document.getElementById('major').value,
       degree: document.getElementById('degree').value,
       experience_years: parseFloat(document.getElementById('experienceYears').value) || 0,

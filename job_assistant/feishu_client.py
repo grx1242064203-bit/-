@@ -182,6 +182,33 @@ class FeishuClient:
         )
         return data.get("items", [])
 
+    def list_fields(self, app_token: str, table_id: str) -> List[Dict]:
+        """列出数据表的所有字段,用于查找主字段(primary field)"""
+        app_token = self.resolve_app_token(app_token)
+        data = self._request(
+            "GET", f"/open-apis/bitable/v1/apps/{app_token}/tables/{table_id}/fields",
+        )
+        return data.get("items", [])
+
+    def update_field(self, app_token: str, table_id: str, field_id: str,
+                     field_name: str = None, **kwargs) -> bool:
+        """更新字段属性(如重命名字段)。成功返回 True。"""
+        app_token = self.resolve_app_token(app_token)
+        body = {}
+        if field_name:
+            body["field_name"] = field_name
+        body.update(kwargs)
+        try:
+            self._request(
+                "PUT",
+                f"/open-apis/bitable/v1/apps/{app_token}/tables/{table_id}/fields/{field_id}",
+                json_body=body,
+            )
+            return True
+        except RuntimeError as e:
+            logger.warning(f"更新字段失败 {field_id}: {e}")
+            return False
+
     def verify_bitable_access(self, app_token: str) -> bool:
         """
         验证多维表格 token 是否有效且应用有访问权限。

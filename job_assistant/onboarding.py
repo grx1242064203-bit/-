@@ -78,7 +78,23 @@ def _create_fields_and_views(client: FeishuClient, base_token: str,
                              table_id: str, closed_table_id: str):
     """后台创建字段和视图(耗时操作,不阻塞用户拿到消息)"""
     try:
+        # 关键修复:建表后第一个字段是主字段(记录名),默认名不是"岗位标题",
+        # 会导致所有记录显示"未命名记录"。这里先找到主字段并重命名为"岗位标题"。
+        for tid in (table_id, closed_table_id):
+            try:
+                fields = client.list_fields(base_token, tid)
+                for f in fields:
+                    if f.get("is_primary"):
+                        client.update_field(base_token, tid, f["field_id"],
+                                            field_name="岗位标题")
+                        break
+            except Exception as e:
+                logger.warning(f"重命名主字段失败 table={tid}: {e}")
+
+        # 创建其余字段(跳过"岗位标题",因为它已是主字段)
         for f in JOB_FIELDS:
+            if f["name"] == "岗位标题":
+                continue  # 主字段已重命名,无需再创建
             kwargs = {}
             if "options" in f:
                 kwargs["property"] = {"options": f["options"]}
@@ -93,6 +109,8 @@ def _create_fields_and_views(client: FeishuClient, base_token: str,
                 logger.warning(f"创建字段失败 {f['name']}: {e}")
 
         for f in CLOSED_JOB_FIELDS:
+            if f["name"] == "岗位标题":
+                continue
             kwargs = {}
             if "options" in f:
                 kwargs["property"] = {"options": f["options"]}

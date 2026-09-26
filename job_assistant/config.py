@@ -30,8 +30,8 @@ class Settings:
     SERVICE_BASE_URL: str = field(default_factory=lambda: os.getenv("SERVICE_BASE_URL", "https://zhaopin-helper.xyz"))
 
     # === 运行参数 ===
-    # 每个用户每日采集岗位数量上限
-    DAILY_JOBS_PER_USER: int = int(os.getenv("DAILY_JOBS_PER_USER", "20"))
+    # 每个用户每日采集岗位数量上限(调大,但通过质量过滤保证精度)
+    DAILY_JOBS_PER_USER: int = int(os.getenv("DAILY_JOBS_PER_USER", "40"))
     # 飞书 API 写入重试次数
     FEISHU_RETRY: int = int(os.getenv("FEISHU_RETRY", "3"))
     # 飞书 API 调用间隔(秒),避免触发限流
@@ -41,13 +41,13 @@ class Settings:
     # 全局不再硬编码任何行业机构,保持产品通用性
 
     # 通用招聘/求职网站域名(用于搜索时 site: 限定 + sitemap 穷举)
-    # 保留少量通用域名,用户也可通过 profile 自定义
+    # 已移除 linkedin.com(国内使用率低)
     JOB_BOARD_DOMAINS: List[str] = field(default_factory=lambda: [
         # 国内综合招聘
         "zhipin.com", "liepin.com", "51job.com", "zhaopin.com", "lagou.com",
-        "maimai.cn", "linkedin.com",
+        "maimai.cn",
         # 海外综合招聘
-        "indeed.com", "glassdoor.com", "linkedin.com/jobs",
+        "indeed.com", "glassdoor.com",
         # 外资企业招聘页(通用,不限行业)
         "careers.", "jobs.", "talent.",
     ])
@@ -172,6 +172,71 @@ class Settings:
         {"name": "Boss直聘社区", "domain": "zhipin.com", "type": "招聘平台"},
         {"name": "猎聘", "domain": "liepin.com", "type": "中高端招聘"},
     ])
+
+    # === 公司域名 → 公司名映射(用于从 URL 提取公司名) ===
+    # 覆盖头部互联网/金融/快消/咨询/国企,从 URL 域名直接推断公司名
+    COMPANY_DOMAIN_MAP: Dict[str, str] = field(default_factory=lambda: {
+        # 互联网
+        "bytedance.com": "字节跳动", "jobs.bytedance.com": "字节跳动",
+        "tencent.com": "腾讯", "careers.tencent.com": "腾讯",
+        "alibaba.com": "阿里巴巴", "talent.alibaba.com": "阿里巴巴",
+        "baidu.com": "百度", "talent.baidu.com": "百度",
+        "meituan.com": "美团", "zhaopin.meituan.com": "美团",
+        "jd.com": "京东", "zhaopin.jd.com": "京东",
+        "163.com": "网易", "hr.163.com": "网易",
+        "kuaishou.com": "快手", "zhaopin.kuaishou.cn": "快手",
+        "xiaomi.com": "小米", "hr.xiaomi.com": "小米",
+        "didiglobal.com": "滴滴", "talent.didiglobal.com": "滴滴",
+        "pinduoduo.com": "拼多多", "careers.pinduoduo.com": "拼多多",
+        "bilibili.com": "B站", "jobs.bilibili.com": "B站",
+        "ctrip.com": "携程", "job.ctrip.com": "携程",
+        "huawei.com": "华为", "career.huawei.com": "华为",
+        "oppo.com": "OPPO", "career.oppo.com": "OPPO",
+        "vivo.com": "vivo", "hr.vivo.com": "vivo",
+        "dji.com": "大疆", "we.dji.com": "大疆",
+        "xiaohongshu.com": "小红书", "job.xiaohongshu.com": "小红书",
+        # 金融
+        "cmbchina.com": "招商银行", "career.cmbchina.com": "招商银行",
+        "citic.com": "中信证券", "career.cs.ecitic.com": "中信证券",
+        "cicc.com": "中金公司", "cicc.zhiye.com": "中金公司",
+        "htsc.com.cn": "华泰证券", "job.htsc.com.cn": "华泰证券",
+        "icbc.com.cn": "工商银行", "job.icbc.com.cn": "工商银行",
+        "ccb.com": "建设银行", "job.ccb.com": "建设银行",
+        "pingan.com": "平安集团", "talent.pingan.com": "平安集团",
+        "goldmansachs.com": "高盛",
+        "morganstanley.com": "摩根士丹利",
+        "jpmorgan.com": "摩根大通",
+        "hsbc.com": "汇丰银行",
+        "ubs.com": "瑞银",
+        "blackrock.com": "贝莱德",
+        "citi.com": "花旗银行",
+        "db.com": "德意志银行",
+        # 快消/外企
+        "pg.com.cn": "宝洁",
+        "unilever.com.cn": "联合利华",
+        "loreal.com.cn": "欧莱雅",
+        "mars.com": "玛氏",
+        "nestle.com.cn": "雀巢",
+        "coca-cola.com.cn": "可口可乐",
+        # 咨询
+        "mckinsey.com": "麦肯锡",
+        "bcg.com": "波士顿咨询",
+        "bain.com": "贝恩咨询",
+        # 国企
+        "sgcc.com.cn": "国家电网", "zhaopin.sgcc.com.cn": "国家电网",
+        "cnpc.com.cn": "中石油", "zhaopin.cnpc.com.cn": "中石油",
+        "sinopec.com": "中石化", "job.sinopec.com": "中石化",
+    })
+
+    # === 管培生项目分类(校招用户可选) ===
+    # all=全部, finance=金融, internet=互联网, consulting_fmcg=咨询快消, soe=国企央企
+    MT_PROGRAM_CATEGORIES: Dict[str, str] = field(default_factory=lambda: {
+        "all": "全部管培生项目",
+        "finance": "金融管培(银行/券商/基金)",
+        "internet": "互联网管培(产品/运营/技术)",
+        "consulting_fmcg": "咨询快消管培",
+        "soe": "国企央企管培",
+    })
 
 
 settings = Settings()

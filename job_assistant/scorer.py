@@ -204,24 +204,61 @@ def parse_education(jd_text: str) -> str:
 
 def is_graduate_window(jd_text: str, title: str = "") -> tuple:
     """
-    判断是否为应届/管培/校招窗口,返回 (是否窗口, 窗口说明)。
-    通用:不限行业,识别graduate/管培/校招/应届等关键词。
+    判断是否为应届/管培/校招窗口。
+
+    严格判断:必须在 JD 正文(含标题)中找到明确的"接受/要求应届生"的表述,
+    不能仅因为出现"graduate"等英文词就判定。
+
+    返回 (是否窗口, 窗口说明)。
+    """
+    combined = (title + "\n" + jd_text)
+    combined_lower = combined.lower()
+
+    # 明确的应届/校招/管培信号(中文优先,最可靠)
+    explicit_campus_kw = [
+        "应届毕业生", "应届生", "2025届", "2026届", "2024届",
+        "校园招聘", "校招", "管培生", "管理培训生",
+        "接受应届生", "招收应届", "面向应届", "仅限应届",
+        "应届可投", "应届生优先",
+        "秋招", "春招", "提前批",
+    ]
+    for kw in explicit_campus_kw:
+        if kw in combined:
+            return True, f"窗口标识: {kw}"
+
+    # 英文明确信号
+    explicit_english_kw = [
+        "graduate program", "management trainee", "analyst program",
+        "campus recruiting", "early career", "rotational program",
+        "fresh graduate", "entry level", "new graduate",
+    ]
+    for kw in explicit_english_kw:
+        if kw in combined_lower:
+            return True, f"窗口标识: {kw}"
+
+    # 明确只限下一届的,不算窗口(已经毕业的用户不符合)
+    if re.search(r"class of 2026|2027届|2026届", combined_lower):
+        return False, "只限2026/2027届"
+
+    return False, "社招岗位"
+
+
+def is_management_trainee(jd_text: str, title: str = "") -> str:
+    """
+    判断是否为管培生项目,返回管培项目类别标签(空字符串表示非管培)。
+    用于校招用户的管培项目跟踪。
     """
     combined = (title + " " + jd_text).lower()
-    window_kw = [
-        "graduate", "管培", "analyst program", "management trainee",
-        "应届", "校招", "campus", "early career", "rotational",
-        "class of 2024", "class of 2025", "within 12 months",
-        "within 24 months", "2 years post-graduation", "recent graduate",
-        "fresh graduate", "entry level", "internship", "实习",
+    mt_signals = [
+        ("管培生", "管培生"), ("管理培训生", "管培生"),
+        ("management trainee", "管培生"), ("mt program", "管培生"),
+        ("graduate program", "管培生"), ("analyst program", "管培生"),
+        ("rotational program", "管培生"),
     ]
-    for kw in window_kw:
-        if kw.lower() in combined:
-            return True, f"窗口标识: {kw}"
-    # 明确只限下一届的,不算窗口
-    if re.search(r"class of 2026|2027届|2026届", combined):
-        return False, "只限2026/2027届"
-    return False, "社招岗位"
+    for signal, label in mt_signals:
+        if signal in combined:
+            return label
+    return ""
 
 
 def score_job(job: Dict[str, str], profile: UserProfile,
@@ -240,6 +277,10 @@ def score_job(job: Dict[str, str], profile: UserProfile,
     jd_url = job.get("jd_url", "")
     posted = job.get("posted", "")
 
+    # 应届窗口 + 管培项目标记(提前计算,供经验评分使用)
+    in_window, window_note = is_graduate_window(jd_text, title)
+    mt_label = is_management_trainee(jd_text, title)
+
     # 1. 岗位类别(用户自定义方向)
     direction = classify_direction(jd_text, title, profile.direction_keywords)
     # 方向匹配分:命中用户目标方向=40,部分命中=25,未命中=10
@@ -257,8 +298,13 @@ def score_job(job: Dict[str, str], profile: UserProfile,
     exp = parse_experience(jd_text)
     user_exp = profile.experience_years
     user_role = getattr(profile, "role", "") or ""
-    if "应届" in exp or "在校" in exp or "fresh" in exp.lower() or "entry" in exp.lower():
-        # 校招/实习用户对应届岗位给满分;社招用户给低分
+    # 校招窗口岗位:社招用户给低分,校招/实习用户给满分
+    if in_window:
+        if user_role in ("campus", "internship"):
+            exp_score = 15
+        else:
+            exp_score = 5  # 社招用户不适合校招窗口岗位
+    elif "应届" in exp or "在校" in exp or "fresh" in exp.lower() or "entry" in exp.lower():
         if user_role in ("campus", "internship"):
             exp_score = 15
         else:
@@ -330,9 +376,6 @@ def score_job(job: Dict[str, str], profile: UserProfile,
         recommend = "观望"
     else:
         recommend = "跳过"
-
-    # 应届窗口
-    in_window, window_note = is_graduate_window(jd_text, title)
 
     # JD 深度分析:优先用 LLM(基于 JD 正文),降级用正则
     jd_summary = job.get("jd_summary", "") or ""
@@ -411,4 +454,5 @@ def score_job(job: Dict[str, str], profile: UserProfile,
         "去重hash": _make_hash(company, title, location, jd_url),
         "应届窗口": "是" if in_window else "否",
         "是否在招": "是",
+        "管培项目": mt_label,
     }

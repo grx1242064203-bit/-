@@ -25,6 +25,7 @@ class UserProfile:
     """用户画像 — 用于评分匹配(通用化,支持任意专业/职业阶段)"""
     # === 角色分化 ===
     role: str = ""             # 求职角色: internship(实习)/campus(校招)/social(社招)
+    mt_program_preference: str = "all"  # 管培项目偏好: all/finance/internet/consulting_fmcg/soe(仅校招用户)
     # === 基本信息 ===
     school: str = ""           # 学校
     degree: str = ""           # 学历:本科/硕士/博士

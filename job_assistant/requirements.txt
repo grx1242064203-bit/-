@@ -1,0 +1,8 @@
+requests>=2.28
+beautifulsoup4>=4.12
+# 简历解析:PDF/DOCX 文本提取
+pypdf>=4.0
+python-docx>=1.0
+# 可选:搜索 API 二选一
+# tavily-python  # 如需 SDK 形式调用 Tavily
+# flask>=2.0      # 如需本地回调服务

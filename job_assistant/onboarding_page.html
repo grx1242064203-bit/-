@@ -1,0 +1,844 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>招聘情报助手 - 个人配置</title>
+<style>
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  body {
+    font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", "PingFang SC", "Hiragino Sans GB", "Microsoft YaHei", sans-serif;
+    background: linear-gradient(135deg, #e0f2fe 0%, #f0f9ff 50%, #ffffff 100%);
+    min-height: 100vh;
+    padding: 20px;
+    color: #1e3a5f;
+  }
+  .container {
+    max-width: 600px;
+    margin: 0 auto;
+  }
+  .card {
+    background: #fff;
+    border-radius: 16px;
+    padding: 28px;
+    margin-bottom: 20px;
+    box-shadow: 0 10px 40px rgba(0,0,0,0.15);
+  }
+  h1 {
+    font-size: 22px;
+    color: #1e3a5f;
+    margin-bottom: 6px;
+  }
+  .subtitle {
+    color: #888;
+    font-size: 14px;
+    margin-bottom: 20px;
+  }
+  h2 {
+    font-size: 17px;
+    color: #1e3a5f;
+    margin-bottom: 16px;
+    padding-left: 10px;
+    border-left: 4px solid #4A90D9;
+  }
+  .form-group {
+    margin-bottom: 16px;
+  }
+  .checkbox-group {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 12px;
+    margin-top: 4px;
+  }
+  .checkbox-label {
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    font-weight: 400;
+    font-size: 14px;
+    color: #555;
+    cursor: pointer;
+    padding: 6px 12px;
+    border: 1.5px solid #e0e0e0;
+    border-radius: 8px;
+    background: #f8fafc;
+    transition: all 0.2s;
+  }
+  .checkbox-label:hover {
+    border-color: #4A90D9;
+    background: #e0f2fe;
+  }
+  .checkbox-label input[type="checkbox"] {
+    width: 16px;
+    height: 16px;
+    margin: 0;
+  }
+  label {
+    display: block;
+    font-size: 14px;
+    font-weight: 600;
+    color: #444;
+    margin-bottom: 6px;
+  }
+  label .hint {
+    font-weight: 400;
+    color: #999;
+    font-size: 12px;
+  }
+  input[type="text"], input[type="number"], select, textarea {
+    width: 100%;
+    padding: 10px 14px;
+    border: 1.5px solid #e0e0e0;
+    border-radius: 8px;
+    font-size: 14px;
+    transition: border 0.2s;
+    font-family: inherit;
+  }
+  input:focus, select:focus, textarea:focus {
+    outline: none;
+    border-color: #4A90D9;
+    box-shadow: 0 0 0 3px rgba(74, 144, 217, 0.15);
+  }
+  .direction-row {
+    display: flex;
+    gap: 8px;
+    margin-bottom: 8px;
+  }
+  .direction-row input {
+    flex: 1;
+  }
+  .btn {
+    padding: 10px 16px;
+    border: none;
+    border-radius: 8px;
+    font-size: 14px;
+    font-weight: 600;
+    cursor: pointer;
+    transition: all 0.2s;
+    font-family: inherit;
+  }
+  .btn-primary {
+    background: linear-gradient(135deg, #4A90D9, #357ABD);
+    color: #fff;
+    width: 100%;
+    padding: 14px;
+    font-size: 16px;
+  }
+  .btn-primary:hover { opacity: 0.9; }
+  .btn-secondary {
+    background: #f0f0f0;
+    color: #555;
+  }
+  .btn-secondary:hover { background: #e0e0e0; }
+  .btn-danger {
+    background: #fff;
+    color: #e74c3c;
+    border: 1px solid #e74c3c;
+    padding: 8px 12px;
+  }
+  .btn-small {
+    padding: 6px 10px;
+    font-size: 12px;
+  }
+  .qrcode-area {
+    text-align: center;
+    padding: 20px;
+    background: #f9f9f9;
+    border-radius: 12px;
+    margin-bottom: 16px;
+  }
+  .qrcode-area img {
+    max-width: 200px;
+    border-radius: 8px;
+  }
+  .status-badge {
+    display: inline-block;
+    padding: 4px 12px;
+    border-radius: 20px;
+    font-size: 12px;
+    font-weight: 600;
+  }
+  .status-pending { background: #fff3cd; color: #856404; }
+  .status-done { background: #d4edda; color: #155724; }
+  .toast {
+    position: fixed;
+    top: 20px;
+    left: 50%;
+    transform: translateX(-50%);
+    padding: 12px 24px;
+    border-radius: 8px;
+    color: #fff;
+    font-weight: 600;
+    z-index: 1000;
+    opacity: 0;
+    transition: opacity 0.3s;
+  }
+  .toast.show { opacity: 1; }
+  .toast.success { background: #28a745; }
+  .toast.error { background: #dc3545; }
+  .step-indicator {
+    display: flex;
+    gap: 8px;
+    margin-bottom: 24px;
+  }
+  .step {
+    flex: 1;
+    text-align: center;
+    padding: 10px;
+    border-radius: 8px;
+    font-size: 13px;
+    font-weight: 600;
+  }
+  .step.active { background: #4A90D9; color: #fff; }
+  .step.done { background: #d4edda; color: #155724; }
+  .step.todo { background: #f0f0f0; color: #999; }
+  .grid-2 { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; }
+  @media (max-width: 480px) { .grid-2 { grid-template-columns: 1fr; } }
+  .success-card {
+    text-align: center;
+    padding: 40px 20px;
+  }
+  .success-card .check {
+    width: 64px; height: 64px;
+    background: #28a745;
+    border-radius: 50%;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    color: #fff;
+    font-size: 32px;
+    margin-bottom: 16px;
+  }
+  .role-selector {
+    display: grid;
+    grid-template-columns: 1fr 1fr 1fr;
+    gap: 10px;
+  }
+  .role-option {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    padding: 14px 8px;
+    border: 2px solid #e0e0e0;
+    border-radius: 10px;
+    cursor: pointer;
+    transition: all 0.2s;
+    text-align: center;
+  }
+  .role-option input { display: none; }
+  .role-option:has(input:checked) {
+    border-color: #4A90D9;
+    background: #e8f4fd;
+  }
+  .role-label {
+    font-size: 15px;
+    font-weight: 600;
+    margin-bottom: 4px;
+  }
+  .role-desc {
+    font-size: 11px;
+    color: #999;
+  }
+  textarea {
+    width: 100%;
+    padding: 10px 14px;
+    border: 1.5px solid #e0e0e0;
+    border-radius: 8px;
+    font-size: 13px;
+    font-family: inherit;
+    resize: vertical;
+  }
+  .upload-area {
+    border: 2px dashed #b8d8f0;
+    border-radius: 12px;
+    padding: 24px;
+    text-align: center;
+    cursor: pointer;
+    transition: all 0.2s;
+    background: #f8fbfe;
+  }
+  .upload-area:hover {
+    border-color: #4A90D9;
+    background: #eef6fd;
+  }
+  .upload-area.dragover {
+    border-color: #4A90D9;
+    background: #e0f2fe;
+  }
+  .upload-icon { font-size: 36px; margin-bottom: 8px; }
+  .upload-text { color: #4A90D9; font-weight: 600; font-size: 14px; }
+  .upload-hint { color: #999; font-size: 12px; margin-top: 4px; }
+  .file-info {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    padding: 10px 14px;
+    background: #e8f4fd;
+    border-radius: 8px;
+    margin-top: 8px;
+    font-size: 13px;
+    color: #1e3a5f;
+  }
+  @media (max-width: 480px) { .role-selector { grid-template-columns: 1fr; } }
+</style>
+</head>
+<body>
+<div class="container">
+  <div class="card">
+    <h1>🎯 招聘情报助手</h1>
+    <p class="subtitle">配置您的求职偏好，AI 将为您精准筛选岗位</p>
+    <div class="step-indicator">
+      <div class="step active" id="step1">1. 配置偏好</div>
+      <div class="step todo" id="step2">2. 完成</div>
+    </div>
+  </div>
+  <!-- 配置表单 -->
+  <div class="card" id="profileCard">
+    <h2>求职偏好</h2>
+
+    <!-- 求职角色选择 -->
+    <div class="form-group">
+      <label>求职角色 <span class="hint">（决定采集岗位类型）</span></label>
+      <div class="role-selector">
+        <label class="role-option">
+          <input type="radio" name="role" value="internship">
+          <span class="role-label">💼 实习</span>
+          <span class="role-desc">在校学生找实习</span>
+        </label>
+        <label class="role-option">
+          <input type="radio" name="role" value="campus">
+          <span class="role-label">🎓 校招</span>
+          <span class="role-desc">应届毕业生求职</span>
+        </label>
+        <label class="role-option">
+          <input type="radio" name="role" value="social">
+          <span class="role-label">🏢 社招</span>
+          <span class="role-desc">有工作经验跳槽</span>
+        </label>
+      </div>
+    </div>
+
+    <!-- 管培项目选择(仅校招用户显示) -->
+    <div class="form-group" id="mtProgramGroup" style="display:none;">
+      <label>管培项目选择 <span class="hint">（针对性采集管培生岗位，仅校招有效）</span></label>
+      <select id="mtProgram" class="input">
+        <option value="all">全部管培生项目</option>
+        <option value="finance">金融管培(银行/券商/基金)</option>
+        <option value="internet">互联网管培(产品/运营/技术)</option>
+        <option value="consulting_fmcg">咨询快消管培</option>
+        <option value="soe">国企央企管培</option>
+      </select>
+    </div>
+
+    <!-- 简历解析 -->
+    <div class="form-group">
+      <label>简历智能解析 <span class="hint">（上传 PDF/Word/图片 简历，AI 自动提取信息）</span></label>
+      <div class="upload-area" id="uploadArea" onclick="document.getElementById('resumeFile').click()">
+        <div class="upload-icon">📄</div>
+        <div class="upload-text">点击或拖拽上传简历</div>
+        <div class="upload-hint">支持 PDF、DOC、DOCX、PNG、JPG 格式，最大 10MB</div>
+      </div>
+      <input type="file" id="resumeFile" accept=".pdf,.doc,.docx,.png,.jpg,.jpeg,.webp,.bmp" style="display:none;" onchange="handleFileSelect(event)">
+      <div id="fileInfo" style="display:none;">
+        <div class="file-info">
+          <span>📎</span>
+          <span id="fileName" style="flex:1;"></span>
+          <button class="btn btn-danger btn-small" onclick="clearFile()">删除</button>
+        </div>
+      </div>
+      <button class="btn btn-secondary btn-small" style="margin-top:8px;" onclick="parseResume()">✨ AI 解析简历</button>
+      <div id="parseStatus" style="margin-top:8px;font-size:13px;color:#666;"></div>
+    </div>
+
+    <div class="form-group">
+      <label>目标岗位方向 <span class="hint">（填写方向名后点击"✨优化",AI 将基于简历生成 5-8 个精准搜索关键词）</span></label>
+      <div id="directionsContainer"></div>
+      <button class="btn btn-secondary btn-small" onclick="addDirection()">+ 添加方向</button>
+    </div>
+
+    <div class="grid-2">
+      <div class="form-group">
+        <label>专业</label>
+        <input type="text" id="major" placeholder="如：计算机科学与技术">
+      </div>
+      <div class="form-group">
+        <label>学历</label>
+        <select id="degree">
+          <option value="">请选择</option>
+          <option value="本科">本科</option>
+          <option value="硕士">硕士</option>
+          <option value="博士">博士</option>
+        </select>
+      </div>
+    </div>
+
+    <div class="grid-2">
+      <div class="form-group" id="experienceYearsGroup">
+        <label>工作年限 <span class="hint">（应届填 0）</span></label>
+        <input type="number" id="experienceYears" min="0" step="0.5" placeholder="0">
+      </div>
+      <div class="form-group" id="graduationDateGroup" style="display:none;">
+        <label>毕业年月 <span class="hint" style="color:#e74c3c;">（必填，用于匹配校招届数）</span></label>
+        <input type="month" id="graduationDate">
+      </div>
+      <div class="form-group">
+        <label>核心技能 <span class="hint">（逗号分隔）</span></label>
+        <input type="text" id="coreSkills" placeholder="如：Python, SQL, Excel">
+      </div>
+    </div>
+
+    <!-- 校招用户专属:企业匹配维度 -->
+    <div id="campusMatchGroup" style="display:none;">
+      <div class="form-group">
+        <label>偏好公司类型 <span class="hint">（可多选）</span></label>
+        <div class="checkbox-group" id="companyTypeGroup">
+          <label class="checkbox-label"><input type="checkbox" value="国央企"> 国央企</label>
+          <label class="checkbox-label"><input type="checkbox" value="民企"> 民企</label>
+          <label class="checkbox-label"><input type="checkbox" value="外企"> 外企</label>
+        </div>
+      </div>
+      <div class="form-group">
+        <label>偏好申请难度 <span class="hint">（可多选）</span></label>
+        <div class="checkbox-group" id="difficultyGroup">
+          <label class="checkbox-label"><input type="checkbox" value="最激烈"> 最激烈</label>
+          <label class="checkbox-label"><input type="checkbox" value="较为激烈"> 较为激烈</label>
+          <label class="checkbox-label"><input type="checkbox" value="中等难度"> 中等难度</label>
+          <label class="checkbox-label"><input type="checkbox" value="较低难度"> 较低难度</label>
+        </div>
+      </div>
+      <div class="form-group">
+        <label>偏好城市 <span class="hint">（逗号分隔）</span></label>
+        <input type="text" id="preferredLocations" placeholder="如：北京, 上海, 深圳">
+      </div>
+    </div>
+
+    <div class="form-group">
+      <label>目标公司 <span class="hint">（逗号分隔，可填简称）</span></label>
+      <input type="text" id="targetCompanies" placeholder="如：字节, 腾讯, 阿里">
+    </div>
+
+    <div class="form-group">
+      <label>目标城市 <span class="hint">（逗号分隔）</span></label>
+      <input type="text" id="targetCities" placeholder="如：北京, 上海, 深圳">
+    </div>
+
+    <button class="btn btn-primary" onclick="saveProfile()">保存偏好配置</button>
+  </div>
+
+  <!-- 完成 -->
+  <div class="card" id="successCard" style="display:none;">
+    <div class="success-card">
+      <div class="check">✓</div>
+      <h2 style="border:none;padding:0;">配置完成！</h2>
+      <p style="color:#666;margin:16px 0;">
+        您的求职偏好已保存，我们正在为您采集第一批岗位。<br>
+        采集完成后将通过飞书消息通知您结果。<br>
+        此后每天早上 9:00，您将收到岗位日报推送。
+      </p>
+      <p style="color:#999;font-size:13px;">
+        岗位数据已自动录入您的飞书多维表格「招聘情报库」<br>
+        如需修改偏好，请重新打开本页面。
+      </p>
+    </div>
+  </div>
+</div>
+
+<div class="toast" id="toast"></div>
+
+<script>
+const userId = new URLSearchParams(window.location.search).get('user_id');
+if (!userId) {
+  document.querySelector('.container').innerHTML = 
+    '<div class="card"><h1>错误</h1><p>缺少用户 ID。请从飞书应用重新打开本页面。</p></div>';
+}
+
+let directions = [{}];
+
+function showToast(msg, type='success') {
+  const t = document.getElementById('toast');
+  t.textContent = msg;
+  t.className = 'toast show ' + type;
+  setTimeout(() => t.className = 'toast', 3000);
+}
+
+function renderDirections() {
+  const c = document.getElementById('directionsContainer');
+  c.innerHTML = '';
+  directions.forEach((d, i) => {
+    const row = document.createElement('div');
+    row.className = 'direction-row';
+    row.innerHTML = `
+      <input type="text" placeholder="方向名称（如：FOF投资经理）" value="${d.name||''}" oninput="directions[${i}].name=this.value" style="flex:2;">
+      <input type="text" placeholder="关键词，逗号分隔（5-8个）" value="${d.keywords||''}" oninput="directions[${i}].keywords=this.value" style="flex:3;">
+      <button class="btn btn-secondary btn-small" onclick="optimizeKeywords(${i})" title="基于简历AI优化关键词">✨优化</button>
+      ${directions.length > 1 ? `<button class="btn btn-danger btn-small" onclick="removeDirection(${i})">删除</button>` : ''}
+    `;
+    c.appendChild(row);
+  });
+}
+
+function addDirection() {
+  directions.push({});
+  renderDirections();
+}
+
+function removeDirection(i) {
+  directions.splice(i, 1);
+  renderDirections();
+}
+
+// 关键词优化:调用 LLM 根据简历生成 5-8 个精准关键词
+async function optimizeKeywords(index) {
+  const d = directions[index];
+  if (!d || !d.name) {
+    showToast('请先填写方向名称', 'error');
+    return;
+  }
+  const existing = (d.keywords || '').split(/[,，]/).map(s => s.trim()).filter(Boolean);
+  const btn = event.target;
+  btn.disabled = true;
+  btn.textContent = '优化中...';
+
+  try {
+    const resp = await fetch('/api/optimize-keywords', {
+      method: 'POST',
+      headers: {'Content-Type': 'application/json'},
+      body: JSON.stringify({
+        user_id: userId,
+        direction: d.name,
+        existing_keywords: existing,
+      })
+    });
+    const data = await resp.json();
+    if (data.code === 0 && data.keywords) {
+      directions[index].keywords = data.keywords.join(', ');
+      renderDirections();
+      showToast(`已为「${d.name}」生成 ${data.keywords.length} 个关键词`);
+    } else {
+      showToast(data.msg || '优化失败', 'error');
+    }
+  } catch(e) {
+    showToast('网络错误，请重试', 'error');
+  } finally {
+    btn.disabled = false;
+    btn.textContent = '✨优化';
+  }
+}
+
+// 加载已有配置
+async function loadProfile() {
+  try {
+    const resp = await fetch('/api/profile?user_id=' + encodeURIComponent(userId));
+    const data = await resp.json();
+    if (data.profile) {
+      const p = data.profile;
+      // 角色
+      if (p.role) {
+        const rb = document.querySelector(`input[name="role"][value="${p.role}"]`);
+        if (rb) rb.checked = true;
+      }
+      toggleCampusFields();
+      // 毕业年月
+      if (p.graduation_date) {
+        document.getElementById('graduationDate').value = p.graduation_date;
+      }
+      // 校招匹配维度
+      if (p.preferred_company_types && p.preferred_company_types.length) {
+        p.preferred_company_types.forEach(t => {
+          const cb = document.querySelector(`#companyTypeGroup input[value="${t}"]`);
+          if (cb) cb.checked = true;
+        });
+      }
+      if (p.preferred_difficulties && p.preferred_difficulties.length) {
+        p.preferred_difficulties.forEach(d => {
+          const cb = document.querySelector(`#difficultyGroup input[value="${d}"]`);
+          if (cb) cb.checked = true;
+        });
+      }
+      if (p.preferred_locations && p.preferred_locations.length) {
+        document.getElementById('preferredLocations').value = p.preferred_locations.join(', ');
+      }
+      // 管培项目偏好
+      if (p.mt_program_preference) {
+        const mtSel = document.getElementById('mtProgram');
+        if (mtSel) mtSel.value = p.mt_program_preference;
+      }
+      document.getElementById('major').value = p.major || '';
+      document.getElementById('degree').value = p.degree || '';
+      document.getElementById('experienceYears').value = p.experience_years || 0;
+      document.getElementById('coreSkills').value = (p.core_skills || []).join(', ');
+      document.getElementById('targetCompanies').value = (p.target_companies || []).join(', ');
+      document.getElementById('targetCities').value = (p.target_cities || []).join(', ');
+      const dk = p.direction_keywords || {};
+      directions = Object.keys(dk).map(k => ({name: k, keywords: (dk[k]||[]).join(', ')}));
+      if (directions.length === 0) directions = [{}];
+      renderDirections();
+    }
+  } catch(e) {
+    console.error('加载配置失败', e);
+  }
+}
+
+// 获取当前选中的角色
+function getRole() {
+  const checked = document.querySelector('input[name="role"]:checked');
+  return checked ? checked.value : '';
+}
+
+// 根据角色显示/隐藏校招专属字段
+function toggleCampusFields() {
+  const role = getRole();
+  const isCampus = (role === 'campus');
+  // 管培项目
+  const mtGroup = document.getElementById('mtProgramGroup');
+  if (mtGroup) mtGroup.style.display = isCampus ? 'block' : 'none';
+  // 工作年限:校招隐藏
+  const expGroup = document.getElementById('experienceYearsGroup');
+  if (expGroup) expGroup.style.display = isCampus ? 'none' : 'block';
+  // 毕业年月:校招显示
+  const gradGroup = document.getElementById('graduationDateGroup');
+  if (gradGroup) gradGroup.style.display = isCampus ? 'block' : 'none';
+  // 企业匹配维度:校招显示
+  const matchGroup = document.getElementById('campusMatchGroup');
+  if (matchGroup) matchGroup.style.display = isCampus ? 'block' : 'none';
+}
+// 监听角色切换
+document.querySelectorAll('input[name="role"]').forEach(rb => {
+  rb.addEventListener('change', toggleCampusFields);
+});
+
+// 简历文件处理
+let selectedFile = null;
+
+function handleFileSelect(event) {
+  const file = event.target.files[0];
+  if (file) setFile(file);
+}
+
+function setFile(file) {
+  if (file.size > 10 * 1024 * 1024) {
+    showToast('文件不能超过 10MB', 'error');
+    return;
+  }
+  const ext = file.name.split('.').pop().toLowerCase();
+  if (!['pdf', 'doc', 'docx', 'png', 'jpg', 'jpeg', 'webp', 'bmp'].includes(ext)) {
+    showToast('仅支持 PDF、DOC、DOCX、PNG、JPG 格式', 'error');
+    return;
+  }
+  selectedFile = file;
+  document.getElementById('fileName').textContent = file.name;
+  document.getElementById('fileInfo').style.display = 'block';
+}
+
+function clearFile() {
+  selectedFile = null;
+  document.getElementById('resumeFile').value = '';
+  document.getElementById('fileInfo').style.display = 'none';
+}
+
+// 拖拽上传
+const uploadArea = document.getElementById('uploadArea');
+uploadArea.addEventListener('dragover', e => {
+  e.preventDefault();
+  uploadArea.classList.add('dragover');
+});
+uploadArea.addEventListener('dragleave', () => uploadArea.classList.remove('dragover'));
+uploadArea.addEventListener('drop', e => {
+  e.preventDefault();
+  uploadArea.classList.remove('dragover');
+  if (e.dataTransfer.files[0]) setFile(e.dataTransfer.files[0]);
+});
+
+// 简历解析
+async function parseResume() {
+  if (!selectedFile) {
+    showToast('请先上传简历文件', 'error');
+    return;
+  }
+  const statusEl = document.getElementById('parseStatus');
+  statusEl.style.color = '#4A90D9';
+  const isImage = /\.(png|jpg|jpeg|webp|bmp|gif)$/i.test(selectedFile.name);
+  statusEl.textContent = isImage
+    ? '⏳ 正在识别图片简历（OCR），请稍候...'
+    : '⏳ AI 正在解析简历，请稍候...';
+
+  const formData = new FormData();
+  formData.append('user_id', userId);
+  formData.append('resume', selectedFile);
+
+  try {
+    const resp = await fetch('/api/parse-resume', {
+      method: 'POST',
+      body: formData
+    });
+    const data = await resp.json();
+    if (data.code === 0 && data.profile) {
+      const p = data.profile;
+      if (p.degree) document.getElementById('degree').value = p.degree;
+      if (p.major) document.getElementById('major').value = p.major;
+      if (p.experience_years) document.getElementById('experienceYears').value = p.experience_years;
+      // 毕业年月(校招用户)
+      if (p.graduation_date) {
+        document.getElementById('graduationDate').value = p.graduation_date;
+      } else if (p.graduation_year) {
+        // 只有年份时默认填6月
+        document.getElementById('graduationDate').value = p.graduation_year + '-06';
+      }
+      if (p.core_skills && p.core_skills.length) {
+        document.getElementById('coreSkills').value = p.core_skills.join(', ');
+      }
+      if (p.target_cities && p.target_cities.length) {
+        document.getElementById('targetCities').value = p.target_cities.join(', ');
+      }
+      // 校招匹配维度回填
+      if (p.preferred_company_types && p.preferred_company_types.length) {
+        p.preferred_company_types.forEach(t => {
+          const cb = document.querySelector(`#companyTypeGroup input[value="${t}"]`);
+          if (cb) cb.checked = true;
+        });
+      }
+      if (p.preferred_difficulties && p.preferred_difficulties.length) {
+        p.preferred_difficulties.forEach(d => {
+          const cb = document.querySelector(`#difficultyGroup input[value="${d}"]`);
+          if (cb) cb.checked = true;
+        });
+      }
+      if (p.target_industries && p.target_industries.length) {
+        // 行业字段前端没有单独输入框,存入 localStorage 供保存时使用
+        window._parsed_industries = p.target_industries;
+      }
+      if (p.direction_keywords && Object.keys(p.direction_keywords).length) {
+        directions = Object.keys(p.direction_keywords).map(k => ({
+          name: k, keywords: (p.direction_keywords[k]||[]).join(', ')
+        }));
+        renderDirections();
+      }
+      statusEl.style.color = '#28a745';
+      // 丰富画像展示:学校、学历、专业、亮点、方向数
+      const hl = (p.highlights || []).slice(0, 4);
+      const hlHtml = hl.length ? `<br>💡 亮点: ${hl.map(h=>`${h}`).join(' | ')}` : '';
+      const dirCount = Object.keys(p.direction_keywords || {}).length;
+      const summary = p.summary ? `<br>📝 ${p.summary}` : '';
+      statusEl.innerHTML = `✅ 解析成功！已自动填写 — 学校: ${p.school||'未识别'} | 学历: ${p.degree||'未识别'} | 专业: ${p.major||'未识别'}<br>🎯 识别到 ${dirCount} 个求职方向, ${p.core_skills?.length||0} 项核心技能${hlHtml}${summary}`;
+      showToast('简历解析成功，信息已回填');
+    } else {
+      statusEl.style.color = '#dc3545';
+      statusEl.textContent = '❌ 解析失败: ' + (data.msg || '未知错误');
+      showToast('简历解析失败', 'error');
+    }
+  } catch(e) {
+    statusEl.style.color = '#dc3545';
+    statusEl.textContent = '❌ 网络错误，请重试';
+    showToast('网络错误，请重试', 'error');
+  }
+}
+
+async function saveProfile() {
+  // 防止重复提交
+  const saveBtn = event.target;
+  if (saveBtn.disabled) return;
+  saveBtn.disabled = true;
+  const originalText = saveBtn.textContent;
+  saveBtn.textContent = '保存中...';
+
+  const role = getRole();
+  if (!role) {
+    showToast('请选择求职角色', 'error');
+    saveBtn.disabled = false;
+    saveBtn.textContent = originalText;
+    return;
+  }
+
+  // 校招用户:毕业年月必填
+  if (role === 'campus') {
+    const gradDate = document.getElementById('graduationDate').value;
+    if (!gradDate) {
+      showToast('请填写毕业年月（用于匹配校招届数）', 'error');
+      saveBtn.disabled = false;
+      saveBtn.textContent = originalText;
+      return;
+    }
+  }
+
+  const direction_keywords = {};
+  directions.forEach(d => {
+    if (d.name && d.keywords) {
+      direction_keywords[d.name] = d.keywords.split(/[,，]/).map(s=>s.trim()).filter(Boolean);
+    }
+  });
+
+  // 收集校招匹配维度
+  const companyTypes = Array.from(document.querySelectorAll('#companyTypeGroup input:checked')).map(cb => cb.value);
+  const difficulties = Array.from(document.querySelectorAll('#difficultyGroup input:checked')).map(cb => cb.value);
+  const locations = document.getElementById('preferredLocations').value.split(/[,，]/).map(s=>s.trim()).filter(Boolean);
+
+  const payload = {
+    user_id: userId,
+    profile: {
+      role: role,
+      mt_program_preference: (role === 'campus') ? (document.getElementById('mtProgram').value || 'all') : 'all',
+      major: document.getElementById('major').value,
+      degree: document.getElementById('degree').value,
+      experience_years: (role === 'campus') ? 0 : (parseFloat(document.getElementById('experienceYears').value) || 0),
+      graduation_date: (role === 'campus') ? document.getElementById('graduationDate').value : '',
+      graduation_year: (role === 'campus') ? (document.getElementById('graduationDate').value || '').substring(0, 4) : '',
+      core_skills: document.getElementById('coreSkills').value.split(/[,，]/).map(s=>s.trim()).filter(Boolean),
+      direction_keywords: direction_keywords,
+      target_companies: document.getElementById('targetCompanies').value.split(/[,，]/).map(s=>s.trim()).filter(Boolean),
+      target_cities: document.getElementById('targetCities').value.split(/[,，]/).map(s=>s.trim()).filter(Boolean),
+      target_industries: window._parsed_industries || [],
+      preferred_company_types: (role === 'campus') ? companyTypes : [],
+      preferred_difficulties: (role === 'campus') ? difficulties : [],
+      preferred_locations: (role === 'campus') ? locations : [],
+    }
+  };
+
+  // 校验:每个方向至少需要 1 个关键词(用于搜索抓取)
+  const emptyDirs = Object.entries(direction_keywords).filter(([, kws]) => kws.length === 0);
+  if (emptyDirs.length > 0) {
+    showToast(`方向「${emptyDirs[0][0]}」缺少关键词,请填写或点击"优化"`, 'error');
+    return;
+  }
+
+  if (Object.keys(direction_keywords).length === 0) {
+    showToast('请至少填写一个目标岗位方向', 'error');
+    return;
+  }
+
+  try {
+    const resp = await fetch('/api/profile', {
+      method: 'POST',
+      headers: {'Content-Type': 'application/json'},
+      body: JSON.stringify(payload)
+    });
+    const data = await resp.json();
+    if (data.code === 0) {
+      showToast('偏好配置已保存！正在为您采集岗位...');
+      setStep(2);
+    } else {
+      showToast(data.msg || '保存失败', 'error');
+    }
+  } catch(e) {
+    showToast('网络错误，请重试', 'error');
+    saveBtn.disabled = false;
+    saveBtn.textContent = originalText;
+  }
+}
+
+function setStep(n) {
+  [1,2].forEach(i => {
+    const el = document.getElementById('step'+i);
+    if (el) {
+      el.className = 'step ' + (i < n ? 'done' : i === n ? 'active' : 'todo');
+    }
+  });
+  document.getElementById('profileCard').style.display = n <= 1 ? 'block' : 'none';
+  document.getElementById('successCard').style.display = n === 2 ? 'block' : 'none';
+}
+
+// 初始化
+renderDirections();
+loadProfile();
+</script>
+</body>
+</html>

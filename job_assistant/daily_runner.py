@@ -164,9 +164,9 @@ class DailyRunner:
                         self.user.feishu_base_token, self.user.feishu_table_id, rid)
                     # 归一化字段格式
                     norm = self.feishu.normalize_fields(full_fields)
-                    # 写入已关闭表
-                    archive_record = {**norm, "是否在招": "否",
-                                      "关闭日期": time.strftime("%Y-%m-%d %H:%M:%S")}
+                    # 写入已关闭表(关闭日期需转毫秒时间戳,飞书日期字段不接受字符串)
+                    close_ts = int(time.time() * 1000)
+                    archive_record = {**norm, "是否在招": "否", "关闭日期": close_ts}
                     self.feishu.batch_create_records(
                         self.user.feishu_base_token, self.user.feishu_closed_table_id,
                         [archive_record],

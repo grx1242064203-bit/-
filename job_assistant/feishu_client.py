@@ -216,25 +216,69 @@ class FeishuClient:
         )
         return data["field"]["field_id"]
 
+    @staticmethod
+    def _sanitize_fields(fields: Dict) -> Dict:
+        """清洗待写入的字段,剔除 None 值和空字符串,避免飞书字段转换失败。
+
+        - None 值:直接剔除(该字段不写入)
+        - URL 字段值为 None:已在上游处理,这里兜底剔除
+        - 空字符串:对于文本类字段保留(允许空值),但确保不是 None
+        """
+        return {k: v for k, v in fields.items() if v is not None}
+
     def batch_create_records(self, app_token: str, table_id: str,
                              records: List[Dict]) -> List[str]:
-        """批量写入记录,每批最多 500 条,返回 record_id 列表"""
+        """批量写入记录,每批最多 500 条,返回 record_id 列表。
+
+        设计:
+        1. 先清洗每条记录(剔除 None 值字段)
+        2. 批量写入;若整批失败,降级为逐条写入,避免一条非法记录导致全部丢失
+        """
         app_token = self.resolve_app_token(app_token)
+        # 清洗:剔除 None 值字段
+        sanitized = [self._sanitize_fields(r) for r in records]
+        # 过滤掉清洗后为空的记录
+        sanitized = [r for r in sanitized if r]
+        if not sanitized:
+            return []
+
         ids = []
-        for i in range(0, len(records), 500):
-            batch = records[i:i + 500]
-            data = self._request(
-                "POST",
-                f"/open-apis/bitable/v1/apps/{app_token}/tables/{table_id}/records/batch_create",
-                json_body={"records": [{"fields": r} for r in batch]},
-            )
-            ids.extend(r["record_id"] for r in data.get("records", []))
+        batch_size = 500
+        for i in range(0, len(sanitized), batch_size):
+            batch = sanitized[i:i + batch_size]
+            try:
+                data = self._request(
+                    "POST",
+                    f"/open-apis/bitable/v1/apps/{app_token}/tables/{table_id}/records/batch_create",
+                    json_body={"records": [{"fields": r} for r in batch]},
+                )
+                ids.extend(r["record_id"] for r in data.get("records", []))
+            except RuntimeError as e:
+                # 整批失败:降级为逐条写入,定位并跳过非法记录
+                logger.warning(f"批量写入失败,降级为逐条写入: {e}")
+                for record in batch:
+                    try:
+                        data = self._request(
+                            "POST",
+                            f"/open-apis/bitable/v1/apps/{app_token}/tables/{table_id}/records",
+                            json_body={"fields": record},
+                        )
+                        rid = data.get("record", {}).get("record_id", "")
+                        if rid:
+                            ids.append(rid)
+                    except RuntimeError as e2:
+                        logger.error(f"单条写入失败,跳过该记录: {e2} fields_keys={list(record.keys())}")
             time.sleep(settings.FEISHU_API_INTERVAL)
         return ids
 
     def search_records(self, app_token: str, table_id: str,
                        filter_expr: str, fields: List[str] = None) -> List[Dict]:
-        """按条件查询记录(用于去重 hash 查询)"""
+        """按条件查询记录(用于去重 hash 查询)。
+
+        使用「列出记录」接口 GET /records，支持 filter 公式查询参数。
+        注意:不能用 /records/search，因为 GET 请求时飞书会把路径最后一段
+        当作 record_id，返回 1254043 RecordIdNotFound。
+        """
         app_token = self.resolve_app_token(app_token)
         all_records = []
         page_token = None
@@ -246,7 +290,7 @@ class FeishuClient:
                 params["field_names"] = json.dumps(fields)
             data = self._request(
                 "GET",
-                f"/open-apis/bitable/v1/apps/{app_token}/tables/{table_id}/records/search",
+                f"/open-apis/bitable/v1/apps/{app_token}/tables/{table_id}/records",
                 params=params,
             )
             all_records.extend(data.get("items", []))

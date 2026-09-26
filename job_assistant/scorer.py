@@ -9,10 +9,51 @@
 第一原则:评分必须可解释,每个分数项有明确依据。
 """
 import re
+import time
 import hashlib
+from datetime import datetime
 from typing import Dict, Any, List
 
 from models import UserProfile
+
+
+def _build_url_field(url: str) -> dict:
+    """构造飞书 URL 字段(type=15)的值。
+
+    飞书 URL 字段只接受 {"text": str, "link": str} 对象。
+    空字符串或非法 URL 会触发 1254068 URLFieldDetailFail。
+    空值时返回 None(调用方需在写入前剔除 None 值字段)。
+    """
+    if not url or not isinstance(url, str):
+        return None
+    url = url.strip()
+    if not url:
+        return None
+    # 确保 URL 带协议前缀,否则飞书可能判定为非法
+    if not url.startswith(("http://", "https://")):
+        url = "https://" + url
+    return {"text": url, "link": url}
+
+
+def _to_timestamp_ms(date_str: str) -> int:
+    """将日期字符串转为飞书日期字段(type=5)所需的 Unix 毫秒时间戳。
+
+    飞书日期字段只接受数字(毫秒时间戳),传入字符串会触发 1254064 DatetimeFieldConvFail。
+    解析失败时返回当前时间戳,避免空值导致写入失败。
+    """
+    if not date_str or not isinstance(date_str, str):
+        return int(time.time() * 1000)
+    date_str = date_str.strip()
+    # 尝试多种常见格式
+    for fmt in ("%Y-%m-%d %H:%M:%S", "%Y-%m-%d %H:%M", "%Y-%m-%d",
+                "%Y/%m/%d %H:%M:%S", "%Y/%m/%d"):
+        try:
+            dt = datetime.strptime(date_str, fmt)
+            return int(dt.timestamp() * 1000)
+        except ValueError:
+            continue
+    # 解析失败,返回当前时间戳
+    return int(time.time() * 1000)
 
 
 def _make_hash(company: str, title: str, location: str, jd_url: str = "") -> str:
@@ -261,8 +302,11 @@ def score_job(job: Dict[str, str], profile: UserProfile) -> Dict[str, Any]:
         "经验要求": exp,
         "学历要求": edu,
         "JD摘要": (job.get("jd_summary", "")[:200] + ("..." if len(job.get("jd_summary", "")) > 200 else "")),
-        "JD链接": jd_url,
-        "抓取日期": job.get("crawl_date", ""),
+        # JD链接 是飞书 URL 字段(type=15),必须传 {"text","link"} 对象。
+        # 空字符串会触发 1254068 URLFieldDetailFail,所以空值时省略该字段。
+        "JD链接": _build_url_field(jd_url),
+        # 抓取日期 是飞书日期字段(type=5),必须传 Unix 毫秒时间戳,不能传字符串。
+        "抓取日期": _to_timestamp_ms(job.get("crawl_date", "")),
         "发布时间": posted,
         "岗位类别": direction,
         "平台层级": platform,

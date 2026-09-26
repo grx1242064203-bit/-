@@ -44,8 +44,9 @@ pip install requests beautifulsoup4
 ```bash
 export FEISHU_APP_ID="cli_xxx"           # 飞书应用 App ID
 export FEISHU_APP_SECRET="xxx"           # 飞书应用 App Secret
-export WXPUSHER_APP_TOKEN="AT_xxx"       # WxPusher 应用 Token
+export WXPUSHER_APP_TOKEN="AT_xxx"       # WxPusher 应用 Token（可选）
 export TAVILY_API_KEY="tvly-xxx"         # 搜索 API(或用 SERPAPI_KEY)
+export DEEPSEEK_API_KEY="sk-xxx"         # 简历解析 LLM（可选，不配置则简历解析不可用）
 export DATA_DIR="./data"                 # 用户数据存储目录
 ```
 

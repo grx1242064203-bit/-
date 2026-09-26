@@ -8,6 +8,9 @@ from typing import List, Dict, Any
 JOB_FIELDS: List[Dict[str, Any]] = [
     {"name": "岗位标题", "type": 1},   # text
     {"name": "公司", "type": 1},
+    {"name": "行业", "type": 1},       # 公司所属行业(来自公司库)
+    {"name": "公司类型", "type": 1},   # 民企/国央企/外企
+    {"name": "难度", "type": 1},       # 最激烈/较为激烈/中等难度/较低难度
     {"name": "部门", "type": 1},
     {"name": "地点", "type": 1},
     {"name": "薪资范围", "type": 1},

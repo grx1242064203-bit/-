@@ -437,11 +437,15 @@ def score_job(job: Dict[str, str], profile: UserProfile,
     return {
         "岗位标题": title,
         "公司": company,
+        "行业": job.get("industry", ""),
+        "公司类型": job.get("company_type", ""),
+        "难度": job.get("difficulty", ""),
         "部门": job.get("department", ""),
         "地点": location,
         "薪资范围": salary,
         "经验要求": exp,
         "学历要求": edu,
+        # JD摘要:优先 LLM 深度分析,降级用主库预生成的 jd_summary
         "JD摘要": (llm_summary or job.get("jd_summary", "") or "")[:300],
         # JD链接 是飞书 URL 字段(type=15),必须传 {"text","link"} 对象。
         # 空字符串会触发 1254068 URLFieldDetailFail,所以空值时省略该字段。

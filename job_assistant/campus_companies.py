@@ -320,6 +320,27 @@ COMPANY_TYPE_LIST = [COMPANY_TYPE_SOE, COMPANY_TYPE_PRIVATE, COMPANY_TYPE_FOREIG
 # 难度列表
 DIFFICULTY_LIST = [DIFFICULTY_HIGHEST, DIFFICULTY_HIGH, DIFFICULTY_MEDIUM, DIFFICULTY_LOW]
 
+# === 公司来源字段补充 ===
+# 给每家公司补充: career_domain(官网域名) / wechat_account(公众号) / 历史公告 / has_2027
+# career_domain 从 config.COMPANY_CAREER_SITES / FOREIGN_CAREER_SITES 自动匹配
+try:
+    from config import settings as _settings
+    _domain_map = {}
+    for cs in _settings.COMPANY_CAREER_SITES:
+        _domain_map[cs["name"]] = cs.get("campus_domain") or cs["domain"]
+    for fs in _settings.FOREIGN_CAREER_SITES:
+        _domain_map[fs["name"]] = fs["domain"]
+except Exception:
+    _domain_map = {}
+
+for _c in CAMPUS_COMPANIES:
+    _name = _c["name"]
+    _c.setdefault("career_domain", _domain_map.get(_name, ""))
+    _c.setdefault("wechat_account", "")          # 官方招聘公众号名(后续采集填充)
+    _c.setdefault("last_announcement_url", "")   # 历史公告链接(参考用)
+    _c.setdefault("last_announcement_date", "")  # 历史公告日期(参考今年发布时间)
+    _c.setdefault("has_2027_announcement", False)  # 是否已发2027届公告
+
 
 def get_companies_by_filters(
     company_types: list = None,

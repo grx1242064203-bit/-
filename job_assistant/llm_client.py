@@ -397,6 +397,81 @@ class LLMClient:
             return f"{m.group(1)}-{int(m.group(2)):02d}-{int(m.group(3)):02d}"
         return ""
 
+    def verify_campus_announcement(self, title: str, jd_text: str,
+                                    company: str = "") -> Dict:
+        """
+        AI 检视校招公告:确认是否为完整的 2027 届校招公告,信息是否准确。
+
+        返回: {
+            is_valid: bool,        # 是否为有效校招公告
+            is_2027: bool,         # 是否为 2027 届
+            job_title: str,        # 修正后的岗位标题
+            publish_time: str,     # 发布时间(YYYY-MM-DD)
+            confidence: str        # 高/中/低
+        }
+        """
+        if not jd_text or len(jd_text.strip()) < 30:
+            return {"is_valid": False, "is_2027": False, "job_title": title,
+                    "publish_time": "", "confidence": "低"}
+
+        prompt = f"""你是校招信息审核专家。请审核以下招聘公告,判断其是否为有效的 2027 届校园招聘公告。
+
+公司: {company or '未知'}
+标题: {title}
+
+公告正文:
+\"\"\"{jd_text[:3000]}\"\"\"
+
+请输出 JSON(不要输出其他文字):
+{{
+  "is_valid": true/false,
+  "is_2027": true/false,
+  "job_title": "修正后的岗位标题(如果标题不准确请修正,否则原样返回)",
+  "publish_time": "公告发布日期(YYYY-MM-DD,无法确定则空字符串)",
+  "confidence": "高/中/低"
+}}
+
+判断标准:
+- is_valid=true: 是完整的招聘公告(非列表页/广告/新闻),有明确的招聘岗位和申请方式
+- is_2027=true: 面向 2027 届毕业生(含 2027届、2026年秋招、class of 2027 等表述;2026届春招不算)
+"""
+        content = self._chat(
+            [{"role": "user", "content": prompt}],
+            temperature=0.1, max_tokens=300,
+        )
+        parsed = self._extract_json(content) if content else None
+        if not parsed:
+            return {"is_valid": False, "is_2027": False, "job_title": title,
+                    "publish_time": "", "confidence": "低"}
+        return {
+            "is_valid": bool(parsed.get("is_valid", False)),
+            "is_2027": bool(parsed.get("is_2027", False)),
+            "job_title": str(parsed.get("job_title", title)).strip(),
+            "publish_time": str(parsed.get("publish_time", "")).strip(),
+            "confidence": str(parsed.get("confidence", "低")).strip(),
+        }
+
+    def generate_jd_summary(self, jd_text: str, title: str) -> str:
+        """
+        AI 生成 JD 摘要(100字内),用于总数据库展示。
+        """
+        if not jd_text or len(jd_text.strip()) < 30:
+            return title[:100]
+        prompt = f"""请用 100 字以内概括以下招聘公告的核心内容(岗位职责+要求)。
+
+标题: {title}
+正文:
+\"\"\"{jd_text[:2000]}\"\"\"
+
+只输出摘要,不要其他文字。"""
+        content = self._chat(
+            [{"role": "user", "content": prompt}],
+            temperature=0.3, max_tokens=200,
+        )
+        if content:
+            return content.strip()[:200]
+        return jd_text[:100].replace("\n", " ")
+
     def analyze_jd(self, jd_text: str, title: str, profile: Dict) -> Dict[str, str]:
         """
         基于 JD 正文深度分析,生成高质量摘要和申请建议。

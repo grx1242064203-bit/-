@@ -111,30 +111,44 @@ class DailyRunner:
             result["errors"].append(msg)
             return result
         try:
-            # 1. 采集
-            raw_jobs = self.collector.collect(
-                self.user.profile,
-                self.user.profile.target_companies,
-                self.user.profile.target_cities,
-                limit=settings.DAILY_JOBS_PER_USER,
-            )
+            # 字段迁移:确保飞书表包含 schema 中定义的所有字段(如 行业/公司类型/难度)
+            # 已存在的表若缺少新字段,写入会失败,所以这里自动补建
+            self._ensure_table_fields()
 
-            # 1.5 AI 质量筛选层:过滤垃圾信息(搜索页、不匹配、过期等)
-            if self.llm and raw_jobs:
-                try:
-                    profile_dict = self.user.profile.__dict__
-                    raw_jobs = self.llm.quality_screen_jobs(raw_jobs, profile_dict)
-                except Exception as e:
-                    logger.warning(f"AI质量筛选失败,跳过: {e}")
+            is_campus = self.user.profile.role == "campus"
 
-            # 2. 评分
-            scored = [score_job(j, self.user.profile, llm_client=self.llm) for j in raw_jobs]
+            if is_campus:
+                # === 校招用户:从总数据库匹配(中心化采集 → 按需分发) ===
+                from user_matcher import match_jobs_for_user
+                scored = match_jobs_for_user(
+                    self.user.profile, llm_client=self.llm, max_per_company=5
+                )
+                # user_matcher 已完成规则预筛+AI评分+每公司≤5
+                # 转换字段名以适配后续写入逻辑(job_title→title, jd_url→url 等)
+                for j in scored:
+                    j.setdefault("title", j.get("job_title", ""))
+                    j.setdefault("url", j.get("jd_url", ""))
+                    j.setdefault("jd_text", j.get("jd_summary", ""))
+                    j.setdefault("location", "")
+                    j.setdefault("salary", "")
+            else:
+                # === 社招用户:保持原有独立搜索逻辑 ===
+                raw_jobs = self.collector.collect(
+                    self.user.profile,
+                    self.user.profile.target_companies,
+                    self.user.profile.target_cities,
+                    limit=settings.DAILY_JOBS_PER_USER,
+                )
+                # AI 质量筛选层
+                if self.llm and raw_jobs:
+                    try:
+                        profile_dict = self.user.profile.__dict__
+                        raw_jobs = self.llm.quality_screen_jobs(raw_jobs, profile_dict)
+                    except Exception as e:
+                        logger.warning(f"AI质量筛选失败,跳过: {e}")
+                scored = [score_job(j, self.user.profile, llm_client=self.llm) for j in raw_jobs]
 
-            # 2.5 校招用户:每家企业只保留最匹配的岗位(按匹配度)
-            if self.user.profile.role == "campus":
-                scored = self._filter_top_per_company(scored, max_per_company=8)
-
-            # 2. 分离管培岗位到独立表格(校招用户)
+            # 分离管培岗位到独立表格(校招用户)
             mt_jobs = [j for j in scored if j.get("管培项目")]
             regular_jobs = [j for j in scored if not j.get("管培项目")]
             if mt_jobs and self.user.feishu_mt_table_id:
@@ -196,6 +210,45 @@ class DailyRunner:
             result["errors"].append(str(e))
 
         return result
+
+    def _ensure_table_fields(self):
+        """
+        字段迁移:确保用户的飞书表包含 schema 中定义的所有字段。
+        已存在的表若缺少新字段(如 行业/公司类型/难度),写入记录会失败。
+        这里对比 schema 与现有字段,自动补建缺失字段(幂等,已有则跳过)。
+        """
+        from schema import JOB_FIELDS, CLOSED_JOB_FIELDS
+
+        tables = [
+            (self.user.feishu_table_id, JOB_FIELDS),
+            (self.user.feishu_closed_table_id, CLOSED_JOB_FIELDS),
+        ]
+        for table_id, fields_def in tables:
+            if not table_id:
+                continue
+            try:
+                existing = self.feishu.list_fields(self.user.feishu_base_token, table_id)
+                existing_names = {f.get("field_name", "") for f in existing}
+            except Exception as e:
+                logger.warning(f"读取表字段失败 table={table_id}: {e}")
+                continue
+            for f in fields_def:
+                name = f["name"]
+                if name in existing_names:
+                    continue
+                kwargs = {}
+                if "options" in f:
+                    kwargs["property"] = {"options": f["options"]}
+                if "style" in f:
+                    kwargs["property"] = {**kwargs.get("property", {}), **f["style"]}
+                try:
+                    self.feishu.create_field(
+                        self.user.feishu_base_token, table_id, name, f["type"], **kwargs
+                    )
+                    logger.info(f"补建字段: {name} (table={table_id})")
+                    time.sleep(0.1)
+                except Exception as e:
+                    logger.warning(f"补建字段失败 {name}: {e}")
 
     def _bitable_url(self, table_id: str = None) -> str:
         """生成多维表格访问 URL(用于卡片中直达链接)"""

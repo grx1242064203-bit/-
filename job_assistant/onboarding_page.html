@@ -179,6 +179,46 @@
     font-size: 32px;
     margin-bottom: 16px;
   }
+  .role-selector {
+    display: grid;
+    grid-template-columns: 1fr 1fr 1fr;
+    gap: 10px;
+  }
+  .role-option {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    padding: 14px 8px;
+    border: 2px solid #e0e0e0;
+    border-radius: 10px;
+    cursor: pointer;
+    transition: all 0.2s;
+    text-align: center;
+  }
+  .role-option input { display: none; }
+  .role-option:has(input:checked) {
+    border-color: #667eea;
+    background: #f0f0ff;
+  }
+  .role-label {
+    font-size: 15px;
+    font-weight: 600;
+    margin-bottom: 4px;
+  }
+  .role-desc {
+    font-size: 11px;
+    color: #999;
+  }
+  textarea {
+    width: 100%;
+    padding: 10px 14px;
+    border: 1.5px solid #e0e0e0;
+    border-radius: 8px;
+    font-size: 13px;
+    font-family: inherit;
+    resize: vertical;
+  }
+  @media (max-width: 480px) { .role-selector { grid-template-columns: 1fr; } }
 </style>
 </head>
 <body>
@@ -188,14 +228,43 @@
     <p class="subtitle">配置您的求职偏好，AI 将为您精准筛选岗位</p>
     <div class="step-indicator">
       <div class="step active" id="step1">1. 配置偏好</div>
-      <div class="step todo" id="step2">2. 绑定微信</div>
-      <div class="step todo" id="step3">3. 完成</div>
+      <div class="step todo" id="step2">2. 完成</div>
     </div>
   </div>
 
   <!-- 配置表单 -->
   <div class="card" id="profileCard">
     <h2>求职偏好</h2>
+
+    <!-- 求职角色选择 -->
+    <div class="form-group">
+      <label>求职角色 <span class="hint">（决定采集岗位类型）</span></label>
+      <div class="role-selector">
+        <label class="role-option">
+          <input type="radio" name="role" value="internship">
+          <span class="role-label">💼 实习</span>
+          <span class="role-desc">在校学生找实习</span>
+        </label>
+        <label class="role-option">
+          <input type="radio" name="role" value="campus">
+          <span class="role-label">🎓 校招</span>
+          <span class="role-desc">应届毕业生求职</span>
+        </label>
+        <label class="role-option">
+          <input type="radio" name="role" value="social">
+          <span class="role-label">🏢 社招</span>
+          <span class="role-desc">有工作经验跳槽</span>
+        </label>
+      </div>
+    </div>
+
+    <!-- 简历解析 -->
+    <div class="form-group">
+      <label>简历智能解析 <span class="hint">（粘贴简历文本，AI 自动提取信息）</span></label>
+      <textarea id="resumeText" rows="6" placeholder="粘贴您的简历文本（支持从 PDF/Word 复制），点击下方按钮自动解析..."></textarea>
+      <button class="btn btn-secondary btn-small" style="margin-top:8px;" onclick="parseResume()">✨ AI 解析简历</button>
+      <div id="parseStatus" style="margin-top:8px;font-size:13px;color:#666;"></div>
+    </div>
 
     <div class="form-group">
       <label>目标岗位方向 <span class="hint">（可添加多个，每个方向填 2-3 个关键词）</span></label>
@@ -243,11 +312,13 @@
     <button class="btn btn-primary" onclick="saveProfile()">保存偏好配置</button>
   </div>
 
-  <!-- 微信绑定 -->
+  <!-- 微信推送(可选辅助通道) -->
   <div class="card" id="wxpusherCard" style="display:none;">
-    <h2>绑定微信推送</h2>
+    <h2>📱 微信推送（可选）</h2>
     <p style="color:#666;font-size:14px;margin-bottom:16px;">
-      完成后，您每天将在微信收到岗位日报推送。
+      ⚠️ 由于微信政策调整，WxPusher 消息目前只能送达 WxPusher App，无法直接推送至微信。<br>
+      <strong>飞书消息是主推送渠道</strong>，您每天将在飞书收到岗位日报卡片。<br>
+      如仍需微信辅助通知，可绑定 WxPusher（需下载 WxPusher App 接收）。
     </p>
     <div class="qrcode-area">
       <img id="qrcodeImg" src="" alt="WxPusher 二维码">
@@ -257,7 +328,8 @@
       <label>您的 WxPusher UID <span class="hint">（在公众号菜单「我的」→「我的UID」查看，格式 UID_xxx）</span></label>
       <input type="text" id="wxpusherUid" placeholder="如：UID_abc123def456">
     </div>
-    <button class="btn btn-primary" onclick="bindWxpusher()">绑定并发送测试消息</button>
+    <button class="btn btn-secondary" onclick="bindWxpusher()">绑定并发送测试消息</button>
+    <button class="btn btn-primary" style="margin-top:10px;" onclick="skipWxpusher()">跳过，直接完成</button>
   </div>
 
   <!-- 完成 -->
@@ -266,8 +338,9 @@
       <div class="check">✓</div>
       <h2 style="border:none;padding:0;">配置完成！</h2>
       <p style="color:#666;margin:16px 0;">
-        您的求职偏好已保存，微信推送已绑定。<br>
-        明天早上 9:00，您将收到第一份岗位日报。
+        您的求职偏好已保存，我们正在为您采集第一批岗位。<br>
+        采集完成后将通过飞书消息通知您结果。<br>
+        此后每天早上 9:00，您将收到岗位日报推送。
       </p>
       <p style="color:#999;font-size:13px;">
         岗位数据已自动录入您的飞书多维表格「招聘情报库」<br>
@@ -327,6 +400,11 @@ async function loadProfile() {
     const data = await resp.json();
     if (data.profile) {
       const p = data.profile;
+      // 角色
+      if (p.role) {
+        const rb = document.querySelector(`input[name="role"][value="${p.role}"]`);
+        if (rb) rb.checked = true;
+      }
       document.getElementById('major').value = p.major || '';
       document.getElementById('degree').value = p.degree || '';
       document.getElementById('experienceYears').value = p.experience_years || 0;
@@ -337,16 +415,81 @@ async function loadProfile() {
       directions = Object.keys(dk).map(k => ({name: k, keywords: (dk[k]||[]).join(', ')}));
       if (directions.length === 0) directions = [{}];
       renderDirections();
-      if (data.wxpusher_bound) {
-        setStep(2);
-      }
     }
   } catch(e) {
     console.error('加载配置失败', e);
   }
 }
 
+// 获取当前选中的角色
+function getRole() {
+  const checked = document.querySelector('input[name="role"]:checked');
+  return checked ? checked.value : '';
+}
+
+// 简历解析
+async function parseResume() {
+  const text = document.getElementById('resumeText').value.trim();
+  if (!text) {
+    showToast('请先粘贴简历文本', 'error');
+    return;
+  }
+  if (text.length < 20) {
+    showToast('简历文本过短，请粘贴完整简历', 'error');
+    return;
+  }
+  const statusEl = document.getElementById('parseStatus');
+  statusEl.style.color = '#667eea';
+  statusEl.textContent = '⏳ AI 正在解析简历，请稍候...';
+
+  try {
+    const resp = await fetch('/api/parse-resume', {
+      method: 'POST',
+      headers: {'Content-Type': 'application/json'},
+      body: JSON.stringify({user_id: userId, resume_text: text})
+    });
+    const data = await resp.json();
+    if (data.code === 0 && data.profile) {
+      const p = data.profile;
+      // 回填表单
+      if (p.school) document.getElementById('major').parentElement; // no school field, skip
+      if (p.degree) document.getElementById('degree').value = p.degree;
+      if (p.major) document.getElementById('major').value = p.major;
+      if (p.experience_years) document.getElementById('experienceYears').value = p.experience_years;
+      if (p.core_skills && p.core_skills.length) {
+        document.getElementById('coreSkills').value = p.core_skills.join(', ');
+      }
+      if (p.target_cities && p.target_cities.length) {
+        document.getElementById('targetCities').value = p.target_cities.join(', ');
+      }
+      if (p.direction_keywords && Object.keys(p.direction_keywords).length) {
+        directions = Object.keys(p.direction_keywords).map(k => ({
+          name: k, keywords: (p.direction_keywords[k]||[]).join(', ')
+        }));
+        renderDirections();
+      }
+      statusEl.style.color = '#28a745';
+      const summary = p.summary ? `<br>✅ ${p.summary}` : '';
+      statusEl.innerHTML = `✅ 解析成功！已自动填写学校: ${p.school||'未识别'}, 学历: ${p.degree||'未识别'}, 技能: ${(p.core_skills||[]).length}个${summary}`;
+      showToast('简历解析成功，信息已回填');
+    } else {
+      statusEl.style.color = '#dc3545';
+      statusEl.textContent = '❌ 解析失败: ' + (data.msg || '未知错误');
+      showToast('简历解析失败', 'error');
+    }
+  } catch(e) {
+    statusEl.style.color = '#dc3545';
+    statusEl.textContent = '❌ 网络错误，请重试';
+    showToast('网络错误，请重试', 'error');
+  }
+}
+
 async function saveProfile() {
+  const role = getRole();
+  if (!role) {
+    showToast('请选择求职角色', 'error');
+    return;
+  }
   const direction_keywords = {};
   directions.forEach(d => {
     if (d.name && d.keywords) {
@@ -357,6 +500,7 @@ async function saveProfile() {
   const payload = {
     user_id: userId,
     profile: {
+      role: role,
       major: document.getElementById('major').value,
       degree: document.getElementById('degree').value,
       experience_years: parseFloat(document.getElementById('experienceYears').value) || 0,
@@ -380,8 +524,9 @@ async function saveProfile() {
     });
     const data = await resp.json();
     if (data.code === 0) {
-      showToast('偏好配置已保存！');
+      showToast('偏好配置已保存！正在为您采集岗位...');
       setStep(2);
+      // 加载微信绑定二维码(可选)
       loadQrcode();
     } else {
       showToast(data.msg || '保存失败', 'error');
@@ -420,7 +565,7 @@ async function bindWxpusher() {
     });
     const data = await resp.json();
     if (data.code === 0) {
-      showToast('微信绑定成功！测试消息已发送');
+      showToast('微信绑定成功！测试消息已发送（请在 WxPusher App 查看）');
       setStep(3);
     } else {
       showToast(data.msg || '绑定失败', 'error');
@@ -430,10 +575,16 @@ async function bindWxpusher() {
   }
 }
 
+function skipWxpusher() {
+  setStep(3);
+}
+
 function setStep(n) {
   [1,2,3].forEach(i => {
     const el = document.getElementById('step'+i);
-    el.className = 'step ' + (i < n ? 'done' : i === n ? 'active' : 'todo');
+    if (el) {
+      el.className = 'step ' + (i < n ? 'done' : i === n ? 'active' : 'todo');
+    }
   });
   document.getElementById('profileCard').style.display = n <= 1 ? 'block' : 'none';
   document.getElementById('wxpusherCard').style.display = n === 2 ? 'block' : 'none';

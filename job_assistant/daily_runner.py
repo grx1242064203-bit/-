@@ -8,6 +8,8 @@
 - 失败降级:飞书写入失败不阻塞推送,WxPusher 失败不影响数据
 """
 import time
+import os
+import fcntl
 import logging
 from datetime import datetime
 from typing import List, Dict
@@ -20,6 +22,36 @@ from scorer import score_job
 from config import settings
 
 logger = logging.getLogger(__name__)
+
+
+class UserRunLock:
+    """用户级采集锁 — 防止同一用户的采集任务并发执行。
+
+    使用 fcntl.flock 非阻塞排他锁,若锁已被持有则抛出 RuntimeError。
+    锁文件路径: data/locks/{user_id}.lock
+    """
+
+    def __init__(self, user_id: str):
+        lock_dir = os.path.join(settings.DATA_DIR, "locks")
+        os.makedirs(lock_dir, exist_ok=True)
+        self.lock_path = os.path.join(lock_dir, f"{user_id}.lock")
+        self.lock_fd = None
+
+    def __enter__(self):
+        self.lock_fd = open(self.lock_path, "w")
+        try:
+            fcntl.flock(self.lock_fd.fileno(), fcntl.LOCK_EX | fcntl.LOCK_NB)
+        except (OSError, BlockingIOError):
+            self.lock_fd.close()
+            self.lock_fd = None
+            raise RuntimeError(f"用户 {user_id} 的采集任务正在执行中,跳过本次")
+        return self
+
+    def __exit__(self, exc_type, exc_val, exc_tb):
+        if self.lock_fd:
+            fcntl.flock(self.lock_fd.fileno(), fcntl.LOCK_UN)
+            self.lock_fd.close()
+            self.lock_fd = None
 
 
 class DailyRunner:
@@ -42,6 +74,18 @@ class DailyRunner:
             "push_ok": False,
             "errors": [],
         }
+        # 用户级采集锁:防止即时采集与每日定时任务并发写同一用户数据
+        try:
+            with UserRunLock(self.user.id):
+                return self._run_with_lock(result)
+        except RuntimeError as e:
+            # 锁被持有:另一采集任务正在执行,跳过本次
+            logger.warning(str(e))
+            result["errors"].append(str(e))
+            return result
+
+    def _run_with_lock(self, result: Dict) -> Dict:
+        """持锁后的实际执行逻辑"""
         # 前置校验:用户必须完成 onboarding(有飞书多维表格 token)
         missing = []
         if not self.user.feishu_base_token:
@@ -78,7 +122,7 @@ class DailyRunner:
             doc_url = self._create_daily_report(date_str, new_jobs, closed)
             result["doc_url"] = doc_url
 
-            # 5. 微信推送
+            # 5. 微信推送(WxPusher 已降级为可选辅助通道,主推送走飞书)
             if self.user.wxpusher_uid:
                 result["push_ok"] = self.wxpusher.send_daily_summary(
                     self.user.wxpusher_uid, date_str, new_jobs, doc_url,
@@ -86,29 +130,266 @@ class DailyRunner:
                     major=self.user.profile.major,
                 )
 
-            # 6. 飞书机器人消息推送(日报摘要+链接)
+            # 6. 飞书交互卡片推送(主推送渠道): TOP3 摘要 + 表格链接
             if self.user.feishu_open_id:
                 try:
-                    major = self.user.profile.major.strip()
-                    title = f"{major}招聘日报" if major else "招聘日报"
-                    priority = sum(1 for j in new_jobs if j.get("综合推荐度") == "优先申请")
-                    msg = (
-                        f"📋 {title} {date_str}\n\n"
-                        f"今日新增 {len(new_jobs)} 条岗位"
-                        + (f"，归档关闭 {len(closed)} 条" if closed else "")
-                        + f"。\n优先申请 {priority} 条。\n\n"
-                        f"📄 完整日报：{doc_url}"
-                    )
-                    self.feishu.send_message(self.user.feishu_open_id, msg)
-                    logger.info(f"飞书日报消息已发送: user_id={self.user.id}")
+                    self._send_daily_card(date_str, new_jobs, closed, doc_url)
+                    logger.info(f"飞书日报卡片已发送: user_id={self.user.id}")
                 except Exception as e:
-                    logger.warning(f"飞书日报消息发送失败: {e}")
+                    logger.warning(f"飞书日报卡片发送失败,降级为纯文本: {e}")
+                    # 降级:卡片发送失败时用纯文本消息,确保用户能收到通知
+                    try:
+                        major = self.user.profile.major.strip()
+                        title = f"{major}招聘日报" if major else "招聘日报"
+                        priority = sum(1 for j in new_jobs if j.get("综合推荐度") == "优先申请")
+                        msg = (
+                            f"📋 {title} {date_str}\n\n"
+                            f"今日新增 {len(new_jobs)} 条岗位"
+                            + (f"，归档关闭 {len(closed)} 条" if closed else "")
+                            + f"。\n优先申请 {priority} 条。\n\n"
+                            f"📄 完整日报：{doc_url}"
+                        )
+                        self.feishu.send_message(self.user.feishu_open_id, msg)
+                    except Exception:
+                        logger.warning("飞书纯文本降级消息也发送失败")
+
+            # 7. 校招截止提醒(提前 3 天)
+            self._check_deadline_reminders()
+
+            # 8. 投递跟踪:复查已投递岗位状态
+            self._check_applied_jobs()
 
         except Exception as e:
             logger.exception(f"用户 {self.user.id} 每日任务失败")
             result["errors"].append(str(e))
 
         return result
+
+    def _bitable_url(self, table_id: str = None) -> str:
+        """生成多维表格访问 URL(用于卡片中直达链接)"""
+        base = self.user.feishu_base_token
+        if not base:
+            return ""
+        domain = os.environ.get("FEISHU_DOMAIN", "www.feishu.cn")
+        if table_id:
+            return f"https://{domain}/base/{base}?table={table_id}"
+        return f"https://{domain}/base/{base}"
+
+    def _send_daily_card(self, date_str: str, new_jobs: List[Dict],
+                         closed: List[Dict], doc_url: str):
+        """
+        发送飞书交互卡片:日报摘要 + TOP3 岗位 + 直达链接。
+        这是主推送渠道(WxPusher 降级为可选)。
+        """
+        major = self.user.profile.major.strip()
+        title = f"{major}招聘日报" if major else "招聘日报"
+        priority_count = sum(1 for j in new_jobs if j.get("综合推荐度") == "优先申请")
+
+        # TOP3 岗位(按相关性评分降序)
+        top3 = sorted(new_jobs, key=lambda x: x.get("相关性评分", 0), reverse=True)[:3]
+
+        # 构建卡片元素
+        elements = []
+
+        # 概览
+        overview = (
+            f"📊 **今日新增 {len(new_jobs)} 条** | 优先申请 {priority_count} 条"
+            + (f" | 归档关闭 {len(closed)} 条" if closed else "")
+        )
+        elements.append({
+            "tag": "div",
+            "text": {"tag": "lark_md", "content": overview},
+        })
+
+        # TOP3 推荐
+        if top3:
+            elements.append({"tag": "hr"})
+            elements.append({
+                "tag": "div",
+                "text": {"tag": "lark_md", "content": "**🔥 TOP 3 推荐岗位**"},
+            })
+            for i, j in enumerate(top3, 1):
+                company = j.get("公司", "")
+                pos = j.get("岗位标题", "")
+                loc = j.get("地点", "")
+                score = j.get("相关性评分", "?")
+                rec = j.get("综合推荐度", "")
+                brief = (j.get("简评", "") or "")[:80]
+                content = (
+                    f"**{i}. {company} · {pos}**\n"
+                    f"📍 {loc} | 📈 相关性 {score} | {rec}\n"
+                    f"_{brief}_"
+                )
+                elements.append({
+                    "tag": "div",
+                    "text": {"tag": "lark_md", "content": content},
+                })
+
+        # 直达链接
+        elements.append({"tag": "hr"})
+        job_table_url = self._bitable_url(self.user.feishu_table_id)
+        closed_table_url = self._bitable_url(self.user.feishu_closed_table_id)
+        actions = []
+        if job_table_url:
+            actions.append({
+                "tag": "button",
+                "text": {"tag": "plain_text", "content": "📋 岗位数据库"},
+                "type": "primary",
+                "url": job_table_url,
+            })
+        if closed_table_url:
+            actions.append({
+                "tag": "button",
+                "text": {"tag": "plain_text", "content": "🗄️ 已关闭岗位"},
+                "url": closed_table_url,
+            })
+        if doc_url:
+            actions.append({
+                "tag": "button",
+                "text": {"tag": "plain_text", "content": "📄 完整日报"},
+                "url": doc_url,
+            })
+        if actions:
+            elements.append({"tag": "action", "actions": actions})
+
+        # 底部备注
+        elements.append({
+            "tag": "note",
+            "elements": [{"tag": "plain_text", "content": "明天 9:00 继续为您推送 | 招聘情报助手"}],
+        })
+
+        card = {
+            "config": {"wide_screen_mode": True},
+            "header": {
+                "title": {"tag": "plain_text", "content": f"{title} {date_str}"},
+                "template": "blue",
+            },
+            "elements": elements,
+        }
+        self.feishu.send_card_message(self.user.feishu_open_id, card)
+
+    def _check_deadline_reminders(self):
+        """
+        校招截止提醒:检查主表中投递截止日期在 3 天内的岗位,飞书通知用户。
+        仅对有截止日期且未过期的岗位提醒。
+        """
+        try:
+            records = self.feishu.search_records(
+                self.user.feishu_base_token, self.user.feishu_table_id,
+                'AND(CurrentValue.[投递截止日期] != "")',
+                fields=["岗位标题", "公司", "投递截止日期", "申请状态"],
+            )
+        except Exception as e:
+            logger.warning(f"查询截止日期岗位失败: {e}")
+            return
+
+        now = datetime.now()
+        deadline_jobs = []
+        for r in records:
+            fields = r.get("fields", {})
+            deadline_ts = fields.get("投递截止日期")
+            if not deadline_ts:
+                continue
+            # 飞书日期字段返回毫秒时间戳
+            try:
+                deadline_dt = datetime.fromtimestamp(int(deadline_ts) / 1000)
+            except (ValueError, TypeError):
+                continue
+            days_left = (deadline_dt - now).days
+            if 0 <= days_left <= 3:
+                deadline_jobs.append({
+                    "title": fields.get("岗位标题", ""),
+                    "company": fields.get("公司", ""),
+                    "deadline": deadline_dt.strftime("%Y-%m-%d"),
+                    "days_left": days_left,
+                    "status": fields.get("申请状态", "未投递"),
+                })
+
+        if not deadline_jobs:
+            return
+
+        # 发送飞书提醒
+        lines = [f"⏰ **投递截止提醒**({len(deadline_jobs)}个岗位即将截止)\n"]
+        for j in deadline_jobs:
+            day_word = "今天" if j["days_left"] == 0 else f"{j['days_left']}天后"
+            lines.append(
+                f"• {j['company']} · {j['title']}\n"
+                f"  截止: {j['deadline']} ({day_word}) | 状态: {j['status']}"
+            )
+        content = "\n".join(lines)
+        msg = (
+            f"⏰ 校招投递截止提醒\n\n{content}\n\n"
+            f"请尽快投递,避免错过截止日期!"
+        )
+        try:
+            self.feishu.send_message(self.user.feishu_open_id, msg)
+            logger.info(f"截止提醒已发送: {len(deadline_jobs)} 个岗位")
+        except Exception as e:
+            logger.warning(f"截止提醒发送失败: {e}")
+
+    def _check_applied_jobs(self):
+        """
+        投递跟踪:复查用户标记为"已投递/面试中"的岗位状态。
+        若岗位已关闭,通知用户。
+        """
+        try:
+            records = self.feishu.search_records(
+                self.user.feishu_base_token, self.user.feishu_table_id,
+                'OR(CurrentValue.[申请状态] = "已投递", CurrentValue.[申请状态] = "面试中")',
+                fields=["岗位标题", "公司", "JD链接", "申请状态"],
+            )
+        except Exception as e:
+            logger.warning(f"查询已投递岗位失败: {e}")
+            return
+
+        closed_applied = []
+        for r in records[:15]:  # 限制复查数量
+            rid = r.get("record_id", "")
+            fields = r.get("fields", {})
+            url = fields.get("JD链接", "")
+            if isinstance(url, dict):
+                url = url.get("link", "")
+            if not url or not rid:
+                continue
+            # 复查 JD 是否还在
+            from collector import fetch_jd
+            jd = fetch_jd(url, timeout=8)
+            if not jd or "no longer" in jd.lower() or "已关闭" in jd or "404" in jd:
+                closed_applied.append({
+                    "title": fields.get("岗位标题", ""),
+                    "company": fields.get("公司", ""),
+                    "status": fields.get("申请状态", ""),
+                })
+                # 将该岗位从主表移到已关闭表(复用归档逻辑)
+                try:
+                    full_fields = self.feishu.get_record(
+                        self.user.feishu_base_token, self.user.feishu_table_id, rid)
+                    norm = self.feishu.normalize_fields(full_fields)
+                    close_ts = int(time.time() * 1000)
+                    archive_record = {**norm, "是否在招": "否", "关闭日期": close_ts}
+                    self.feishu.batch_create_records(
+                        self.user.feishu_base_token, self.user.feishu_closed_table_id,
+                        [archive_record])
+                    self.feishu.delete_record(
+                        self.user.feishu_base_token, self.user.feishu_table_id, rid)
+                except Exception as e:
+                    logger.warning(f"归档已投递关闭岗位失败: {e}")
+            time.sleep(0.2)
+
+        if closed_applied:
+            lines = [f"📬 **投递状态更新**({len(closed_applied)}个已投递岗位已关闭)\n"]
+            for j in closed_applied:
+                lines.append(f"• {j['company']} · {j['title']} (原状态:{j['status']})")
+            content = "\n".join(lines)
+            msg = (
+                f"📬 投递跟踪通知\n\n{content}\n\n"
+                f"这些岗位已关闭,建议关注其他机会。"
+            )
+            try:
+                self.feishu.send_message(self.user.feishu_open_id, msg)
+                logger.info(f"投递跟踪通知已发送: {len(closed_applied)} 个岗位关闭")
+            except Exception as e:
+                logger.warning(f"投递跟踪通知发送失败: {e}")
 
     def _get_existing_hashes(self) -> set:
         """从主表+已关闭表读取已有 hash"""

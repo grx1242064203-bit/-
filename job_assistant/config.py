@@ -15,10 +15,13 @@ class Settings:
     FEISHU_ENCRYPT_KEY: str = field(default_factory=lambda: os.getenv("FEISHU_ENCRYPT_KEY", ""))
     FEISHU_VERIFICATION_TOKEN: str = field(default_factory=lambda: os.getenv("FEISHU_VERIFICATION_TOKEN", ""))
 
-    # === WxPusher 配置(在 wxpusher.zjiecode.com 注册应用后获取) ===
+    # === WxPusher 配置(已降级为可选辅助通道,主推送走飞书) ===
     WXPUSHER_APP_TOKEN: str = field(default_factory=lambda: os.getenv("WXPUSHER_APP_TOKEN", ""))
     # 管理员 WxPusher UID — 每日任务失败时向其推送告警(不配置则仅记日志)
     ADMIN_WXPUSHER_UID: str = field(default_factory=lambda: os.getenv("ADMIN_WXPUSHER_UID", ""))
+
+    # === LLM 配置(DeepSeek,用于简历解析) ===
+    DEEPSEEK_API_KEY: str = field(default_factory=lambda: os.getenv("DEEPSEEK_API_KEY", ""))
 
     # === 数据存储 ===
     DATA_DIR: str = field(default_factory=lambda: os.getenv("DATA_DIR", "/opt/job_assistant/data"))

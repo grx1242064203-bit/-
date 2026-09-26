@@ -140,10 +140,15 @@ class JobCollector:
         """
         根据用户画像构建搜索关键词(通用化)。
         从 direction_keywords 取每个方向的关键词组合搜索词。
+        按用户角色(role)注入差异化关键词:
+        - internship(实习): 优先搜实习岗位
+        - campus(校招): 优先搜校招/管培/应届
+        - social(社招): 搜社招岗位,排除校招
         """
         cities = " ".join(target_cities) if target_cities else ""
         companies = target_companies if target_companies else []
         directions = profile.direction_keywords or {}
+        role = getattr(profile, "role", "") or ""
 
         queries = []
         # 按用户目标方向构建搜索词
@@ -158,9 +163,26 @@ class JobCollector:
             if not companies:
                 queries.append(f"{core_kw} 招聘 {cities}".strip())
 
-        # 校招/管培专项(通用,不限行业)
-        queries.append("管培生 校招 招聘 2026")
-        queries.append("graduate program campus hiring 2026 china")
+        # 按角色注入专项搜索词
+        if role == "internship":
+            # 实习:优先搜实习岗位
+            queries.append("实习生 招聘 2026")
+            queries.append("internship hiring 2026 china")
+            for direction in directions:
+                queries.append(f"{direction} 实习 招聘")
+        elif role == "campus":
+            # 校招:校招/管培/应届
+            queries.append("管培生 校招 招聘 2026")
+            queries.append("graduate program campus hiring 2026 china")
+            queries.append("应届生 校招 招聘")
+        elif role == "social":
+            # 社招:搜社招岗位
+            queries.append("社招 招聘 2026")
+            queries.append("experienced hire 2026 china")
+        else:
+            # 未指定角色:通用校招/管培(默认,覆盖大多数用户)
+            queries.append("管培生 校招 招聘 2026")
+            queries.append("graduate program campus hiring 2026 china")
 
         # 用户专业相关
         if profile.major:

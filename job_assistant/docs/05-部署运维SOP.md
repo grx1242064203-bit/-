@@ -115,8 +115,10 @@ sudo systemctl start job-callback
 
 ```bash
 crontab -e
-# 每日 9:00 执行（北京时间）
+# 每日 9:00 执行每日任务（北京时间）
 0 9 * * * cd /opt/job_assistant && /opt/job_assistant/venv/bin/python main.py daily >> /var/log/job_assistant.log 2>&1
+# 每周一 9:30 执行校招投递热度榜
+30 9 * * 1 cd /opt/job_assistant && /opt/job_assistant/venv/bin/python main.py weekly-ranking >> /var/log/job_assistant_weekly.log 2>&1
 ```
 
 ---
@@ -136,7 +138,7 @@ sudo find . -name "__pycache__" -type d -exec rm -rf {} + 2>/dev/null
 sudo find . -name "*.pyc" -delete 2>/dev/null
 
 # 3. 语法检查
-venv/bin/python3 -m py_compile onboarding.py feishu_client.py daily_runner.py models.py callback_server.py collector.py scorer.py main.py config.py schema.py wxpusher_client.py && echo "语法 OK"
+venv/bin/python3 -m py_compile onboarding.py feishu_client.py daily_runner.py models.py callback_server.py collector.py scorer.py main.py config.py schema.py wxpusher_client.py llm_client.py weekly_rankings.py && echo "语法 OK"
 
 # 4. 清理坏数据（仅保留已知用户 u1，按需调整）
 sudo venv/bin/python3 -c "

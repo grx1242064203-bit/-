@@ -17,6 +17,7 @@ JOB_FIELDS: List[Dict[str, Any]] = [
     {"name": "JD链接", "type": 15},  # URL(超链接)
     {"name": "抓取日期", "type": 5, "style": {"date_formatter": "yyyy-MM-dd"}},  # datetime
     {"name": "发布时间", "type": 1},
+    {"name": "投递截止日期", "type": 5, "style": {"date_formatter": "yyyy-MM-dd"}},  # 校招截止提醒
     {"name": "岗位类别", "type": 1},
     {"name": "平台层级", "type": 1},
     {"name": "相关性评分", "type": 2, "style": {"formatter": "0"}},  # number, 整数
@@ -27,6 +28,7 @@ JOB_FIELDS: List[Dict[str, Any]] = [
     {"name": "申请建议", "type": 1},
     {"name": "申请状态", "type": 3, "options": [
         {"name": "未投递"}, {"name": "已投递"}, {"name": "面试中"}, {"name": "Offer"}, {"name": "拒绝"}]},
+    {"name": "投递日期", "type": 5, "style": {"date_formatter": "yyyy-MM-dd"}},  # 投递跟踪
     {"name": "去重hash", "type": 1},
     {"name": "应届窗口", "type": 3, "options": [{"name": "是"}, {"name": "否"}]},
     {"name": "是否在招", "type": 3, "options": [{"name": "是"}, {"name": "否"}]},

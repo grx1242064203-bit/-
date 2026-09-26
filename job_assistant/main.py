@@ -124,9 +124,15 @@ def run_migrate_tokens():
     print(json.dumps(summary, ensure_ascii=False, indent=2))
 
 
+def run_weekly_ranking():
+    """执行每周校招投递热度榜"""
+    from weekly_rankings import run_weekly_ranking
+    run_weekly_ranking()
+
+
 if __name__ == "__main__":
     if len(sys.argv) < 2:
-        print("用法: python main.py [daily|single <user_id>|migrate-tokens]")
+        print("用法: python main.py [daily|single <user_id>|migrate-tokens|weekly-ranking]")
         sys.exit(1)
     cmd = sys.argv[1]
     if cmd == "daily":
@@ -135,6 +141,8 @@ if __name__ == "__main__":
         run_single(sys.argv[2])
     elif cmd == "migrate-tokens":
         run_migrate_tokens()
+    elif cmd == "weekly-ranking":
+        run_weekly_ranking()
     else:
         print(f"未知命令: {cmd}")
         sys.exit(1)

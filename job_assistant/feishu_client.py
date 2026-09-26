@@ -425,3 +425,93 @@ class FeishuClient:
         except Exception as e:
             logger.warning(f"飞书消息发送失败: {e}")
             return False
+
+    def send_card_message(self, open_id: str, card: Dict) -> bool:
+        """
+        向用户发送飞书交互卡片消息。
+        card: 飞书卡片 JSON 结构(dict),会被序列化为 content 字符串。
+        """
+        try:
+            self._request(
+                "POST",
+                "/open-apis/im/v1/messages?receive_id_type=open_id",
+                json_body={
+                    "receive_id": open_id,
+                    "msg_type": "interactive",
+                    "content": json.dumps(card, ensure_ascii=False),
+                },
+            )
+            logger.info(f"飞书卡片消息已发送给用户 {open_id}")
+            return True
+        except Exception as e:
+            logger.warning(f"飞书卡片消息发送失败: {e}")
+            return False
+
+    # ---------- 多维表格视图 ----------
+    def create_view(self, app_token: str, table_id: str, view_name: str,
+                    view_type: str = "grid", property_: Dict = None) -> str:
+        """
+        创建数据表视图。
+        view_type: grid(表格)/kanban(看板)/gallery(画册)/form(表单)
+        property_: 视图属性(排序/筛选/分组等)
+        返回 view_id
+        """
+        app_token = self.resolve_app_token(app_token)
+        body = {"view_name": view_name, "view_type": view_type}
+        if property_:
+            body["property"] = property_
+        try:
+            data = self._request(
+                "POST",
+                f"/open-apis/bitable/v1/apps/{app_token}/tables/{table_id}/views",
+                json_body=body,
+            )
+            view_id = data.get("view", {}).get("view_id", "")
+            logger.info(f"创建视图成功: {view_name} -> {view_id}")
+            return view_id
+        except RuntimeError as e:
+            logger.warning(f"创建视图失败 {view_name}: {e}")
+            return ""
+
+    # ---------- 记录更新(用于投递跟踪等) ----------
+    def update_record(self, app_token: str, table_id: str, record_id: str,
+                      fields: Dict) -> bool:
+        """更新单条记录的字段(用于标记已投递、记录投递日期等)"""
+        app_token = self.resolve_app_token(app_token)
+        try:
+            self._request(
+                "PUT",
+                f"/open-apis/bitable/v1/apps/{app_token}/tables/{table_id}/records/{record_id}",
+                json_body={"fields": fields},
+            )
+            return True
+        except RuntimeError as e:
+            logger.warning(f"更新记录失败 {record_id}: {e}")
+            return False
+
+    def list_all_records(self, app_token: str, table_id: str,
+                         fields: List[str] = None) -> List[Dict]:
+        """
+        列出表中所有记录(无筛选条件)。
+        用于热度榜统计、投递跟踪扫描等场景。
+        自动分页,返回所有记录的 fields 列表。
+        """
+        app_token = self.resolve_app_token(app_token)
+        all_records = []
+        page_token = None
+        while True:
+            params = {"page_size": 500}
+            if page_token:
+                params["page_token"] = page_token
+            if fields:
+                params["field_names"] = json.dumps(fields)
+            data = self._request(
+                "GET",
+                f"/open-apis/bitable/v1/apps/{app_token}/tables/{table_id}/records",
+                params=params,
+            )
+            all_records.extend(data.get("items") or [])
+            if not data.get("has_more"):
+                break
+            page_token = data.get("page_token")
+        return all_records

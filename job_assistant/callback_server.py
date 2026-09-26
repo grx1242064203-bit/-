@@ -144,6 +144,11 @@ class CallbackHandler(BaseHTTPRequestHandler):
             self._handle_bind_wxpusher()
             return
 
+        # 简历解析(LLM)
+        if path == "/api/parse-resume":
+            self._handle_parse_resume()
+            return
+
         self._send_error(404, "not found")
 
     def _handle_feishu_callback(self):
@@ -210,14 +215,87 @@ class CallbackHandler(BaseHTTPRequestHandler):
         # 更新画像字段（只更新传入的字段）
         allowed_fields = {"major", "degree", "experience_years", "core_skills",
                           "direction_keywords", "target_companies", "target_industries",
-                          "target_cities", "target_certificates", "school", "current_role"}
+                          "target_cities", "target_certificates", "school", "current_role",
+                          "role", "graduation_year", "resume_text", "summary"}
         for key in allowed_fields:
             if key in profile_data:
                 setattr(user.profile, key, profile_data[key])
 
         store.upsert(user)
         logger.info(f"用户 {user_id} 画像已更新")
+
+        # 保存成功后立即触发一次采集(后台线程,不阻塞响应)
+        try:
+            _trigger_immediate_collect(user_id)
+        except Exception:
+            logger.exception(f"触发即时采集失败: user_id={user_id}")
+
         self._send_json(200, json.dumps({"code": 0, "msg": "ok"}, ensure_ascii=False))
+
+    def _handle_parse_resume(self):
+        """调用 LLM 解析简历文本,返回结构化画像"""
+        try:
+            length = int(self.headers.get("Content-Length", 0))
+            raw = self.rfile.read(length)
+            data = json.loads(raw.decode("utf-8"))
+        except (ValueError, json.JSONDecodeError):
+            self._send_error(400, "invalid JSON")
+            return
+
+        user_id = data.get("user_id", "")
+        resume_text = data.get("resume_text", "")
+        if not user_id:
+            self._send_error(400, "missing user_id")
+            return
+        if not resume_text or not resume_text.strip():
+            self._send_error(400, "missing resume_text")
+            return
+
+        store = UserStore()
+        user = store.get(user_id)
+        if not user:
+            self._send_error(404, "user not found")
+            return
+
+        # 调用 LLM 解析
+        from llm_client import LLMClient
+        llm = LLMClient()
+        parsed = llm.parse_resume(resume_text)
+
+        # 将解析结果回填到用户画像(用户可在表单中修改)
+        if parsed.get("school"):
+            user.profile.school = parsed["school"]
+        if parsed.get("degree"):
+            user.profile.degree = parsed["degree"]
+        if parsed.get("major"):
+            user.profile.major = parsed["major"]
+        if parsed.get("graduation_year"):
+            user.profile.graduation_year = parsed["graduation_year"]
+        if parsed.get("experience_years"):
+            user.profile.experience_years = parsed["experience_years"]
+        if parsed.get("core_skills"):
+            user.profile.core_skills = parsed["core_skills"]
+        if parsed.get("direction_keywords"):
+            user.profile.direction_keywords = parsed["direction_keywords"]
+        if parsed.get("target_cities"):
+            user.profile.target_cities = parsed["target_cities"]
+        if parsed.get("target_industries"):
+            user.profile.target_industries = parsed["target_industries"]
+        if parsed.get("target_certificates"):
+            user.profile.target_certificates = parsed["target_certificates"]
+        if parsed.get("current_role"):
+            user.profile.current_role = parsed["current_role"]
+        if parsed.get("summary"):
+            user.profile.summary = parsed["summary"]
+        # 留档原始简历文本
+        user.profile.resume_text = resume_text[:5000]
+        store.upsert(user)
+
+        self._send_json(200, json.dumps({
+            "code": 0,
+            "msg": "ok",
+            "profile": parsed,
+        }, ensure_ascii=False))
 
     def _handle_bind_wxpusher(self):
         """绑定 WxPusher UID，并发送测试消息"""
@@ -285,6 +363,80 @@ class CallbackHandler(BaseHTTPRequestHandler):
 
     def log_message(self, format, *args):
         logger.info(format % args)
+
+
+def _trigger_immediate_collect(user_id: str):
+    """
+    新用户保存画像后,立即在后台线程触发一次采集。
+    让用户马上看到效果,而不是等到第二天。
+
+    流程:
+    1. 后台线程运行 DailyRunner
+    2. 采集完成后发送飞书消息告知结果(新增 N 条岗位)
+    3. 失败不影响主流程,仅记日志
+    """
+    import threading
+
+    def _collect():
+        try:
+            from models import UserStore
+            from daily_runner import DailyRunner
+            from feishu_client import FeishuClient
+
+            store = UserStore()
+            user = store.get(user_id)
+            if not user:
+                logger.warning(f"即时采集:用户不存在 {user_id}")
+                return
+            if not user.feishu_base_token:
+                logger.warning(f"即时采集:用户未完成 onboarding {user_id}")
+                return
+
+            # 先发送"开始采集"通知
+            feishu = FeishuClient()
+            try:
+                feishu.send_message(
+                    user.feishu_open_id,
+                    "🚀 已为您启动首次岗位采集,请稍候...\n"
+                    "采集完成后将第一时间通知您结果。"
+                )
+            except Exception:
+                pass
+
+            runner = DailyRunner(user)
+            result = runner.run()
+
+            # 发送采集结果通知
+            new_count = result.get("new_jobs", 0)
+            closed_count = result.get("closed_jobs", 0)
+            doc_url = result.get("doc_url", "")
+            table_url = (
+                f"https://{os.environ.get('FEISHU_DOMAIN', 'www.feishu.cn')}"
+                f"/base/{user.feishu_base_token}?table={user.feishu_table_id}"
+            )
+            msg = (
+                f"✅ 首次采集完成!\n\n"
+                f"新增 {new_count} 条岗位"
+                + (f",归档 {closed_count} 条已关闭" if closed_count else "")
+                + "。\n\n"
+            )
+            if new_count > 0:
+                msg += f"📋 查看岗位库: {table_url}\n"
+            if doc_url:
+                msg += f"📄 完整日报: {doc_url}"
+            if new_count == 0:
+                msg += "暂未采集到新岗位,我们会在明天的日报中继续为您筛选。"
+
+            try:
+                feishu.send_message(user.feishu_open_id, msg)
+            except Exception:
+                logger.warning(f"即时采集结果通知发送失败: user_id={user_id}")
+
+            logger.info(f"即时采集完成: user_id={user_id} new={new_count}")
+        except Exception:
+            logger.exception(f"即时采集异常: user_id={user_id}")
+
+    threading.Thread(target=_collect, daemon=True).start()
 
 
 def run(host="0.0.0.0", port=8080):

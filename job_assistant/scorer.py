@@ -56,15 +56,67 @@ def _to_timestamp_ms(date_str: str) -> int:
     return int(time.time() * 1000)
 
 
-def _make_hash(company: str, title: str, location: str, jd_url: str = "") -> str:
+def _normalize_for_hash(text: str) -> str:
+    """
+    归一化文本用于去重 hash:
+    - 去除括号及括号内内容(如 "产品经理(北京)" → "产品经理")
+    - 去除所有空白字符
+    - 转小写
+    - 去除常见后缀词(如 "招聘", "急招", "热招")
+    """
+    if not text:
+        return ""
+    text = text.lower()
+    # 去除括号及内容: (...) 【...】 [...] （...）
+    text = re.sub(r"[\(\)（）\[\]【】][^\(\)（）\[\]【】]*[\(\)（）\[\]【】]", "", text)
+    # 去除空白
+    text = re.sub(r"\s+", "", text)
+    # 去除常见招聘后缀
+    for suffix in ["招聘", "急招", "热招", "校招", "社招", "实习", "应届"]:
+        text = text.replace(suffix, "")
+    return text.strip()
+
+
+def _make_hash(company: str, title: str, location: str = "", jd_url: str = "") -> str:
     """
     生成岗位去重 hash。
-    包含 公司+标题+地点+JD链接,确保同一岗位的不同抓取不会重复入库,
-    同时不同岗位(即使同公司同城市)也不会误判为重复。
-    使用 MD5 截断为 16 位,兼顾唯一性和存储长度。
+
+    第一原则:同一公司同一岗位只显示一次(聚类去重)。
+    因此 hash 仅基于 公司+岗位标题(归一化),不包含地点和 URL。
+    - 归一化:去除括号、空白、招聘后缀,避免"产品经理(北京)"与"产品经理"被判为不同
+    - 不同地点的同一岗位视为同一岗位聚类,保留先入的那条
     """
-    raw = f"{company}|{title}|{location}|{jd_url}".lower().strip()
+    norm_company = _normalize_for_hash(company)
+    norm_title = _normalize_for_hash(title)
+    raw = f"{norm_company}|{norm_title}"
     return hashlib.md5(raw.encode("utf-8")).hexdigest()[:16]
+
+
+def extract_deadline_from_jd(jd_text: str) -> str:
+    """
+    从 JD 文本中用正则提取投递截止日期(校招岗位常用)。
+    返回 YYYY-MM-DD 格式字符串,提取失败返回空字符串。
+    兜底:若正则未命中,返回空(后续可由 LLM 提取,但正则优先避免 API 开销)。
+    """
+    if not jd_text:
+        return ""
+    # 匹配 "截止日期: 2026-10-31" / "截止到 2026/10/31" / "投递截止 2026年10月31日"
+    patterns = [
+        r"截止[日期时间到为]*\s*[:：]?\s*(\d{4})[-/年.](\d{1,2})[-/月.](\d{1,2})",
+        r"投递截止[日期时间到为]*\s*[:：]?\s*(\d{4})[-/年.](\d{1,2})[-/月.](\d{1,2})",
+        r"网申截止[日期时间到为]*\s*[:：]?\s*(\d{4})[-/年.](\d{1,2})[-/月.](\d{1,2})",
+        r"(\d{4})[-/年.](\d{1,2})[-/月.](\d{1,2})\s*[日号]?\s*截止",
+    ]
+    for p in patterns:
+        m = re.search(p, jd_text)
+        if m:
+            try:
+                y, mo, d = int(m.group(1)), int(m.group(2)), int(m.group(3))
+                if 2020 <= y <= 2030 and 1 <= mo <= 12 and 1 <= d <= 31:
+                    return f"{y:04d}-{mo:02d}-{d:02d}"
+            except (ValueError, IndexError):
+                continue
+    return ""
 
 
 def _has(text: str, keywords: List[str]) -> bool:
@@ -202,8 +254,13 @@ def score_job(job: Dict[str, str], profile: UserProfile) -> Dict[str, Any]:
     # 3. 经验匹配
     exp = parse_experience(jd_text)
     user_exp = profile.experience_years
+    user_role = getattr(profile, "role", "") or ""
     if "应届" in exp or "在校" in exp or "fresh" in exp.lower() or "entry" in exp.lower():
-        exp_score = 15
+        # 校招/实习用户对应届岗位给满分;社招用户给低分
+        if user_role in ("campus", "internship"):
+            exp_score = 15
+        else:
+            exp_score = 5
     elif re.search(r"(\d+)", exp):
         years = int(re.search(r"(\d+)", exp).group(1))
         if years <= user_exp + 1:
@@ -293,6 +350,10 @@ def score_job(job: Dict[str, str], profile: UserProfile) -> Dict[str, Any]:
         advice_parts.append("结合自身背景挖掘与JD的交集")
     advice = "建议投递," + ";".join(advice_parts) + "。"
 
+    # 截止日期(校招岗位常用,正则提取;失败则为空)
+    deadline = extract_deadline_from_jd(jd_text)
+    deadline_ts = _to_timestamp_ms(deadline) if deadline else None
+
     return {
         "岗位标题": title,
         "公司": company,
@@ -308,6 +369,8 @@ def score_job(job: Dict[str, str], profile: UserProfile) -> Dict[str, Any]:
         # 抓取日期 是飞书日期字段(type=5),必须传 Unix 毫秒时间戳,不能传字符串。
         "抓取日期": _to_timestamp_ms(job.get("crawl_date", "")),
         "发布时间": posted,
+        # 投递截止日期:校招截止提醒用;空值时省略(None 会被 _sanitize_fields 剔除)
+        "投递截止日期": deadline_ts,
         "岗位类别": direction,
         "平台层级": platform,
         # 数字字段必须传 int,否则飞书返回 1254061 NumberFieldConvFail
@@ -317,6 +380,8 @@ def score_job(job: Dict[str, str], profile: UserProfile) -> Dict[str, Any]:
         "简评": summary,
         "申请建议": advice,
         "申请状态": "未投递",
+        # 投递日期:用户标记"已投递"时由更新逻辑写入,初始为空
+        "投递日期": None,
         "去重hash": _make_hash(company, title, location, jd_url),
         "应届窗口": "是" if in_window else "否",
         "是否在招": "是",

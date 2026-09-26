@@ -23,9 +23,13 @@ from config import settings
 @dataclass
 class UserProfile:
     """用户画像 — 用于评分匹配(通用化,支持任意专业/职业阶段)"""
+    # === 角色分化 ===
+    role: str = ""             # 求职角色: internship(实习)/campus(校招)/social(社招)
+    # === 基本信息 ===
     school: str = ""           # 学校
     degree: str = ""           # 学历:本科/硕士/博士
     major: str = ""            # 专业
+    graduation_year: str = ""  # 毕业年份(如 2026)
     experience_years: float = 0  # 工作年限(0=应届)
     current_role: str = ""     # 当前岗位/身份(学生/在职)
     core_skills: List[str] = field(default_factory=list)  # 核心技能/标签
@@ -36,6 +40,9 @@ class UserProfile:
     target_industries: List[str] = field(default_factory=list)  # 目标行业(可空=全部)
     target_cities: List[str] = field(default_factory=list)      # 目标城市(可空=不限)
     target_certificates: List[str] = field(default_factory=list)  # 已持证书(CFA/CPA/法考等)
+    # === LLM 简历解析留档 ===
+    resume_text: str = ""      # 原始简历文本(留档,便于重新解析)
+    summary: str = ""          # LLM 生成的候选人一句话画像
 
 
 @dataclass

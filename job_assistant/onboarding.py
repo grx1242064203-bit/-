@@ -27,6 +27,53 @@ logger = logging.getLogger(__name__)
 _onboarding_lock = threading.Lock()
 
 
+def _create_optimized_views(client: FeishuClient, base_token: str, table_id: str):
+    """
+    创建多维表格优化视图:
+    1. 按推荐度排序(相关性评分降序)
+    2. 按城市筛选(每个目标城市一个视图)
+
+    视图属性 property 结构:
+    - sort_info: 排序规则 [{field_name, desc}]
+    - filter_info: 筛选规则 {conjunction, conditions: [{field_name, operator, value}]}
+    """
+    # 视图1: 按推荐度排序
+    sort_property = {
+        "sort_info": {
+            "sort_conditions": [
+                {"field_name": "相关性评分", "desc": True},
+            ]
+        }
+    }
+    client.create_view(base_token, table_id, "按推荐度排序",
+                       view_type="grid", property_=sort_property)
+
+    # 视图2: 优先申请(筛选综合推荐度=优先申请)
+    priority_property = {
+        "filter_info": {
+            "conjunction": "and",
+            "conditions": [
+                {"field_name": "综合推荐度", "operator": "is",
+                 "value": ["优先申请"]},
+            ],
+        }
+    }
+    client.create_view(base_token, table_id, "优先申请",
+                       view_type="grid", property_=priority_property)
+
+    # 视图3: 校招应届窗口
+    campus_property = {
+        "filter_info": {
+            "conjunction": "and",
+            "conditions": [
+                {"field_name": "应届窗口", "operator": "is", "value": ["是"]},
+            ],
+        }
+    }
+    client.create_view(base_token, table_id, "校招应届窗口",
+                       view_type="grid", property_=campus_property)
+
+
 def setup_user_feishu(tenant_key: str, open_id: str, client: FeishuClient = None) -> dict:
     """
     为用户创建专属飞书空间(多维表格+两个数据表)。
@@ -69,6 +116,13 @@ def setup_user_feishu(tenant_key: str, open_id: str, client: FeishuClient = None
             kwargs["property"] = {**kwargs.get("property", {}), "multiple": f["multiple"]}
         client.create_field(base_token, closed_table_id, f["name"], f["type"], **kwargs)
         time.sleep(0.1)
+
+    # 3.5 创建优化视图(按推荐度排序、按城市筛选)
+    # 视图创建失败不阻塞 onboarding,用户可手动创建
+    try:
+        _create_optimized_views(client, base_token, table_id)
+    except Exception as e:
+        logger.warning(f"创建优化视图失败(不影响使用): {e}")
 
     # 4. 分享给用户 + 转所有权（失败不阻塞 onboarding，管理员可手动补分享）
     try:

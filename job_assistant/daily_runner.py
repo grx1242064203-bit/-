@@ -130,9 +130,9 @@ class DailyRunner:
             # 2. 评分
             scored = [score_job(j, self.user.profile, llm_client=self.llm) for j in raw_jobs]
 
-            # 2.5 校招用户:每家企业只保留最匹配的 1-5 个岗位(按匹配度)
+            # 2.5 校招用户:每家企业只保留最匹配的岗位(按匹配度)
             if self.user.profile.role == "campus":
-                scored = self._filter_top_per_company(scored, max_per_company=5)
+                scored = self._filter_top_per_company(scored, max_per_company=8)
 
             # 2. 分离管培岗位到独立表格(校招用户)
             mt_jobs = [j for j in scored if j.get("管培项目")]
@@ -463,7 +463,7 @@ class DailyRunner:
         for j in jobs:
             # 过滤极低分岗位
             score = j.get("相关性评分", 0) or 0
-            if score <= 30:
+            if score < 20:
                 continue
             company = (j.get("company") or "").strip()
             if company and company != "未知":
@@ -477,9 +477,9 @@ class DailyRunner:
             sorted_jobs = sorted(group_jobs, key=lambda x: x.get("相关性评分", 0), reverse=True)
             result.extend(sorted_jobs[:max_per_company])
 
-        # 未知公司的岗位也保留(取前 10 个,避免过多)
+        # 未知公司的岗位也保留(取前 20 个,避免过多)
         unknown_sorted = sorted(unknown_company, key=lambda x: x.get("相关性评分", 0), reverse=True)
-        result.extend(unknown_sorted[:10])
+        result.extend(unknown_sorted[:20])
 
         logger.info(f"企业分组筛选: {len(jobs)} → {len(result)} 条(覆盖 {len(company_groups)} 家企业)")
         return result

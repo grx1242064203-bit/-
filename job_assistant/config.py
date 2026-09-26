@@ -31,7 +31,7 @@ class Settings:
 
     # === 运行参数 ===
     # 每个用户每日采集岗位数量上限(调大,但通过质量过滤保证精度)
-    DAILY_JOBS_PER_USER: int = int(os.getenv("DAILY_JOBS_PER_USER", "40"))
+    DAILY_JOBS_PER_USER: int = int(os.getenv("DAILY_JOBS_PER_USER", "60"))
     # 飞书 API 写入重试次数
     FEISHU_RETRY: int = int(os.getenv("FEISHU_RETRY", "3"))
     # 飞书 API 调用间隔(秒),避免触发限流

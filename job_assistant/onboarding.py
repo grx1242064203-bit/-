@@ -86,7 +86,7 @@ def _create_fields_and_views(client: FeishuClient, base_token: str,
                 for f in fields:
                     if f.get("is_primary"):
                         client.update_field(base_token, tid, f["field_id"],
-                                            field_name="岗位标题")
+                                            field_name="岗位标题", type=1)
                         break
             except Exception as e:
                 logger.warning(f"重命名主字段失败 table={tid}: {e}")
@@ -191,7 +191,7 @@ def ensure_mt_table(user: User, client: FeishuClient = None) -> str:
                 if mt_table_id:
                     logger.info(f"管培项目表已存在,复用: {mt_table_id}")
                     # 保存 mt_table_id 到用户
-                    from store import UserStore
+                    from models import UserStore
                     store = UserStore()
                     user.feishu_mt_table_id = mt_table_id
                     store.upsert(user)
@@ -207,7 +207,7 @@ def ensure_mt_table(user: User, client: FeishuClient = None) -> str:
             for f in fields:
                 if f.get("is_primary"):
                     client.update_field(base_token, mt_table_id, f["field_id"],
-                                        field_name="项目名称")
+                                        field_name="项目名称", type=1)
                     break
         except Exception as e:
             logger.warning(f"重命名管培表主字段失败: {e}")
@@ -230,7 +230,7 @@ def ensure_mt_table(user: User, client: FeishuClient = None) -> str:
                 logger.warning(f"创建管培表字段失败 {f['name']}: {e}")
 
         # 保存 mt_table_id 到用户
-        from store import UserStore
+        from models import UserStore
         store = UserStore()
         user.feishu_mt_table_id = mt_table_id
         store.upsert(user)

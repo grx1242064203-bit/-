@@ -410,6 +410,12 @@ def _is_role_mismatch(title: str, text: str, role: str) -> bool:
         return any(kw in combined for kw in campus_kw)
 
     elif role == "campus":
+        # 校招用户:排除实习岗位(实习是独立角色)
+        intern_kw = ["实习", "intern", "internship", "暑期实习", "summer intern",
+                     "日常实习", "实习僧"]
+        # 标题或正文包含实习关键词 → 排除
+        if any(kw in combined for kw in intern_kw):
+            return True
         # 校招用户:排除明确要求多年经验的社招岗位
         social_exp_patterns = [
             r"(\d+)\s*年以上工作经验", r"(\d+)\s*年工作经验",
@@ -894,10 +900,13 @@ class JobCollector:
         """
         提取公司名。优先级:
         1. URL 域名映射(最可靠,如 careers.tencent.com → 腾讯)
-        2. title 中的 【公司名】 格式
-        3. title 开头的公司名
-        4. 正文中的"公司:"等标记
+        2. 匹配校招企业清单(微信文章无公司域名,从标题/正文匹配已知企业名)
+        3. title 中的 【公司名】 格式
+        4. title 开头的公司名
+        5. 正文中的"公司:"等标记
         """
+        combined = (title + " " + text)
+
         # 1. 从 URL 域名提取公司名(最可靠)
         if url:
             from urllib.parse import urlparse
@@ -913,14 +922,26 @@ class JobCollector:
             except Exception:
                 pass
 
-        # 2. 从 title 提取【公司名】
+        # 2. 匹配校招企业清单(微信文章场景核心方法)
+        try:
+            from campus_companies import CAMPUS_COMPANIES
+            # 按公司名长度降序,优先匹配更长的名称(避免"腾讯"匹配到"腾讯云"时出错)
+            sorted_companies = sorted(CAMPUS_COMPANIES, key=lambda c: len(c["name"]), reverse=True)
+            for c in sorted_companies:
+                cname = c["name"]
+                if cname in combined:
+                    return cname
+        except Exception:
+            pass
+
+        # 3. 从 title 提取【公司名】
         m = re.search(r"【([^】]{2,20})】", title)
         if m:
             return m.group(1).strip()
         m = re.match(r"^([^\s\-|·【\[]+)", title)
         if m and len(m.group(1)) <= 30:
             return m.group(1).strip()
-        # 3. 从正文中提取公司名
+        # 4. 从正文中提取公司名
         m = re.search(r"(?:公司|单位|招聘方|雇主)[:：]\s*([^\n，,。]{2,30})", text)
         if m:
             return m.group(1).strip()

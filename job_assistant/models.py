@@ -24,14 +24,12 @@ from config import settings
 class UserProfile:
     """用户画像 — 用于评分匹配(通用化,支持任意专业/职业阶段)"""
     # === 角色分化 ===
-    role: str = ""             # 求职角色: internship(实习)/campus(校招)/social(社招)
+    role: str = ""             # 求职角色: campus(校招)/social(社招) — internship 已下线
     mt_program_preference: str = "all"  # 管培项目偏好: all/finance/internet/consulting_fmcg/soe(仅校招用户)
     # === 基本信息 ===
     school: str = ""           # 学校
     degree: str = ""           # 学历:本科/硕士/博士
     major: str = ""            # 专业
-    graduation_year: str = ""  # 毕业年份(如 2026)
-    graduation_date: str = ""  # 毕业年月(如 2026-06,校招用户必填,用于严格匹配JD届数要求)
     experience_years: float = 0  # 工作年限(0=应届,校招用户忽略此字段)
     current_role: str = ""     # 当前岗位/身份(学生/在职)
     core_skills: List[str] = field(default_factory=list)  # 核心技能/标签

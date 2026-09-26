@@ -301,11 +301,6 @@
       <label>求职角色 <span class="hint">（决定采集岗位类型）</span></label>
       <div class="role-selector">
         <label class="role-option">
-          <input type="radio" name="role" value="internship">
-          <span class="role-label">💼 实习</span>
-          <span class="role-desc">在校学生找实习</span>
-        </label>
-        <label class="role-option">
           <input type="radio" name="role" value="campus">
           <span class="role-label">🎓 校招</span>
           <span class="role-desc">应届毕业生求职</span>
@@ -376,10 +371,6 @@
       <div class="form-group" id="experienceYearsGroup">
         <label>工作年限 <span class="hint">（应届填 0）</span></label>
         <input type="number" id="experienceYears" min="0" step="0.5" placeholder="0">
-      </div>
-      <div class="form-group" id="graduationDateGroup" style="display:none;">
-        <label>毕业年月 <span class="hint" style="color:#e74c3c;">（必填，用于匹配校招届数）</span></label>
-        <input type="month" id="graduationDate">
       </div>
       <div class="form-group">
         <label>核心技能 <span class="hint">（逗号分隔）</span></label>
@@ -538,10 +529,6 @@ async function loadProfile() {
         if (rb) rb.checked = true;
       }
       toggleCampusFields();
-      // 毕业年月
-      if (p.graduation_date) {
-        document.getElementById('graduationDate').value = p.graduation_date;
-      }
       // 校招匹配维度
       if (p.preferred_company_types && p.preferred_company_types.length) {
         p.preferred_company_types.forEach(t => {
@@ -595,9 +582,6 @@ function toggleCampusFields() {
   // 工作年限:校招隐藏
   const expGroup = document.getElementById('experienceYearsGroup');
   if (expGroup) expGroup.style.display = isCampus ? 'none' : 'block';
-  // 毕业年月:校招显示
-  const gradGroup = document.getElementById('graduationDateGroup');
-  if (gradGroup) gradGroup.style.display = isCampus ? 'block' : 'none';
   // 企业匹配维度:校招显示
   const matchGroup = document.getElementById('campusMatchGroup');
   if (matchGroup) matchGroup.style.display = isCampus ? 'block' : 'none';
@@ -677,13 +661,6 @@ async function parseResume() {
       if (p.degree) document.getElementById('degree').value = p.degree;
       if (p.major) document.getElementById('major').value = p.major;
       if (p.experience_years) document.getElementById('experienceYears').value = p.experience_years;
-      // 毕业年月(校招用户)
-      if (p.graduation_date) {
-        document.getElementById('graduationDate').value = p.graduation_date;
-      } else if (p.graduation_year) {
-        // 只有年份时默认填6月
-        document.getElementById('graduationDate').value = p.graduation_year + '-06';
-      }
       if (p.core_skills && p.core_skills.length) {
         document.getElementById('coreSkills').value = p.core_skills.join(', ');
       }
@@ -749,17 +726,6 @@ async function saveProfile() {
     return;
   }
 
-  // 校招用户:毕业年月必填
-  if (role === 'campus') {
-    const gradDate = document.getElementById('graduationDate').value;
-    if (!gradDate) {
-      showToast('请填写毕业年月（用于匹配校招届数）', 'error');
-      saveBtn.disabled = false;
-      saveBtn.textContent = originalText;
-      return;
-    }
-  }
-
   const direction_keywords = {};
   directions.forEach(d => {
     if (d.name && d.keywords) {
@@ -780,8 +746,6 @@ async function saveProfile() {
       major: document.getElementById('major').value,
       degree: document.getElementById('degree').value,
       experience_years: (role === 'campus') ? 0 : (parseFloat(document.getElementById('experienceYears').value) || 0),
-      graduation_date: (role === 'campus') ? document.getElementById('graduationDate').value : '',
-      graduation_year: (role === 'campus') ? (document.getElementById('graduationDate').value || '').substring(0, 4) : '',
       core_skills: document.getElementById('coreSkills').value.split(/[,，]/).map(s=>s.trim()).filter(Boolean),
       direction_keywords: direction_keywords,
       target_companies: document.getElementById('targetCompanies').value.split(/[,，]/).map(s=>s.trim()).filter(Boolean),

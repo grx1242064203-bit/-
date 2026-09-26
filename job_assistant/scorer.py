@@ -309,14 +309,14 @@ def score_job(job: Dict[str, str], profile: UserProfile,
     exp = parse_experience(jd_text)
     user_exp = profile.experience_years
     user_role = getattr(profile, "role", "") or ""
-    # 校招窗口岗位:社招用户给低分,校招/实习用户给满分
+    # 校招窗口岗位:社招用户给低分,校招用户给满分
     if in_window:
-        if user_role in ("campus", "internship"):
+        if user_role == "campus":
             exp_score = 15
         else:
             exp_score = 5  # 社招用户不适合校招窗口岗位
     elif "应届" in exp or "在校" in exp or "fresh" in exp.lower() or "entry" in exp.lower():
-        if user_role in ("campus", "internship"):
+        if user_role == "campus":
             exp_score = 15
         else:
             exp_score = 5

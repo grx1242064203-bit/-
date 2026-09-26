@@ -252,7 +252,7 @@ class CallbackHandler(BaseHTTPRequestHandler):
         allowed_fields = {"major", "degree", "experience_years", "core_skills",
                           "direction_keywords", "target_companies", "target_industries",
                           "target_cities", "target_certificates", "school", "current_role",
-                          "role", "graduation_year", "graduation_date", "resume_text", "summary", "highlights",
+                          "role", "resume_text", "summary", "highlights",
                           "mt_program_preference", "preferred_company_types",
                           "preferred_difficulties", "preferred_locations"}
         for key in allowed_fields:
@@ -337,7 +337,7 @@ class CallbackHandler(BaseHTTPRequestHandler):
         parsed = llm.parse_resume(resume_text)
 
         # 将解析结果回填到用户画像
-        for key in ["school", "degree", "major", "graduation_year",
+        for key in ["school", "degree", "major",
                     "experience_years", "core_skills", "direction_keywords",
                     "target_cities", "target_industries", "target_certificates",
                     "current_role", "summary", "highlights"]:

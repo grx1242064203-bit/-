@@ -524,55 +524,7 @@ def _is_role_mismatch(title: str, text: str, role: str) -> bool:
             return True
         return False
 
-    elif role == "internship":
-        # 实习用户:排除全职岗位
-        if "全职" in combined and "实习" not in combined:
-            return True
-        return False
-
     return False
-
-
-def _is_graduation_year_mismatch(title: str, text: str, user_grad_year: int) -> bool:
-    """
-    校招用户:严格匹配毕业年份。
-    若 JD 明确限定了届数,且用户毕业年份不在范围内,则不匹配。
-
-    user_grad_year: 用户毕业年份(如 2026)
-    返回 True 表示不匹配(应过滤)
-    """
-    if not user_grad_year:
-        return False  # 用户未提供毕业年份,不过滤
-
-    combined = (title + " " + text)
-    from datetime import datetime as _dt
-    _yr = _dt.now().year
-
-    # 检测 JD 中明确的届数要求
-    # 匹配模式: "2025届"、"2026届毕业生"、"仅限2025届"、"面向2025-2026届"
-    import re
-    # 提取所有年份+届
-    year_matches = re.findall(r"(20\d{2})\s*届", combined)
-    years_in_jd = set(int(y) for y in year_matches)
-
-    if not years_in_jd:
-        # JD 未明确届数,可能是"应届生"通用招聘,不过滤
-        return False
-
-    # 用户毕业年份必须在 JD 要求的届数中,或在当年/次年范围内
-    # 允许范围:用户毕业年份 或 当年 或 次年
-    allowed_years = {user_grad_year, _yr, _yr + 1}
-    # 若 JD 明确列出了届数,用户届数必须在其中(取交集判断)
-    if years_in_jd & allowed_years:
-        return False  # 匹配
-    # JD 要求的届数与用户毕业年份完全不重叠 → 不匹配
-    # 但如果 JD 写的是"2024届及以后"这类,需额外判断
-    if "及以后" in combined or "以后" in combined:
-        # "2024届及以后" → 只要用户毕业年 >= JD 最小年即可
-        min_jd_year = min(years_in_jd)
-        if user_grad_year >= min_jd_year:
-            return False
-    return True  # 不匹配
 
 
 def _is_too_old(posted_date_str: str, max_days: int = 365) -> bool:
@@ -638,10 +590,8 @@ class JobCollector:
                 q = f"{core_kw} 招聘 {city}".strip()
                 if len(q) > 5:
                     queries.append(q)
-            # 方向名 + 校招/实习/社招(按 role)
-            if role == "internship":
-                queries.append(f"{core_kw} 实习 招聘")
-            elif role == "campus":
+            # 方向名 + 校招/社招(按 role)
+            if role == "campus":
                 queries.append(f"{core_kw} 校招 招聘")
                 queries.append(f"{core_kw} 应届 招聘")
             else:
@@ -735,14 +685,7 @@ class JobCollector:
                 queries.append(f"{core_kw} 招聘 {cities}".strip())
 
         # === 优先级4:角色专项(仅在 role 明确时注入,避免无关通用查询) ===
-        if role == "internship":
-            from datetime import datetime as _dt
-            _yr = _dt.now().year
-            queries.append(f"实习生 招聘 {_yr}")
-            queries.append(f"internship hiring {_yr} china")
-            for direction in directions:
-                queries.append(f"{direction} 实习 招聘")
-        elif role == "campus":
+        if role == "campus":
             from datetime import datetime as _dt
             _yr = _dt.now().year
             queries.append(f"管培生 校招 招聘 {_yr}")
@@ -796,7 +739,7 @@ class JobCollector:
             company_sites = settings.COMPANY_CAREER_SITES[:8]
 
         for cs in company_sites[:6]:
-            domain = cs.get("campus_domain", cs["domain"]) if role in ("campus", "internship") else cs["domain"]
+            domain = cs.get("campus_domain", cs["domain"]) if role == "campus" else cs["domain"]
             for direction, keywords in directions.items():
                 if not keywords:
                     continue
@@ -973,24 +916,6 @@ class JobCollector:
                 # 过滤4:角色再次校验(基于完整 JD 正文)
                 if _is_role_mismatch(title, full_text, role):
                     continue
-
-                # 过滤5:校招用户毕业年份严格匹配
-                if role == "campus":
-                    user_grad_year = 0
-                    gd = getattr(profile, "graduation_date", "") or ""
-                    if gd and len(gd) >= 4:
-                        try:
-                            user_grad_year = int(gd[:4])
-                        except ValueError:
-                            pass
-                    if not user_grad_year:
-                        gy = getattr(profile, "graduation_year", "") or ""
-                        try:
-                            user_grad_year = int(str(gy)[:4])
-                        except (ValueError, TypeError):
-                            pass
-                    if _is_graduation_year_mismatch(title, full_text, user_grad_year):
-                        continue
 
                 # 提取发布日期并过滤过老岗位
                 posted = self._extract_posted_date(full_text)

@@ -16,10 +16,14 @@
 """
 import json
 import logging
+import os
 import time
 from http.server import HTTPServer, BaseHTTPRequestHandler
+from urllib.parse import urlparse, parse_qs
 
 from onboarding import handle_feishu_callback
+from models import UserStore, UserProfile
+from wxpusher_client import WxPusherClient
 from config import settings
 
 logging.basicConfig(level=logging.INFO)
@@ -30,6 +34,9 @@ MAX_BODY_SIZE = 1 * 1024 * 1024
 
 # 服务启动时间,用于健康检查
 _SERVICE_START_TIME = time.time()
+
+# 自助配置页面 HTML
+_ONBOARDING_HTML_PATH = os.path.join(os.path.dirname(__file__), "onboarding_page.html")
 
 
 def _verify_feishu_token(body: dict) -> bool:
@@ -50,29 +57,82 @@ class CallbackHandler(BaseHTTPRequestHandler):
     timeout = 10
 
     def do_GET(self):
-        """健康检查端点"""
-        if self.path == "/health" or self.path == "/healthz":
+        parsed = urlparse(self.path)
+        path = parsed.path
+        params = parse_qs(parsed.query)
+
+        # 健康检查
+        if path == "/health" or path == "/healthz":
             uptime = int(time.time() - _SERVICE_START_TIME)
             body = json.dumps({
                 "status": "ok",
                 "uptime_seconds": uptime,
                 "service": "job-callback",
             })
-            self.send_response(200)
-            self.send_header("Content-Type", "application/json")
-            self.send_header("Content-Length", str(len(body)))
-            self.end_headers()
-            self.wfile.write(body.encode())
-        else:
-            self.send_response(404)
-            self.end_headers()
-
-    def do_POST(self):
-        if self.path != "/feishu/callback":
-            self.send_response(404)
-            self.end_headers()
+            self._send_json(200, body)
             return
 
+        # 客户自助配置页面
+        if path == "/onboarding":
+            try:
+                with open(_ONBOARDING_HTML_PATH, "r", encoding="utf-8") as f:
+                    html = f.read()
+                self._send_html(200, html)
+            except FileNotFoundError:
+                self._send_error(404, "onboarding page not found")
+            return
+
+        # 获取用户已有画像（回显到表单）
+        if path == "/api/profile":
+            user_id = (params.get("user_id") or [""])[0]
+            if not user_id:
+                self._send_error(400, "missing user_id")
+                return
+            store = UserStore()
+            user = store.get(user_id)
+            if not user:
+                self._send_error(404, "user not found")
+                return
+            from dataclasses import asdict
+            resp = {
+                "code": 0,
+                "profile": asdict(user.profile),
+                "wxpusher_bound": bool(user.wxpusher_uid),
+            }
+            self._send_json(200, json.dumps(resp, ensure_ascii=False))
+            return
+
+        # 获取 WxPusher 关注二维码
+        if path == "/api/wxpusher-qrcode":
+            client = WxPusherClient()
+            url = client.get_qrcode()
+            self._send_json(200, json.dumps({"url": url}))
+            return
+
+        self._send_error(404, "not found")
+
+    def do_POST(self):
+        parsed = urlparse(self.path)
+        path = parsed.path
+
+        # 飞书事件回调
+        if path == "/feishu/callback":
+            self._handle_feishu_callback()
+            return
+
+        # 保存用户画像
+        if path == "/api/profile":
+            self._handle_save_profile()
+            return
+
+        # 绑定 WxPusher
+        if path == "/api/bind-wxpusher":
+            self._handle_bind_wxpusher()
+            return
+
+        self._send_error(404, "not found")
+
+    def _handle_feishu_callback(self):
         # 1. 限制请求体大小
         try:
             length = int(self.headers.get("Content-Length", 0))
@@ -106,14 +166,100 @@ class CallbackHandler(BaseHTTPRequestHandler):
         try:
             result = handle_feishu_callback(body)
             resp_body = json.dumps(result, ensure_ascii=False)
-            self.send_response(200)
-            self.send_header("Content-Type", "application/json; charset=utf-8")
-            self.send_header("Content-Length", str(len(resp_body.encode("utf-8"))))
-            self.end_headers()
-            self.wfile.write(resp_body.encode("utf-8"))
+            self._send_json(200, resp_body)
         except Exception:
             logger.exception("回调处理失败")
             self._send_error(500, "internal error")
+
+    def _handle_save_profile(self):
+        """保存用户画像（客户自助配置）"""
+        try:
+            length = int(self.headers.get("Content-Length", 0))
+            raw = self.rfile.read(length)
+            data = json.loads(raw.decode("utf-8"))
+        except (ValueError, json.JSONDecodeError):
+            self._send_error(400, "invalid JSON")
+            return
+
+        user_id = data.get("user_id", "")
+        profile_data = data.get("profile", {})
+        if not user_id:
+            self._send_error(400, "missing user_id")
+            return
+
+        store = UserStore()
+        user = store.get(user_id)
+        if not user:
+            self._send_error(404, "user not found")
+            return
+
+        # 更新画像字段（只更新传入的字段）
+        allowed_fields = {"major", "degree", "experience_years", "core_skills",
+                          "direction_keywords", "target_companies", "target_industries",
+                          "target_cities", "target_certificates", "school", "current_role"}
+        for key in allowed_fields:
+            if key in profile_data:
+                setattr(user.profile, key, profile_data[key])
+
+        store.upsert(user)
+        logger.info(f"用户 {user_id} 画像已更新")
+        self._send_json(200, json.dumps({"code": 0, "msg": "ok"}, ensure_ascii=False))
+
+    def _handle_bind_wxpusher(self):
+        """绑定 WxPusher UID，并发送测试消息"""
+        try:
+            length = int(self.headers.get("Content-Length", 0))
+            raw = self.rfile.read(length)
+            data = json.loads(raw.decode("utf-8"))
+        except (ValueError, json.JSONDecodeError):
+            self._send_error(400, "invalid JSON")
+            return
+
+        user_id = data.get("user_id", "")
+        uid = data.get("wxpusher_uid", "")
+        if not user_id or not uid:
+            self._send_error(400, "missing user_id or wxpusher_uid")
+            return
+
+        store = UserStore()
+        user = store.get(user_id)
+        if not user:
+            self._send_error(404, "user not found")
+            return
+
+        user.wxpusher_uid = uid
+        store.upsert(user)
+
+        # 发送测试消息
+        client = WxPusherClient()
+        sent = client.send(
+            uid,
+            "## 招聘情报助手\n\n✅ 微信推送绑定成功！\n\n明天早上 9:00 起，您将收到每日岗位日报推送。",
+            content_type=3,
+        )
+        logger.info(f"用户 {user_id} WxPusher 绑定完成, 测试消息发送={'成功' if sent else '失败'}")
+
+        self._send_json(200, json.dumps({
+            "code": 0,
+            "msg": "ok",
+            "test_sent": sent,
+        }, ensure_ascii=False))
+
+    def _send_json(self, code: int, body: str):
+        data = body.encode("utf-8")
+        self.send_response(code)
+        self.send_header("Content-Type", "application/json; charset=utf-8")
+        self.send_header("Content-Length", str(len(data)))
+        self.end_headers()
+        self.wfile.write(data)
+
+    def _send_html(self, code: int, html: str):
+        data = html.encode("utf-8")
+        self.send_response(code)
+        self.send_header("Content-Type", "text/html; charset=utf-8")
+        self.send_header("Content-Length", str(len(data)))
+        self.end_headers()
+        self.wfile.write(data)
 
     def _send_error(self, code: int, msg: str):
         body = json.dumps({"code": -1, "msg": msg})
@@ -131,6 +277,7 @@ def run(host="0.0.0.0", port=8080):
     server = HTTPServer((host, port), CallbackHandler)
     logger.info(f"回调服务启动: http://{host}:{port}/feishu/callback")
     logger.info(f"健康检查: http://{host}:{port}/health")
+    logger.info(f"客户配置页: http://{host}:{port}/onboarding")
     server.serve_forever()
 
 

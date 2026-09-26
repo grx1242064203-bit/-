@@ -1,0 +1,448 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>招聘情报助手 - 个人配置</title>
+<style>
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  body {
+    font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", "PingFang SC", "Hiragino Sans GB", "Microsoft YaHei", sans-serif;
+    background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+    min-height: 100vh;
+    padding: 20px;
+    color: #333;
+  }
+  .container {
+    max-width: 600px;
+    margin: 0 auto;
+  }
+  .card {
+    background: #fff;
+    border-radius: 16px;
+    padding: 28px;
+    margin-bottom: 20px;
+    box-shadow: 0 10px 40px rgba(0,0,0,0.15);
+  }
+  h1 {
+    font-size: 22px;
+    color: #1a1a2e;
+    margin-bottom: 6px;
+  }
+  .subtitle {
+    color: #888;
+    font-size: 14px;
+    margin-bottom: 20px;
+  }
+  h2 {
+    font-size: 17px;
+    color: #1a1a2e;
+    margin-bottom: 16px;
+    padding-left: 10px;
+    border-left: 4px solid #667eea;
+  }
+  .form-group {
+    margin-bottom: 16px;
+  }
+  label {
+    display: block;
+    font-size: 14px;
+    font-weight: 600;
+    color: #444;
+    margin-bottom: 6px;
+  }
+  label .hint {
+    font-weight: 400;
+    color: #999;
+    font-size: 12px;
+  }
+  input[type="text"], input[type="number"], select, textarea {
+    width: 100%;
+    padding: 10px 14px;
+    border: 1.5px solid #e0e0e0;
+    border-radius: 8px;
+    font-size: 14px;
+    transition: border 0.2s;
+    font-family: inherit;
+  }
+  input:focus, select:focus, textarea:focus {
+    outline: none;
+    border-color: #667eea;
+  }
+  .direction-row {
+    display: flex;
+    gap: 8px;
+    margin-bottom: 8px;
+  }
+  .direction-row input {
+    flex: 1;
+  }
+  .btn {
+    padding: 10px 16px;
+    border: none;
+    border-radius: 8px;
+    font-size: 14px;
+    font-weight: 600;
+    cursor: pointer;
+    transition: all 0.2s;
+    font-family: inherit;
+  }
+  .btn-primary {
+    background: linear-gradient(135deg, #667eea, #764ba2);
+    color: #fff;
+    width: 100%;
+    padding: 14px;
+    font-size: 16px;
+  }
+  .btn-primary:hover { opacity: 0.9; }
+  .btn-secondary {
+    background: #f0f0f0;
+    color: #555;
+  }
+  .btn-secondary:hover { background: #e0e0e0; }
+  .btn-danger {
+    background: #fff;
+    color: #e74c3c;
+    border: 1px solid #e74c3c;
+    padding: 8px 12px;
+  }
+  .btn-small {
+    padding: 6px 10px;
+    font-size: 12px;
+  }
+  .qrcode-area {
+    text-align: center;
+    padding: 20px;
+    background: #f9f9f9;
+    border-radius: 12px;
+    margin-bottom: 16px;
+  }
+  .qrcode-area img {
+    max-width: 200px;
+    border-radius: 8px;
+  }
+  .status-badge {
+    display: inline-block;
+    padding: 4px 12px;
+    border-radius: 20px;
+    font-size: 12px;
+    font-weight: 600;
+  }
+  .status-pending { background: #fff3cd; color: #856404; }
+  .status-done { background: #d4edda; color: #155724; }
+  .toast {
+    position: fixed;
+    top: 20px;
+    left: 50%;
+    transform: translateX(-50%);
+    padding: 12px 24px;
+    border-radius: 8px;
+    color: #fff;
+    font-weight: 600;
+    z-index: 1000;
+    opacity: 0;
+    transition: opacity 0.3s;
+  }
+  .toast.show { opacity: 1; }
+  .toast.success { background: #28a745; }
+  .toast.error { background: #dc3545; }
+  .step-indicator {
+    display: flex;
+    gap: 8px;
+    margin-bottom: 24px;
+  }
+  .step {
+    flex: 1;
+    text-align: center;
+    padding: 10px;
+    border-radius: 8px;
+    font-size: 13px;
+    font-weight: 600;
+  }
+  .step.active { background: #667eea; color: #fff; }
+  .step.done { background: #d4edda; color: #155724; }
+  .step.todo { background: #f0f0f0; color: #999; }
+  .grid-2 { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; }
+  @media (max-width: 480px) { .grid-2 { grid-template-columns: 1fr; } }
+  .success-card {
+    text-align: center;
+    padding: 40px 20px;
+  }
+  .success-card .check {
+    width: 64px; height: 64px;
+    background: #28a745;
+    border-radius: 50%;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    color: #fff;
+    font-size: 32px;
+    margin-bottom: 16px;
+  }
+</style>
+</head>
+<body>
+<div class="container">
+  <div class="card">
+    <h1>🎯 招聘情报助手</h1>
+    <p class="subtitle">配置您的求职偏好，AI 将为您精准筛选岗位</p>
+    <div class="step-indicator">
+      <div class="step active" id="step1">1. 配置偏好</div>
+      <div class="step todo" id="step2">2. 绑定微信</div>
+      <div class="step todo" id="step3">3. 完成</div>
+    </div>
+  </div>
+
+  <!-- 配置表单 -->
+  <div class="card" id="profileCard">
+    <h2>求职偏好</h2>
+
+    <div class="form-group">
+      <label>目标岗位方向 <span class="hint">（可添加多个，每个方向填 2-3 个关键词）</span></label>
+      <div id="directionsContainer"></div>
+      <button class="btn btn-secondary btn-small" onclick="addDirection()">+ 添加方向</button>
+    </div>
+
+    <div class="grid-2">
+      <div class="form-group">
+        <label>专业</label>
+        <input type="text" id="major" placeholder="如：计算机科学与技术">
+      </div>
+      <div class="form-group">
+        <label>学历</label>
+        <select id="degree">
+          <option value="">请选择</option>
+          <option value="本科">本科</option>
+          <option value="硕士">硕士</option>
+          <option value="博士">博士</option>
+        </select>
+      </div>
+    </div>
+
+    <div class="grid-2">
+      <div class="form-group">
+        <label>工作年限 <span class="hint">（应届填 0）</span></label>
+        <input type="number" id="experienceYears" min="0" step="0.5" placeholder="0">
+      </div>
+      <div class="form-group">
+        <label>核心技能 <span class="hint">（逗号分隔）</span></label>
+        <input type="text" id="coreSkills" placeholder="如：Python, SQL, Excel">
+      </div>
+    </div>
+
+    <div class="form-group">
+      <label>目标公司 <span class="hint">（逗号分隔，可填简称）</span></label>
+      <input type="text" id="targetCompanies" placeholder="如：字节, 腾讯, 阿里">
+    </div>
+
+    <div class="form-group">
+      <label>目标城市 <span class="hint">（逗号分隔）</span></label>
+      <input type="text" id="targetCities" placeholder="如：北京, 上海, 深圳">
+    </div>
+
+    <button class="btn btn-primary" onclick="saveProfile()">保存偏好配置</button>
+  </div>
+
+  <!-- 微信绑定 -->
+  <div class="card" id="wxpusherCard" style="display:none;">
+    <h2>绑定微信推送</h2>
+    <p style="color:#666;font-size:14px;margin-bottom:16px;">
+      完成后，您每天将在微信收到岗位日报推送。
+    </p>
+    <div class="qrcode-area">
+      <img id="qrcodeImg" src="" alt="WxPusher 二维码">
+      <p style="margin-top:12px;font-size:14px;color:#666;">微信扫码关注「WxPusher」公众号</p>
+    </div>
+    <div class="form-group">
+      <label>您的 WxPusher UID <span class="hint">（在公众号菜单「我的」→「我的UID」查看，格式 UID_xxx）</span></label>
+      <input type="text" id="wxpusherUid" placeholder="如：UID_abc123def456">
+    </div>
+    <button class="btn btn-primary" onclick="bindWxpusher()">绑定并发送测试消息</button>
+  </div>
+
+  <!-- 完成 -->
+  <div class="card" id="successCard" style="display:none;">
+    <div class="success-card">
+      <div class="check">✓</div>
+      <h2 style="border:none;padding:0;">配置完成！</h2>
+      <p style="color:#666;margin:16px 0;">
+        您的求职偏好已保存，微信推送已绑定。<br>
+        明天早上 9:00，您将收到第一份岗位日报。
+      </p>
+      <p style="color:#999;font-size:13px;">
+        岗位数据已自动录入您的飞书多维表格「招聘情报库」<br>
+        如需修改偏好，请重新打开本页面。
+      </p>
+    </div>
+  </div>
+</div>
+
+<div class="toast" id="toast"></div>
+
+<script>
+const userId = new URLSearchParams(window.location.search).get('user_id');
+if (!userId) {
+  document.querySelector('.container').innerHTML = 
+    '<div class="card"><h1>错误</h1><p>缺少用户 ID。请从飞书应用重新打开本页面。</p></div>';
+}
+
+let directions = [{}];
+
+function showToast(msg, type='success') {
+  const t = document.getElementById('toast');
+  t.textContent = msg;
+  t.className = 'toast show ' + type;
+  setTimeout(() => t.className = 'toast', 3000);
+}
+
+function renderDirections() {
+  const c = document.getElementById('directionsContainer');
+  c.innerHTML = '';
+  directions.forEach((d, i) => {
+    const row = document.createElement('div');
+    row.className = 'direction-row';
+    row.innerHTML = `
+      <input type="text" placeholder="方向名称（如：产品经理）" value="${d.name||''}" oninput="directions[${i}].name=this.value">
+      <input type="text" placeholder="关键词，逗号分隔（如：产品,PM）" value="${d.keywords||''}" oninput="directions[${i}].keywords=this.value">
+      ${directions.length > 1 ? `<button class="btn btn-danger btn-small" onclick="removeDirection(${i})">删除</button>` : ''}
+    `;
+    c.appendChild(row);
+  });
+}
+
+function addDirection() {
+  directions.push({});
+  renderDirections();
+}
+
+function removeDirection(i) {
+  directions.splice(i, 1);
+  renderDirections();
+}
+
+// 加载已有配置
+async function loadProfile() {
+  try {
+    const resp = await fetch('/api/profile?user_id=' + encodeURIComponent(userId));
+    const data = await resp.json();
+    if (data.profile) {
+      const p = data.profile;
+      document.getElementById('major').value = p.major || '';
+      document.getElementById('degree').value = p.degree || '';
+      document.getElementById('experienceYears').value = p.experience_years || 0;
+      document.getElementById('coreSkills').value = (p.core_skills || []).join(', ');
+      document.getElementById('targetCompanies').value = (p.target_companies || []).join(', ');
+      document.getElementById('targetCities').value = (p.target_cities || []).join(', ');
+      const dk = p.direction_keywords || {};
+      directions = Object.keys(dk).map(k => ({name: k, keywords: (dk[k]||[]).join(', ')}));
+      if (directions.length === 0) directions = [{}];
+      renderDirections();
+      if (data.wxpusher_bound) {
+        setStep(2);
+      }
+    }
+  } catch(e) {
+    console.error('加载配置失败', e);
+  }
+}
+
+async function saveProfile() {
+  const direction_keywords = {};
+  directions.forEach(d => {
+    if (d.name && d.keywords) {
+      direction_keywords[d.name] = d.keywords.split(/[,，]/).map(s=>s.trim()).filter(Boolean);
+    }
+  });
+
+  const payload = {
+    user_id: userId,
+    profile: {
+      major: document.getElementById('major').value,
+      degree: document.getElementById('degree').value,
+      experience_years: parseFloat(document.getElementById('experienceYears').value) || 0,
+      core_skills: document.getElementById('coreSkills').value.split(/[,，]/).map(s=>s.trim()).filter(Boolean),
+      direction_keywords: direction_keywords,
+      target_companies: document.getElementById('targetCompanies').value.split(/[,，]/).map(s=>s.trim()).filter(Boolean),
+      target_cities: document.getElementById('targetCities').value.split(/[,，]/).map(s=>s.trim()).filter(Boolean),
+    }
+  };
+
+  if (Object.keys(direction_keywords).length === 0) {
+    showToast('请至少填写一个目标岗位方向', 'error');
+    return;
+  }
+
+  try {
+    const resp = await fetch('/api/profile', {
+      method: 'POST',
+      headers: {'Content-Type': 'application/json'},
+      body: JSON.stringify(payload)
+    });
+    const data = await resp.json();
+    if (data.code === 0) {
+      showToast('偏好配置已保存！');
+      setStep(2);
+      loadQrcode();
+    } else {
+      showToast(data.msg || '保存失败', 'error');
+    }
+  } catch(e) {
+    showToast('网络错误，请重试', 'error');
+  }
+}
+
+async function loadQrcode() {
+  try {
+    const resp = await fetch('/api/wxpusher-qrcode');
+    const data = await resp.json();
+    if (data.url) {
+      document.getElementById('qrcodeImg').src = data.url;
+    } else {
+      document.getElementById('qrcodeImg').src = 
+        'data:image/svg+xml;base64,' + btoa('<svg xmlns="http://www.w3.org/2000/svg" width="200" height="200"><rect width="200" height="200" fill="#f0f0f0"/><text x="100" y="110" text-anchor="middle" fill="#999" font-size="14">二维码加载失败</text></svg>');
+    }
+  } catch(e) {
+    console.error(e);
+  }
+}
+
+async function bindWxpusher() {
+  const uid = document.getElementById('wxpusherUid').value.trim();
+  if (!uid.startsWith('UID_')) {
+    showToast('UID 格式错误，应以 UID_ 开头', 'error');
+    return;
+  }
+  try {
+    const resp = await fetch('/api/bind-wxpusher', {
+      method: 'POST',
+      headers: {'Content-Type': 'application/json'},
+      body: JSON.stringify({user_id: userId, wxpusher_uid: uid})
+    });
+    const data = await resp.json();
+    if (data.code === 0) {
+      showToast('微信绑定成功！测试消息已发送');
+      setStep(3);
+    } else {
+      showToast(data.msg || '绑定失败', 'error');
+    }
+  } catch(e) {
+    showToast('网络错误，请重试', 'error');
+  }
+}
+
+function setStep(n) {
+  [1,2,3].forEach(i => {
+    const el = document.getElementById('step'+i);
+    el.className = 'step ' + (i < n ? 'done' : i === n ? 'active' : 'todo');
+  });
+  document.getElementById('profileCard').style.display = n <= 1 ? 'block' : 'none';
+  document.getElementById('wxpusherCard').style.display = n === 2 ? 'block' : 'none';
+  document.getElementById('successCard').style.display = n === 3 ? 'block' : 'none';
+}
+
+// 初始化
+renderDirections();
+loadProfile();
+</script>
+</body>
+</html>

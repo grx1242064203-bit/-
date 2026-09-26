@@ -19,6 +19,7 @@ from typing import Optional
 from models import User, UserProfile, UserStore
 from feishu_client import FeishuClient
 from schema import JOB_FIELDS, CLOSED_JOB_FIELDS
+from config import settings
 
 logger = logging.getLogger(__name__)
 
@@ -98,7 +99,8 @@ def onboard_user(user_id: str, tenant_key: str, open_id: str,
             logger.info(f"用户 {user_id} 已存在,跳过飞书初始化")
             return existing
 
-        feishu_info = setup_user_feishu(tenant_key, open_id)
+        client = FeishuClient()
+        feishu_info = setup_user_feishu(tenant_key, open_id, client=client)
 
         user = User(
             id=user_id,
@@ -113,6 +115,20 @@ def onboard_user(user_id: str, tenant_key: str, open_id: str,
         )
         store.upsert(user)
         logger.info(f"用户 {user_id} onboarding 完成")
+
+        # 自动发送飞书消息:引导客户打开配置页
+        try:
+            onboarding_url = f"{settings.SERVICE_BASE_URL}/onboarding?user_id={user_id}"
+            msg = (
+                "🎉 招聘情报助手已为您创建专属岗位库！\n\n"
+                "请点击下方链接配置您的求职偏好并绑定微信推送：\n"
+                f"{onboarding_url}\n\n"
+                "配置完成后，每天早上 9:00 您将收到岗位日报推送。"
+            )
+            client.send_message(open_id, msg)
+        except Exception:
+            logger.exception(f"发送 onboarding 通知消息失败: user_id={user_id}")
+
         return user
 
 

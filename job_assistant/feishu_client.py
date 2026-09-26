@@ -339,3 +339,22 @@ class FeishuClient:
             # 转移所有权可能因权限配置失败,降级为只分享
             logger.warning(f"所有权转移失败,降级为分享: {e}")
             self.share_with_user(token, doc_type, open_id, "full_access")
+
+    # ---------- 消息推送 ----------
+    def send_message(self, open_id: str, text: str) -> bool:
+        """向用户发送飞书文本消息(用于 onboarding 后通知配置页链接)"""
+        try:
+            self._request(
+                "POST",
+                "/open-apis/im/v1/messages?receive_id_type=open_id",
+                json_body={
+                    "receive_id": open_id,
+                    "msg_type": "text",
+                    "content": json.dumps({"text": text}),
+                },
+            )
+            logger.info(f"飞书消息已发送给用户 {open_id}")
+            return True
+        except Exception as e:
+            logger.warning(f"飞书消息发送失败: {e}")
+            return False

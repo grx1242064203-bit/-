@@ -23,6 +23,9 @@ class Settings:
     # === 数据存储 ===
     DATA_DIR: str = field(default_factory=lambda: os.getenv("DATA_DIR", "/opt/job_assistant/data"))
 
+    # === 服务域名（用于生成客户配置页链接） ===
+    SERVICE_BASE_URL: str = field(default_factory=lambda: os.getenv("SERVICE_BASE_URL", "https://zhaopin-helper.xyz"))
+
     # === 运行参数 ===
     # 每个用户每日采集岗位数量上限
     DAILY_JOBS_PER_USER: int = int(os.getenv("DAILY_JOBS_PER_USER", "20"))

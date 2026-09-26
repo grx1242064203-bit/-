@@ -13,6 +13,7 @@ MVP 阶段可用 ngrok/cloudflared 做内网穿透,或用云函数接收回调�
 import json
 import logging
 import time
+import threading
 from typing import Optional
 
 from models import User, UserProfile, UserStore
@@ -20,6 +21,9 @@ from feishu_client import FeishuClient
 from schema import JOB_FIELDS, CLOSED_JOB_FIELDS
 
 logger = logging.getLogger(__name__)
+
+# onboarding 全局锁，防止并发回调创建多个多维表格（竞态条件）
+_onboarding_lock = threading.Lock()
 
 
 def setup_user_feishu(tenant_key: str, open_id: str, client: FeishuClient = None) -> dict:
@@ -85,27 +89,31 @@ def onboard_user(user_id: str, tenant_key: str, open_id: str,
     3. 保存用户配置
     """
     store = store or UserStore()
-    existing = store.get(user_id)
-    if existing and existing.feishu_base_token:
-        logger.info(f"用户 {user_id} 已存在,跳过飞书初始化")
-        return existing
 
-    feishu_info = setup_user_feishu(tenant_key, open_id)
+    # 加锁防止并发 onboarding（竞态条件导致创建多个多维表格）
+    with _onboarding_lock:
+        # 双重检查：加锁后再次确认用户不存在
+        existing = store.get(user_id)
+        if existing and existing.feishu_base_token:
+            logger.info(f"用户 {user_id} 已存在,跳过飞书初始化")
+            return existing
 
-    user = User(
-        id=user_id,
-        feishu_tenant_key=tenant_key,
-        feishu_open_id=open_id,
-        feishu_base_token=feishu_info["base_token"],
-        feishu_table_id=feishu_info["table_id"],
-        feishu_closed_table_id=feishu_info["closed_table_id"],
-        profile=UserProfile(**(profile or {})),
-        plan=plan,
-        expire_date=expire_date,
-    )
-    store.upsert(user)
-    logger.info(f"用户 {user_id} onboarding 完成")
-    return user
+        feishu_info = setup_user_feishu(tenant_key, open_id)
+
+        user = User(
+            id=user_id,
+            feishu_tenant_key=tenant_key,
+            feishu_open_id=open_id,
+            feishu_base_token=feishu_info["base_token"],
+            feishu_table_id=feishu_info["table_id"],
+            feishu_closed_table_id=feishu_info["closed_table_id"],
+            profile=UserProfile(**(profile or {})),
+            plan=plan,
+            expire_date=expire_date,
+        )
+        store.upsert(user)
+        logger.info(f"用户 {user_id} onboarding 完成")
+        return user
 
 
 def handle_feishu_callback(body: dict) -> dict:

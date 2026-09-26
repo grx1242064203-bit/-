@@ -8,6 +8,7 @@
 4. 失败不影响其他用户 — 调用方捕获异常
 """
 import json
+import os
 import time
 import logging
 from typing import Dict, List, Optional, Any
@@ -292,7 +293,9 @@ class FeishuClient:
         data = self._request("POST", "/open-apis/docx/v1/documents",
                              json_body={"title": title})
         doc_id = data["document"]["document_id"]
-        url = data["document"]["url"]
+        # 飞书 docx API 响应不含 url 字段，需手动拼接
+        domain = os.environ.get("FEISHU_DOMAIN", "www.feishu.cn")
+        url = f"https://{domain}/docx/{doc_id}"
         return doc_id, url
 
     def append_doc_blocks(self, document_id: str, blocks: List[Dict]):

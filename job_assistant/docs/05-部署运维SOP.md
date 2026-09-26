@@ -134,42 +134,116 @@ crontab -e
 
 ---
 
-## 3. 更新部署 SOP（标准流程）
+## 3. 服务器同步核心原则（必读）
 
-> 这是日常迭代的标准部署流程，每次代码更新后执行。
+> ⚠️ **第一性原则：本地代码修改 ≠ 服务器生效。所有改动必须同步到生产服务器并重启服务，用户才能看到变化。**
+
+### 3.1 为什么必须同步到服务器
+
+本项目采用**单机部署架构**，所有用户请求和定时任务都运行在阿里云轻量应用服务器上：
+
+| 项目 | 值 |
+|------|-----|
+| 服务器 | 阿里云轻量应用服务器（马来西亚·吉隆坡） |
+| 公网 IP | `47.250.216.165` |
+| 域名 | `zhaopin-helper.xyz` |
+| 应用路径 | `/opt/job_assistant` |
+| 服务进程 | `job-callback`（systemd 管理，监听 `127.0.0.1:8080`） |
+| 代码来源 | 本地开发机直接 `scp` 上传（服务器 git 仓库无远程 origin） |
+
+**常见误区**：
+- ❌ 在本地改完代码就以为用户能看到效果 → 服务跑的是服务器上的旧代码
+- ❌ 只改 collector.py 不重启服务 → Python 进程加载的是旧字节码
+- ❌ 只在本地测试通过就交付 → 生产环境可能因依赖/数据不同而异常
+
+**正确流程**：本地修改 → 本地测试 → `scp` 上传服务器 → 语法检查 → 重启服务 → 健康检查 → 生产验证
+
+### 3.2 SSH 连接方式（通过 HTTP 代理 CONNECT 隧道）
+
+本地开发机通过 TRAE 环境的 HTTP 代理（`127.0.0.1:18080`）建立 SSH 隧道连接服务器：
 
 ```bash
-cd /opt/job_assistant
+# ~/.ssh/config
+Host prod
+    HostName 47.250.216.165
+    User admin
+    Port 22
+    IdentityFile ~/.ssh/id_ed25519
+    ProxyCommand nc -X connect -x 127.0.0.1:18080 %h %p
+    StrictHostKeyChecking no
+    UserKnownHostsFile /dev/null
+```
 
-# 1. 拉取最新代码
-sudo git pull origin trae/agent-ooAq84
+公钥需预先部署到服务器 `~/.ssh/authorized_keys`。
+
+### 3.3 验证同步是否生效
+
+每次部署后必须执行：
+
+```bash
+# 1. 确认服务已加载新代码（看启动时间）
+ssh prod "sudo systemctl status job-callback | head -5"
+
+# 2. 健康检查
+ssh prod "curl -s http://localhost:8080/health"
+
+# 3. 验证具体修改已生效（以领英过滤为例）
+ssh prod "cd /opt/job_assistant && venv/bin/python3 -c '
+from collector import _is_allowed_campus_source
+assert _is_allowed_campus_source(\"https://www.linkedin.com/jobs/1\") == False
+print(\"过滤逻辑已生效\")
+'"
+```
+
+---
+
+## 4. 更新部署 SOP（标准流程）
+
+> 这是日常迭代的标准部署流程，每次代码更新后执行。
+> 注意：服务器 git 仓库无远程 origin，使用 `scp` 上传而非 `git pull`。
+
+在**本地开发机**执行（假设本地代码已修改并通过测试）：
+
+```bash
+# === 本地侧 ===
+
+# 1. 上传修改的文件到服务器（按需指定文件）
+scp /workspace/job_assistant/collector.py prod:/opt/job_assistant/
+# 如需上传多个文件：
+# scp collector.py config.py scorer.py prod:/opt/job_assistant/
+
+# === 服务器侧 ===
+ssh prod << 'EOF'
+cd /opt/job_assistant
 
 # 2. 清理缓存
 sudo find . -name "__pycache__" -type d -exec rm -rf {} + 2>/dev/null
 sudo find . -name "*.pyc" -delete 2>/dev/null
 
-# 3. 语法检查
-venv/bin/python3 -m py_compile onboarding.py feishu_client.py daily_runner.py models.py callback_server.py collector.py scorer.py main.py config.py schema.py wxpusher_client.py llm_client.py weekly_rankings.py && echo "语法 OK"
+# 3. 语法检查（必须通过才能继续）
+venv/bin/python3 -m py_compile collector.py && echo "语法 OK" || { echo "语法错误，终止部署"; exit 1; }
 
-# 4. 清理坏数据（仅保留已知用户 u1，按需调整）
-sudo venv/bin/python3 -c "
-import json
-with open('data/users.json', 'r') as f:
-    users = json.load(f)
-for uid in list(users.keys()):
-    if uid != 'u1':
-        del users[uid]
-with open('data/users.json', 'w') as f:
-    json.dump(users, f, ensure_ascii=False, indent=2)
-print('用户清理完成:', list(users.keys()))
-"
+# 4. （可选）清理坏数据 — 按需执行
+# sudo venv/bin/python3 -c "
+# import json
+# with open('data/users.json', 'r') as f:
+#     users = json.load(f)
+# # 按需删除指定用户
+# for uid in list(users.keys()):
+#     if uid in ('test_001',):
+#         del users[uid]
+# with open('data/users.json', 'w') as f:
+#     json.dump(users, f, ensure_ascii=False, indent=2)
+# print('清理后用户:', list(users.keys()))
+# "
 
-# 5. 重启服务
+# 5. 重启服务（使新代码生效）
 sudo systemctl restart job-callback
 sleep 3
 
 # 6. 健康检查
 curl -s http://localhost:8080/health
+EOF
 ```
 
 **预期输出**：
@@ -177,11 +251,19 @@ curl -s http://localhost:8080/health
 {"status": "ok", "uptime_seconds": 3, "service": "job-callback"}
 ```
 
+**部署 Checklist**（每次必须逐项确认）：
+- [ ] 本地代码已通过 `py_compile` 和功能测试
+- [ ] `scp` 上传成功（检查文件大小/时间戳）
+- [ ] 服务器 `py_compile` 通过
+- [ ] `systemctl restart job-callback` 执行完成
+- [ ] `/health` 返回 `status: ok`
+- [ ] 生产环境验证修改生效（如领英过滤等）
+
 ---
 
-## 4. 验证流程
+## 5. 验证流程
 
-### 4.1 部署后验证
+### 5.1 部署后验证
 
 ```bash
 # 1. 服务状态
@@ -197,7 +279,7 @@ sudo ss -tlnp | grep 8080
 curl -s https://zhaopin-helper.xyz/health
 ```
 
-### 4.2 功能验证（91402 修复验证）
+### 5.2 功能验证（91402 修复验证）
 
 ```bash
 cd /opt/job_assistant
@@ -211,7 +293,7 @@ python verify_fix.py
 3. 存量用户 token 迁移
 4. 单用户每日任务测试
 
-### 4.3 端到端验证
+### 5.3 端到端验证
 
 1. **飞书回调**：在飞书中打开应用，检查 `users.json` 是否新增用户
 2. **多维表格**：确认用户专属多维表格已创建，字段完整
@@ -220,9 +302,9 @@ python verify_fix.py
 
 ---
 
-## 5. 运维监控
+## 6. 运维监控
 
-### 5.1 日志查看
+### 6.1 日志查看
 
 ```bash
 # 回调服务日志
@@ -236,7 +318,7 @@ sudo tail -f /var/log/nginx/access.log
 sudo tail -f /var/log/nginx/error.log
 ```
 
-### 5.2 健康检查
+### 6.2 健康检查
 
 ```bash
 # 手动检查
@@ -246,7 +328,7 @@ curl -s http://localhost:8080/health
 https://zhaopin-helper.xyz/health
 ```
 
-### 5.3 常用排查命令
+### 6.3 常用排查命令
 
 ```bash
 # 服务重启
@@ -264,9 +346,9 @@ cd /opt/job_assistant && venv/bin/python main.py single u1
 
 ---
 
-## 6. 回滚 SOP
+## 7. 回滚 SOP
 
-### 6.1 代码回滚
+### 7.1 代码回滚
 
 ```bash
 cd /opt/job_assistant
@@ -276,7 +358,7 @@ sudo systemctl restart job-callback
 curl -s http://localhost:8080/health
 ```
 
-### 6.2 服务紧急降级
+### 7.2 服务紧急降级
 
 若飞书 API 大面积故障，可临时停止定时任务：
 
@@ -289,9 +371,9 @@ crontab -e  # 注释掉 daily 任务行
 
 ---
 
-## 7. 数据备份
+## 8. 数据备份
 
-### 7.1 备份脚本
+### 8.1 备份脚本
 
 ```bash
 #!/bin/bash
@@ -312,7 +394,7 @@ find $BACKUP_DIR -name "*.json" -mtime +30 -delete
 0 3 * * * /opt/job_assistant/backup.sh
 ```
 
-### 7.2 恢复
+### 8.2 恢复
 
 ```bash
 cp /opt/job_assistant/backups/users_YYYYMMDD_HHMMSS.json /opt/job_assistant/data/users.json

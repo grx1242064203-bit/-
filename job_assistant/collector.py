@@ -647,6 +647,28 @@ class JobCollector:
             else:
                 queries.append(f"{core_kw} 社招 招聘")
 
+        # === 优先级1.5:高校职业发展中心(CDC)公众号 + 就业网 ===
+        # 用户要求的第四类来源:高校职业发展中心公众号(放在企业查询之前,避免被截断)
+        if role == "campus":
+            from datetime import datetime as _dt_cdc
+            _yr_cdc = _dt_cdc.now().year
+            school = getattr(profile, "school", "") or ""
+            cdc_keywords = ["就业指导中心", "职业发展中心", "CDC", "就业服务", "就业网"]
+            if school:
+                # 用户学校的 CDC 公众号
+                for cdc_kw in cdc_keywords[:3]:
+                    queries.append(f"{school} {cdc_kw} 校招 {_yr_cdc} site:{settings.WECHAT_MP_DOMAIN}")
+                # 用户学校的就业网站
+                queries.append(f"{school} 校招 {_yr_cdc} 校园招聘")
+            # 通用高校 CDC 公众号(求职类)
+            for cdc_kw in cdc_keywords[:2]:
+                queries.append(f"高校 {cdc_kw} 校招 {_yr_cdc} site:{settings.WECHAT_MP_DOMAIN}")
+            # 重点高校就业网(不限定学校,覆盖知名高校)
+            top_universities = ["清华大学", "北京大学", "复旦大学", "上海交通大学",
+                                "浙江大学", "南京大学", "中国人民大学", "武汉大学"]
+            for uni in top_universities[:4]:
+                queries.append(f"{uni} 就业指导中心 校招 {_yr_cdc}")
+
         # === 优先级2:校招用户 — 基于企业清单的精准查询(微信公众号为主) ===
         if role == "campus":
             from campus_companies import get_companies_by_filters
@@ -674,8 +696,8 @@ class JobCollector:
             from datetime import datetime as _dt
             _yr = _dt.now().year
             # 每家目标企业生成查询:企业名 + 校招/管培 + 微信公众号
-            # 限制查询数量,避免过多(取前 60 家,按用户偏好匹配度)
-            for comp in target_companies_list[:60]:
+            # 限制查询数量,避免过多(取前 40 家,给 CDC/公众号/官网查询留出空间)
+            for comp in target_companies_list[:40]:
                 cname = comp["name"]
                 # 企业校招公告(微信公众号优先)
                 queries.append(f"{cname} 校招 {_yr} site:mp.weixin.qq.com")
@@ -941,7 +963,8 @@ class JobCollector:
 
                 # 抓取 JD
                 jd_text = fetch_jd_by_source(url)
-                full_text = jd_text or snippet
+                # 合并 title + snippet + jd_text,避免仅因摘要缺失关键词而误过滤
+                full_text = " ".join(filter(None, [title, snippet, jd_text]))
 
                 # 过滤3:内容校验(必须含岗位相关关键词)
                 if not _is_job_content(full_text):

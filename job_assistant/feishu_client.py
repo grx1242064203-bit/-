@@ -316,7 +316,8 @@ class FeishuClient:
             f"/open-apis/bitable/v1/apps/{app_token}/tables/{table_id}/records/{record_id}",
         ).get("record", {}).get("fields", {})
 
-    @staticmethod
+    _NUMBER_FIELDS = {"相关性评分", "难度评分"}
+
     def normalize_fields(fields: Dict) -> Dict:
         """
         将飞书读出的字段值归一化为可写入的格式。
@@ -343,6 +344,12 @@ class FeishuClient:
                 else:
                     # 其他对象转字符串
                     result[k] = str(v)
+            elif k in FeishuClient._NUMBER_FIELDS:
+                # 数字字段:确保为数值类型
+                try:
+                    result[k] = int(float(v))
+                except (ValueError, TypeError):
+                    continue
             else:
                 result[k] = v
         return result

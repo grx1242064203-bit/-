@@ -124,12 +124,7 @@ def setup_user_feishu(tenant_key: str, open_id: str, client: FeishuClient = None
     except Exception as e:
         logger.warning(f"创建优化视图失败(不影响使用): {e}")
 
-    # 4. 分享给用户 + 转所有权（失败不阻塞 onboarding，管理员可手动补分享）
-    try:
-        client.transfer_owner(base_token, "bitable", open_id)
-    except Exception as e:
-        logger.warning(f"分享/转所有权失败(不影响用户创建): {e}")
-
+    # 注意:所有权转移放到 onboard_user 中异步执行,避免阻塞消息发送
     return {
         "base_token": base_token,
         "table_id": table_id,
@@ -173,18 +168,49 @@ def onboard_user(user_id: str, tenant_key: str, open_id: str,
         store.upsert(user)
         logger.info(f"用户 {user_id} onboarding 完成")
 
-        # 自动发送飞书消息:引导客户打开配置页
+        # 立即发送飞书卡片消息(带配置页按钮),不等所有权转移
+        onboarding_url = f"{settings.SERVICE_BASE_URL}/onboarding?user_id={user_id}"
         try:
-            onboarding_url = f"{settings.SERVICE_BASE_URL}/onboarding?user_id={user_id}"
-            msg = (
-                "🎉 招聘情报助手已为您创建专属岗位库！\n\n"
-                "请点击下方链接配置您的求职偏好（支持简历智能解析）：\n"
-                f"{onboarding_url}\n\n"
-                "配置完成后将立即为您采集第一批岗位，此后每天早上 9:00 推送岗位日报。"
-            )
-            client.send_message(open_id, msg)
+            card = {
+                "config": {"wide_screen_mode": True},
+                "header": {
+                    "template": "blue",
+                    "title": {"tag": "plain_text", "content": "🎉 招聘情报助手已就绪"},
+                },
+                "elements": [
+                    {
+                        "tag": "markdown",
+                        "content": (
+                            "已为您创建专属岗位数据库！\n\n"
+                            "请点击下方按钮配置求职偏好（支持简历智能解析），"
+                            "配置完成后立即采集第一批岗位，此后每天 9:00 推送岗位日报。"
+                        ),
+                    },
+                    {
+                        "tag": "action",
+                        "actions": [
+                            {
+                                "tag": "button",
+                                "text": {"tag": "plain_text", "content": "配置求职偏好"},
+                                "type": "primary",
+                                "url": onboarding_url,
+                            }
+                        ],
+                    },
+                ],
+            }
+            client.send_card_message(open_id, card)
         except Exception:
-            logger.exception(f"发送 onboarding 通知消息失败: user_id={user_id}")
+            logger.exception(f"发送 onboarding 卡片消息失败: user_id={user_id}")
+
+        # 所有权转移放后台线程执行(可能耗时,不阻塞用户)
+        def _transfer():
+            try:
+                client.transfer_owner(feishu_info["base_token"], "bitable", open_id)
+            except Exception as e:
+                logger.warning(f"所有权转移失败(已降级为分享): {e}")
+
+        threading.Thread(target=_transfer, daemon=True).start()
 
         return user
 

@@ -43,6 +43,7 @@ class UserProfile:
     # === LLM 简历解析留档 ===
     resume_text: str = ""      # 原始简历文本(留档,便于重新解析)
     summary: str = ""          # LLM 生成的候选人一句话画像
+    highlights: List[str] = field(default_factory=list)  # 简历亮点(丰富画像展示)
 
 
 @dataclass

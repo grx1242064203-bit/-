@@ -35,16 +35,27 @@ RESUME_PARSE_PROMPT = """你是一位有 10 年经验的资深 HR 专家,擅长�
 4. graduation_year: 毕业年份(4位数字,如 2026)。在读则填预计毕业年份。
 5. experience_years: 工作年限(数字,应届/在校填 0,实习经历不算正式工作年限)。
 6. core_skills: 核心技能列表(硬技能优先,如 Python/SQL/Excel/数据分析/项目管理等,提取 5-15 个)。
-7. target_roles: 目标岗位方向列表(从简历求职意向/经历推断,如 ["产品经理","数据分析"])。
-8. target_cities: 目标城市列表(从简历期望地点推断,不确定则为空数组)。
-9. target_industries: 目标行业列表(从经历推断,如 ["互联网","金融"])。
-10. certificates: 已获证书列表(如 CFA/CPA/法考/PMP/四六级等)。
-11. current_role: 当前身份("学生"/"在职"/"待业")。
-12. summary: 候选人一句话画像(学校+学历+核心亮点,不超过 50 字)。
+7. target_roles: 目标岗位方向列表(从简历求职意向/经历推断,如 ["产品经理","数据分析"])。每个方向需精炼为 2-6 字的岗位名称。
+8. direction_keywords: 每个目标方向对应的搜索关键词数组。这是最关键的字段!
+   格式: [{"direction": "方向名", "keywords": ["关键词1","关键词2",...]}]
+   要求: 每个方向生成 5-8 个搜索关键词,必须包含:
+     - 方向名本身(如 "FOF投资经理")
+     - 同义/近义岗位名(如 "基金投资经理"、"资产配置研究员")
+     - 细分领域术语(如 "基金筛选"、"组合管理"、"母基金")
+     - 英文常用缩写(如 "FOF"、"portfolio")
+     - 相关技能/工具词(如 "资产配置"、"量化")
+   这些关键词将直接用于搜索引擎抓取岗位,必须精准、专业、覆盖全面。
+9. target_cities: 目标城市列表(从简历期望地点推断,不确定则为空数组)。
+10. target_industries: 目标行业列表(从经历推断,如 ["互联网","金融"])。
+11. certificates: 已获证书列表(如 CFA/CPA/法考/PMP/四六级等)。
+12. current_role: 当前身份("学生"/"在职"/"待业")。
+13. summary: 候选人一句话画像(学校+学历+核心亮点,不超过 50 字)。
+14. highlights: 简历亮点列表(3-5 条,每条不超过 30 字,如 "某券商行研实习经历"、"CFA二级通过")。
 
 注意:
 - 缺失的信息填""(字符串)或 [](数组),不要编造
 - experience_years 必须是数字
+- direction_keywords 的 keywords 必须是搜索友好的关键词,不要用完整句子
 - 只输出 JSON 对象,不要 markdown 代码块标记
 
 简历文本:
@@ -154,17 +165,46 @@ class LLMClient:
         profile["target_industries"] = self._to_list(parsed.get("target_industries"))
         profile["target_certificates"] = self._to_list(parsed.get("certificates"))
 
-        # 目标方向 → direction_keywords (方向名 → 该方向关键词)
-        target_roles = self._to_list(parsed.get("target_roles"))
+        # 亮点(用于丰富画像展示)
+        profile["highlights"] = self._to_list(parsed.get("highlights"))
+
+        # 目标方向 → direction_keywords (方向名 → 该方向关键词列表)
+        # 优先使用 LLM 直接生成的 direction_keywords(含 5-8 个关键词/方向)
         direction_keywords: Dict[str, List[str]] = {}
-        for role in target_roles:
-            if role:
-                # 用岗位名本身作为关键词(采集时会用)
-                direction_keywords[role] = [role]
+        raw_dk = parsed.get("direction_keywords")
+        if isinstance(raw_dk, list):
+            # LLM 输出格式: [{"direction": "xxx", "keywords": ["a","b"]}, ...]
+            for item in raw_dk:
+                if isinstance(item, dict):
+                    direction = str(item.get("direction", "")).strip()
+                    kws = self._to_list(item.get("keywords"))
+                    if direction and kws:
+                        # 确保方向名本身在关键词列表中
+                        if direction not in kws:
+                            kws.insert(0, direction)
+                        direction_keywords[direction] = kws[:8]  # 最多 8 个
+        elif isinstance(raw_dk, dict):
+            # 兼容 dict 格式: {"方向名": ["a","b"]}
+            for direction, kws in raw_dk.items():
+                direction = str(direction).strip()
+                kws = self._to_list(kws)
+                if direction and kws:
+                    if direction not in kws:
+                        kws.insert(0, direction)
+                    direction_keywords[direction] = kws[:8]
+
+        # 降级:若 LLM 未生成 direction_keywords,用 target_roles 兜底
+        if not direction_keywords:
+            target_roles = self._to_list(parsed.get("target_roles"))
+            for role in target_roles:
+                if role:
+                    # 至少包含方向名,采集时会用
+                    direction_keywords[role] = [role]
         profile["direction_keywords"] = direction_keywords
 
         logger.info(f"简历解析完成: school={profile['school']} degree={profile['degree']} "
-                    f"major={profile['major']} skills={len(profile['core_skills'])}个")
+                    f"major={profile['major']} skills={len(profile['core_skills'])}个 "
+                    f"directions={len(direction_keywords)}个")
         return profile
 
     @staticmethod
@@ -183,6 +223,7 @@ class LLMClient:
             "target_certificates": [],
             "current_role": "",
             "summary": "",
+            "highlights": [],
         }
 
     @staticmethod
@@ -197,6 +238,70 @@ class LLMClient:
             parts = re.split(r"[,，、;；\n]", value)
             return [p.strip() for p in parts if p.strip()]
         return [str(value).strip()] if str(value).strip() else []
+
+    def optimize_keywords(self, direction: str, resume_text: str,
+                          existing_keywords: List[str] = None) -> List[str]:
+        """
+        基于简历内容和用户填写的求职方向,优化生成 5-8 个搜索关键词。
+
+        使用场景:
+        - 用户手动填写方向名后,点击"优化"按钮
+        - 根据简历中的经历/技能/证书,为该方向生成精准的搜索关键词
+
+        返回关键词列表(含方向名本身)。
+        """
+        if not direction or not direction.strip():
+            return []
+        direction = direction.strip()
+        existing = existing_keywords or []
+
+        prompt = f"""你是招聘信息搜索专家。请基于以下简历内容,为求职方向"{direction}"生成精准的搜索关键词。
+
+这些关键词将直接用于搜索引擎抓取招聘岗位,必须精准、专业、覆盖全面。
+
+简历摘要:
+\"\"\"{resume_text[:3000]}\"\"\"
+
+用户已有的关键词(可参考改进): {', '.join(existing) if existing else '无'}
+
+请输出 JSON(不要输出其他文字):
+{{
+  "keywords": ["关键词1", "关键词2", ...]
+}}
+
+关键词要求(共 5-8 个):
+1. 必须包含方向名 "{direction}" 本身
+2. 同义/近义岗位名(如 "FOF投资经理" → "基金投资经理"、"资产配置研究员")
+3. 细分领域术语(如 "基金筛选"、"组合管理"、"母基金")
+4. 英文常用缩写(如 "FOF"、"portfolio")
+5. 与简历经历相关的技能/工具词
+6. 关键词必须简洁,不要用完整句子
+"""
+        content = self._chat(
+            [{"role": "user", "content": prompt}],
+            temperature=0.3, max_tokens=300,
+        )
+        parsed = self._extract_json(content) if content else None
+        if not parsed:
+            # 降级:方向名 + 已有关键词
+            result = [direction]
+            for kw in existing:
+                if kw and kw not in result:
+                    result.append(kw)
+            return result[:8]
+
+        kws = self._to_list(parsed.get("keywords"))
+        # 确保方向名在列表中
+        if direction not in kws:
+            kws.insert(0, direction)
+        # 去重并限制数量
+        seen = set()
+        unique = []
+        for kw in kws:
+            if kw and kw.lower() not in seen:
+                seen.add(kw.lower())
+                unique.append(kw)
+        return unique[:8]
 
     def extract_deadline(self, jd_text: str) -> str:
         """

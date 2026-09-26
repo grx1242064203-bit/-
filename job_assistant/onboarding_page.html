@@ -310,7 +310,7 @@
     </div>
 
     <div class="form-group">
-      <label>目标岗位方向 <span class="hint">（可添加多个，每个方向填 2-3 个关键词）</span></label>
+      <label>目标岗位方向 <span class="hint">（填写方向名后点击"✨优化",AI 将基于简历生成 5-8 个精准搜索关键词）</span></label>
       <div id="directionsContainer"></div>
       <button class="btn btn-secondary btn-small" onclick="addDirection()">+ 添加方向</button>
     </div>
@@ -398,8 +398,9 @@ function renderDirections() {
     const row = document.createElement('div');
     row.className = 'direction-row';
     row.innerHTML = `
-      <input type="text" placeholder="方向名称（如：产品经理）" value="${d.name||''}" oninput="directions[${i}].name=this.value">
-      <input type="text" placeholder="关键词，逗号分隔（如：产品,PM）" value="${d.keywords||''}" oninput="directions[${i}].keywords=this.value">
+      <input type="text" placeholder="方向名称（如：FOF投资经理）" value="${d.name||''}" oninput="directions[${i}].name=this.value" style="flex:2;">
+      <input type="text" placeholder="关键词，逗号分隔（5-8个）" value="${d.keywords||''}" oninput="directions[${i}].keywords=this.value" style="flex:3;">
+      <button class="btn btn-secondary btn-small" onclick="optimizeKeywords(${i})" title="基于简历AI优化关键词">✨优化</button>
       ${directions.length > 1 ? `<button class="btn btn-danger btn-small" onclick="removeDirection(${i})">删除</button>` : ''}
     `;
     c.appendChild(row);
@@ -414,6 +415,44 @@ function addDirection() {
 function removeDirection(i) {
   directions.splice(i, 1);
   renderDirections();
+}
+
+// 关键词优化:调用 LLM 根据简历生成 5-8 个精准关键词
+async function optimizeKeywords(index) {
+  const d = directions[index];
+  if (!d || !d.name) {
+    showToast('请先填写方向名称', 'error');
+    return;
+  }
+  const existing = (d.keywords || '').split(/[,，]/).map(s => s.trim()).filter(Boolean);
+  const btn = event.target;
+  btn.disabled = true;
+  btn.textContent = '优化中...';
+
+  try {
+    const resp = await fetch('/api/optimize-keywords', {
+      method: 'POST',
+      headers: {'Content-Type': 'application/json'},
+      body: JSON.stringify({
+        user_id: userId,
+        direction: d.name,
+        existing_keywords: existing,
+      })
+    });
+    const data = await resp.json();
+    if (data.code === 0 && data.keywords) {
+      directions[index].keywords = data.keywords.join(', ');
+      renderDirections();
+      showToast(`已为「${d.name}」生成 ${data.keywords.length} 个关键词`);
+    } else {
+      showToast(data.msg || '优化失败', 'error');
+    }
+  } catch(e) {
+    showToast('网络错误，请重试', 'error');
+  } finally {
+    btn.disabled = false;
+    btn.textContent = '✨优化';
+  }
 }
 
 // 加载已有配置
@@ -523,6 +562,10 @@ async function parseResume() {
       if (p.target_cities && p.target_cities.length) {
         document.getElementById('targetCities').value = p.target_cities.join(', ');
       }
+      if (p.target_industries && p.target_industries.length) {
+        // 行业字段前端没有单独输入框,存入 localStorage 供保存时使用
+        window._parsed_industries = p.target_industries;
+      }
       if (p.direction_keywords && Object.keys(p.direction_keywords).length) {
         directions = Object.keys(p.direction_keywords).map(k => ({
           name: k, keywords: (p.direction_keywords[k]||[]).join(', ')
@@ -530,8 +573,12 @@ async function parseResume() {
         renderDirections();
       }
       statusEl.style.color = '#28a745';
-      const summary = p.summary ? `<br>✅ ${p.summary}` : '';
-      statusEl.innerHTML = `✅ 解析成功！已自动填写学校: ${p.school||'未识别'}, 学历: ${p.degree||'未识别'}, 技能: ${(p.core_skills||[]).length}个${summary}`;
+      // 丰富画像展示:学校、学历、专业、亮点、方向数
+      const hl = (p.highlights || []).slice(0, 4);
+      const hlHtml = hl.length ? `<br>💡 亮点: ${hl.map(h=>`${h}`).join(' | ')}` : '';
+      const dirCount = Object.keys(p.direction_keywords || {}).length;
+      const summary = p.summary ? `<br>📝 ${p.summary}` : '';
+      statusEl.innerHTML = `✅ 解析成功！已自动填写 — 学校: ${p.school||'未识别'} | 学历: ${p.degree||'未识别'} | 专业: ${p.major||'未识别'}<br>🎯 识别到 ${dirCount} 个求职方向, ${p.core_skills?.length||0} 项核心技能${hlHtml}${summary}`;
       showToast('简历解析成功，信息已回填');
     } else {
       statusEl.style.color = '#dc3545';
@@ -569,8 +616,16 @@ async function saveProfile() {
       direction_keywords: direction_keywords,
       target_companies: document.getElementById('targetCompanies').value.split(/[,，]/).map(s=>s.trim()).filter(Boolean),
       target_cities: document.getElementById('targetCities').value.split(/[,，]/).map(s=>s.trim()).filter(Boolean),
+      target_industries: window._parsed_industries || [],
     }
   };
+
+  // 校验:每个方向至少需要 1 个关键词(用于搜索抓取)
+  const emptyDirs = Object.entries(direction_keywords).filter(([, kws]) => kws.length === 0);
+  if (emptyDirs.length > 0) {
+    showToast(`方向「${emptyDirs[0][0]}」缺少关键词,请填写或点击"优化"`, 'error');
+    return;
+  }
 
   if (Object.keys(direction_keywords).length === 0) {
     showToast('请至少填写一个目标岗位方向', 'error');

@@ -318,6 +318,7 @@ class FeishuClient:
 
     _NUMBER_FIELDS = {"相关性评分", "难度评分"}
 
+    @staticmethod
     def normalize_fields(fields: Dict) -> Dict:
         """
         将飞书读出的字段值归一化为可写入的格式。

@@ -320,28 +320,62 @@ class JobCollector:
                        target_cities: List[str]) -> List[str]:
         """
         根据用户画像构建搜索关键词。
-        优先级:微信公众号(高质量) > 公司官网 > 社区 > 通用
+        优先级:方向关键词(精准) > 微信公众号(高质量) > 公司官网 > 社区
+
+        核心修复:
+        - 方向关键词驱动搜索,避免 role 为空时注入无关的通用管培/外资查询
+        - role 为空时从 experience_years 推断(0年→campus,否则→social),不瞎猜
         """
         cities = " ".join(target_cities) if target_cities else ""
         companies = target_companies if target_companies else []
         directions = profile.direction_keywords or {}
         role = getattr(profile, "role", "") or ""
 
+        # role 兜底:若未设置,从经验年限推断(0年→校招,有经验→社招)
+        if not role:
+            exp = getattr(profile, "experience_years", 0) or 0
+            role = "campus" if exp == 0 else "social"
+
         queries = []
 
-        # === 优先级1:微信公众号(高质量、低噪声,放最前面) ===
-        # 招聘类公众号文章覆盖搜索难以直接找到的一手岗位
+        # === 优先级1:用户方向关键词 + 招聘词(精准匹配,放最前面) ===
+        # 方向关键词是用户画像的核心,必须优先搜索
         for direction, keywords in directions.items():
+            if not keywords:
+                continue
+            # 用前 2-3 个关键词组合搜索,提高精准度
+            core_kw = " ".join(keywords[:3])
+            # 方向名 + 招聘 + 城市
+            for city in (target_cities or [""]):
+                q = f"{core_kw} 招聘 {city}".strip()
+                if len(q) > 5:
+                    queries.append(q)
+            # 方向名 + 校招/实习/社招(按 role)
+            if role == "internship":
+                queries.append(f"{core_kw} 实习 招聘")
+            elif role == "campus":
+                queries.append(f"{core_kw} 校招 招聘")
+                queries.append(f"{core_kw} 应届 招聘")
+            else:
+                queries.append(f"{core_kw} 社招 招聘")
+
+        # === 优先级2:微信公众号(高质量、低噪声) ===
+        for direction, keywords in directions.items():
+            if not keywords:
+                continue
             core_kw = " ".join(keywords[:2])
             for kw in settings.WECHAT_RECRUIT_KEYWORDS[:4]:
                 queries.append(f"{core_kw} {kw} site:{settings.WECHAT_MP_DOMAIN}")
-        # 重点公众号账号精确搜索
-        for account in settings.WECHAT_MP_ACCOUNTS[:8]:
+        # 重点公众号账号精确搜索(按行业匹配用户方向,避免不相关账号)
+        relevant_accounts = self._match_wechat_accounts(directions)
+        for account in relevant_accounts[:8]:
             for kw in settings.WECHAT_RECRUIT_KEYWORDS[:3]:
                 queries.append(f"{account} {kw} site:{settings.WECHAT_MP_DOMAIN}")
 
-        # === 优先级2:用户方向 + 公司/城市 ===
+        # === 优先级3:用户方向 + 目标公司 ===
         for direction, keywords in directions.items():
+            if not keywords:
+                continue
             core_kw = " ".join(keywords[:3])
             for comp in (companies or [""]):
                 for city in (target_cities or [""]):
@@ -351,7 +385,7 @@ class JobCollector:
             if not companies:
                 queries.append(f"{core_kw} 招聘 {cities}".strip())
 
-        # === 优先级3:角色专项 ===
+        # === 优先级4:角色专项(仅在 role 明确时注入,避免无关通用查询) ===
         if role == "internship":
             queries.append("实习生 招聘 2026")
             queries.append("internship hiring 2026 china")
@@ -366,16 +400,12 @@ class JobCollector:
         elif role == "social":
             queries.append("社招 招聘 2026")
             queries.append("experienced hire 2026 china")
-        else:
-            queries.append("管培生 校招 招聘 2026")
-            for fg in settings.FOREIGN_GRADUATE_KEYWORDS[:3]:
-                queries.append(f"{fg} China")
 
         # 用户专业相关
         if profile.major:
             queries.append(f"{profile.major} 招聘 {cities}".strip())
 
-        # === 优先级4:公司招聘官网(site:限定) ===
+        # === 优先级5:公司招聘官网(site:限定) ===
         company_sites = []
         for tc in companies:
             for cs in settings.COMPANY_CAREER_SITES:
@@ -385,26 +415,86 @@ class JobCollector:
             company_sites = settings.COMPANY_CAREER_SITES[:8]
 
         for cs in company_sites[:6]:
-            domain = cs.get("campus_domain", cs["domain"]) if role in ("campus", "internship", "") else cs["domain"]
+            domain = cs.get("campus_domain", cs["domain"]) if role in ("campus", "internship") else cs["domain"]
             for direction, keywords in directions.items():
+                if not keywords:
+                    continue
                 core_kw = " ".join(keywords[:2])
                 queries.append(f"{core_kw} 招聘 site:{domain}")
-            if role in ("campus", "internship", ""):
+            if role == "campus":
                 queries.append(f"{cs['name']} 校招 2026 site:{domain}")
 
-        # === 优先级5:外资官网管培专项(校招/应届用户) ===
-        if role in ("campus", "internship", ""):
+        # === 优先级6:外资官网管培专项(仅校招用户) ===
+        if role == "campus":
             for fs in settings.FOREIGN_CAREER_SITES[:6]:
                 for fg in settings.FOREIGN_GRADUATE_KEYWORDS[:3]:
                     queries.append(f"{fs['name']} {fg}")
 
-        # === 优先级6:社区渠道 ===
+        # === 优先级7:社区渠道 ===
         for cs in settings.COMMUNITY_SITES[:5]:
             for direction, keywords in directions.items():
+                if not keywords:
+                    continue
                 core_kw = " ".join(keywords[:2])
                 queries.append(f"{core_kw} 内推 site:{cs['domain']}")
 
         return list(dict.fromkeys(queries))[:30]
+
+    @staticmethod
+    def _match_wechat_accounts(directions: Dict[str, List[str]]) -> List[str]:
+        """
+        根据用户方向关键词匹配相关的微信公众号账号。
+        避免对金融方向的用户推送互联网/快消类公众号文章。
+        """
+        if not directions:
+            return settings.WECHAT_MP_ACCOUNTS[:8]
+
+        # 合并所有方向关键词
+        all_kw = set()
+        for kws in directions.values():
+            for kw in kws:
+                all_kw.add(kw.lower())
+
+        # 账号分组(与 config 中 WECHAT_MP_ACCOUNTS 对应)
+        account_groups = {
+            "金融": ["金融求职", "金融求职招聘", "券商招聘", "基金招聘",
+                    "投行PEVC求职", "金融小伙伴", "券业星球", "Bank资管Street"],
+            "互联网": ["互联网招聘", "Tech求职", "程序员工厂", "后端技术",
+                      "牛客网", "程序员工厂"],
+            "咨询快消": ["咨询求职", "快消求职", "外企招聘", "四大求职",
+                       "Consulting-Case"],
+            "国企": ["国企招聘", "事业单位招聘", "央企招聘", "选调生"],
+            "综合": ["应届生求职", "校招薪水", "互联派", "职业僧", "offer先生",
+                    "实习僧", "面包求职", "一起求职", "海归求职",
+                    "刺猬实习", "白熊求职", "求职奶爸", "校招管家"],
+        }
+
+        # 判断用户方向属于哪个行业
+        finance_kw = ["金融", "银行", "证券", "券商", "基金", "fof", "投资",
+                      "投行", "pe", "vc", "资管", "保险", "信托", "量化"]
+        internet_kw = ["互联网", "产品", "运营", "研发", "算法", "前端", "后端",
+                       "java", "python", "数据", "程序员", "开发"]
+        consulting_kw = ["咨询", "快消", "mbb", "贝恩", "麦肯锡", "bcg", "宝洁",
+                         "联合利华", "欧莱雅"]
+        soe_kw = ["国企", "央企", "公务员", "事业单位", "选调", "体制内"]
+
+        matched_groups = []
+        for kw in all_kw:
+            if any(f in kw for f in finance_kw):
+                matched_groups.append("金融")
+            if any(i in kw for i in internet_kw):
+                matched_groups.append("互联网")
+            if any(c in kw for c in consulting_kw):
+                matched_groups.append("咨询快消")
+            if any(s in kw for s in soe_kw):
+                matched_groups.append("国企")
+
+        # 收集匹配的账号 + 综合类账号(兜底)
+        result = []
+        for group in set(matched_groups):
+            result.extend(account_groups.get(group, []))
+        result.extend(account_groups["综合"])
+        return result[:12]
 
     def collect(self, profile, target_companies: List[str],
                 target_cities: List[str], limit: int = 20) -> List[Dict]:

@@ -175,6 +175,11 @@ class CallbackHandler(BaseHTTPRequestHandler):
             self._handle_parse_resume()
             return
 
+        # 关键词优化(LLM)
+        if path == "/api/optimize-keywords":
+            self._handle_optimize_keywords()
+            return
+
         self._send_error(404, "not found")
 
     def _handle_feishu_callback(self):
@@ -242,7 +247,7 @@ class CallbackHandler(BaseHTTPRequestHandler):
         allowed_fields = {"major", "degree", "experience_years", "core_skills",
                           "direction_keywords", "target_companies", "target_industries",
                           "target_cities", "target_certificates", "school", "current_role",
-                          "role", "graduation_year", "resume_text", "summary"}
+                          "role", "graduation_year", "resume_text", "summary", "highlights"}
         for key in allowed_fields:
             if key in profile_data:
                 setattr(user.profile, key, profile_data[key])
@@ -320,7 +325,7 @@ class CallbackHandler(BaseHTTPRequestHandler):
         for key in ["school", "degree", "major", "graduation_year",
                     "experience_years", "core_skills", "direction_keywords",
                     "target_cities", "target_industries", "target_certificates",
-                    "current_role", "summary"]:
+                    "current_role", "summary", "highlights"]:
             val = parsed.get(key)
             if val:
                 setattr(user.profile, key, val)
@@ -331,6 +336,51 @@ class CallbackHandler(BaseHTTPRequestHandler):
             "code": 0,
             "msg": "ok",
             "profile": parsed,
+        }, ensure_ascii=False))
+
+    def _handle_optimize_keywords(self):
+        """接收方向名+已有关键词,调用 LLM 生成优化后的 5-8 个关键词"""
+        try:
+            length = int(self.headers.get("Content-Length", 0))
+            raw = self.rfile.read(length)
+            data = json.loads(raw.decode("utf-8"))
+        except (ValueError, json.JSONDecodeError):
+            self._send_error(400, "invalid JSON")
+            return
+
+        user_id = data.get("user_id", "")
+        direction = data.get("direction", "")
+        existing_keywords = data.get("existing_keywords", [])
+
+        if not user_id:
+            self._send_error(400, "missing user_id")
+            return
+        if not direction:
+            self._send_error(400, "missing direction")
+            return
+
+        store = UserStore()
+        user = store.get(user_id)
+        if not user:
+            self._send_error(404, "user not found")
+            return
+
+        # 优先用用户已上传的简历文本,没有则用核心技能拼一个摘要
+        resume_text = user.profile.resume_text or ""
+        if not resume_text:
+            skills = user.profile.core_skills or []
+            industries = user.profile.target_industries or []
+            resume_text = f"专业:{user.profile.major} 技能:{','.join(skills)} 行业:{','.join(industries)}"
+
+        from llm_client import LLMClient
+        llm = LLMClient()
+        keywords = llm.optimize_keywords(direction, resume_text, existing_keywords)
+
+        self._send_json(200, json.dumps({
+            "code": 0,
+            "msg": "ok",
+            "direction": direction,
+            "keywords": keywords,
         }, ensure_ascii=False))
 
     def _handle_bind_wxpusher(self):

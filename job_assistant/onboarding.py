@@ -70,8 +70,11 @@ def setup_user_feishu(tenant_key: str, open_id: str, client: FeishuClient = None
         client.create_field(base_token, closed_table_id, f["name"], f["type"], **kwargs)
         time.sleep(0.1)
 
-    # 4. 分享给用户 + 转所有权
-    client.transfer_owner(base_token, "bitable", open_id)
+    # 4. 分享给用户 + 转所有权（失败不阻塞 onboarding，管理员可手动补分享）
+    try:
+        client.transfer_owner(base_token, "bitable", open_id)
+    except Exception as e:
+        logger.warning(f"分享/转所有权失败(不影响用户创建): {e}")
 
     return {
         "base_token": base_token,

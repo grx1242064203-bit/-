@@ -18,6 +18,20 @@ import json
 import logging
 import os
 import time
+
+# 加载 .env 文件(与 main.py 保持一致,不依赖 python-dotenv)
+_env_path = os.path.join(os.path.dirname(os.path.abspath(__file__)), ".env")
+if os.path.exists(_env_path):
+    with open(_env_path, "r", encoding="utf-8") as _f:
+        for _line in _f:
+            _line = _line.strip()
+            if not _line or _line.startswith("#") or "=" not in _line:
+                continue
+            _k, _v = _line.split("=", 1)
+            _k = _k.strip()
+            _v = _v.strip().strip('"').strip("'")
+            if _k and _k not in os.environ:
+                os.environ[_k] = _v
 from http.server import HTTPServer, BaseHTTPRequestHandler
 from urllib.parse import urlparse, parse_qs
 

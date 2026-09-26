@@ -28,12 +28,44 @@ if os.path.exists(_env_path):
 from models import UserStore
 from daily_runner import DailyRunner
 from onboarding import migrate_user_tokens
+from wxpusher_client import WxPusherClient
+from config import settings
 
 logging.basicConfig(
     level=logging.INFO,
     format="%(asctime)s [%(levelname)s] %(name)s: %(message)s",
 )
 logger = logging.getLogger(__name__)
+
+
+def _alert_admin(summary: dict, results: list):
+    """每日任务有失败时,向管理员推送告警(需配置 ADMIN_WXPUSHER_UID)。"""
+    failed = summary.get("failed", 0)
+    if failed <= 0:
+        return
+    admin_uid = settings.ADMIN_WXPUSHER_UID
+    if not admin_uid:
+        logger.warning(f"每日任务有 {failed} 个用户失败,但未配置 ADMIN_WXPUSHER_UID,跳过告警推送")
+        return
+    failed_users = [r for r in results if r.get("errors")]
+    detail_lines = []
+    for r in failed_users[:10]:
+        errs = "; ".join(r.get("errors", []))[:100]
+        detail_lines.append(f"- {r.get('user_id')}: {errs}")
+    content = (
+        f"## ⚠️ 招聘情报助手每日任务告警\n\n"
+        f"**失败用户数: {failed} / {summary.get('total_users', 0)}**\n\n"
+        + "\n".join(detail_lines)
+        + (f"\n\n_仅显示前 10 条,共 {len(failed_users)} 条_" if len(failed_users) > 10 else "")
+    )
+    try:
+        ok = WxPusherClient().send(admin_uid, content)
+        if ok:
+            logger.info(f"已向管理员推送失败告警: {failed} 个用户失败")
+        else:
+            logger.error("管理员告警推送失败")
+    except Exception as e:
+        logger.exception(f"管理员告警推送异常: {e}")
 
 
 def run_daily_all():
@@ -67,6 +99,10 @@ def run_daily_all():
         "total_closed": sum(r.get("closed_jobs", 0) for r in results),
     }
     logger.info(f"每日任务结束: {json.dumps(summary, ensure_ascii=False)}")
+
+    # 失败告警:有用户失败时推送给管理员
+    _alert_admin(summary, results)
+
     return summary
 
 

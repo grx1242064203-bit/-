@@ -20,6 +20,7 @@ import time
 from http.server import HTTPServer, BaseHTTPRequestHandler
 
 from onboarding import handle_feishu_callback
+from config import settings
 
 logging.basicConfig(level=logging.INFO)
 logger = logging.getLogger(__name__)
@@ -29,6 +30,19 @@ MAX_BODY_SIZE = 1 * 1024 * 1024
 
 # 服务启动时间,用于健康检查
 _SERVICE_START_TIME = time.time()
+
+
+def _verify_feishu_token(body: dict) -> bool:
+    """校验飞书回调的 verification_token。
+    若配置了 FEISHU_VERIFICATION_TOKEN,则请求体中的 token 必须匹配。
+    兼容 v1(body.token) 和 v2(body.header.token) 结构。
+    未配置时跳过校验(MVP 兼容),生产环境强烈建议配置。
+    """
+    expected = settings.FEISHU_VERIFICATION_TOKEN
+    if not expected:
+        return True
+    token = body.get("token") or body.get("header", {}).get("token", "")
+    return token == expected
 
 
 class CallbackHandler(BaseHTTPRequestHandler):
@@ -80,6 +94,12 @@ class CallbackHandler(BaseHTTPRequestHandler):
         except (json.JSONDecodeError, UnicodeDecodeError) as e:
             logger.warning(f"回调 JSON 解析失败: {e}")
             self._send_error(400, "invalid JSON")
+            return
+
+        # 2.5 校验飞书 verification_token(防伪造回调)
+        if not _verify_feishu_token(body):
+            logger.warning("回调 verification_token 校验失败,拒绝处理")
+            self._send_error(403, "invalid token")
             return
 
         # 3. 处理回调

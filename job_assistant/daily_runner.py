@@ -70,6 +70,7 @@ class DailyRunner:
                 result["push_ok"] = self.wxpusher.send_daily_summary(
                     self.user.wxpusher_uid, date_str, new_jobs, doc_url,
                     closed_count=len(closed),
+                    major=self.user.profile.major,
                 )
 
         except Exception as e:
@@ -170,7 +171,10 @@ class DailyRunner:
     def _create_daily_report(self, date_str: str, new_jobs: List[Dict],
                              closed: List[Dict]) -> str:
         """生成日报文档,返回文档 URL"""
-        title = f"金融招聘日报 {date_str}"
+        # 标题通用化:有专业则用"专业招聘日报",否则用"招聘日报",避免行业硬编码
+        major = self.user.profile.major.strip()
+        title_prefix = f"{major}招聘日报" if major else "招聘日报"
+        title = f"{title_prefix} {date_str}"
         doc_id, url = self.feishu.create_doc(title)
 
         blocks = []

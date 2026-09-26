@@ -17,6 +17,8 @@ class Settings:
 
     # === WxPusher 配置(在 wxpusher.zjiecode.com 注册应用后获取) ===
     WXPUSHER_APP_TOKEN: str = field(default_factory=lambda: os.getenv("WXPUSHER_APP_TOKEN", ""))
+    # 管理员 WxPusher UID — 每日任务失败时向其推送告警(不配置则仅记日志)
+    ADMIN_WXPUSHER_UID: str = field(default_factory=lambda: os.getenv("ADMIN_WXPUSHER_UID", ""))
 
     # === 数据存储 ===
     DATA_DIR: str = field(default_factory=lambda: os.getenv("DATA_DIR", "/opt/job_assistant/data"))

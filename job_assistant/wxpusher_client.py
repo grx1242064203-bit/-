@@ -73,16 +73,20 @@ class WxPusherClient:
         return False
 
     def send_daily_summary(self, uid: str, date_str: str, jobs: List[dict],
-                           doc_url: str, closed_count: int = 0) -> bool:
-        """推送每日摘要 — Markdown 格式"""
+                           doc_url: str, closed_count: int = 0,
+                           major: str = "") -> bool:
+        """推送每日摘要 — Markdown 格式。
+        major: 用户专业,用于生成个性化标题(如"计算机招聘日报");为空则用"招聘日报"。
+        """
+        title_prefix = f"{major.strip()}招聘日报" if major.strip() else "招聘日报"
         if not jobs:
-            content = f"## 金融招聘日报 {date_str}\n\n今日暂无新增岗位。\n\n[查看完整岗位库]({doc_url})"
+            content = f"## {title_prefix} {date_str}\n\n今日暂无新增岗位。\n\n[查看完整岗位库]({doc_url})"
             return self.send(uid, content, url=doc_url)
 
         priority = [j for j in jobs if j.get("综合推荐度") == "优先申请"]
         top3 = sorted(jobs, key=lambda x: x.get("相关性评分", 0), reverse=True)[:3]
 
-        lines = [f"## 金融招聘日报 {date_str}\n"]
+        lines = [f"## {title_prefix} {date_str}\n"]
         lines.append(f"**今日新增 {len(jobs)} 条** | 优先申请 {len(priority)} 条"
                      + (f" | 已归档关闭 {closed_count} 条" if closed_count else ""))
         lines.append("")

@@ -101,19 +101,12 @@ class UserStore:
         os.replace(tmp, self.path)  # 原子写入
 
     def _reload_from_disk(self):
-        """从磁盘重新加载,合并到内存中(防止 lost-update)。
-        磁盘上的版本优先,内存中未持久化的修改会被覆盖 —
-        因此调用方应在持锁期间先修改内存再调用此方法。"""
-        if os.path.exists(self.path):
-            with open(self.path, "r", encoding="utf-8") as f:
-                raw = json.load(f)
-            for uid, data in raw.items():
-                # 只加载内存中不存在的用户,避免覆盖当前正在修改的用户
-                if uid not in self._users:
-                    data.pop("id", None)
-                    prof_data = data.pop("profile", {})
-                    data["profile"] = UserProfile(**prof_data)
-                    self._users[uid] = User(id=uid, **data)
+        """持锁后从磁盘全量重新加载,确保拿到最新状态。
+        会清空内存再加载,调用方必须已经持有文件锁。
+        修复多进程 lost-update: 若只加载内存中不存在的用户,
+        两个进程修改不同用户时,后保存的进程会覆盖先保存进程的修改。"""
+        self._users = {}
+        self._load()
 
     def get(self, user_id: str) -> Optional[User]:
         return self._users.get(user_id)
@@ -125,14 +118,16 @@ class UserStore:
                 if not u.expire_date or u.expire_date >= now]
 
     def upsert(self, user: User):
-        """插入或更新用户。持锁 → 重载磁盘 → 写回,防止并发覆盖。"""
+        """插入或更新用户。
+        持锁 → 全量重载磁盘(拿到最新状态) → 应用修改 → 写回。
+        全量重载确保不会丢失其他进程对其他用户的修改。"""
         with self._file_lock():
             self._reload_from_disk()
             self._users[user.id] = user
             self._save()
 
     def delete(self, user_id: str):
-        """删除用户。持锁 → 重载磁盘 → 写回。"""
+        """删除用户。持锁 → 全量重载磁盘 → 删除 → 写回。"""
         with self._file_lock():
             self._reload_from_disk()
             self._users.pop(user_id, None)
@@ -140,12 +135,30 @@ class UserStore:
 
 
 class HashStore:
-    """去重哈希存储 — 每个用户一个文件,记录已见过的岗位hash"""
+    """去重哈希存储 — 每个用户一个文件,记录已见过的岗位hash。
+
+    并发安全: 写操作(add)通过 fcntl.flock 获取排他锁,防止并发写损坏文件。
+    """
 
     def __init__(self, user_id: str):
         self.path = os.path.join(settings.DATA_DIR, "hashes", f"{user_id}.json")
         os.makedirs(os.path.dirname(self.path), exist_ok=True)
+        self._lock_path = self.path + ".lock"
         self._hashes: Dict[str, Any] = {}
+        self._load()
+
+    @contextmanager
+    def _file_lock(self):
+        """获取排他文件锁,防止并发写导致 hash 文件损坏"""
+        lock_fd = open(self._lock_path, "w")
+        try:
+            fcntl.flock(lock_fd.fileno(), fcntl.LOCK_EX)
+            yield
+        finally:
+            fcntl.flock(lock_fd.fileno(), fcntl.LOCK_UN)
+            lock_fd.close()
+
+    def _load(self):
         if os.path.exists(self.path):
             with open(self.path, "r", encoding="utf-8") as f:
                 self._hashes = json.load(f)
@@ -154,8 +167,13 @@ class HashStore:
         return h in self._hashes
 
     def add(self, h: str, meta: dict = None):
-        self._hashes[h] = meta or {"ts": time.time()}
-        tmp = self.path + ".tmp"
-        with open(tmp, "w", encoding="utf-8") as f:
-            json.dump(self._hashes, f, ensure_ascii=False)
-        os.replace(tmp, self.path)
+        """添加 hash 并持久化。持文件锁 + 原子写入,防止并发损坏。"""
+        with self._file_lock():
+            # 持锁后从磁盘重新加载,避免覆盖其他进程写入的 hash
+            self._hashes = {}
+            self._load()
+            self._hashes[h] = meta or {"ts": time.time()}
+            tmp = self.path + ".tmp"
+            with open(tmp, "w", encoding="utf-8") as f:
+                json.dump(self._hashes, f, ensure_ascii=False)
+            os.replace(tmp, self.path)  # 原子写入

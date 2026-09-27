@@ -1,0 +1,49 @@
+{
+  "manifest_version": "v1",
+  "format": "ndjson",
+  "base_token": "WfgTb3wE3aSGhesttvack8innbh",
+  "table_id": "tblcBX0o8CIJlQQr",
+  "rev": 106,
+  "timezone": "Asia/Shanghai",
+  "query_context": {
+    "field_scope": "selected_fields",
+    "record_scope": "filtered_records"
+  },
+  "requested_limit": 2,
+  "records_count": 2,
+  "page_count": 1,
+  "has_more": true,
+  "next_offset": 2,
+  "record_file": "/workspace/tblcBX0o8CIJlQQr_20260927_012900_548.ndjson",
+  "record_file_size_bytes": 485,
+  "manifest_file": "/workspace/tblcBX0o8CIJlQQr_20260927_012900_548.manifest.json",
+  "columns": {
+    "record_id": {
+      "physical_type": "string",
+      "stats": {
+        "max_length": 14
+      },
+      "example": "recvo1NjOQlMyi"
+    },
+    "公司名称": {
+      "field_id": "fld8xiue7N",
+      "field_type": "text",
+      "physical_type": "string|null",
+      "stats": {
+        "null_count": 0,
+        "max_length": 5
+      },
+      "example": "基恩士"
+    },
+    "招聘岗位": {
+      "field_id": "fldSU3OSg4",
+      "field_type": "text",
+      "physical_type": "string|null",
+      "stats": {
+        "null_count": 0,
+        "max_length": 106
+      },
+      "example": "销售工程师/销售,营业支持\\\\专业不限"
+    }
+  }
+}

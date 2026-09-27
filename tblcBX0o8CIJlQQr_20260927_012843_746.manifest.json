@@ -1,0 +1,168 @@
+{
+  "manifest_version": "v1",
+  "format": "ndjson",
+  "base_token": "WfgTb3wE3aSGhesttvack8innbh",
+  "table_id": "tblcBX0o8CIJlQQr",
+  "rev": 106,
+  "timezone": "Asia/Shanghai",
+  "query_context": {
+    "field_scope": "selected_fields",
+    "record_scope": "filtered_records"
+  },
+  "requested_limit": 3,
+  "records_count": 3,
+  "page_count": 1,
+  "has_more": true,
+  "next_offset": 3,
+  "record_file": "/workspace/tblcBX0o8CIJlQQr_20260927_012843_746.ndjson",
+  "record_file_size_bytes": 2559,
+  "manifest_file": "/workspace/tblcBX0o8CIJlQQr_20260927_012843_746.manifest.json",
+  "columns": {
+    "record_id": {
+      "physical_type": "string",
+      "stats": {
+        "max_length": 14
+      },
+      "example": "recvo1NjOQlMyi"
+    },
+    "企业性质": {
+      "field_id": "fldgNvA2Uo",
+      "field_type": "select",
+      "physical_type": "array<string>",
+      "stats": {
+        "empty_count": 0,
+        "max_length": 1,
+        "avg_length": 1
+      },
+      "example": [
+        "民企"
+      ]
+    },
+    "公司名称": {
+      "field_id": "fld8xiue7N",
+      "field_type": "text",
+      "physical_type": "string|null",
+      "stats": {
+        "null_count": 0,
+        "max_length": 5
+      },
+      "example": "基恩士"
+    },
+    "公司行业": {
+      "field_id": "fldv3dz1G6",
+      "field_type": "select",
+      "physical_type": "array<string>",
+      "stats": {
+        "empty_count": 1,
+        "max_length": 1,
+        "avg_length": 0.6666666666666666
+      },
+      "example": [
+        "科技"
+      ]
+    },
+    "学历": {
+      "field_id": "fldmUhOibV",
+      "field_type": "select",
+      "physical_type": "array<string>",
+      "stats": {
+        "empty_count": 0,
+        "max_length": 1,
+        "avg_length": 1
+      },
+      "example": [
+        "本科起"
+      ]
+    },
+    "工作地点": {
+      "field_id": "fld4WwSymg",
+      "field_type": "select",
+      "physical_type": "array<string>",
+      "stats": {
+        "empty_count": 0,
+        "max_length": 24,
+        "avg_length": 9.333333333333334
+      },
+      "example": [
+        "成都"
+      ]
+    },
+    "投递链接": {
+      "field_id": "fld2yTkKKZ",
+      "field_type": "text",
+      "physical_type": "string|null",
+      "stats": {
+        "null_count": 0,
+        "max_length": 242
+      },
+      "example": "[邮箱：sofia.fu@phasym.com](http://邮箱：sofia.fu@phasym.com)"
+    },
+    "招聘对象": {
+      "field_id": "fldCRBHhUM",
+      "field_type": "select",
+      "physical_type": "array<string>",
+      "stats": {
+        "empty_count": 0,
+        "max_length": 1,
+        "avg_length": 1
+      },
+      "example": [
+        "27届"
+      ]
+    },
+    "招聘岗位": {
+      "field_id": "fldSU3OSg4",
+      "field_type": "text",
+      "physical_type": "string|null",
+      "stats": {
+        "null_count": 0,
+        "max_length": 106
+      },
+      "example": "销售工程师/销售,营业支持\\\\专业不限"
+    },
+    "招聘类型": {
+      "field_id": "fldzdJhzko",
+      "field_type": "select",
+      "physical_type": "array<string>",
+      "stats": {
+        "empty_count": 0,
+        "max_length": 1,
+        "avg_length": 1
+      },
+      "example": [
+        "秋招"
+      ]
+    },
+    "网申公告": {
+      "field_id": "fldXPfFeq1",
+      "field_type": "text",
+      "physical_type": "string|null",
+      "stats": {
+        "null_count": 0,
+        "max_length": 102
+      },
+      "example": "[https://mp.weixin.qq.com/s/mZrTxKVVROsTHouc1MtbzQ](https://mp.weixin.qq.com/s/mZrTxKVVROsTHouc1MtbzQ)"
+    },
+    "网申截止": {
+      "field_id": "fldEBnMBnh",
+      "field_type": "text",
+      "physical_type": "string|null",
+      "stats": {
+        "null_count": 0,
+        "max_length": 4
+      },
+      "example": "招满即止"
+    },
+    "网申更新": {
+      "field_id": "fldrL56wFJ",
+      "field_type": "datetime",
+      "physical_type": "string|null",
+      "stats": {
+        "null_count": 0,
+        "min": "2026-06-30T00:00:00.000+08:00",
+        "max": "2026-07-01T00:00:00.000+08:00"
+      },
+      "example": "2026-06-30T00:00:00.000+08:00"
+    }
+  }
+}

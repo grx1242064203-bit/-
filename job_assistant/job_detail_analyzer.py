@@ -188,21 +188,25 @@ def analyze_images_with_vl(image_urls: List[str], llm: LLMClient) -> str:
     }
 
     for img_url in image_urls[:4]:  # 最多分析4张图(平衡速度和覆盖率)
-        try:
-            resp = requests.get(img_url, headers=headers, timeout=15)
-            if resp.status_code != 200:
-                continue
+        for attempt in range(2):  # 失败重试1次
+            try:
+                resp = requests.get(img_url, headers=headers, timeout=15)
+                if resp.status_code != 200:
+                    break
 
-            # 压缩图片
-            compressed = compress_image(resp.content)
-            if not compressed:
-                continue
+                # 压缩图片(更激进,避免 API 400)
+                compressed = compress_image(resp.content, max_width=600, quality=60)
+                if not compressed:
+                    break
 
-            # 调用 DeepSeek 视觉 API 提取文字
-            b64 = base64.b64encode(compressed).decode("utf-8")
-            data_url = f"data:image/jpeg;base64,{b64}"
+                # 检查压缩后大小(base64 后不超过 3MB)
+                b64 = base64.b64encode(compressed).decode("utf-8")
+                if len(b64) > 3 * 1024 * 1024:
+                    logger.warning(f"图片过大({len(b64)}b),跳过")
+                    break
+                data_url = f"data:image/jpeg;base64,{b64}"
 
-            prompt = """这是一张校园招聘公告图片。请提取图片中所有招聘岗位相关信息,包括:
+                prompt = """这是一张校园招聘公告图片。请提取图片中所有招聘岗位相关信息,包括:
 1. 所有岗位名称
 2. 每个岗位的工作地点、学历要求、专业要求
 3. 招聘人数
@@ -211,34 +215,45 @@ def analyze_images_with_vl(image_urls: List[str], llm: LLMClient) -> str:
 
 请完整提取,用中文输出。"""
 
-            vl_resp = requests.post(
-                "https://api.deepseek.com/chat/completions",
-                headers={
-                    "Authorization": f"Bearer {llm.api_key}",
-                    "Content-Type": "application/json",
-                },
-                json={
-                    "model": llm.model,
-                    "messages": [{
-                        "role": "user",
-                        "content": [
-                            {"type": "text", "text": prompt},
-                            {"type": "image_url", "image_url": {"url": data_url}},
-                        ],
-                    }],
-                    "temperature": 0.1,
-                    "max_tokens": 2000,
-                },
-                timeout=90,
-            )
-            vl_resp.raise_for_status()
-            text = vl_resp.json()["choices"][0]["message"]["content"]
-            all_text.append(text)
-            logger.info(f"图片分析成功,提取 {len(text)} 字符")
+                vl_resp = requests.post(
+                    "https://api.deepseek.com/chat/completions",
+                    headers={
+                        "Authorization": f"Bearer {llm.api_key}",
+                        "Content-Type": "application/json",
+                    },
+                    json={
+                        "model": llm.model,
+                        "messages": [{
+                            "role": "user",
+                            "content": [
+                                {"type": "text", "text": prompt},
+                                {"type": "image_url", "image_url": {"url": data_url}},
+                            ],
+                        }],
+                        "temperature": 0.1,
+                        "max_tokens": 2000,
+                    },
+                    timeout=90,
+                )
+                if vl_resp.status_code == 400:
+                    err_body = vl_resp.text[:300]
+                    logger.warning(f"VL API 400 错误: {err_body}")
+                    if attempt == 0:
+                        time.sleep(2)
+                        continue
+                    break
+                vl_resp.raise_for_status()
+                text = vl_resp.json()["choices"][0]["message"]["content"]
+                all_text.append(text)
+                logger.info(f"图片分析成功,提取 {len(text)} 字符")
+                break
 
-        except Exception as e:
-            logger.warning(f"图片分析失败: {e}")
-            continue
+            except Exception as e:
+                logger.warning(f"图片分析失败(attempt {attempt+1}): {e}")
+                if attempt == 0:
+                    time.sleep(2)
+                    continue
+                break
 
     return "\n".join(all_text)
 

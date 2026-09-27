@@ -38,7 +38,33 @@ CREATE TABLE IF NOT EXISTS companies (
     source TEXT DEFAULT 'feishu'          -- 数据来源
 );
 
--- 岗位表:每个具体岗位一条(从公告拆分)
+-- 招聘公告表:每个公司的招聘链接一条(后台中间表,不直接给用户)
+-- 存储原始链接 + 抓取状态 + 分析状态,LLM 拆分出的具体岗位写入 jobs 表
+CREATE TABLE IF NOT EXISTS announcements (
+    id INTEGER PRIMARY KEY AUTOINCREMENT,
+    company TEXT NOT NULL,
+    job_title TEXT,                        -- 原始多岗位拼接标题(飞书导入)
+    apply_url TEXT,                        -- 投递链接
+    announcement_url TEXT,                 -- 公告链接
+    industry TEXT,                         -- 行业(冗余)
+    company_type TEXT,                     -- 公司类型(冗余)
+    difficulty TEXT,
+    recruitment_stage TEXT,
+    target_min_grade INTEGER,
+    target_max_grade INTEGER,
+    source TEXT DEFAULT 'feishu',
+    link_valid INTEGER DEFAULT 1,          -- 链接是否有效
+    detail_analyzed INTEGER DEFAULT 0,     -- 是否已做 AI 分析
+    analysis_status TEXT,                  -- 分析结果状态:success/fetch_blocked/fetch_failed/content_invalid/llm_parse_empty/not_current_grade
+    status TEXT DEFAULT '在招',
+    crawl_time TEXT,
+    dedup_hash TEXT UNIQUE,
+    jd_summary TEXT,
+    publish_time TEXT,
+    deadline TEXT
+);
+
+-- 岗位表:每个具体岗位一条(从公告 LLM 拆分,给用户的最终数据)
 CREATE TABLE IF NOT EXISTS jobs (
     id INTEGER PRIMARY KEY AUTOINCREMENT,
     company TEXT NOT NULL,
@@ -158,6 +184,9 @@ def init_db():
             CREATE INDEX IF NOT EXISTS idx_jobs_grade ON jobs(target_min_grade, target_max_grade);
             CREATE INDEX IF NOT EXISTS idx_jobs_stage ON jobs(recruitment_stage);
             CREATE INDEX IF NOT EXISTS idx_companies_name ON companies(name);
+            CREATE INDEX IF NOT EXISTS idx_announcements_dedup ON announcements(dedup_hash);
+            CREATE INDEX IF NOT EXISTS idx_announcements_analyzed ON announcements(detail_analyzed, link_valid);
+            CREATE INDEX IF NOT EXISTS idx_announcements_company ON announcements(company);
         """)
         conn.commit()
         logger.info(f"总数据库已初始化: {DB_PATH}")
@@ -461,16 +490,9 @@ def get_jobs_by_grade(graduation_year: int) -> List[Dict]:
 
 
 def get_unanalyzed_jobs(limit: int = 100) -> List[Dict]:
-    """获取尚未做 AI 详情分析的岗位"""
-    conn = _get_conn()
-    try:
-        rows = conn.execute(
-            "SELECT * FROM jobs WHERE detail_analyzed = 0 AND link_valid = 1 LIMIT ?",
-            (limit,),
-        ).fetchall()
-        return [dict(r) for r in rows]
-    finally:
-        conn.close()
+    """[兼容] 获取尚未分析的公告(已迁移到 announcements 表)
+    新代码请使用 get_unanalyzed_announcements()"""
+    return get_unanalyzed_announcements(limit)
 
 
 def close_job(dedup_hash: str):
@@ -486,7 +508,7 @@ def close_job(dedup_hash: str):
 
 
 def get_stats() -> Dict:
-    """获取总数据库统计"""
+    """获取总数据库统计(jobs 表=具体岗位,给用户的最终数据)"""
     conn = _get_conn()
     try:
         row = conn.execute(
@@ -496,6 +518,171 @@ def get_stats() -> Dict:
                 SUM(CASE WHEN detail_analyzed=1 THEN 1 ELSE 0 END) as analyzed_jobs,
                 COUNT(DISTINCT company) as companies
                FROM jobs"""
+        ).fetchone()
+        return dict(row)
+    finally:
+        conn.close()
+
+
+# ========== 招聘公告表操作(后台中间表,存原始链接) ==========
+
+def insert_announcement(ann: Dict) -> bool:
+    """
+    插入一条招聘公告(原始链接)到 announcements 表。
+    返回 True=新增成功, False=已存在(去重跳过)。
+    """
+    conn = _get_conn()
+    try:
+        dedup_hash = compute_dedup_hash(
+            ann.get("company", ""),
+            ann.get("job_title", ""),
+            ann.get("apply_url", "") or ann.get("jd_url", ""),
+        )
+        now = time.strftime("%Y-%m-%d %H:%M:%S")
+        apply_url = ann.get("apply_url", "") or ann.get("jd_url", "")
+        conn.execute(
+            """INSERT OR IGNORE INTO announcements
+               (company, job_title, apply_url, announcement_url, industry,
+                company_type, difficulty, recruitment_stage, target_min_grade,
+                target_max_grade, source, link_valid, detail_analyzed, status,
+                crawl_time, dedup_hash, jd_summary, publish_time, deadline)
+               VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, 0, '在招', ?, ?, ?, ?, ?)""",
+            (
+                ann.get("company", ""),
+                ann.get("job_title", ""),
+                apply_url,
+                ann.get("announcement_url", ""),
+                ann.get("industry", ""),
+                ann.get("company_type", ""),
+                ann.get("difficulty", ""),
+                ann.get("recruitment_stage", ""),
+                ann.get("target_min_grade"),
+                ann.get("target_max_grade"),
+                ann.get("source", "feishu"),
+                1 if ann.get("link_valid", True) else 0,
+                now,
+                dedup_hash,
+                ann.get("jd_summary", ""),
+                ann.get("publish_time", ""),
+                ann.get("deadline", ""),
+            ),
+        )
+        conn.commit()
+        cur = conn.execute("SELECT changes() as cnt")
+        return cur.fetchone()["cnt"] > 0
+    except Exception as e:
+        logger.exception(f"插入公告失败: {e}")
+        return False
+    finally:
+        conn.close()
+
+
+def batch_insert_announcements(anns: List[Dict]) -> Dict:
+    """批量插入公告,返回 {"inserted": N, "skipped": M}"""
+    conn = _get_conn()
+    inserted = 0
+    skipped = 0
+    try:
+        now = time.strftime("%Y-%m-%d %H:%M:%S")
+        for ann in anns:
+            dedup_hash = compute_dedup_hash(
+                ann.get("company", ""),
+                ann.get("job_title", ""),
+                ann.get("apply_url", "") or ann.get("jd_url", ""),
+            )
+            apply_url = ann.get("apply_url", "") or ann.get("jd_url", "")
+            try:
+                conn.execute(
+                    """INSERT OR IGNORE INTO announcements
+                       (company, job_title, apply_url, announcement_url, industry,
+                        company_type, difficulty, recruitment_stage, target_min_grade,
+                        target_max_grade, source, link_valid, detail_analyzed, status,
+                        crawl_time, dedup_hash, jd_summary, publish_time, deadline)
+                       VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, 0, '在招', ?, ?, ?, ?, ?)""",
+                    (
+                        ann.get("company", ""),
+                        ann.get("job_title", ""),
+                        apply_url,
+                        ann.get("announcement_url", ""),
+                        ann.get("industry", ""),
+                        ann.get("company_type", ""),
+                        ann.get("difficulty", ""),
+                        ann.get("recruitment_stage", ""),
+                        ann.get("target_min_grade"),
+                        ann.get("target_max_grade"),
+                        ann.get("source", "feishu"),
+                        1 if ann.get("link_valid", True) else 0,
+                        now,
+                        dedup_hash,
+                        ann.get("jd_summary", ""),
+                        ann.get("publish_time", ""),
+                        ann.get("deadline", ""),
+                    ),
+                )
+                if conn.total_changes > 0:
+                    inserted += 1
+                else:
+                    skipped += 1
+            except Exception as e:
+                logger.warning(f"批量插入公告跳过 [{ann.get('company','')}]: {e}")
+                skipped += 1
+        conn.commit()
+    except Exception as e:
+        logger.exception(f"批量插入公告失败: {e}")
+    finally:
+        conn.close()
+    return {"inserted": inserted, "skipped": skipped}
+
+
+def get_unanalyzed_announcements(limit: int = 100) -> List[Dict]:
+    """获取尚未做 AI 分析的公告(用于抓取流水线)"""
+    conn = _get_conn()
+    try:
+        rows = conn.execute(
+            "SELECT * FROM announcements WHERE detail_analyzed = 0 AND link_valid = 1 LIMIT ?",
+            (limit,),
+        ).fetchall()
+        return [dict(r) for r in rows]
+    finally:
+        conn.close()
+
+
+def update_announcement_analysis(dedup_hash: str, **fields):
+    """更新公告的 AI 分析结果字段(analysis_status, jd_summary, link_valid, status 等)"""
+    if not fields:
+        fields = {}
+    # 始终标记已分析
+    fields["detail_analyzed"] = 1
+    conn = _get_conn()
+    try:
+        set_clause = ", ".join(f"{k} = ?" for k in fields.keys())
+        values = list(fields.values()) + [dedup_hash]
+        conn.execute(
+            f"UPDATE announcements SET {set_clause} WHERE dedup_hash = ?",
+            values,
+        )
+        conn.commit()
+    finally:
+        conn.close()
+
+
+def get_announcement_stats() -> Dict:
+    """获取公告表统计(流水线进度)"""
+    conn = _get_conn()
+    try:
+        row = conn.execute(
+            """SELECT
+                COUNT(*) as total,
+                SUM(CASE WHEN detail_analyzed=1 THEN 1 ELSE 0 END) as analyzed,
+                SUM(CASE WHEN detail_analyzed=0 AND link_valid=1 THEN 1 ELSE 0 END) as pending,
+                SUM(CASE WHEN link_valid=0 THEN 1 ELSE 0 END) as invalid,
+                SUM(CASE WHEN analysis_status='success' THEN 1 ELSE 0 END) as status_success,
+                SUM(CASE WHEN analysis_status='fetch_blocked' THEN 1 ELSE 0 END) as status_blocked,
+                SUM(CASE WHEN analysis_status='fetch_failed' THEN 1 ELSE 0 END) as status_fetch_failed,
+                SUM(CASE WHEN analysis_status='content_invalid' THEN 1 ELSE 0 END) as status_content_invalid,
+                SUM(CASE WHEN analysis_status='llm_parse_empty' THEN 1 ELSE 0 END) as status_llm_empty,
+                SUM(CASE WHEN analysis_status='not_current_grade' THEN 1 ELSE 0 END) as status_not_grade
+               FROM announcements"""
         ).fetchone()
         return dict(row)
     finally:

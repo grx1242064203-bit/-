@@ -141,7 +141,7 @@ class CompanyCrawler:
             "deadline": deadline,
             "publish_time": verify.get("publish_time", ""),
         }
-        inserted = job_db.insert_job(job)
+        inserted = job_db.insert_announcement(job)
         if inserted:
             logger.info(f"✓ 入库 [{company_name}] {verify['job_title'][:40]}")
             # 标记公司已发 2027 公告

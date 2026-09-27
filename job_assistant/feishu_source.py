@@ -309,8 +309,8 @@ def sync_from_feishu() -> Dict:
             source="feishu",
         )
 
-    # 批量写入岗位表
-    result = job_db.batch_insert_jobs(jobs_to_insert)
+    # 批量写入公告表(后台中间表,后续 LLM 拆分出的岗位写入 jobs 表)
+    result = job_db.batch_insert_announcements(jobs_to_insert)
 
     stats = {
         "total_records": len(records),

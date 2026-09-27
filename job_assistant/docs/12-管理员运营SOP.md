@@ -1,9 +1,8 @@
 # 12. 管理员运营 SOP
 
-> 本文档面向运营人员，指导如何为付费客户完成开户、配置偏好、验证服务。
+> 本文档面向运营人员，指导如何为校招客户完成开户、配置偏好、验证服务。
 >
-> **重要变更**：已移除 WxPusher 微信绑定步骤，主推送渠道统一为飞书消息。
-> 客户通过飞书应用内的自助配置页面完成求职偏好设置。
+> 系统为**校招专属**，所有用户均为应届毕业生。主推送渠道为飞书消息，客户通过飞书应用内的自助配置页面完成求职偏好设置。
 
 ---
 
@@ -27,12 +26,12 @@
 向客户发送飞书应用安装链接，并附上简要说明：
 
 ```
-您好！感谢购买招聘情报助手。
+您好！感谢购买校招情报助手。
 请按以下步骤操作：
 1. 点击下方链接安装飞书应用
 2. 安装后请"打开应用一次"（系统会自动为您创建岗位库）
 3. 打开应用后，点击飞书消息中的配置链接，填写求职偏好（支持简历智能解析）
-4. 保存偏好后系统会立即为您采集第一批岗位
+4. 保存偏好后系统会立即为您匹配第一批岗位
 
 安装链接：[飞书应用安装链接]
 ```
@@ -42,8 +41,7 @@
 客户安装并打开应用后，飞书会触发回调，系统自动：
 - 创建用户记录（user_id = `{tenant_key}_{open_id}`）
 - 创建「招聘情报库」多维表格
-- 创建「岗位数据库」和「已关闭岗位」两张表
-- 校招用户额外创建「管培生项目」表
+- 创建「岗位数据库」「已关闭岗位」「管培生项目」三张表
 - 创建字段（含行业/公司类型/难度等）
 - 将多维表格所有权转移给客户
 - 发送飞书消息，附带自助配置页面链接
@@ -65,11 +63,11 @@ cat data/users.json | python3 -c "import json,sys; d=json.load(sys.stdin); print
 ### 步骤 4：确认客户已配置求职偏好
 
 客户通过飞书消息中的链接打开自助配置页面，可：
-- 选择求职角色（校招/社招；实习功能已下线）
-- 粘贴简历文本，AI 自动解析提取学校、学历、专业、技能等
-- 手动填写/调整目标岗位方向、专业、学历、技能、目标公司、目标城市
-- 校招用户额外配置：偏好公司类型、可接受难度、是否偏好管培项目
-- 保存后系统立即触发首次采集
+- 粘贴简历文本或上传简历文件，AI 自动解析提取学校、学历、专业、技能等
+- 手动填写/调整目标岗位方向、专业、学历、毕业年份、技能、目标公司、目标城市
+- 校招匹配维度：偏好公司类型（国央企/民企/外企）、偏好难度、偏好城市
+- 管培项目偏好
+- 保存后系统立即触发首次匹配
 
 **验证客户已配置**：
 
@@ -81,11 +79,11 @@ store = UserStore()
 u = store.get('<user_id>')
 if u:
     p = u.profile
-    print(f'role={p.role}, major={p.major}, directions={list(p.direction_keywords.keys())}')
+    print(f'graduation_year={p.graduation_year}, major={p.major}, directions={list(p.direction_keywords.keys())}')
 "
 ```
 
-如果客户未配置或配置不完整，`direction_keywords` 为空，则无法采集到匹配岗位。
+如果客户未配置或配置不完整，`direction_keywords` 为空，则无法匹配到岗位。
 
 > ⚠️ 如需手动为客户配置偏好，可编辑 `data/users.json`（编辑前备份，编辑后重启服务）。
 
@@ -106,10 +104,10 @@ venv/bin/python main.py single <user_id>
 向客户发送确认消息：
 
 ```
-您好！您的招聘情报助手已配置完成。
+您好！您的校招情报助手已配置完成。
 ✅ 已为您创建专属岗位库（飞书云空间 → 招聘情报库）
 ✅ 已配置您的求职偏好
-✅ 已启动岗位采集
+✅ 已启动岗位匹配
 
 每天早上 9:00 您将收到岗位日报推送（飞书消息）。
 如有问题请随时联系。
@@ -141,13 +139,21 @@ cd /opt/job_assistant
 venv/bin/python main.py single <user_id>
 ```
 
-### 3.3 更新客户偏好
+### 3.3 手动触发数据同步
+
+```bash
+# 同步飞书表 + AI 分析(不分发用户)
+cd /opt/job_assistant
+venv/bin/python main.py sync
+```
+
+### 3.4 更新客户偏好
 
 1. 编辑 `data/users.json` 中对应用户的 `profile`
 2. `sudo systemctl restart job-callback`
 3. 手动触发一次验证：`venv/bin/python main.py single <user_id>`
 
-### 3.4 客户退订/到期处理
+### 3.5 客户退订/到期处理
 
 ```bash
 # 删除用户（会保留飞书多维表格，仅停止服务）
@@ -160,7 +166,7 @@ print('已删除用户 <user_id>')
 "
 ```
 
-### 3.5 查看用户列表
+### 3.6 查看用户列表
 
 ```bash
 cd /opt/job_assistant
@@ -172,9 +178,9 @@ for u in store.list_active():
 "
 ```
 
-### 3.6 校招总数据库管理
+### 3.7 校招总数据库管理
 
-> 总数据库（`data/jobs.db`）是校招岗位的中心化存储，所有校招用户共享。
+> 总数据库（`data/jobs.db`）是校招岗位的中心化存储，所有校招用户共享。包含三张表：`companies`（公司元数据）、`announcements`（原始招聘链接）、`jobs`（具体岗位）。
 
 ```bash
 cd /opt/job_assistant
@@ -182,26 +188,21 @@ source venv/bin/activate
 
 # 查看总数据库统计
 venv/bin/python -c "
-from job_db import get_stats
-stats = get_stats()
-print(f'总岗位数: {stats[\"total\"]}')
-print(f'在招岗位: {stats[\"active\"]}')
-print(f'AI 已验证: {stats[\"verified\"]}')
-print(f'已关闭: {stats[\"closed\"]}')
+from job_db import get_stats, get_announcement_stats
+print('=== 岗位表(jobs) ===')
+print(get_stats())
+print('=== 公告表(announcements) ===')
+print(get_announcement_stats())
 "
-
-# 手动触发增量采集（只扫未发 2027 公告的公司）
-venv/bin/python -c "from company_crawler import CompanyCrawler; CompanyCrawler().run_daily_crawl()"
-
-# 手动触发全量采集（重新扫所有公司，用于修复遗漏）
-# venv/bin/python -c "from company_crawler import CompanyCrawler; CompanyCrawler().run_initial_crawl()"
 
 # 按公司查询岗位
 venv/bin/python -c "
-from job_db import get_jobs_by_company
-jobs = get_jobs_by_company('字节跳动')
-for j in jobs:
-    print(f'{j[\"job_title\"]} | {j[\"status\"]} | {j[\"deadline\"]}')
+import job_db
+conn = job_db._get_conn()
+rows = conn.execute(\"SELECT job_title, status, deadline FROM jobs WHERE company = ?\", ('字节跳动',)).fetchall()
+for r in rows:
+    print(f'{r[\"job_title\"]} | {r[\"status\"]} | {r[\"deadline\"]}')
+conn.close()
 "
 ```
 
@@ -213,43 +214,9 @@ ls -la /opt/job_assistant/data/jobs.db
 # 2. 若不存在，初始化
 venv/bin/python -c "from job_db import init_db; init_db()"
 
-# 3. 执行首次全量采集（耗时 30-60 分钟）
-nohup venv/bin/python -c "from company_crawler import CompanyCrawler; CompanyCrawler().run_initial_crawl()" >> /var/log/job_crawler_initial.log 2>&1 &
+# 3. 执行飞书同步 + AI 分析
+nohup venv/bin/python main.py sync >> /var/log/job_sync.log 2>&1 &
 ```
-
-### 3.7 校招公司库维护
-
-> 公司库（`campus_companies.py`）定义了采集范围，当前 488 家企业，目标覆盖 2024-2026 校招企业的 95%。
-
-```bash
-# 查看公司库统计
-cd /opt/job_assistant
-venv/bin/python -c "
-from campus_companies import CAMPUS_COMPANIES
-from collections import Counter
-print(f'公司总数: {len(CAMPUS_COMPANIES)}')
-print(f'行业分布: {Counter(c[\"industry\"] for c in CAMPUS_COMPANIES)}')
-print(f'类型分布: {Counter(c[\"type\"] for c in CAMPUS_COMPANIES)}')
-print(f'有 career_domain: {sum(1 for c in CAMPUS_COMPANIES if c.get(\"career_domain\"))}')
-print(f'已发 2027 公告: {sum(1 for c in CAMPUS_COMPANIES if c.get(\"has_2027_announcement\"))}')
-"
-```
-
-**新增公司到公司库**：
-1. 编辑 `campus_companies.py`，在 `CAMPUS_COMPANIES` 列表中添加：
-```python
-{
-    "name": "新公司名",
-    "type": "民企",           # 国央企/民企/外企
-    "difficulty": "普通",      # 最激烈/激烈/普通/轻松
-    "industry": "互联网",
-    "career_domain": "jobs.example.com",  # 可选，官网招聘域名
-    "wechat_account": "新公司招聘",       # 可选，官方公众号
-},
-```
-2. 上传到服务器：`scp campus_companies.py prod:/opt/job_assistant/`
-3. 重启服务：`sudo systemctl restart job-callback`
-4. 下次采集时新公司会被扫描
 
 ---
 
@@ -274,14 +241,14 @@ sudo journalctl -u job-callback -n 100 --no-pager
 cd /opt/job_assistant
 venv/bin/python main.py single <user_id> 2>&1 | tail -50
 
-# 校招用户额外检查：总数据库是否有数据
+# 检查总数据库是否有数据
 venv/bin/python -c "from job_db import get_stats; print(get_stats())"
 
 # 常见原因：
-# 1. 搜索 API 配额耗尽（检查 TAVILY_API_KEY 额度）
+# 1. 总数据库无匹配届数的岗位(需执行 main.py sync)
 # 2. 用户 direction_keywords 为空（需配置偏好）
-# 3. 所有岗位已推送过（去重）
-# 4. 校招用户：总数据库为空（需执行 run_initial_crawl，见 3.6 节）
+# 3. 用户毕业年份不在岗位届数范围内
+# 4. 所有岗位已推送过（去重）
 ```
 
 ### 4.3 飞书消息推送失败
@@ -308,6 +275,22 @@ venv/bin/python main.py migrate-tokens
 
 # 如果仍失败，查看具体错误
 venv/bin/python main.py single <user_id> 2>&1 | grep -i error
+```
+
+### 4.5 数据流水线异常
+
+```bash
+# 查看公告表分析状态分布
+venv/bin/python -c "
+from job_db import get_announcement_stats
+s = get_announcement_stats()
+for k, v in s.items():
+    print(f'{k}: {v}')
+"
+
+# 大量 fetch_blocked: 微信反爬,需降速或换 IP
+# 大量 llm_parse_empty: 优化岗位拆分 prompt
+# 大量 not_current_grade: 正常,非本届校招已过滤
 ```
 
 ---

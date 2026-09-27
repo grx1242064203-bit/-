@@ -352,6 +352,6 @@ AI 分析公告链接，将"招聘岗位"大类（如"研发类"）拆分为具�
 原方案硬编码 cohort='2027'，只服务 2027 届学生。但春招补招面向 26-27 届，且用户毕业届数多样。
 
 ### 结论
-- UserProfile 新增 graduation_year 字段（校招用户自填，社招留空）
+- UserProfile 新增 graduation_year 字段（用户自填毕业年份）
 - 岗位表新增 target_min_grade / target_max_grade（从飞书"招聘对象"解析）
 - 匹配逻辑：用户毕业年份 ∈ [target_min_grade, target_max_grade]

@@ -296,26 +296,9 @@
   <div class="card" id="profileCard">
     <h2>求职偏好</h2>
 
-    <!-- 求职角色选择 -->
-    <div class="form-group">
-      <label>求职角色 <span class="hint">（决定采集岗位类型）</span></label>
-      <div class="role-selector">
-        <label class="role-option">
-          <input type="radio" name="role" value="campus">
-          <span class="role-label">🎓 校招</span>
-          <span class="role-desc">应届毕业生求职</span>
-        </label>
-        <label class="role-option">
-          <input type="radio" name="role" value="social">
-          <span class="role-label">🏢 社招</span>
-          <span class="role-desc">有工作经验跳槽</span>
-        </label>
-      </div>
-    </div>
-
-    <!-- 管培项目选择(仅校招用户显示) -->
-    <div class="form-group" id="mtProgramGroup" style="display:none;">
-      <label>管培项目选择 <span class="hint">（针对性采集管培生岗位，仅校招有效）</span></label>
+    <!-- 管培项目选择 -->
+    <div class="form-group" id="mtProgramGroup">
+      <label>管培项目选择 <span class="hint">（针对性采集管培生岗位）</span></label>
       <select id="mtProgram" class="input">
         <option value="all">全部管培生项目</option>
         <option value="finance">金融管培(银行/券商/基金)</option>
@@ -368,10 +351,6 @@
     </div>
 
     <div class="grid-2">
-      <div class="form-group" id="experienceYearsGroup">
-        <label>工作年限 <span class="hint">（应届填 0）</span></label>
-        <input type="number" id="experienceYears" min="0" step="0.5" placeholder="0">
-      </div>
       <div class="form-group">
         <label>核心技能 <span class="hint">（逗号分隔）</span></label>
         <input type="text" id="coreSkills" placeholder="如：Python, SQL, Excel">
@@ -536,11 +515,6 @@ async function loadProfile() {
     const data = await resp.json();
     if (data.profile) {
       const p = data.profile;
-      // 角色
-      if (p.role) {
-        const rb = document.querySelector(`input[name="role"][value="${p.role}"]`);
-        if (rb) rb.checked = true;
-      }
       toggleCampusFields();
       // 毕业年份
       if (p.graduation_year) {
@@ -569,7 +543,6 @@ async function loadProfile() {
       }
       document.getElementById('major').value = p.major || '';
       document.getElementById('degree').value = p.degree || '';
-      document.getElementById('experienceYears').value = p.experience_years || 0;
       document.getElementById('coreSkills').value = (p.core_skills || []).join(', ');
       document.getElementById('targetCompanies').value = (p.target_companies || []).join(', ');
       document.getElementById('targetCities').value = (p.target_cities || []).join(', ');
@@ -583,30 +556,18 @@ async function loadProfile() {
   }
 }
 
-// 获取当前选中的角色
+// 校招专属 — 所有用户均为校招
 function getRole() {
-  const checked = document.querySelector('input[name="role"]:checked');
-  return checked ? checked.value : '';
+  return 'campus';
 }
 
-// 根据角色显示/隐藏校招专属字段
+// 显示校招专属字段(管培项目、企业匹配维度)
 function toggleCampusFields() {
-  const role = getRole();
-  const isCampus = (role === 'campus');
-  // 管培项目
   const mtGroup = document.getElementById('mtProgramGroup');
-  if (mtGroup) mtGroup.style.display = isCampus ? 'block' : 'none';
-  // 工作年限:校招隐藏
-  const expGroup = document.getElementById('experienceYearsGroup');
-  if (expGroup) expGroup.style.display = isCampus ? 'none' : 'block';
-  // 企业匹配维度:校招显示
+  if (mtGroup) mtGroup.style.display = 'block';
   const matchGroup = document.getElementById('campusMatchGroup');
-  if (matchGroup) matchGroup.style.display = isCampus ? 'block' : 'none';
+  if (matchGroup) matchGroup.style.display = 'block';
 }
-// 监听角色切换
-document.querySelectorAll('input[name="role"]').forEach(rb => {
-  rb.addEventListener('change', toggleCampusFields);
-});
 
 // 简历文件处理
 let selectedFile = null;
@@ -677,7 +638,6 @@ async function parseResume() {
       const p = data.profile;
       if (p.degree) document.getElementById('degree').value = p.degree;
       if (p.major) document.getElementById('major').value = p.major;
-      if (p.experience_years) document.getElementById('experienceYears').value = p.experience_years;
       if (p.core_skills && p.core_skills.length) {
         document.getElementById('coreSkills').value = p.core_skills.join(', ');
       }
@@ -735,14 +695,7 @@ async function saveProfile() {
   const originalText = saveBtn.textContent;
   saveBtn.textContent = '保存中...';
 
-  const role = getRole();
-  if (!role) {
-    showToast('请选择求职角色', 'error');
-    saveBtn.disabled = false;
-    saveBtn.textContent = originalText;
-    return;
-  }
-
+  // 校招专属:所有用户均为校招,无需角色选择
   const direction_keywords = {};
   directions.forEach(d => {
     if (d.name && d.keywords) {
@@ -758,20 +711,18 @@ async function saveProfile() {
   const payload = {
     user_id: userId,
     profile: {
-      role: role,
-      mt_program_preference: (role === 'campus') ? (document.getElementById('mtProgram').value || 'all') : 'all',
-      graduation_year: (role === 'campus') ? (document.getElementById('graduationYear').value || '') : '',
+      mt_program_preference: document.getElementById('mtProgram').value || 'all',
+      graduation_year: document.getElementById('graduationYear').value || '',
       major: document.getElementById('major').value,
       degree: document.getElementById('degree').value,
-      experience_years: (role === 'campus') ? 0 : (parseFloat(document.getElementById('experienceYears').value) || 0),
       core_skills: document.getElementById('coreSkills').value.split(/[,，]/).map(s=>s.trim()).filter(Boolean),
       direction_keywords: direction_keywords,
       target_companies: document.getElementById('targetCompanies').value.split(/[,，]/).map(s=>s.trim()).filter(Boolean),
       target_cities: document.getElementById('targetCities').value.split(/[,，]/).map(s=>s.trim()).filter(Boolean),
       target_industries: window._parsed_industries || [],
-      preferred_company_types: (role === 'campus') ? companyTypes : [],
-      preferred_difficulties: (role === 'campus') ? difficulties : [],
-      preferred_locations: (role === 'campus') ? locations : [],
+      preferred_company_types: companyTypes,
+      preferred_difficulties: difficulties,
+      preferred_locations: locations,
     }
   };
 

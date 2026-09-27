@@ -33,10 +33,9 @@ RESUME_PARSE_PROMPT = """你是一位有 10 年经验的资深 HR 专家,擅长�
 1. school: 毕业院校(全称,如"清华大学")。多个取最高学历的院校。
 2. degree: 学历(本科/硕士/博士/大专/高中)。
 3. major: 专业全称(如"计算机科学与技术")。
-4. experience_years: 工作年限(数字,应届/在校填 0,实习经历不算正式工作年限)。校招用户此值应为 0。
-5. core_skills: 核心技能列表(硬技能优先,如 Python/SQL/Excel/数据分析/项目管理等,提取 5-15 个)。
-6. target_roles: 目标岗位方向列表(从简历求职意向/经历推断,如 ["产品经理","数据分析"])。每个方向需精炼为 2-6 字的岗位名称。
-7. direction_keywords: 每个目标方向对应的搜索关键词数组。这是最关键的字段!
+4. core_skills: 核心技能列表(硬技能优先,如 Python/SQL/Excel/数据分析/项目管理等,提取 5-15 个)。
+5. target_roles: 目标岗位方向列表(从简历求职意向/经历推断,如 ["产品经理","数据分析"])。每个方向需精炼为 2-6 字的岗位名称。
+6. direction_keywords: 每个目标方向对应的搜索关键词数组。这是最关键的字段!
    格式: [{{"direction": "方向名", "keywords": ["关键词1","关键词2",...]}}]
    要求: 每个方向生成 5-8 个搜索关键词,必须包含:
      - 方向名本身(如 "FOF投资经理")
@@ -45,18 +44,17 @@ RESUME_PARSE_PROMPT = """你是一位有 10 年经验的资深 HR 专家,擅长�
      - 英文常用缩写(如 "FOF"、"portfolio")
      - 相关技能/工具词(如 "资产配置"、"量化")
    这些关键词将直接用于搜索引擎抓取岗位,必须精准、专业、覆盖全面。
-8. target_cities: 目标城市列表(从简历期望地点推断,不确定则为空数组)。
-9. target_industries: 目标行业列表(从经历推断,如 ["互联网","金融"])。
-10. preferred_company_types: 偏好的公司类型(从简历背景和目标推断,可选值:["国央企","民企","外企"],可多选)。如金融背景且求稳可推荐"国央企",技术背景可推荐"民企"。
-11. preferred_difficulties: 偏好的申请难度(根据学校层次和经历推荐,可选值:["最激烈","较为激烈","中等难度","较低难度"],可多选)。顶尖院校+强实习推荐"最激烈"+"较为激烈"。
-12. certificates: 已获证书列表(如 CFA/CPA/法考/PMP/四六级等)。
-13. current_role: 当前身份("学生"/"在职"/"待业")。
-14. summary: 候选人一句话画像(学校+学历+核心亮点,不超过 50 字)。
-15. highlights: 简历亮点列表(3-5 条,每条不超过 30 字,如 "某券商行研实习经历"、"CFA二级通过")。
+7. target_cities: 目标城市列表(从简历期望地点推断,不确定则为空数组)。
+8. target_industries: 目标行业列表(从经历推断,如 ["互联网","金融"])。
+9. preferred_company_types: 偏好的公司类型(从简历背景和目标推断,可选值:["国央企","民企","外企"],可多选)。如金融背景且求稳可推荐"国央企",技术背景可推荐"民企"。
+10. preferred_difficulties: 偏好的申请难度(根据学校层次和经历推荐,可选值:["最激烈","较为激烈","中等难度","较低难度"],可多选)。顶尖院校+强实习推荐"最激烈"+"较为激烈"。
+11. certificates: 已获证书列表(如 CFA/CPA/法考/PMP/四六级等)。
+12. current_role: 当前身份("学生"/"在职"/"待业")。
+13. summary: 候选人一句话画像(学校+学历+核心亮点,不超过 50 字)。
+14. highlights: 简历亮点列表(3-5 条,每条不超过 30 字,如 "某券商行研实习经历"、"CFA二级通过")。
 
 注意:
 - 缺失的信息填""(字符串)或 [](数组),不要编造
-- experience_years 必须是数字
 - direction_keywords 的 keywords 必须是搜索友好的关键词,不要用完整句子
 - 只输出 JSON 对象,不要 markdown 代码块标记
 
@@ -204,9 +202,9 @@ class LLMClient:
         解析简历文本,返回结构化画像 dict。
 
         返回字段与 UserProfile 对齐:
-        school, degree, major, experience_years,
-        core_skills, direction_keywords, target_cities, target_industries,
-        target_certificates, current_role, summary
+        school, degree, major, core_skills, direction_keywords,
+        target_cities, target_industries, target_certificates,
+        current_role, summary, highlights
         """
         if not resume_text or not resume_text.strip():
             logger.warning("简历文本为空")
@@ -227,12 +225,6 @@ class LLMClient:
         profile["major"] = str(parsed.get("major", "")).strip()
         profile["current_role"] = str(parsed.get("current_role", "")).strip()
         profile["summary"] = str(parsed.get("summary", "")).strip()
-
-        # 经验年限:确保为数字
-        try:
-            profile["experience_years"] = float(parsed.get("experience_years", 0) or 0)
-        except (ValueError, TypeError):
-            profile["experience_years"] = 0.0
 
         # 列表字段
         profile["core_skills"] = self._to_list(parsed.get("core_skills"))
@@ -291,7 +283,6 @@ class LLMClient:
             "school": "",
             "degree": "",
             "major": "",
-            "experience_years": 0.0,
             "core_skills": [],
             "direction_keywords": {},
             "target_cities": [],
@@ -671,10 +662,10 @@ class LLMClient:
                 "application_advice": "请查看 JD 详情了解具体要求",
             }
 
-        # 用户画像摘要(用于匹配分析)
+        # 用户画像摘要(用于匹配分析,校招用户无工作年限)
         profile_summary = (
             f"学校:{profile.get('school','')},学历:{profile.get('degree','')},"
-            f"专业:{profile.get('major','')},工作年限:{profile.get('experience_years',0)}年,"
+            f"专业:{profile.get('major','')},"
             f"核心技能:{','.join(profile.get('core_skills',[])[:8])}"
         )
 
@@ -739,8 +730,6 @@ JD 正文:
                 all_directions.append(direction)
                 all_directions.extend(kws if isinstance(kws, list) else [])
         direction_str = "、".join(all_directions[:20]) if all_directions else "未指定"
-        role = profile.get("role", "") or ""
-        role_label = {"campus": "校招", "social": "社招"}.get(role, "未知")
 
         passed = []
         for i in range(0, len(jobs), batch_size):
@@ -760,7 +749,7 @@ JD 正文:
             prompt = f"""你是招聘信息质量审核专家。请对以下岗位信息进行质量筛选。
 
 用户求职方向: {direction_str}
-用户角色: {role_label}
+用户身份: 应届毕业生(校招)
 
 岗位列表(JSON):
 {json.dumps(job_list, ensure_ascii=False)}
@@ -781,7 +770,6 @@ JD 正文:
 4. 及时性:发布时间在合理范围内(未知不扣分,但明确标注"已结束"/"过期"的排除)
 
 注意:
-- 社招用户:校招/应届/管培岗位 pass=false
 - 校招用户:要求3年以上工作经验的社招岗位 pass=false
 - URL 明显是搜索页(含/search、/list、?q=等)的 pass=false
 """

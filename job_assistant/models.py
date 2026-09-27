@@ -22,25 +22,21 @@ from config import settings
 
 @dataclass
 class UserProfile:
-    """用户画像 — 用于评分匹配(通用化,支持任意专业/职业阶段)"""
-    # === 角色分化 ===
-    role: str = ""             # 求职角色: campus(校招)/social(社招) — internship 已下线
-    mt_program_preference: str = "all"  # 管培项目偏好: all/finance/internet/consulting_fmcg/soe(仅校招用户)
+    """用户画像 — 校招用户求职画像,用于人岗匹配评分"""
     # === 基本信息 ===
     school: str = ""           # 学校
     degree: str = ""           # 学历:本科/硕士/博士
     major: str = ""            # 专业
-    experience_years: float = 0  # 工作年限(0=应届,校招用户忽略此字段)
-    current_role: str = ""     # 当前岗位/身份(学生/在职)
+    current_role: str = ""     # 当前身份(学生)
     core_skills: List[str] = field(default_factory=list)  # 核心技能/标签
-    # 目标方向 + 关键词(用户自定义,通用化)
+    # 目标方向 + 关键词(用户自定义)
     direction_keywords: Dict[str, List[str]] = field(default_factory=dict)
     target_companies: List[str] = field(default_factory=list)   # 目标公司(可空=全部)
     target_industries: List[str] = field(default_factory=list)  # 目标行业(可空=全部)
     target_cities: List[str] = field(default_factory=list)      # 目标城市(可空=不限)
     target_certificates: List[str] = field(default_factory=list)  # 已持证书(CFA/CPA/法考等)
-    # === 校招用户专属:企业匹配维度(可多选) ===
-    graduation_year: str = ""          # 毕业年份(如"2027"),用于匹配岗位目标届数范围;社招留空
+    # === 校招用户专属:企业匹配维度 ===
+    graduation_year: str = ""          # 毕业年份(如"2027"),用于匹配岗位目标届数范围
     preferred_company_types: List[str] = field(default_factory=list)  # 偏好公司类型:国央企/民企/外企/事业单位
     preferred_difficulties: List[str] = field(default_factory=list)   # 偏好难度:最激烈/较为激烈/中等难度/较低难度
     preferred_locations: List[str] = field(default_factory=list)      # 偏好城市

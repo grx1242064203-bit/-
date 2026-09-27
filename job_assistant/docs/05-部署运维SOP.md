@@ -1,17 +1,64 @@
 # 05. 部署运维 SOP
 
-## 1. 部署架构
+> 本文档面向运维/部署工程师，指导如何从零部署、日常运维、故障排查校招情报助手。
+> 系统为**校招专属**，采用中心化数据流水线 + 多用户分发架构。
+
+---
+
+## 1. 部署架构总览
 
 ```
-用户 → HTTPS → Nginx (:443) → 反向代理 → callback_server (:8080)
-                                              │
-                                    systemd (job-callback)
+互联网用户
+    │
+    ▼ HTTPS :443
+┌─────────────────────────────────────────────────┐
+│  Nginx (反向代理 + SSL 终结)                      │
+│  server_name: zhaopin-helper.xyz                 │
+└───────────────────┬─────────────────────────────┘
+                    │ proxy_pass http://127.0.0.1:8080
+                    ▼
+┌─────────────────────────────────────────────────┐
+│  callback_server.py (systemd: job-callback)       │
+│  - 监听 127.0.0.1:8080                            │
+│  - 接收飞书事件回调 (app_open / app_install)       │
+│  - 提供用户配置页面 API (/api/profile 等)         │
+└─────────────────────────────────────────────────┘
+
+定时任务 (cron):
+  0 9 * * *    main.py daily            → 数据同步 + 所有用户每日任务
+  30 9 * * 1   main.py weekly-ranking   → 每周校招投递热度榜
 ```
 
-- Nginx 负责 HTTPS 终结和反向代理
-- callback_server 监听 `127.0.0.1:8080`
-- systemd 管理服务进程，自动重启
-- cron 每日 9:00 触发 `main.py daily`
+### 1.1 服务器信息
+
+| 项目 | 值 |
+|------|-----|
+| 服务器 | 阿里云轻量应用服务器（马来西亚·吉隆坡） |
+| 公网 IP | `47.250.216.165` |
+| 域名 | `zhaopin-helper.xyz` |
+| 应用路径 | `/opt/job_assistant` |
+| 服务进程 | `job-callback`（systemd 管理） |
+| 代码来源 | 本地开发机 `scp` 上传（服务器 git 无远程 origin） |
+
+### 1.2 数据流（校招专属）
+
+```
+飞书秋招汇总表(10150条)
+    │
+    ▼ feishu_source.py  (同步+归一化)
+announcements 表(原始招聘链接,后台中间表)
+    │
+    ▼ fetch_announcements.py  (阶段一: Playwright 并发抓取)
+fetch_results.jsonl  (正文文字 + 图片URL, append-only)
+    │
+    ▼ analyze_daemon.py  (阶段二: LLM 分析, tail -f)
+jobs 表(具体岗位,25+ 维度) + companies 表(公司元数据)
+    │
+    ▼ user_matcher.py  (规则预筛 + AI 评分)
+    │
+    ▼ daily_runner.py  (写入飞书表 + 日报 + 推送)
+用户飞书多维表格 + 飞书卡片 + 微信推送
+```
 
 ---
 
@@ -40,30 +87,37 @@ git checkout main
 python3 -m venv venv
 source venv/bin/activate
 pip install -r requirements.txt
-```
 
-> 注意：`trae/agent-ooAq84` 分支已合并到 `main`，生产部署统一使用 `main` 分支。
+# 安装 Playwright + Chromium（阶段一抓取微信公告用）
+pip install playwright
+playwright install chromium
+```
 
 ### 2.3 配置环境变量
 
 ```bash
 cat > /opt/job_assistant/.env << 'EOF'
-# 飞书应用凭证(open.feishu.cn 创建后获取)
-FEISHU_APP_ID=cli_xxx
-FEISHU_APP_SECRET=xxx
-FEISHU_VERIFICATION_TOKEN=xxx
+# 飞书应用凭证(open.feishu.cn 创建商店应用后获取)
+FEISHU_APP_ID=cli_xxxxxxxx
+FEISHU_APP_SECRET=xxxxxxxx
+FEISHU_VERIFICATION_TOKEN=xxxxxxxx
+# FEISHU_ENCRYPT_KEY=xxxxxxxx
 
-# 搜索 API(二选一,Tavily 有免费额度)
-TAVILY_API_KEY=tvly-xxx
+# LLM 配置(DeepSeek — 简历解析 + 岗位拆分 + JD 分析)
+DEEPSEEK_API_KEY=sk-xxxxxxxx
 
-# LLM 配置(DeepSeek,用于简历解析)
-DEEPSEEK_API_KEY=sk-xxx
+# WxPusher(可选辅助通道,主推送走飞书)
+WXPUSHER_APP_TOKEN=AT_xxxxxxxx
+ADMIN_WXPUSHER_UID=UID_xxxxxxxx
 
 # 数据存储目录
 DATA_DIR=/opt/job_assistant/data
 
-# 服务域名(用于生成客户配置页链接)
+# 服务域名(生成客户配置页链接)
 SERVICE_BASE_URL=https://zhaopin-helper.xyz
+
+# 数据源告警接收人(可选,不配置则发给所有用户)
+# ALERT_OPEN_ID=ou_xxxxxxxx
 EOF
 
 # 限制 .env 权限
@@ -79,6 +133,8 @@ server {
 
     ssl_certificate     /etc/letsencrypt/live/zhaopin-helper.xyz/fullchain.pem;
     ssl_certificate_key /etc/letsencrypt/live/zhaopin-helper.xyz/privkey.pem;
+
+    client_max_body_size 20M;  # 简历上传
 
     location / {
         proxy_pass http://127.0.0.1:8080;
@@ -128,94 +184,55 @@ sudo systemctl start job-callback
 
 ```bash
 crontab -e
-# 每日 9:00 执行用户每日任务（内含飞书同步 + AI 分析 + 分发）
+# 每日 9:00 执行(内含飞书同步 + AI 分析 + 多用户分发)
 0 9 * * * cd /opt/job_assistant && /opt/job_assistant/venv/bin/python main.py daily >> /var/log/job_assistant.log 2>&1
-# 每周一 9:30 执行校招投递热度榜
+# 每周一 9:30 校招投递热度榜
 30 9 * * 1 cd /opt/job_assistant && /opt/job_assistant/venv/bin/python main.py weekly-ranking >> /var/log/job_assistant_weekly.log 2>&1
 ```
 
-> **说明**：`main.py daily` 内部会先执行中心化数据同步（飞书表 + AI 岗位分析），再分发给各用户。无需单独的采集 cron。
+> **说明**：`main.py daily` 内部先执行 `run_sync_and_analyze()`（飞书表同步 + AI 岗位分析），再遍历活跃用户分发岗位。无需单独的采集 cron。
 
-### 2.8 数据源告警配置（可选但推荐）
-
-飞书数据源故障时会通过飞书消息告警。配置告警接收人：
-
-```bash
-# 在 .env 中添加告警接收人 open_id
-echo 'ALERT_OPEN_ID=ou_xxxxxxxx' >> /opt/job_assistant/.env
-# 若不配置,则告警发给所有校招用户
-```
-
-### 2.9 校招总数据库初始化（首次部署必做）
-
-首次部署或更新到飞书数据源架构后，执行以下步骤：
+### 2.8 数据库初始化（首次部署必做）
 
 ```bash
 cd /opt/job_assistant
 source venv/bin/activate
 
-# 1. 初始化数据库表结构（companies + jobs 表，自动迁移旧字段）
-python -c "from job_db import init_db; init_db(); print('数据库初始化完成')"
+# 1. 初始化三表结构(companies + announcements + jobs)
+python3 -c "import job_db; job_db.init_db(); print('数据库初始化完成')"
 
 # 2. 验证表结构
-python -c "
+python3 -c "
 import sqlite3
 conn = sqlite3.connect('data/jobs.db')
-cur = conn.execute(\"SELECT name FROM sqlite_master WHERE type='table'\")
-print('表:', [r[0] for r in cur.fetchall()])
+print('表:', [r[0] for r in conn.execute(\"SELECT name FROM sqlite_master WHERE type='table'\").fetchall()])
 conn.close()
 "
 
-# 3. 首次全量同步飞书秋招汇总表 + AI 分析（耗时较长，建议后台运行）
-nohup python main.py sync >> /var/log/job_sync_initial.log 2>&1 &
+# 3. 首次全量同步飞书表 + AI 分析(耗时较长,建议后台运行)
+nohup python3 main.py sync >> /var/log/job_sync_initial.log 2>&1 &
 
 # 4. 查看同步进度
 tail -f /var/log/job_sync_initial.log
 
-# 5. 同步完成后验证统计
-python -c "from job_db import get_stats; print(get_stats())"
+# 5. 验证统计
+python3 -c "from job_db import get_stats, get_announcement_stats; print('岗位:', get_stats()); print('公告:', get_announcement_stats())"
 ```
 
 **预期结果**：
-- `jobs.db` 包含 `companies` 和 `jobs` 两张表
-- `get_stats()` 返回公司数 > 5000、岗位数 > 5000
-- 校招用户（graduation_year 已填）执行 `main.py single <user_id>` 能匹配到岗位
-
-> ⚠️ **首次同步注意事项**：
-> - 飞书表约 10000 条记录，同步预计 1-2 分钟
-> - AI 岗位分析会消耗 DeepSeek API 配额，首批 100 条分析
-> - 若飞书表访问失败，会通过飞书消息发送告警
-> - 已入库岗位不会重复（dedup_hash 去重）
+- `jobs.db` 包含 `companies`、`announcements`、`jobs` 三张表
+- `get_stats()` 返回岗位数 > 0（随 AI 分析进度增长）
+- 校招用户执行 `main.py single <user_id>` 能匹配到岗位
 
 ---
 
-## 3. 服务器同步核心原则（必读）
+## 3. 代码同步核心原则（必读）
 
-> ⚠️ **第一性原则：本地代码修改 ≠ 服务器生效。所有改动必须同步到生产服务器并重启服务，用户才能看到变化。**
+> ⚠️ **第一性原则：本地代码修改 ≠ 服务器生效。所有改动必须 scp 上传并重启服务，用户才能看到变化。**
 
-### 3.1 为什么必须同步到服务器
+### 3.1 SSH 连接方式
 
-本项目采用**单机部署架构**，所有用户请求和定时任务都运行在阿里云轻量应用服务器上：
-
-| 项目 | 值 |
-|------|-----|
-| 服务器 | 阿里云轻量应用服务器（马来西亚·吉隆坡） |
-| 公网 IP | `47.250.216.165` |
-| 域名 | `zhaopin-helper.xyz` |
-| 应用路径 | `/opt/job_assistant` |
-| 服务进程 | `job-callback`（systemd 管理，监听 `127.0.0.1:8080`） |
-| 代码来源 | 本地开发机直接 `scp` 上传（服务器 git 仓库无远程 origin） |
-
-**常见误区**：
-- ❌ 在本地改完代码就以为用户能看到效果 → 服务跑的是服务器上的旧代码
-- ❌ 只改 collector.py 不重启服务 → Python 进程加载的是旧字节码
-- ❌ 只在本地测试通过就交付 → 生产环境可能因依赖/数据不同而异常
-
-**正确流程**：本地修改 → 本地测试 → `scp` 上传服务器 → 语法检查 → 重启服务 → 健康检查 → 生产验证
-
-### 3.2 SSH 连接方式（通过 HTTP 代理 CONNECT 隧道）
-
-本地开发机通过 TRAE 环境的 HTTP 代理（`127.0.0.1:18080`）建立 SSH 隧道连接服务器：
+本地开发机通过 TRAE 环境的 HTTP 代理（`127.0.0.1:18080`）建立 SSH 隧道：
 
 ```bash
 # ~/.ssh/config
@@ -229,135 +246,134 @@ Host prod
     UserKnownHostsFile /dev/null
 ```
 
-公钥需预先部署到服务器 `~/.ssh/authorized_keys`。
+### 3.2 标准更新部署流程
 
-### 3.3 验证同步是否生效
-
-每次部署后必须执行：
+在**本地开发机**执行：
 
 ```bash
-# 1. 确认服务已加载新代码（看启动时间）
-ssh prod "sudo systemctl status job-callback | head -5"
+# === 本地侧：上传修改的文件 ===
+scp /workspace/job_assistant/<修改的文件>.py prod:/opt/job_assistant/
 
-# 2. 健康检查
-ssh prod "curl -s http://localhost:8080/health"
-
-# 3. 验证具体修改已生效（以领英过滤为例）
-ssh prod "cd /opt/job_assistant && venv/bin/python3 -c '
-from collector import _is_allowed_campus_source
-assert _is_allowed_campus_source(\"https://www.linkedin.com/jobs/1\") == False
-print(\"过滤逻辑已生效\")
-'"
-```
-
----
-
-## 4. 更新部署 SOP（标准流程）
-
-> 这是日常迭代的标准部署流程，每次代码更新后执行。
-> 注意：服务器 git 仓库无远程 origin，使用 `scp` 上传而非 `git pull`。
-
-在**本地开发机**执行（假设本地代码已修改并通过测试）：
-
-```bash
-# === 本地侧 ===
-
-# 1. 上传修改的文件到服务器（按需指定文件）
-scp /workspace/job_assistant/collector.py prod:/opt/job_assistant/
-# 如需上传多个文件：
-# scp collector.py config.py scorer.py job_db.py company_crawler.py user_matcher.py campus_companies.py prod:/opt/job_assistant/
-
-# 若新增了总数据库相关文件，需一并上传：
-# scp job_db.py company_crawler.py user_matcher.py campus_companies.py prod:/opt/job_assistant/
-
-# === 服务器侧 ===
+# === 服务器侧：验证 + 重启 ===
 ssh prod << 'EOF'
 cd /opt/job_assistant
 
-# 2. 清理缓存
+# 清理缓存
 sudo find . -name "__pycache__" -type d -exec rm -rf {} + 2>/dev/null
 sudo find . -name "*.pyc" -delete 2>/dev/null
 
-# 3. 语法检查（必须通过才能继续）
-venv/bin/python3 -m py_compile collector.py && echo "语法 OK" || { echo "语法错误，终止部署"; exit 1; }
+# 语法检查(必须通过)
+venv/bin/python3 -m py_compile <修改的文件>.py && echo "语法 OK" || { echo "语法错误,终止"; exit 1; }
 
-# 4. （可选）清理坏数据 — 按需执行
-# sudo venv/bin/python3 -c "
-# import json
-# with open('data/users.json', 'r') as f:
-#     users = json.load(f)
-# # 按需删除指定用户
-# for uid in list(users.keys()):
-#     if uid in ('test_001',):
-#         del users[uid]
-# with open('data/users.json', 'w') as f:
-#     json.dump(users, f, ensure_ascii=False, indent=2)
-# print('清理后用户:', list(users.keys()))
-# "
-
-# 5. 重启服务（使新代码生效）
+# 重启服务
 sudo systemctl restart job-callback
 sleep 3
 
-# 6. 健康检查
+# 健康检查
 curl -s http://localhost:8080/health
 EOF
 ```
 
-**预期输出**：
-```json
-{"status": "ok", "uptime_seconds": 3, "service": "job-callback"}
-```
-
-**部署 Checklist**（每次必须逐项确认）：
-- [ ] 本地代码已通过 `py_compile` 和功能测试
-- [ ] `scp` 上传成功（检查文件大小/时间戳）
+**部署 Checklist**：
+- [ ] 本地代码通过 `py_compile` 和功能测试
+- [ ] `scp` 上传成功
 - [ ] 服务器 `py_compile` 通过
 - [ ] `systemctl restart job-callback` 执行完成
 - [ ] `/health` 返回 `status: ok`
-- [ ] 生产环境验证修改生效（如领英过滤等）
-- [ ] 若涉及总数据库变更：`jobs.db` 存在且 `get_stats()` 正常
+
+---
+
+## 4. 数据流水线管理
+
+系统采用**两阶段流水线**，每日由 `main.py daily` 自动触发。也可手动执行各阶段。
+
+### 4.1 每日自动流程（main.py daily）
+
+```bash
+python3 main.py daily
+```
+
+内部执行顺序：
+1. `run_sync_and_analyze()` — 飞书表同步 + AI 岗位分析（所有用户共享）
+2. 遍历活跃用户 → `DailyRunner.run()` — 匹配 + 写入飞书 + 日报 + 推送
+
+### 4.2 手动执行数据同步
+
+```bash
+# 仅同步飞书表 + AI 分析(不分发用户)
+python3 main.py sync
+```
+
+### 4.3 手动执行两阶段流水线（调试用）
+
+```bash
+# 阶段一：并发抓取公告正文(Playwright)
+python3 fetch_announcements.py --workers 4 --limit 1000
+
+# 阶段二：LLM 分析(一次性分析全部已抓取记录)
+python3 analyze_announcements.py
+
+# 或两阶段并行(推荐)
+python3 run_parallel.py
+```
+
+### 4.4 流水线状态查看
+
+```bash
+python3 -c "
+from job_db import get_stats, get_announcement_stats
+print('=== 岗位表(jobs) ===')
+print(get_stats())
+print('=== 公告表(announcements) ===')
+print(get_announcement_stats())
+"
+```
+
+`announcements.analysis_status` 枚举：
+
+| 值 | 含义 | 处理方式 |
+|----|------|---------|
+| `success` | 成功拆分出岗位 | - |
+| `fetch_blocked` | 微信反爬拦截 | 换 IP / 降速重试 |
+| `fetch_failed` | 抓取失败 | 重试 |
+| `content_invalid` | 抓到无效正文 | 改进抓取策略 |
+| `llm_parse_empty` | LLM 未拆出岗位 | 重试 + 优化 prompt |
+| `not_current_grade` | 非本届校招 | 过滤，不重试 |
+
+### 4.5 监控面板
+
+```bash
+python3 monitor_panel.py   # 启动 Web 监控面板,端口 8765
+```
 
 ---
 
 ## 5. 验证流程
 
-### 5.1 部署后验证
+### 5.1 服务健康检查
 
 ```bash
-# 1. 服务状态
+# 服务状态
 sudo systemctl status job-callback
 
-# 2. 健康检查
-curl -s http://localhost:8080/health | python3 -m json.tool
+# 健康检查
+curl -s http://localhost:8080/health
 
-# 3. 端口监听
-sudo ss -tlnp | grep 8080
-
-# 4. Nginx 转发
+# 公网访问
 curl -s https://zhaopin-helper.xyz/health
 ```
 
-### 5.2 功能验证（91402 修复验证）
-
-```bash
-cd /opt/job_assistant
-source venv/bin/activate
-python verify_fix.py
+预期输出：
+```json
+{"status": "ok", "uptime_seconds": 3, "service": "job-callback"}
 ```
 
-验证脚本会依次执行：
-1. 凭证检查
-2. token 解析测试（wiki node_token → obj_token）
-3. 存量用户 token 迁移
-4. 单用户每日任务测试
+### 5.2 端到端验证
 
-### 5.3 端到端验证
-
-1. **飞书回调**：在飞书中打开应用，检查 `users.json` 是否新增用户
+1. **飞书回调**：在飞书中打开应用，检查 `data/users.json` 是否新增用户
 2. **多维表格**：确认用户专属多维表格已创建，字段完整
-3. **每日任务**：`python main.py single <user_id>`，确认岗位写入飞书表格
-4. **飞书消息推送**：确认用户收到飞书日报卡片消息
+3. **单用户任务**：`python3 main.py single <user_id>`，确认岗位写入飞书表格
+4. **飞书推送**：确认用户收到飞书日报卡片消息
 
 ---
 
@@ -377,30 +393,20 @@ sudo tail -f /var/log/nginx/access.log
 sudo tail -f /var/log/nginx/error.log
 ```
 
-### 6.2 健康检查
-
-```bash
-# 手动检查
-curl -s http://localhost:8080/health
-
-# 可配置监控（如 UptimeRobot）定时访问
-https://zhaopin-helper.xyz/health
-```
-
-### 6.3 常用排查命令
+### 6.2 常用排查命令
 
 ```bash
 # 服务重启
 sudo systemctl restart job-callback
 
-# 查看服务状态
-sudo systemctl status job-callback
-
 # 查看最近错误
 sudo journalctl -u job-callback -n 50 --no-pager | grep -i error
 
-# 手动执行每日任务（调试）
-cd /opt/job_assistant && venv/bin/python main.py single u1
+# 手动执行单用户任务(调试)
+cd /opt/job_assistant && venv/bin/python main.py single <user_id>
+
+# 查看总数据库统计
+venv/bin/python -c "from job_db import get_stats; print(get_stats())"
 ```
 
 ---
@@ -422,10 +428,8 @@ curl -s http://localhost:8080/health
 若飞书 API 大面积故障，可临时停止定时任务：
 
 ```bash
-# 暂停 cron 任务
 crontab -e  # 注释掉 daily 任务行
-
-# 回调服务保持运行（不影响已安装用户查看数据）
+# 回调服务保持运行(不影响已安装用户查看数据)
 ```
 
 ---
@@ -451,7 +455,7 @@ find $BACKUP_DIR -name "*.db" -mtime +30 -delete
 ```
 
 ```bash
-# 添加到 cron
+# 添加到 cron(每日凌晨 3 点)
 0 3 * * * /opt/job_assistant/backup.sh
 ```
 

@@ -97,7 +97,6 @@ TEST_PROFILE = {
     "school": "X大",
     "degree": "本科",
     "major": "计算机",
-    "experience_years": 0,
     "core_skills": ["Python", "SQL"],
     "direction_keywords": {"产品经理": ["pm", "产品"]},
     "target_companies": ["字节"],

@@ -115,38 +115,19 @@ class DailyRunner:
             # 已存在的表若缺少新字段,写入会失败,所以这里自动补建
             self._ensure_table_fields()
 
-            is_campus = self.user.profile.role == "campus"
-
-            if is_campus:
-                # === 校招用户:从总数据库匹配(中心化采集 → 按需分发) ===
-                from user_matcher import match_jobs_for_user
-                scored = match_jobs_for_user(
-                    self.user.profile, llm_client=self.llm, max_per_company=5
-                )
-                # user_matcher 已完成规则预筛+AI评分+每公司≤5
-                # 转换字段名以适配后续写入逻辑(job_title→title, jd_url→url 等)
-                for j in scored:
-                    j.setdefault("title", j.get("job_title", ""))
-                    j.setdefault("url", j.get("jd_url", ""))
-                    j.setdefault("jd_text", j.get("jd_summary", ""))
-                    j.setdefault("location", "")
-                    j.setdefault("salary", "")
-            else:
-                # === 社招用户:保持原有独立搜索逻辑 ===
-                raw_jobs = self.collector.collect(
-                    self.user.profile,
-                    self.user.profile.target_companies,
-                    self.user.profile.target_cities,
-                    limit=settings.DAILY_JOBS_PER_USER,
-                )
-                # AI 质量筛选层
-                if self.llm and raw_jobs:
-                    try:
-                        profile_dict = self.user.profile.__dict__
-                        raw_jobs = self.llm.quality_screen_jobs(raw_jobs, profile_dict)
-                    except Exception as e:
-                        logger.warning(f"AI质量筛选失败,跳过: {e}")
-                scored = [score_job(j, self.user.profile, llm_client=self.llm) for j in raw_jobs]
+            # === 校招用户:从总数据库匹配(中心化采集 → 按需分发) ===
+            from user_matcher import match_jobs_for_user
+            scored = match_jobs_for_user(
+                self.user.profile, llm_client=self.llm, max_per_company=5
+            )
+            # user_matcher 已完成规则预筛+AI评分+每公司≤5
+            # 转换字段名以适配后续写入逻辑(job_title→title, jd_url→url 等)
+            for j in scored:
+                j.setdefault("title", j.get("job_title", ""))
+                j.setdefault("url", j.get("jd_url", ""))
+                j.setdefault("jd_text", j.get("jd_summary", ""))
+                j.setdefault("location", "")
+                j.setdefault("salary", "")
 
             # 分离管培岗位到独立表格(校招用户)
             mt_jobs = [j for j in scored if j.get("管培项目")]

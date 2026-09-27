@@ -249,10 +249,10 @@ class CallbackHandler(BaseHTTPRequestHandler):
             return
 
         # 更新画像字段（只更新传入的字段）
-        allowed_fields = {"major", "degree", "experience_years", "core_skills",
+        allowed_fields = {"major", "degree", "core_skills",
                           "direction_keywords", "target_companies", "target_industries",
                           "target_cities", "target_certificates", "school", "current_role",
-                          "role", "resume_text", "summary", "highlights",
+                          "resume_text", "summary", "highlights",
                           "graduation_year", "mt_program_preference", "preferred_company_types",
                           "preferred_difficulties", "preferred_locations"}
         for key in allowed_fields:
@@ -262,13 +262,12 @@ class CallbackHandler(BaseHTTPRequestHandler):
         store.upsert(user)
         logger.info(f"用户 {user_id} 画像已更新")
 
-        # 校招用户:确保管培项目表存在
-        if user.profile.role == "campus":
-            try:
-                from onboarding import ensure_mt_table
-                ensure_mt_table(user)
-            except Exception:
-                logger.exception(f"创建管培表失败: user_id={user_id}")
+        # 确保管培项目表存在(校招用户)
+        try:
+            from onboarding import ensure_mt_table
+            ensure_mt_table(user)
+        except Exception:
+            logger.exception(f"创建管培表失败: user_id={user_id}")
 
         # 保存成功后立即触发一次采集(后台线程,不阻塞响应)
         try:
@@ -336,9 +335,9 @@ class CallbackHandler(BaseHTTPRequestHandler):
         llm = LLMClient()
         parsed = llm.parse_resume(resume_text)
 
-        # 将解析结果回填到用户画像
+        # 将解析结果回填到用户画像(校招专属,无 work experience 字段)
         for key in ["school", "degree", "major",
-                    "experience_years", "core_skills", "direction_keywords",
+                    "core_skills", "direction_keywords",
                     "target_cities", "target_industries", "target_certificates",
                     "current_role", "summary", "highlights"]:
             val = parsed.get(key)

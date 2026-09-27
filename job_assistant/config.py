@@ -26,6 +26,11 @@ class Settings:
     # === 数据存储 ===
     DATA_DIR: str = field(default_factory=lambda: os.getenv("DATA_DIR", "/opt/job_assistant/data"))
 
+    # === 飞书秋招源表(中心化数据源,每日更新) ===
+    # 来源: https://dcn2fr2wam82.feishu.cn/base/WfgTb3wE3aSGhesttvack8innbh?table=tblcBX0o8CIJlQQr
+    SOURCE_APP_TOKEN: str = field(default_factory=lambda: os.getenv("SOURCE_APP_TOKEN", "WfgTb3wE3aSGhesttvack8innbh"))
+    SOURCE_TABLE_ID: str = field(default_factory=lambda: os.getenv("SOURCE_TABLE_ID", "tblcBX0o8CIJlQQr"))
+
     # === 服务域名（用于生成客户配置页链接） ===
     SERVICE_BASE_URL: str = field(default_factory=lambda: os.getenv("SERVICE_BASE_URL", "https://zhaopin-helper.xyz"))
 

@@ -1,9 +1,10 @@
 """
-用户匹配器 — 从总数据库中筛选与用户画像匹配的岗位。
+用户匹配器 — 从 positions 表(关联 announcements + companies)筛选匹配岗位。
 
-两阶段匹配:
-1. 规则预筛:行业/公司类型/城市/专业关键词,快速过滤 70% 不相关岗位
-2. AI 评分:对预筛通过的岗位调用 score_job 生成匹配度评分
+校招专属设计(不再支持实习/社招):
+1. DB 层预筛:届数 ∈ [min_grade, max_grade] + 行业 + 公司类型
+2. 规则预筛:目标城市 + 专业关键词(岗位标题/JD摘要)
+3. AI 评分:对预筛通过的岗位调用 score_job 生成匹配度评分
 
 输出: 按匹配度排序的岗位列表,每公司最多 max_per_company 个。
 """
@@ -18,20 +19,33 @@ import job_db
 logger = logging.getLogger(__name__)
 
 
+def _graduation_year_to_grade(year: str) -> int:
+    """毕业年份(如 "2026")转届数(如 26)。无法解析返回 0(不过滤)。"""
+    if not year:
+        return 0
+    try:
+        y = int(str(year).strip()[:4])
+        if 2020 <= y <= 2030:
+            return y % 100
+    except (ValueError, TypeError):
+        pass
+    return 0
+
+
 class UserMatcher:
-    """用户岗位匹配器"""
+    """校招用户岗位匹配器"""
 
     def __init__(self, profile: UserProfile, llm_client=None):
         self.profile = profile
         self.llm = llm_client
+        self.user_grade = _graduation_year_to_grade(profile.graduation_year)
 
-    def _rule_filter(self, jobs: List[Dict]) -> List[Dict]:
+    def _rule_filter(self, positions: List[Dict]) -> List[Dict]:
         """
         规则预筛:基于用户画像的硬条件过滤。
-        过滤维度:目标行业、偏好公司类型、目标城市、专业关键词。
+        过滤维度:目标城市、专业/技能关键词。
+        (届数/行业/公司类型已在 DB 层预筛)
         """
-        target_industries = set(self.profile.target_industries or [])
-        pref_types = set(self.profile.preferred_company_types or [])
         target_cities = set(self.profile.target_cities or [])
         # 收集用户所有方向关键词(用于专业/技能匹配)
         all_kws = []
@@ -40,55 +54,54 @@ class UserMatcher:
         all_kws_lower = [k.lower() for k in all_kws]
 
         filtered = []
-        for job in jobs:
-            # 行业匹配:用户选了行业则必须匹配,没选则全通过
-            industry = job.get("industry", "")
-            if target_industries and industry not in target_industries:
-                continue
-            # 公司类型匹配:用户选了类型则必须匹配
-            ctype = job.get("company_type", "")
-            if pref_types and ctype not in pref_types:
-                continue
-            # 城市匹配:用户选了城市则必须匹配(岗位地点字段可能为空,空则不排除)
-            # 总数据库暂存地点信息不完整,这里放宽:有地点才检查
-            # (城市匹配在 score_job 中也会做,这里不硬过滤)
+        for pos in positions:
+            # 城市匹配:用户选了城市则必须匹配(岗位地点为空则不排除)
+            location = pos.get("location", "")
+            if target_cities and location:
+                if not any(c in location for c in target_cities):
+                    continue
             # 专业/技能关键词匹配:标题或摘要含用户关键词
-            text = (job.get("job_title", "") + " " + job.get("jd_summary", "")).lower()
+            text = (pos.get("position_title", "") + " " + pos.get("jd_summary", "")).lower()
             if all_kws_lower and not any(kw in text for kw in all_kws_lower):
                 # 没有关键词命中,但如果是管培/通用岗也保留
-                if "管培" not in text and "mt" not in text:
+                if "管培" not in text and "通用" not in text:
                     continue
-            filtered.append(job)
+            filtered.append(pos)
 
-        logger.info(f"规则预筛: {len(jobs)} → {len(filtered)} 条")
+        logger.info(f"规则预筛: {len(positions)} → {len(filtered)} 条")
         return filtered
 
-    def _score_and_rank(self, jobs: List[Dict]) -> List[Dict]:
+    def _score_and_rank(self, positions: List[Dict]) -> List[Dict]:
         """AI 评分并排序"""
         scored = []
-        for job in jobs:
+        for pos in positions:
             # 转换为 score_job 需要的格式
-            # 注意:jd_summary 需透传,作为 LLM 分析失败时 JD摘要 的降级值
-            # industry/company_type/difficulty 来自公司库,透传到飞书表
+            # jd_summary 作为 jd_text 传入(岗位级摘要)
+            # apply_url 优先岗位级,降级公告级
+            apply_url = pos.get("apply_url", "") or pos.get("ann_apply_url", "")
             job_for_score = {
-                "title": job.get("job_title", ""),
-                "company": job.get("company", ""),
-                "jd_text": job.get("jd_summary", ""),
-                "jd_summary": job.get("jd_summary", ""),
-                "industry": job.get("industry", ""),
-                "company_type": job.get("company_type", ""),
-                "difficulty": job.get("difficulty", ""),
-                "location": "",
+                "title": pos.get("position_title", ""),
+                "company": pos.get("company_name", ""),
+                "jd_text": pos.get("jd_summary", ""),
+                "jd_summary": pos.get("jd_summary", ""),
+                "industry": pos.get("industry", ""),
+                "company_type": pos.get("company_type", ""),
+                "difficulty": pos.get("difficulty", ""),
+                "department": pos.get("department", ""),
+                "location": pos.get("location", ""),
                 "salary": "",
-                "jd_url": job.get("jd_url", ""),
-                "posted": job.get("publish_time", ""),
+                "jd_url": apply_url,
+                "posted": pos.get("publish_time", ""),
             }
             try:
                 result = score_job(job_for_score, self.profile, llm_client=self.llm)
-                scored.append({**job, **result})
+                # 保留 positions 表的 dedup_hash(用于去重写入用户表)
+                result["_dedup_hash"] = pos.get("dedup_hash", "")
+                result["source_url"] = pos.get("source_url", "")
+                scored.append({**pos, **result})
             except Exception as e:
-                logger.warning(f"评分失败 [{job.get('company')}]: {e}")
-                scored.append({**job, "相关性评分": 50, "综合推荐度": "可申请"})
+                logger.warning(f"评分失败 [{pos.get('company_name')}]: {e}")
+                scored.append({**pos, "相关性评分": 50, "综合推荐度": "可申请"})
 
         # 按相关性评分降序
         scored.sort(key=lambda x: x.get("相关性评分", 0), reverse=True)
@@ -98,7 +111,7 @@ class UserMatcher:
         """每公司最多保留 max_per_company 个岗位"""
         groups = defaultdict(list)
         for j in jobs:
-            company = j.get("company", "未知")
+            company = j.get("company_name", "未知")
             groups[company].append(j)
 
         result = []
@@ -113,7 +126,7 @@ class UserMatcher:
 
     def match(self, max_per_company: int = 5, min_score: int = 30) -> List[Dict]:
         """
-        执行完整匹配流程。
+        执行完整匹配流程(校招专属)。
 
         Args:
             max_per_company: 每公司最多岗位数
@@ -122,16 +135,20 @@ class UserMatcher:
         Returns:
             匹配岗位列表(按评分降序)
         """
-        # 1. 从总数据库获取所有在招岗位
-        all_jobs = job_db.get_all_active_jobs()
-        if not all_jobs:
-            logger.info("总数据库为空,无匹配岗位")
+        # 1. DB 层预筛:届数 + 行业 + 公司类型
+        all_positions = job_db.get_active_positions(
+            user_grade=self.user_grade,
+            industries=self.profile.target_industries or None,
+            company_types=self.profile.preferred_company_types or None,
+        )
+        if not all_positions:
+            logger.info("岗位库为空或无匹配岗位")
             return []
 
-        logger.info(f"总数据库在招岗位: {len(all_jobs)} 条")
+        logger.info(f"DB 预筛岗位(届数={self.user_grade}): {len(all_positions)} 条")
 
-        # 2. 规则预筛
-        filtered = self._rule_filter(all_jobs)
+        # 2. 规则预筛(城市 + 关键词)
+        filtered = self._rule_filter(all_positions)
         if not filtered:
             return []
 
@@ -149,6 +166,6 @@ class UserMatcher:
 
 def match_jobs_for_user(profile: UserProfile, llm_client=None,
                         max_per_company: int = 5) -> List[Dict]:
-    """便捷函数:为用户匹配岗位"""
+    """便捷函数:为校招用户匹配岗位"""
     matcher = UserMatcher(profile, llm_client=llm_client)
     return matcher.match(max_per_company=max_per_company)

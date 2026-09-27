@@ -1,10 +1,15 @@
 """
-每日任务执行器 — 为单个用户跑完整的采集→评分→入库→日报→推送。
+每日任务执行器 — 中心化管线 + 单用户匹配分发。
+
+架构(V3 三表重构后):
+1. 中心化管线(每日一次,非按用户):
+   飞书源表同步 → Playwright 正文抓取 → LLM 岗位拆分
+2. 单用户分发(每用户一次):
+   positions 表匹配 → 写入用户飞书表 → 日报 → 推送
 
 设计原则:
 - 单用户失败不影响其他用户(外层捕获异常)
 - 去重:已在主表或已关闭表的岗位不重复写入
-- 状态复查:对主表中"是否在招=是"的岗位复查 JD,关闭的归档
 - 失败降级:飞书写入失败不阻塞推送,WxPusher 失败不影响数据
 """
 import time
@@ -17,11 +22,61 @@ from typing import List, Dict
 from models import User, HashStore
 from feishu_client import FeishuClient
 from wxpusher_client import WxPusherClient
-from collector import JobCollector
 from scorer import score_job
 from config import settings
 
 logger = logging.getLogger(__name__)
+
+
+def run_daily_pipeline(sync_full: bool = False, crawl_limit: int = 200,
+                       enrich_limit: int = 200) -> Dict:
+    """
+    中心化数据管线(每日执行一次,非按用户):
+    1. 飞书源表增量同步 → companies + announcements
+    2. Playwright 正文抓取 → 更新 crawl_status
+    3. LLM 岗位拆分 → positions 表
+
+    Args:
+        sync_full: True=全量同步(首次), False=增量
+        crawl_limit: 本次抓取正文上限
+        enrich_limit: 本次 LLM 拆岗上限
+
+    Returns: 各阶段统计
+    """
+    import job_db
+    from feishu_source import FeishuSourceSync
+    from content_fetcher import fetch_announcement_contents
+    from llm_enricher import run_enrichment
+
+    job_db.init_db()
+    result = {"sync": {}, "crawl": {}, "enrich": {}}
+
+    # 1. 飞书源表同步
+    try:
+        syncer = FeishuSourceSync()
+        result["sync"] = syncer.sync(full=sync_full)
+        logger.info(f"源表同步完成: {result['sync']}")
+    except Exception as e:
+        logger.error(f"源表同步失败: {e}")
+        result["sync"] = {"error": str(e)}
+
+    # 2. 正文抓取
+    try:
+        result["crawl"] = fetch_announcement_contents(limit=crawl_limit)
+        logger.info(f"正文抓取完成: {result['crawl']}")
+    except Exception as e:
+        logger.error(f"正文抓取失败: {e}")
+        result["crawl"] = {"error": str(e)}
+
+    # 3. LLM 岗位拆分
+    try:
+        result["enrich"] = run_enrichment(limit=enrich_limit)
+        logger.info(f"LLM 拆岗完成: {result['enrich']}")
+    except Exception as e:
+        logger.error(f"LLM 拆岗失败: {e}")
+        result["enrich"] = {"error": str(e)}
+
+    return result
 
 
 class UserRunLock:
@@ -62,7 +117,6 @@ class DailyRunner:
         self.user = user
         self.feishu = FeishuClient()
         self.wxpusher = WxPusherClient()
-        self.collector = JobCollector()
         self.hash_store = HashStore(user.id)
         from llm_client import LLMClient
         self.llm = LLMClient()
@@ -115,38 +169,12 @@ class DailyRunner:
             # 已存在的表若缺少新字段,写入会失败,所以这里自动补建
             self._ensure_table_fields()
 
-            is_campus = self.user.profile.role == "campus"
-
-            if is_campus:
-                # === 校招用户:从总数据库匹配(中心化采集 → 按需分发) ===
-                from user_matcher import match_jobs_for_user
-                scored = match_jobs_for_user(
-                    self.user.profile, llm_client=self.llm, max_per_company=5
-                )
-                # user_matcher 已完成规则预筛+AI评分+每公司≤5
-                # 转换字段名以适配后续写入逻辑(job_title→title, jd_url→url 等)
-                for j in scored:
-                    j.setdefault("title", j.get("job_title", ""))
-                    j.setdefault("url", j.get("jd_url", ""))
-                    j.setdefault("jd_text", j.get("jd_summary", ""))
-                    j.setdefault("location", "")
-                    j.setdefault("salary", "")
-            else:
-                # === 社招用户:保持原有独立搜索逻辑 ===
-                raw_jobs = self.collector.collect(
-                    self.user.profile,
-                    self.user.profile.target_companies,
-                    self.user.profile.target_cities,
-                    limit=settings.DAILY_JOBS_PER_USER,
-                )
-                # AI 质量筛选层
-                if self.llm and raw_jobs:
-                    try:
-                        profile_dict = self.user.profile.__dict__
-                        raw_jobs = self.llm.quality_screen_jobs(raw_jobs, profile_dict)
-                    except Exception as e:
-                        logger.warning(f"AI质量筛选失败,跳过: {e}")
-                scored = [score_job(j, self.user.profile, llm_client=self.llm) for j in raw_jobs]
+            # === 校招专属:从 positions 表匹配(中心化管线 → 按需分发) ===
+            from user_matcher import match_jobs_for_user
+            scored = match_jobs_for_user(
+                self.user.profile, llm_client=self.llm, max_per_company=5
+            )
+            # user_matcher 已完成 DB预筛 + 规则预筛 + AI评分 + 每公司≤5
 
             # 分离管培岗位到独立表格(校招用户)
             mt_jobs = [j for j in scored if j.get("管培项目")]
@@ -431,18 +459,19 @@ class DailyRunner:
         for r in records[:15]:  # 限制复查数量
             rid = r.get("record_id", "")
             fields = r.get("fields", {})
-            url = fields.get("JD链接", "")
-            if isinstance(url, dict):
-                url = url.get("link", "")
-            if not url or not rid:
+            company = fields.get("公司", "")
+            if isinstance(company, list):
+                company = company[0].get("name", "") if company else ""
+            title = fields.get("岗位标题", "")
+            if isinstance(title, list):
+                title = title[0].get("text", "") if title else ""
+            if not rid:
                 continue
-            # 复查 JD 是否还在
-            from collector import fetch_jd_by_source
-            jd = fetch_jd_by_source(url, timeout=8)
-            if not jd or "no longer" in jd.lower() or "已关闭" in jd or "404" in jd:
+            # 基于 positions 表检查是否已关闭(替代旧的 URL 抓取)
+            if not self._is_position_active(company, title):
                 closed_applied.append({
-                    "title": fields.get("岗位标题", ""),
-                    "company": fields.get("公司", ""),
+                    "title": title,
+                    "company": company,
                     "status": fields.get("申请状态", ""),
                 })
                 # 将该岗位从主表移到已关闭表(复用归档逻辑)
@@ -618,33 +647,50 @@ class DailyRunner:
         except Exception as e:
             logger.error(f"写入管培项目失败: {e}")
 
+    def _is_position_active(self, company: str, title: str) -> bool:
+        """检查岗位在 positions 表中是否仍在招(替代旧的 URL 抓取复查)。"""
+        import job_db
+        try:
+            positions = job_db.get_positions_by_company(company)
+            if not positions:
+                return True  # 公司不在库中,保守认为在招(避免误归档)
+            # 模糊匹配岗位标题
+            title_lower = (title or "").lower()
+            for p in positions:
+                if title_lower and title_lower in (p.get("position_title", "") or "").lower():
+                    return True
+            # 公司在库但无匹配岗位,可能已关闭
+            return False
+        except Exception:
+            return True  # 出错时保守认为在招
+
     def _recheck_and_archive(self) -> List[Dict]:
-        """复查主表在招岗位,关闭的归档到已关闭表"""
+        """复查主表在招岗位,关闭的归档到已关闭表(基于 positions 表状态)"""
         closed = []
         try:
-            # 先查在招岗位的ID+URL(只查必要字段)
             records = self.feishu.search_records(
                 self.user.feishu_base_token, self.user.feishu_table_id,
                 'AND(CurrentValue.[是否在招] = "是")',
-                fields=["JD链接"],
+                fields=["岗位标题", "公司", "JD链接"],
             )
         except Exception as e:
             logger.warning(f"查询在招岗位失败: {e}")
             return closed
 
-        # 限制每日复查数量,避免请求过多(MVP 最多复查 20 条)
         records = records[:20]
         for r in records:
             rid = r.get("record_id", "")
-            url = r.get("fields", {}).get("JD链接", "")
-            if isinstance(url, dict):
-                url = url.get("link", "")
-            if not url or not rid:
+            fields = r.get("fields", {})
+            company = fields.get("公司", "")
+            if isinstance(company, list):
+                company = company[0].get("name", "") if company else ""
+            title = fields.get("岗位标题", "")
+            if isinstance(title, list):
+                title = title[0].get("text", "") if title else ""
+            if not rid:
                 continue
-            # 复查 JD 是否还在
-            from collector import fetch_jd_by_source
-            jd = fetch_jd_by_source(url, timeout=8)
-            if not jd or "no longer" in jd.lower() or "已关闭" in jd or "404" in jd:
+            # 基于 positions 表检查是否仍在招
+            if not self._is_position_active(company, title):
                 try:
                     # 拉取完整记录
                     full_fields = self.feishu.get_record(

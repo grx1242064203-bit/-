@@ -201,46 +201,27 @@ def analyze_one(rec: Dict, llm: LLMClient, original: Dict) -> Dict:
     return stats
 
 
-def main():
-    parser = argparse.ArgumentParser()
-    parser.add_argument("--limit", type=int, default=0,
-                        help="本次最多分析条数(0=不限制)")
-    args = parser.parse_args()
-
-    logger.info("=" * 60)
-    logger.info("阶段二:公告分析启动")
-    logger.info("=" * 60)
-
+def run_once(limit: int = 0) -> Dict:
+    """执行一轮分析,返回统计"""
     llm = LLMClient()
 
-    # 1. 加载抓取结果
     all_results = load_fetch_results()
-    logger.info(f"抓取结果总数: {len(all_results)}")
-
     if not all_results:
-        logger.warning("没有抓取结果,请先运行阶段一")
-        return
+        logger.info("没有抓取结果,跳过本轮")
+        return {}
 
-    # 2. 加载已分析 hash(断点续传)
     analyzed = load_analyzed_hashes()
-    logger.info(f"已分析记录数: {len(analyzed)}")
-
-    # 3. 构建原始岗位映射
     original_map = build_original_job_map()
-    logger.info(f"DB 岗位记录数: {len(original_map)}")
 
-    # 4. 过滤出待分析的
     todo = [r for r in all_results if r.get("dedup_hash") not in analyzed]
-    if args.limit > 0:
-        todo = todo[:args.limit]
+    if limit > 0:
+        todo = todo[:limit]
 
-    logger.info(f"本次待分析: {len(todo)} 条")
+    logger.info(f"本轮待分析: {len(todo)} 条 (抓取结果 {len(all_results)}, 已分析 {len(analyzed)})")
 
     if not todo:
-        logger.info("没有需要分析的记录")
-        return
+        return {}
 
-    # 5. 逐条分析
     total_stats = {"new_jobs": 0, "parse_empty": 0, "not_current_grade": 0,
                    "fetch_failed": 0, "link_invalid": 0, "no_url": 0, "blocked": 0}
     start = time.time()
@@ -265,10 +246,52 @@ def main():
             logger.info(f"进度 {i}/{len(todo)} ({rate:.2f}条/秒) stats={total_stats}")
 
     elapsed = time.time() - start
+    rate = len(todo) / elapsed if elapsed > 0 else 0
+    logger.info(f"本轮完成: {len(todo)} 条, 耗时 {elapsed:.1f}s ({rate:.2f}条/秒), stats={total_stats}")
+    return total_stats
+
+
+def main():
+    parser = argparse.ArgumentParser()
+    parser.add_argument("--limit", type=int, default=0,
+                        help="本次最多分析条数(0=不限制)")
+    parser.add_argument("--watch", action="store_true",
+                        help="持续监听模式:循环分析新抓取的记录,直到抓取结束")
+    parser.add_argument("--interval", type=int, default=30,
+                        help="watch 模式下每轮间隔秒数")
+    args = parser.parse_args()
+
     logger.info("=" * 60)
-    logger.info(f"阶段二完成: 共 {len(todo)} 条, 耗时 {elapsed:.1f}s")
-    logger.info(f"统计: {total_stats}")
+    logger.info(f"阶段二:公告分析启动 (watch={args.watch})")
     logger.info("=" * 60)
+
+    if not args.watch:
+        run_once(limit=args.limit)
+        return
+
+    # watch 模式:持续循环
+    round_num = 0
+    idle_rounds = 0
+    while True:
+        round_num += 1
+        logger.info(f"\n--- watch 第 {round_num} 轮 ---")
+
+        stats = run_once(limit=args.limit)
+
+        if not stats:
+            idle_rounds += 1
+            logger.info(f"本轮无新记录 (连续空转 {idle_rounds} 轮)")
+        else:
+            idle_rounds = 0
+
+        # 检查抓取阶段是否已结束:若 fetch_results.jsonl 行数 2 分钟未增长,认为抓取结束
+        if idle_rounds >= 3:
+            logger.info("连续 3 轮无新记录,抓取可能已结束,退出 watch 模式")
+            break
+
+        time.sleep(args.interval)
+
+    logger.info("watch 模式结束")
 
 
 if __name__ == "__main__":

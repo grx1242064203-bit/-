@@ -542,6 +542,117 @@ class LLMClient:
             logger.warning(f"解析公告岗位失败: {e}")
             return []
 
+    def parse_announcement_jobs_enhanced(self, announcement_text: str, company: str) -> List[Dict]:
+        """
+        增强版:从校招公告正文中解析具体岗位列表,提取人岗匹配所需的全维度字段。
+
+        每个岗位包含 25+ 维度字段,用于精准匹配用户简历。
+        """
+        if not announcement_text or len(announcement_text.strip()) < 30:
+            return []
+        prompt = f"""你是资深校招信息分析专家。请从以下{company}的校招招聘公告中,提取所有具体招聘岗位的完整信息。
+
+公告正文:
+\"\"\"{announcement_text[:6000]}\"\"\"
+
+请严格输出 JSON(只输出 JSON,不要其他文字),格式如下:
+{{"jobs": [
+    {{
+        "job_title": "具体岗位名称(如Java开发工程师,不能是研发类大类)",
+        "department": "所属部门/事业部(无则空)",
+        "salary": "薪资范围(如15-25K,无则空)",
+        "education": "学历要求原文(如本科及以上,无则空)",
+        "locations": "工作地点(逗号分隔)",
+        "jd_summary": "岗位职责与要求摘要(80字内)",
+        "is_fresh_graduate": true,
+        "mt_program": false,
+        "job_category": "岗位大类(研发/产品/设计/运营/市场/销售/职能/供应链/生产制造/金融/咨询/其他)",
+        "job_subcategory": "岗位子类(如研发→后端,产品→产品经理,无则空)",
+        "hard_skills": "硬技能要求(逗号分隔,如Python,Java,SQL,无则空)",
+        "soft_skills": "软技能要求(逗号分隔,如沟通能力,逻辑思维,无则空)",
+        "certifications": "证书要求(逗号分隔,如CFA,CPA,无则空)",
+        "languages": "语言要求(逗号分隔,如CET6,雅思,无则空)",
+        "major_required": "专业要求(如计算机,机械,金融,无则空)",
+        "major_category": "专业大类(工科/理科/商科/文科/医科/艺术/不限)",
+        "min_education": "最低学历(大专/本科/硕士/博士/不限)",
+        "education_preference": "学历偏好(不限/双一流/985/211/海外名校)",
+        "city": "工作城市(如北京,上海)",
+        "province": "省份(如北京,广东)",
+        "is_remote": false,
+        "career_track": "职业轨道(技术/管理/专业/不限)",
+        "career_level": "岗位级别(初级/中级/高级/专家/不限)",
+        "travel_frequency": "出差频率(无/偶尔/经常/不限)",
+        "overtime_level": "加班强度(无/偶尔/经常/大小周/996/不限)",
+        "recruitment_process": "招聘流程(如网申→笔试→面试→Offer,无则空)",
+        "has_written_test": false,
+        "headcount": "招聘人数(如若干,10人,无则空)",
+        "responsibilities": "岗位职责(简短描述,无则空)",
+        "requirements": "任职要求(简短描述,无则空)",
+        "bonus_points": "加分项(无则空)",
+        "keywords": "综合关键词标签(逗号分隔,用于全文匹配)"
+    }}
+]}}
+
+提取要求:
+1. 必须提取公告中列出的每一个具体岗位,不要遗漏
+2. job_title 必须是具体岗位名,不能用大类
+3. 不确定的字段填空字符串或"不限",不要编造
+4. 硬技能/软技能/关键词等标签字段用逗号分隔,每个标签简洁
+5. 岗位大类必须从给定枚举中选择
+6. 如果公告是管培生项目,mt_program 设为 true
+"""
+        content = self._chat(
+            [{"role": "user", "content": prompt}],
+            temperature=0.1, max_tokens=8000, json_mode=True,
+        )
+        if not content:
+            return []
+        try:
+            data = self._extract_json(content)
+            jobs = data.get("jobs", []) if data else []
+            cleaned = []
+            for j in jobs:
+                if not j.get("job_title"):
+                    continue
+                cleaned.append({
+                    "job_title": str(j.get("job_title", "")).strip()[:100],
+                    "department": str(j.get("department", "")).strip()[:100],
+                    "salary": str(j.get("salary", "")).strip()[:50],
+                    "education": str(j.get("education", "")).strip()[:50],
+                    "locations": str(j.get("locations", "")).strip()[:200],
+                    "jd_summary": str(j.get("jd_summary", "")).strip()[:300],
+                    "is_fresh_graduate": bool(j.get("is_fresh_graduate", True)),
+                    "mt_program": bool(j.get("mt_program", False)),
+                    "job_category": str(j.get("job_category", "")).strip()[:30],
+                    "job_subcategory": str(j.get("job_subcategory", "")).strip()[:50],
+                    "hard_skills": str(j.get("hard_skills", "")).strip()[:300],
+                    "soft_skills": str(j.get("soft_skills", "")).strip()[:200],
+                    "certifications": str(j.get("certifications", "")).strip()[:100],
+                    "languages": str(j.get("languages", "")).strip()[:100],
+                    "major_required": str(j.get("major_required", "")).strip()[:200],
+                    "major_category": str(j.get("major_category", "")).strip()[:20],
+                    "min_education": str(j.get("min_education", "")).strip()[:20],
+                    "education_preference": str(j.get("education_preference", "")).strip()[:30],
+                    "city": str(j.get("city", "")).strip()[:50],
+                    "province": str(j.get("province", "")).strip()[:30],
+                    "is_remote": bool(j.get("is_remote", False)),
+                    "career_track": str(j.get("career_track", "")).strip()[:20],
+                    "career_level": str(j.get("career_level", "")).strip()[:20],
+                    "travel_frequency": str(j.get("travel_frequency", "")).strip()[:20],
+                    "overtime_level": str(j.get("overtime_level", "")).strip()[:20],
+                    "recruitment_process": str(j.get("recruitment_process", "")).strip()[:200],
+                    "has_written_test": bool(j.get("has_written_test", False)),
+                    "headcount": str(j.get("headcount", "")).strip()[:50],
+                    "responsibilities": str(j.get("responsibilities", "")).strip()[:500],
+                    "requirements": str(j.get("requirements", "")).strip()[:500],
+                    "bonus_points": str(j.get("bonus_points", "")).strip()[:300],
+                    "keywords": str(j.get("keywords", "")).strip()[:300],
+                })
+            return cleaned
+        except Exception as e:
+            logger.warning(f"增强版解析公告岗位失败: {e}")
+            return []
+
     def analyze_jd(self, jd_text: str, title: str, profile: Dict) -> Dict[str, str]:
         """
         基于 JD 正文深度分析,生成高质量摘要和申请建议。

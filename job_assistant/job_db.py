@@ -45,8 +45,8 @@ CREATE TABLE IF NOT EXISTS jobs (
     job_title TEXT NOT NULL,              -- 具体岗位名称
     department TEXT,                      -- 部门
     salary TEXT,                          -- 薪资范围
-    education TEXT,                       -- 学历要求
-    locations TEXT,                       -- 工作地点
+    education TEXT,                       -- 学历要求(原文)
+    locations TEXT,                       -- 工作地点(原文)
     industry TEXT,                        -- 行业(冗余,便于查询)
     company_type TEXT,                    -- 公司类型(冗余)
     difficulty TEXT,                      -- 难度
@@ -66,7 +66,42 @@ CREATE TABLE IF NOT EXISTS jobs (
     status TEXT DEFAULT '在招',            -- 在招/已关闭
     crawl_time TEXT NOT NULL,
     ai_verified INTEGER DEFAULT 0,
-    dedup_hash TEXT UNIQUE
+    dedup_hash TEXT UNIQUE,
+    -- ===== 精准匹配扩展字段(人岗匹配核心维度) =====
+    -- 岗位分类
+    job_category TEXT,                    -- 岗位大类:研发/产品/设计/运营/市场/销售/职能/供应链/生产制造/金融/咨询/其他
+    job_subcategory TEXT,                 -- 岗位子类:如研发→前端/后端/算法/测试
+    -- 技能维度(对应用户 core_skills)
+    hard_skills TEXT,                     -- 硬技能标签(逗号分隔):Python,Java,SQL,Excel...
+    soft_skills TEXT,                     -- 软技能标签(逗号分隔):沟通能力,团队协作,逻辑思维...
+    certifications TEXT,                  -- 证书要求(逗号分隔):CFA,CPA,法律职业资格...
+    languages TEXT,                       -- 语言要求(逗号分隔):CET4,CET6,雅思,托福...
+    -- 专业维度(对应用户 major)
+    major_required TEXT,                  -- 专业要求:计算机,机械,金融...
+    major_category TEXT,                  -- 专业大类:工科/理科/商科/文科/医科/艺术/不限
+    -- 学历维度(对应用户 degree)
+    min_education TEXT,                   -- 最低学历:大专/本科/硕士/博士
+    education_preference TEXT,            -- 学历偏好:不限/双一流/985/211/海外名校
+    -- 地点维度(对应用户 target_cities)
+    city TEXT,                            -- 工作城市
+    province TEXT,                        -- 省份
+    is_remote INTEGER DEFAULT 0,          -- 是否支持远程
+    -- 职业发展
+    career_track TEXT,                    -- 职业轨道:技术/管理/专业
+    career_level TEXT,                    -- 岗位级别:初级/中级/高级/专家
+    -- 工作性质
+    travel_frequency TEXT,                -- 出差频率:无/偶尔/经常
+    overtime_level TEXT,                  -- 加班强度:无/偶尔/经常/大小周/996
+    -- 招聘流程
+    recruitment_process TEXT,             -- 招聘流程描述
+    has_written_test INTEGER DEFAULT 0,   -- 是否有笔试
+    headcount TEXT,                       -- 招聘人数
+    -- 岗位职责与要求(增强 jd_summary)
+    responsibilities TEXT,                -- 岗位职责
+    requirements TEXT,                    -- 任职要求
+    bonus_points TEXT,                    -- 加分项
+    -- 综合标签
+    keywords TEXT                         -- 综合关键词标签(全文匹配用)
 );
 
 """
@@ -94,6 +129,22 @@ def init_db():
             "apply_url": "TEXT", "announcement_url": "TEXT",
             "is_fresh_graduate": "INTEGER DEFAULT 1", "mt_program": "INTEGER DEFAULT 0",
             "link_valid": "INTEGER DEFAULT 1", "detail_analyzed": "INTEGER DEFAULT 0",
+            "jd_url": "TEXT",
+            # ===== 精准匹配扩展字段 =====
+            "job_category": "TEXT", "job_subcategory": "TEXT",
+            "hard_skills": "TEXT", "soft_skills": "TEXT",
+            "certifications": "TEXT", "languages": "TEXT",
+            "major_required": "TEXT", "major_category": "TEXT",
+            "min_education": "TEXT", "education_preference": "TEXT",
+            "city": "TEXT", "province": "TEXT",
+            "is_remote": "INTEGER DEFAULT 0",
+            "career_track": "TEXT", "career_level": "TEXT",
+            "travel_frequency": "TEXT", "overtime_level": "TEXT",
+            "recruitment_process": "TEXT",
+            "has_written_test": "INTEGER DEFAULT 0",
+            "headcount": "TEXT",
+            "responsibilities": "TEXT", "requirements": "TEXT", "bonus_points": "TEXT",
+            "keywords": "TEXT",
         }
         for col, ctype in new_cols.items():
             if col not in existing_cols:
@@ -183,8 +234,15 @@ def insert_job(job: Dict) -> bool:
                 target_min_grade, target_max_grade, apply_url, announcement_url,
                 jd_summary, publish_time, deadline, is_fresh_graduate, mt_program,
                 source, link_valid, detail_analyzed, jd_url, status, crawl_time,
-                ai_verified, dedup_hash)
-               VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, '在招', ?, 0, ?)""",
+                ai_verified, dedup_hash,
+                job_category, job_subcategory, hard_skills, soft_skills,
+                certifications, languages, major_required, major_category,
+                min_education, education_preference, city, province, is_remote,
+                career_track, career_level, travel_frequency, overtime_level,
+                recruitment_process, has_written_test, headcount,
+                responsibilities, requirements, bonus_points, keywords)
+               VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, '在招', ?, 0, ?,
+                       ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)""",
             (
                 job.get("company", ""),
                 job.get("job_title", ""),
@@ -211,6 +269,31 @@ def insert_job(job: Dict) -> bool:
                 apply_url,  # jd_url (兼容旧表 NOT NULL 约束)
                 now,
                 dedup_hash,
+                # 精准匹配扩展字段
+                job.get("job_category", ""),
+                job.get("job_subcategory", ""),
+                job.get("hard_skills", ""),
+                job.get("soft_skills", ""),
+                job.get("certifications", ""),
+                job.get("languages", ""),
+                job.get("major_required", ""),
+                job.get("major_category", ""),
+                job.get("min_education", ""),
+                job.get("education_preference", ""),
+                job.get("city", ""),
+                job.get("province", ""),
+                1 if job.get("is_remote", False) else 0,
+                job.get("career_track", ""),
+                job.get("career_level", ""),
+                job.get("travel_frequency", ""),
+                job.get("overtime_level", ""),
+                job.get("recruitment_process", ""),
+                1 if job.get("has_written_test", False) else 0,
+                job.get("headcount", ""),
+                job.get("responsibilities", ""),
+                job.get("requirements", ""),
+                job.get("bonus_points", ""),
+                job.get("keywords", ""),
             ),
         )
         conn.commit()
@@ -244,8 +327,15 @@ def batch_insert_jobs(jobs: List[Dict]) -> Dict:
                         target_min_grade, target_max_grade, apply_url, announcement_url,
                         jd_summary, publish_time, deadline, is_fresh_graduate, mt_program,
                         source, link_valid, detail_analyzed, jd_url, status, crawl_time,
-                        ai_verified, dedup_hash)
-                       VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, '在招', ?, 0, ?)""",
+                        ai_verified, dedup_hash,
+                        job_category, job_subcategory, hard_skills, soft_skills,
+                        certifications, languages, major_required, major_category,
+                        min_education, education_preference, city, province, is_remote,
+                        career_track, career_level, travel_frequency, overtime_level,
+                        recruitment_process, has_written_test, headcount,
+                        responsibilities, requirements, bonus_points, keywords)
+                       VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, '在招', ?, 0, ?,
+                               ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)""",
                     (
                         job.get("company", ""),
                         job.get("job_title", ""),
@@ -272,6 +362,31 @@ def batch_insert_jobs(jobs: List[Dict]) -> Dict:
                         job.get("apply_url", "") or job.get("jd_url", ""),  # jd_url
                         now,
                         dedup_hash,
+                        # 精准匹配扩展字段
+                        job.get("job_category", ""),
+                        job.get("job_subcategory", ""),
+                        job.get("hard_skills", ""),
+                        job.get("soft_skills", ""),
+                        job.get("certifications", ""),
+                        job.get("languages", ""),
+                        job.get("major_required", ""),
+                        job.get("major_category", ""),
+                        job.get("min_education", ""),
+                        job.get("education_preference", ""),
+                        job.get("city", ""),
+                        job.get("province", ""),
+                        1 if job.get("is_remote", False) else 0,
+                        job.get("career_track", ""),
+                        job.get("career_level", ""),
+                        job.get("travel_frequency", ""),
+                        job.get("overtime_level", ""),
+                        job.get("recruitment_process", ""),
+                        1 if job.get("has_written_test", False) else 0,
+                        job.get("headcount", ""),
+                        job.get("responsibilities", ""),
+                        job.get("requirements", ""),
+                        job.get("bonus_points", ""),
+                        job.get("keywords", ""),
                     ),
                 )
                 cur = conn.execute("SELECT changes() as cnt")

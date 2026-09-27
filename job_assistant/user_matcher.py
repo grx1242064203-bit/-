@@ -28,12 +28,14 @@ class UserMatcher:
     def _rule_filter(self, jobs: List[Dict]) -> List[Dict]:
         """
         规则预筛:基于用户画像的硬条件过滤。
-        过滤维度:届数范围、目标行业、偏好公司类型、学历、城市、专业关键词。
+        过滤维度:届数范围、目标行业、偏好公司类型、学历、城市、专业、技能、证书。
+        优先使用结构化字段(job_category/hard_skills/major_required等)做精准匹配,
+        结构化字段为空时降级到全文关键词匹配。
         """
         target_industries = set(self.profile.target_industries or [])
         pref_types = set(self.profile.preferred_company_types or [])
         target_cities = set(self.profile.target_cities or [])
-        # 用户毕业届数(校招用户必填,社招用户不做届数过滤)
+        # 用户毕业届数
         user_grade = None
         try:
             gy = (self.profile.graduation_year or "").strip()
@@ -45,8 +47,14 @@ class UserMatcher:
         user_degree = (self.profile.degree or "").strip()
         degree_order = {"大专": 1, "本科": 2, "硕士": 3, "博士": 4}
         user_degree_level = degree_order.get(user_degree, 0)
+        # 用户专业
+        user_major = (self.profile.major or "").strip()
+        # 用户技能
+        user_skills = [s.lower() for s in (self.profile.core_skills or [])]
+        # 用户证书
+        user_certs = [c.lower() for c in (self.profile.target_certificates or [])]
 
-        # 收集用户所有方向关键词(用于专业/技能匹配)
+        # 收集用户所有方向关键词
         all_kws = []
         for kws in (self.profile.direction_keywords or {}).values():
             all_kws.extend(kws)
@@ -54,7 +62,7 @@ class UserMatcher:
 
         filtered = []
         for job in jobs:
-            # 届数匹配:校招用户需在岗位目标届数范围内
+            # 1. 届数匹配
             if user_grade is not None:
                 min_g = job.get("target_min_grade")
                 max_g = job.get("target_max_grade")
@@ -63,36 +71,70 @@ class UserMatcher:
                 if max_g is not None and user_grade > max_g:
                     continue
 
-            # 行业匹配:用户选了行业则必须匹配,没选则全通过
+            # 2. 行业匹配
             industry = job.get("industry", "")
             if target_industries and industry not in target_industries:
                 continue
 
-            # 公司类型匹配:用户选了类型则必须匹配
+            # 3. 公司类型匹配
             ctype = job.get("company_type", "")
             if pref_types and ctype not in pref_types:
                 continue
 
-            # 学历匹配:岗位学历要求不高于用户学历(岗位无要求则通过)
-            job_edu = (job.get("education") or "").strip()
-            if job_edu:
-                # 取岗位要求的最低学历
-                job_min_level = degree_order.get(job_edu, 0)
+            # 4. 学历匹配(优先用 min_education 结构化字段)
+            job_min_edu = (job.get("min_education") or "").strip()
+            job_edu_raw = (job.get("education") or "").strip()
+            edu_to_check = job_min_edu or job_edu_raw
+            if edu_to_check:
+                job_min_level = degree_order.get(edu_to_check, 0)
                 if job_min_level > 0 and user_degree_level > 0 and user_degree_level < job_min_level:
                     continue
 
-            # 城市匹配:用户选了城市则必须匹配(岗位地点字段可能为空,空则不排除)
-            if target_cities:
-                job_loc = (job.get("locations") or "").lower()
-                if job_loc and not any(c.lower() in job_loc for c in target_cities):
+            # 5. 城市匹配(优先用 city 结构化字段)
+            job_city = (job.get("city") or "").lower()
+            job_loc = (job.get("locations") or "").lower()
+            city_text = job_city or job_loc
+            if target_cities and city_text:
+                if not any(c.lower() in city_text for c in target_cities):
                     continue
 
-            # 专业/技能关键词匹配:标题或摘要含用户关键词
-            text = (job.get("job_title", "") + " " + job.get("jd_summary", "")).lower()
-            if all_kws_lower and not any(kw in text for kw in all_kws_lower):
-                # 没有关键词命中,但如果是管培/通用岗也保留
-                if "管培" not in text and "mt" not in text:
-                    continue
+            # 6. 专业匹配(优先用 major_required 结构化字段)
+            job_major = (job.get("major_required") or "").lower()
+            if user_major and job_major:
+                # 用户专业与岗位专业要求有交集(简单包含判断)
+                if user_major not in job_major and not any(m in user_major for m in job_major.split(',')):
+                    # 专业不匹配,但如果是管培/不限专业则保留
+                    major_cat = (job.get("major_category") or "").strip()
+                    if major_cat != "不限" and "管培" not in job.get("job_title", ""):
+                        continue
+
+            # 7. 技能匹配(优先用 hard_skills 结构化字段)
+            job_hard_skills = (job.get("hard_skills") or "").lower()
+            if user_skills and job_hard_skills:
+                # 用户技能与岗位硬技能有交集
+                skill_hit = any(s in job_hard_skills for s in user_skills)
+                if not skill_hit:
+                    # 降级:用全文关键词匹配
+                    text = (job.get("job_title", "") + " " + job.get("jd_summary", "")).lower()
+                    if all_kws_lower and not any(kw in text for kw in all_kws_lower):
+                        if "管培" not in text and "mt" not in text:
+                            continue
+            elif user_skills and not job_hard_skills:
+                # 岗位无结构化技能字段,降级到全文匹配
+                text = (job.get("job_title", "") + " " + job.get("jd_summary", "")).lower()
+                if all_kws_lower and not any(kw in text for kw in all_kws_lower):
+                    if "管培" not in text and "mt" not in text:
+                        continue
+
+            # 8. 证书匹配(如果岗位有证书要求,用户需持有)
+            job_certs = (job.get("certifications") or "").lower()
+            if job_certs:
+                job_cert_list = [c.strip() for c in job_certs.split(',') if c.strip()]
+                # 岗位要求证书但用户一个都没有 → 过滤(除非是管培)
+                if job_cert_list and not any(c in job_certs for c in user_certs):
+                    if "管培" not in job.get("job_title", ""):
+                        continue
+
             filtered.append(job)
 
         logger.info(f"规则预筛: {len(jobs)} → {len(filtered)} 条")

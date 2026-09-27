@@ -141,16 +141,21 @@ def classify_direction(jd_text: str, title: str,
     return best_dir if best_count > 0 else "其他"
 
 
-def score_skills(jd_text: str, user_skills: List[str]) -> tuple:
+def score_skills(jd_text: str, user_skills: List[str], hard_skills: str = "") -> tuple:
     """
     技能匹配评分(0-15)。
-    用户每有一个技能在 JD 中出现,得 3 分,上限 15。
+    优先用结构化字段 hard_skills 做精准匹配,降级到 jd_text 全文匹配。
+    用户每有一个技能在岗位要求中出现,得 3 分,上限 15。
     返回 (分数, 命中技能列表)
     """
     score = 0
     hits = []
+    # 优先用结构化 hard_skills 字段
+    search_text = (hard_skills or "").lower()
+    if not search_text:
+        search_text = jd_text.lower()
     for skill in user_skills:
-        if skill and skill.lower() in jd_text.lower():
+        if skill and skill.lower() in search_text:
             score += 3
             hits.append(skill)
             if score >= 15:
@@ -329,11 +334,12 @@ def score_job(job: Dict[str, str], profile: UserProfile,
         else:
             exp_score = 12
 
-    # 4. 技能匹配(用户自定义技能)
-    skill_score, skill_hits = score_skills(jd_text, profile.core_skills)
+    # 4. 技能匹配(优先用结构化 hard_skills 字段)
+    job_hard_skills = job.get("hard_skills", "")
+    skill_score, skill_hits = score_skills(jd_text, profile.core_skills, hard_skills=job_hard_skills)
 
-    # 5. 学历匹配
-    edu = parse_education(jd_text)
+    # 5. 学历匹配(优先用结构化 min_education 字段)
+    edu = job.get("min_education") or parse_education(jd_text)
     user_degree = profile.degree
     if "博士" in edu:
         edu_score = 10 if user_degree == "博士" else (7 if user_degree == "硕士" else 3)
@@ -344,10 +350,30 @@ def score_job(job: Dict[str, str], profile: UserProfile,
     else:
         edu_score = 8
 
-    # 6. 行业匹配
+    # 6. 专业匹配(用结构化 major_required 字段)
+    job_major = (job.get("major_required") or "").lower()
+    user_major = (profile.major or "").lower()
+    if user_major and job_major:
+        if user_major in job_major or any(m in user_major for m in job_major.split(',')):
+            major_score = 10
+        else:
+            major_score = 0
+    else:
+        major_score = 5  # 专业信息不足,给中等分
+
+    # 7. 行业匹配
     industry_score = score_industry(jd_text, profile.target_industries)
 
-    relevance = dir_score + platform_score + exp_score + skill_score + edu_score + industry_score
+    # 8. 证书匹配加分
+    job_certs = (job.get("certifications") or "").lower()
+    user_certs = [c.lower() for c in (profile.target_certificates or [])]
+    cert_score = 0
+    if job_certs and user_certs:
+        if any(c in job_certs for c in user_certs):
+            cert_score = 5  # 用户持有岗位要求的证书,加分
+
+    relevance = (dir_score + platform_score + exp_score + skill_score
+                 + edu_score + major_score + industry_score + cert_score)
 
     # 难度评分 — 校招用户不按经验年限打分,只看学历+平台
     diff = 0

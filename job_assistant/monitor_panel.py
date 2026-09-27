@@ -57,10 +57,11 @@ def parse_fetch_progress():
 
 
 def parse_analyze_progress():
-    """从 analyze log 解析最新进度"""
+    """从 analyze log 解析最新进度(兼容一次性和守护模式)"""
     lines = tail_file(ANALYZE_LOG, 200)
     progress = {"current": 0, "total": 0, "rate": 0, "stats": {}}
     for line in reversed(lines):
+        # 一次性模式: 进度 N/M (X条/秒) stats={...}
         m = re.search(r"进度 (\d+)/(\d+) \(([\d.]+)条/秒\) stats=(\{.*\})", line)
         if m:
             progress["current"] = int(m.group(1))
@@ -72,50 +73,82 @@ def parse_analyze_progress():
             except Exception:
                 pass
             break
-    # 检查是否已完成
+        # 守护模式: 已分析 N 条 (X条/秒) stats={...}
+        m = re.search(r"已分析 (\d+) 条 \(([\d.]+)条/秒\) stats=(\{.*\})", line)
+        if m:
+            progress["current"] = int(m.group(1))
+            progress["rate"] = float(m.group(2))
+            try:
+                stats_str = m.group(3).replace("'", '"')
+                progress["stats"] = json.loads(stats_str)
+            except Exception:
+                pass
+            break
     for line in reversed(lines):
-        if "阶段二完成" in line:
+        if "分析守护进程结束" in line or "阶段二完成" in line:
             progress["finished"] = True
             break
     return progress
 
 
 def parse_two_stage_status():
-    """判断当前在哪个阶段"""
-    lines = tail_file(TWO_STAGE_LOG, 50)
-    stage = "unknown"
-    for line in lines:
-        if "阶段一:并发抓取" in line or "阶段一:公告抓取启动" in line:
-            stage = "fetching"
-        elif "阶段二:批量分析" in line or "阶段二:公告分析启动" in line:
-            stage = "analyzing"
-        elif "两阶段处理结束" in line:
-            stage = "finished"
-    return stage
+    """判断当前阶段状态(并行模式)"""
+    procs = _detect_procs()
+    running = bool(procs["fetch"] or procs["analyze"] or procs["parallel"])
+    if not running:
+        lines = tail_file(TWO_STAGE_LOG, 10)
+        for line in lines:
+            if "结束" in line:
+                return "finished"
+        return "stopped"
+    if procs["fetch"] and procs["analyze"]:
+        return "parallel"
+    if procs["fetch"]:
+        return "fetching"
+    if procs["analyze"]:
+        return "analyzing"
+    return "running"
+
+
+def _detect_procs() -> dict:
+    """检测各进程是否运行,返回 dict"""
+    procs = {"fetch": [], "analyze": [], "parallel": []}
+    try:
+        out = subprocess.run(
+            ["pgrep", "-f", "fetch_announcements.py"],
+            capture_output=True, text=True, timeout=5,
+        )
+        if out.returncode == 0 and out.stdout.strip():
+            procs["fetch"] = out.stdout.strip().split("\n")
+    except Exception:
+        pass
+    try:
+        out = subprocess.run(
+            ["pgrep", "-f", "analyze_daemon.py"],
+            capture_output=True, text=True, timeout=5,
+        )
+        if out.returncode == 0 and out.stdout.strip():
+            procs["analyze"] = out.stdout.strip().split("\n")
+    except Exception:
+        pass
+    try:
+        out = subprocess.run(
+            ["pgrep", "-f", "run_parallel.py"],
+            capture_output=True, text=True, timeout=5,
+        )
+        if out.returncode == 0 and out.stdout.strip():
+            procs["parallel"] = out.stdout.strip().split("\n")
+    except Exception:
+        pass
+    return procs
 
 
 def check_process_running():
-    """检查两阶段进程是否在运行"""
-    try:
-        out = subprocess.run(
-            ["pgrep", "-f", "run_two_stage.py"],
-            capture_output=True, text=True, timeout=5,
-        )
-        if out.returncode == 0 and out.stdout.strip():
-            return True, out.stdout.strip().split("\n")
-    except Exception:
-        pass
-    # 也检查 fetch / analyze 子进程
-    try:
-        out = subprocess.run(
-            ["pgrep", "-f", "fetch_announcements.py|analyze_announcements.py"],
-            capture_output=True, text=True, timeout=5,
-        )
-        if out.returncode == 0 and out.stdout.strip():
-            return True, out.stdout.strip().split("\n")
-    except Exception:
-        pass
-    return False, []
+    """检查抓取/分析进程是否在运行,返回 (running, pids_list)"""
+    procs = _detect_procs()
+    running = bool(procs["fetch"] or procs["analyze"] or procs["parallel"])
+    all_pids = procs["fetch"] + procs["analyze"] + procs["parallel"]
+    return running, all_pids
 
 
 def get_db_stats():
@@ -346,6 +379,10 @@ async function refresh() {
       chipFetch.classList.add('done');
       chipAnalyze.classList.add('active');
       document.getElementById('analyzePanel').style.display = 'block';
+    } else if (d.stage === 'parallel') {
+      chipFetch.classList.add('active');
+      chipAnalyze.classList.add('active');
+      document.getElementById('analyzePanel').style.display = 'block';
     } else if (d.stage === 'finished') {
       chipFetch.classList.add('done');
       chipAnalyze.classList.add('done');
@@ -374,21 +411,25 @@ async function refresh() {
 
     // 阶段二进度
     const a = d.analyze;
-    if (a.total > 0) {
-      const pct = (a.current / a.total * 100).toFixed(1);
-      document.getElementById('analyzeFill').style.width = pct + '%';
-      document.getElementById('analyzeFill').textContent = a.current + '/' + a.total + ' (' + pct + '%)';
+    if (a.current > 0 || a.total > 0) {
+      const analyzeFill = document.getElementById('analyzeFill');
+      if (a.total > 0) {
+        const pct = (a.current / a.total * 100).toFixed(1);
+        analyzeFill.style.width = pct + '%';
+        analyzeFill.textContent = a.current + '/' + a.total + ' (' + pct + '%)';
+      } else {
+        // 守护模式:无总数,显示流式进度
+        analyzeFill.style.width = '100%';
+        analyzeFill.style.background = 'linear-gradient(90deg, #8b5cf6, #ec4899)';
+        analyzeFill.textContent = '已分析 ' + a.current + ' 条 (流式)';
+      }
       const s = a.stats || {};
       document.getElementById('analyzeStats').innerHTML =
         '<span class="stat-item"><span class="dot dot-new"></span>新增岗位 ' + (s.new_jobs||0) + '</span>' +
         '<span class="stat-item"><span class="dot dot-failed"></span>解析空 ' + (s.parse_empty||0) + '</span>' +
         '<span class="stat-item"><span class="dot dot-blocked"></span>非本届 ' + (s.not_current_grade||0) + '</span>' +
+        '<span class="stat-item"><span class="dot dot-invalid"></span>抓取失败 ' + (s.fetch_failed||0) + '</span>' +
         '<span class="stat-item" style="color:#64748b">速度 ' + a.rate + ' 条/秒</span>';
-      if (a.rate > 0) {
-        const remain = (a.total - a.current) / a.rate;
-        document.getElementById('analyzeEta').textContent =
-          '预计剩余 ' + (remain/60).toFixed(1) + ' 分钟';
-      }
     }
 
     // 日志

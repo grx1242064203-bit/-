@@ -305,31 +305,29 @@ def score_job(job: Dict[str, str], profile: UserProfile,
     # 2. 平台/公司匹配
     platform_score, platform = score_company(company, profile.target_companies)
 
-    # 3. 经验匹配
+    # 3. 经验匹配 — 校招用户不看经验,统一给满分;社招用户保留经验匹配
     exp = parse_experience(jd_text)
-    user_exp = profile.experience_years
     user_role = getattr(profile, "role", "") or ""
-    # 校招窗口岗位:社招用户给低分,校招用户给满分
-    if in_window:
-        if user_role == "campus":
-            exp_score = 15
-        else:
-            exp_score = 5  # 社招用户不适合校招窗口岗位
-    elif "应届" in exp or "在校" in exp or "fresh" in exp.lower() or "entry" in exp.lower():
-        if user_role == "campus":
-            exp_score = 15
-        else:
-            exp_score = 5
-    elif re.search(r"(\d+)", exp):
-        years = int(re.search(r"(\d+)", exp).group(1))
-        if years <= user_exp + 1:
-            exp_score = 15
-        elif years <= user_exp + 3:
-            exp_score = 10
-        else:
-            exp_score = 5
+    if user_role == "campus":
+        # 校招:不考虑经验要求,直接满分
+        exp_score = 15
     else:
-        exp_score = 12
+        # 社招:保留经验匹配逻辑
+        user_exp = profile.experience_years
+        if in_window:
+            exp_score = 5  # 社招用户不适合校招窗口岗位
+        elif "应届" in exp or "在校" in exp or "fresh" in exp.lower() or "entry" in exp.lower():
+            exp_score = 5
+        elif re.search(r"(\d+)", exp):
+            years = int(re.search(r"(\d+)", exp).group(1))
+            if years <= user_exp + 1:
+                exp_score = 15
+            elif years <= user_exp + 3:
+                exp_score = 10
+            else:
+                exp_score = 5
+        else:
+            exp_score = 12
 
     # 4. 技能匹配(用户自定义技能)
     skill_score, skill_hits = score_skills(jd_text, profile.core_skills)
@@ -351,11 +349,11 @@ def score_job(job: Dict[str, str], profile: UserProfile,
 
     relevance = dir_score + platform_score + exp_score + skill_score + edu_score + industry_score
 
-    # 难度评分
+    # 难度评分 — 校招用户不按经验年限打分,只看学历+平台
     diff = 0
-    if re.search(r"3年|5年|10年|3 years|5 years", exp):
+    if user_role != "campus" and re.search(r"3年|5年|10年|3 years|5 years", exp):
         diff += 25
-    elif re.search(r"1年|2年|1 year|2 years", exp):
+    elif user_role != "campus" and re.search(r"1年|2年|1 year|2 years", exp):
         diff += 15
     else:
         diff += 5
@@ -411,9 +409,14 @@ def score_job(job: Dict[str, str], profile: UserProfile,
             summary += f" (应届窗口:{window_note})"
     else:
         hit_desc = "、".join(skill_hits) if skill_hits else "无直接技能命中"
-        summary = (f"岗位类别:{direction},平台:{platform}。"
-                   f"JD与用户匹配点: {hit_desc}。"
-                   f"经验要求:{exp}(用户{user_exp}年),学历要求:{edu}。")
+        if user_role == "campus":
+            summary = (f"岗位类别:{direction},平台:{platform}。"
+                       f"JD与用户匹配点: {hit_desc}。"
+                       f"学历要求:{edu}。")
+        else:
+            summary = (f"岗位类别:{direction},平台:{platform}。"
+                       f"JD与用户匹配点: {hit_desc}。"
+                       f"经验要求:{exp}(用户{user_exp}年),学历要求:{edu}。")
         if in_window:
             summary += f" {window_note}。"
 
@@ -443,7 +446,6 @@ def score_job(job: Dict[str, str], profile: UserProfile,
         "部门": job.get("department", ""),
         "地点": location,
         "薪资范围": salary,
-        "经验要求": exp,
         "学历要求": edu,
         # JD摘要:优先 LLM 深度分析,降级用主库预生成的 jd_summary
         "JD摘要": (llm_summary or job.get("jd_summary", "") or "")[:300],

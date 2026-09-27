@@ -40,7 +40,8 @@ class UserProfile:
     target_cities: List[str] = field(default_factory=list)      # 目标城市(可空=不限)
     target_certificates: List[str] = field(default_factory=list)  # 已持证书(CFA/CPA/法考等)
     # === 校招用户专属:企业匹配维度(可多选) ===
-    preferred_company_types: List[str] = field(default_factory=list)  # 偏好公司类型:国央企/民企/外企
+    graduation_year: str = ""          # 毕业年份(如"2027"),用于匹配岗位目标届数范围;社招留空
+    preferred_company_types: List[str] = field(default_factory=list)  # 偏好公司类型:国央企/民企/外企/事业单位
     preferred_difficulties: List[str] = field(default_factory=list)   # 偏好难度:最激烈/较为激烈/中等难度/较低难度
     preferred_locations: List[str] = field(default_factory=list)      # 偏好城市
     # === LLM 简历解析留档 ===

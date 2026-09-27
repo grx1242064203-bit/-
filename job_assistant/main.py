@@ -30,6 +30,7 @@ from daily_runner import DailyRunner
 from onboarding import migrate_user_tokens
 from wxpusher_client import WxPusherClient
 from config import settings
+import job_db
 
 logging.basicConfig(
     level=logging.INFO,
@@ -68,8 +69,35 @@ def _alert_admin(summary: dict, results: list):
         logger.exception(f"管理员告警推送异常: {e}")
 
 
+def run_sync_and_analyze():
+    """中心化数据同步:飞书表同步 + 岗位详情 AI 分析(所有用户共享)"""
+    job_db.init_db()
+    # 1. 同步飞书秋招汇总表
+    try:
+        from feishu_source import sync_from_feishu
+        sync_stats = sync_from_feishu()
+        logger.info(f"飞书同步完成: {sync_stats}")
+    except Exception as e:
+        logger.exception(f"飞书同步失败: {e}")
+        sync_stats = {"error": str(e)}
+    # 2. 岗位详情 AI 分析(拆分具体岗位)
+    try:
+        from job_detail_analyzer import run_analysis
+        from llm_client import LLMClient
+        analyze_stats = run_analysis(batch_size=100, llm=LLMClient())
+        logger.info(f"岗位分析完成: {analyze_stats}")
+    except Exception as e:
+        logger.exception(f"岗位分析失败: {e}")
+        analyze_stats = {"error": str(e)}
+    return {"sync": sync_stats, "analyze": analyze_stats}
+
+
 def run_daily_all():
     """为所有活跃用户执行每日任务"""
+    # 先执行中心化数据同步(飞书 + AI 分析)
+    sync_result = run_sync_and_analyze()
+    logger.info(f"中心化数据同步完成: {sync_result}")
+
     store = UserStore()
     users = store.list_active()
     logger.info(f"开始每日任务,活跃用户数: {len(users)}")
@@ -132,11 +160,14 @@ def run_weekly_ranking():
 
 if __name__ == "__main__":
     if len(sys.argv) < 2:
-        print("用法: python main.py [daily|single <user_id>|migrate-tokens|weekly-ranking]")
+        print("用法: python main.py [daily|sync|single <user_id>|migrate-tokens|weekly-ranking]")
         sys.exit(1)
     cmd = sys.argv[1]
     if cmd == "daily":
         run_daily_all()
+    elif cmd == "sync":
+        result = run_sync_and_analyze()
+        print(json.dumps(result, ensure_ascii=False, indent=2))
     elif cmd == "single" and len(sys.argv) > 2:
         run_single(sys.argv[2])
     elif cmd == "migrate-tokens":

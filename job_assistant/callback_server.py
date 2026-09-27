@@ -253,7 +253,7 @@ class CallbackHandler(BaseHTTPRequestHandler):
                           "direction_keywords", "target_companies", "target_industries",
                           "target_cities", "target_certificates", "school", "current_role",
                           "role", "resume_text", "summary", "highlights",
-                          "mt_program_preference", "preferred_company_types",
+                          "graduation_year", "mt_program_preference", "preferred_company_types",
                           "preferred_difficulties", "preferred_locations"}
         for key in allowed_fields:
             if key in profile_data:

@@ -28,11 +28,24 @@ class UserMatcher:
     def _rule_filter(self, jobs: List[Dict]) -> List[Dict]:
         """
         规则预筛:基于用户画像的硬条件过滤。
-        过滤维度:目标行业、偏好公司类型、目标城市、专业关键词。
+        过滤维度:届数范围、目标行业、偏好公司类型、学历、城市、专业关键词。
         """
         target_industries = set(self.profile.target_industries or [])
         pref_types = set(self.profile.preferred_company_types or [])
         target_cities = set(self.profile.target_cities or [])
+        # 用户毕业届数(校招用户必填,社招用户不做届数过滤)
+        user_grade = None
+        try:
+            gy = (self.profile.graduation_year or "").strip()
+            if gy:
+                user_grade = int(gy)
+        except (ValueError, TypeError):
+            user_grade = None
+        # 用户学历
+        user_degree = (self.profile.degree or "").strip()
+        degree_order = {"大专": 1, "本科": 2, "硕士": 3, "博士": 4}
+        user_degree_level = degree_order.get(user_degree, 0)
+
         # 收集用户所有方向关键词(用于专业/技能匹配)
         all_kws = []
         for kws in (self.profile.direction_keywords or {}).values():
@@ -41,17 +54,39 @@ class UserMatcher:
 
         filtered = []
         for job in jobs:
+            # 届数匹配:校招用户需在岗位目标届数范围内
+            if user_grade is not None:
+                min_g = job.get("target_min_grade")
+                max_g = job.get("target_max_grade")
+                if min_g is not None and user_grade < min_g:
+                    continue
+                if max_g is not None and user_grade > max_g:
+                    continue
+
             # 行业匹配:用户选了行业则必须匹配,没选则全通过
             industry = job.get("industry", "")
             if target_industries and industry not in target_industries:
                 continue
+
             # 公司类型匹配:用户选了类型则必须匹配
             ctype = job.get("company_type", "")
             if pref_types and ctype not in pref_types:
                 continue
+
+            # 学历匹配:岗位学历要求不高于用户学历(岗位无要求则通过)
+            job_edu = (job.get("education") or "").strip()
+            if job_edu:
+                # 取岗位要求的最低学历
+                job_min_level = degree_order.get(job_edu, 0)
+                if job_min_level > 0 and user_degree_level > 0 and user_degree_level < job_min_level:
+                    continue
+
             # 城市匹配:用户选了城市则必须匹配(岗位地点字段可能为空,空则不排除)
-            # 总数据库暂存地点信息不完整,这里放宽:有地点才检查
-            # (城市匹配在 score_job 中也会做,这里不硬过滤)
+            if target_cities:
+                job_loc = (job.get("locations") or "").lower()
+                if job_loc and not any(c.lower() in job_loc for c in target_cities):
+                    continue
+
             # 专业/技能关键词匹配:标题或摘要含用户关键词
             text = (job.get("job_title", "") + " " + job.get("jd_summary", "")).lower()
             if all_kws_lower and not any(kw in text for kw in all_kws_lower):
@@ -78,10 +113,13 @@ class UserMatcher:
                 "industry": job.get("industry", ""),
                 "company_type": job.get("company_type", ""),
                 "difficulty": job.get("difficulty", ""),
-                "location": "",
-                "salary": "",
-                "jd_url": job.get("jd_url", ""),
+                "location": job.get("locations", ""),
+                "salary": job.get("salary", ""),
+                "jd_url": job.get("apply_url", "") or job.get("announcement_url", ""),
                 "posted": job.get("publish_time", ""),
+                "recruitment_stage": job.get("recruitment_stage", ""),
+                "education": job.get("education", ""),
+                "department": job.get("department", ""),
             }
             try:
                 result = score_job(job_for_score, self.profile, llm_client=self.llm)
@@ -122,8 +160,18 @@ class UserMatcher:
         Returns:
             匹配岗位列表(按评分降序)
         """
-        # 1. 从总数据库获取所有在招岗位
-        all_jobs = job_db.get_all_active_jobs()
+        # 1. 从总数据库获取匹配届数的在招岗位
+        user_grade = None
+        try:
+            gy = (self.profile.graduation_year or "").strip()
+            if gy:
+                user_grade = int(gy)
+        except (ValueError, TypeError):
+            user_grade = None
+        if user_grade:
+            all_jobs = job_db.get_jobs_by_grade(user_grade)
+        else:
+            all_jobs = job_db.get_all_active_jobs()
         if not all_jobs:
             logger.info("总数据库为空,无匹配岗位")
             return []

@@ -479,6 +479,69 @@ class LLMClient:
             return content.strip()[:200]
         return jd_text[:100].replace("\n", " ")
 
+    def parse_announcement_jobs(self, announcement_text: str, company: str) -> List[Dict]:
+        """
+        从校招公告正文中解析具体岗位列表(一条公告可能含多个岗位)。
+
+        返回岗位列表,每个岗位含: job_title, department, salary, education,
+        locations, jd_summary, is_fresh_graduate, mt_program
+        """
+        if not announcement_text or len(announcement_text.strip()) < 50:
+            return []
+        prompt = f"""你是校招信息分析专家。请从以下{company}的校招招聘公告中,提取所有具体招聘岗位。
+
+公告正文:
+\"\"\"{announcement_text[:4000]}\"\"\"
+
+请严格输出 JSON,格式如下:
+{{"jobs": [
+    {{
+        "job_title": "具体岗位名称(如Java开发工程师,不是研发类这种大类)",
+        "department": "所属部门或事业部(如无则空字符串)",
+        "salary": "薪资范围(如15-25K,如无则空字符串)",
+        "education": "学历要求(如本科/硕士/博士,如无则空字符串)",
+        "locations": "工作地点(逗号分隔,如无则空字符串)",
+        "jd_summary": "该岗位的职责与要求摘要(50字内)",
+        "is_fresh_graduate": true,
+        "mt_program": false
+    }}
+]}}
+
+要求:
+1. 必须提取公告中列出的每一个具体岗位,不要遗漏
+2. job_title 必须是具体岗位名,不要用"研发类""销售类"这种大类
+3. 如果公告是管培生项目,mt_program 设为 true
+4. 只输出 JSON,不要其他文字
+"""
+        content = self._chat(
+            [{"role": "user", "content": prompt}],
+            temperature=0.1, max_tokens=2000, json_mode=True,
+        )
+        if not content:
+            return []
+        try:
+            data = self._extract_json(content)
+            jobs = data.get("jobs", []) if data else []
+            # 清洗
+            cleaned = []
+            for j in jobs:
+                if not j.get("job_title"):
+                    continue
+                cleaned.append({
+                    "job_title": str(j.get("job_title", "")).strip()[:100],
+                    "department": str(j.get("department", "")).strip()[:100],
+                    "salary": str(j.get("salary", "")).strip()[:50],
+                    "education": str(j.get("education", "")).strip()[:50],
+                    "locations": str(j.get("locations", "")).strip()[:200],
+                    "jd_summary": str(j.get("jd_summary", "")).strip()[:300],
+                    "is_fresh_graduate": bool(j.get("is_fresh_graduate", True)),
+                    "mt_program": bool(j.get("mt_program", False)),
+                })
+            return cleaned
+        except Exception as e:
+            logger.warning(f"解析公告岗位失败: {e}")
+            return []
+
     def analyze_jd(self, jd_text: str, title: str, profile: Dict) -> Dict[str, str]:
         """
         基于 JD 正文深度分析,生成高质量摘要和申请建议。

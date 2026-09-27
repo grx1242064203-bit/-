@@ -128,28 +128,36 @@ sudo systemctl start job-callback
 
 ```bash
 crontab -e
-# 每日 8:00 执行校招总数据库增量采集（中心化，先于用户分发）
-0 8 * * * cd /opt/job_assistant && /opt/job_assistant/venv/bin/python -c "from company_crawler import CompanyCrawler; CompanyCrawler().run_daily_crawl()" >> /var/log/job_crawler.log 2>&1
-# 每日 9:00 执行用户每日任务（分发）
+# 每日 9:00 执行用户每日任务（内含飞书同步 + AI 分析 + 分发）
 0 9 * * * cd /opt/job_assistant && /opt/job_assistant/venv/bin/python main.py daily >> /var/log/job_assistant.log 2>&1
 # 每周一 9:30 执行校招投递热度榜
 30 9 * * 1 cd /opt/job_assistant && /opt/job_assistant/venv/bin/python main.py weekly-ranking >> /var/log/job_assistant_weekly.log 2>&1
 ```
 
-> **时序说明**：总数据库采集（8:00）必须早于用户分发（9:00），确保用户拿到的是当天最新岗位。
+> **说明**：`main.py daily` 内部会先执行中心化数据同步（飞书表 + AI 岗位分析），再分发给各用户。无需单独的采集 cron。
 
-### 2.8 校招总数据库初始化（首次部署必做）
+### 2.8 数据源告警配置（可选但推荐）
 
-首次部署或更新到含总数据库架构的版本后，必须执行以下步骤初始化总数据库并完成首次全量采集：
+飞书数据源故障时会通过飞书消息告警。配置告警接收人：
+
+```bash
+# 在 .env 中添加告警接收人 open_id
+echo 'ALERT_OPEN_ID=ou_xxxxxxxx' >> /opt/job_assistant/.env
+# 若不配置,则告警发给所有校招用户
+```
+
+### 2.9 校招总数据库初始化（首次部署必做）
+
+首次部署或更新到飞书数据源架构后，执行以下步骤：
 
 ```bash
 cd /opt/job_assistant
 source venv/bin/activate
 
-# 1. 初始化数据库表结构（若已存在则跳过）
+# 1. 初始化数据库表结构（companies + jobs 表，自动迁移旧字段）
 python -c "from job_db import init_db; init_db(); print('数据库初始化完成')"
 
-# 2. 验证数据库表已创建
+# 2. 验证表结构
 python -c "
 import sqlite3
 conn = sqlite3.connect('data/jobs.db')
@@ -158,28 +166,26 @@ print('表:', [r[0] for r in cur.fetchall()])
 conn.close()
 "
 
-# 3. 首次全量采集（遍历全部 488 家公司，耗时较长，建议后台运行）
-nohup python -c "from company_crawler import CompanyCrawler; CompanyCrawler().run_initial_crawl()" >> /var/log/job_crawler_initial.log 2>&1 &
+# 3. 首次全量同步飞书秋招汇总表 + AI 分析（耗时较长，建议后台运行）
+nohup python main.py sync >> /var/log/job_sync_initial.log 2>&1 &
 
-# 4. 查看采集进度
-tail -f /var/log/job_crawler_initial.log
+# 4. 查看同步进度
+tail -f /var/log/job_sync_initial.log
 
-# 5. 采集完成后验证总数据库统计
-python -c "
-from job_db import get_stats
-print(get_stats())
-"
+# 5. 同步完成后验证统计
+python -c "from job_db import get_stats; print(get_stats())"
 ```
 
 **预期结果**：
-- `jobs.db` 文件存在于 `data/` 目录
-- `get_stats()` 返回总岗位数 > 0、在招岗位数 > 0
-- 校招用户执行 `main.py single <user_id>` 能从总库匹配到岗位
+- `jobs.db` 包含 `companies` 和 `jobs` 两张表
+- `get_stats()` 返回公司数 > 5000、岗位数 > 5000
+- 校招用户（graduation_year 已填）执行 `main.py single <user_id>` 能匹配到岗位
 
-> ⚠️ **首次全量采集注意事项**：
-> - 488 家公司全量扫描预计耗时 30-60 分钟（受 Tavily 速率限制）
-> - 采集过程中 AI 检视会消耗 DeepSeek API 配额
-> - 若中途中断，可重新执行 `run_initial_crawl()`，已入库的岗位不会重复（dedup_hash 去重）
+> ⚠️ **首次同步注意事项**：
+> - 飞书表约 10000 条记录，同步预计 1-2 分钟
+> - AI 岗位分析会消耗 DeepSeek API 配额，首批 100 条分析
+> - 若飞书表访问失败，会通过飞书消息发送告警
+> - 已入库岗位不会重复（dedup_hash 去重）
 
 ---
 

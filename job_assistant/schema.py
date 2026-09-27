@@ -14,7 +14,6 @@ JOB_FIELDS: List[Dict[str, Any]] = [
     {"name": "部门", "type": 1},
     {"name": "地点", "type": 1},
     {"name": "薪资范围", "type": 1},
-    {"name": "经验要求", "type": 1},
     {"name": "学历要求", "type": 1},
     {"name": "JD摘要", "type": 1},
     {"name": "JD链接", "type": 15},  # URL(超链接)

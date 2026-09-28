@@ -54,19 +54,23 @@ class UserProfile:
 @dataclass
 class User:
     id: str
-    # 飞书
-    feishu_tenant_key: str = ""
-    feishu_open_id: str = ""
-    feishu_base_token: str = ""      # 用户专属多维表格
+    # 订单身份(XHS 店铺订单号,新身份体系的核心标识)
+    order_id: str = ""
+    # 飞书 — 用户专属多维表格(互联网分享,无需用户飞书账号)
+    feishu_tenant_key: str = ""      # 可选:旧版飞书应用安装用户保留
+    feishu_open_id: str = ""         # 可选:旧版飞书应用安装用户保留
+    feishu_base_token: str = ""      # 用户专属多维表格 app_token
     feishu_table_id: str = ""        # 岗位表ID
     feishu_closed_table_id: str = "" # 已关闭岗位表ID
     feishu_mt_table_id: str = ""     # 管培生项目表ID(校招用户专项)
-    # 微信推送
+    # 微信推送(可选,辅助提醒)
     wxpusher_uid: str = ""
+    # 邮箱(可选,用于岗位更新提醒)
+    email: str = ""
     # 画像
     profile: UserProfile = field(default_factory=UserProfile)
     # 套餐
-    plan: str = "autumn"             # trial / autumn / spring / yearly
+    plan: str = "autumn"             # trial / autumn / spring / yearly / monthly
     expire_date: str = ""            # YYYY-MM-DD
     created_at: float = field(default_factory=time.time)
     last_run_at: float = 0.0
@@ -124,6 +128,15 @@ class UserStore:
 
     def get(self, user_id: str) -> Optional[User]:
         return self._users.get(user_id)
+
+    def get_by_order_id(self, order_id: str) -> Optional[User]:
+        """按 XHS 订单号查找用户(新身份体系)。"""
+        if not order_id:
+            return None
+        for u in self._users.values():
+            if u.order_id == order_id:
+                return u
+        return None
 
     def list_active(self) -> List[User]:
         """返回未过期的用户"""

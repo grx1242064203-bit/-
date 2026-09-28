@@ -1,9 +1,17 @@
 """
 全局配置 — 所有敏感信息通过环境变量注入,不硬编码。
+支持 .env 文件(项目根目录),方便本地开发和部署。
 """
 import os
 from dataclasses import dataclass, field
 from typing import Dict, List
+
+# 加载 .env 文件(如果存在),不覆盖已设置的环境变量
+try:
+    from dotenv import load_dotenv
+    load_dotenv(os.path.join(os.path.dirname(__file__), ".env"))
+except ImportError:
+    pass
 
 
 @dataclass

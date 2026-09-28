@@ -227,7 +227,8 @@ def _fetch_with_playwright(url: str) -> Tuple[str, List[str]]:
                 "viewport": {"width": 1920, "height": 1080} if not is_wechat else {"width": 390, "height": 844},
                 "locale": "zh-CN",
             }
-            # 微信公众号:添加 Cookie 绕过反爬
+            context = browser.new_context(**context_kwargs)
+            # 微信公众号:创建后添加 Cookie 绕过反爬
             if is_wechat and WECHAT_COOKIE:
                 cookies = []
                 for pair in WECHAT_COOKIE.split(";"):
@@ -240,8 +241,8 @@ def _fetch_with_playwright(url: str) -> Tuple[str, List[str]]:
                             "domain": ".qq.com",
                             "path": "/",
                         })
-                context_kwargs["cookies"] = cookies
-            context = browser.new_context(**context_kwargs)
+                if cookies:
+                    context.add_cookies(cookies)
             # 禁用 webdriver 标志 + 模拟 chrome 属性
             context.add_init_script(
                 "Object.defineProperty(navigator, 'webdriver', {get: () => undefined});"

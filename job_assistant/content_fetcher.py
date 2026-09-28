@@ -126,6 +126,9 @@ def _extract_html_text(html: str) -> str:
     return "\n".join(lines)
 
 
+# 微信 Cookie(从浏览器复制,用于绕过微信反爬)
+WECHAT_COOKIE = os.getenv("WECHAT_COOKIE", "")
+
 # 微信内置浏览器 UA(更接近真实微信环境)
 WECHAT_UA = (
     "Mozilla/5.0 (Linux; Android 13; Pixel 7 Build/TQ3A.230805.001; wv) "
@@ -168,11 +171,26 @@ def _fetch_with_playwright(url: str) -> Tuple[str, List[str]]:
             ],
         )
         try:
-            context = browser.new_context(
-                user_agent=ua,
-                viewport={"width": 1920, "height": 1080} if not is_wechat else {"width": 390, "height": 844},
-                locale="zh-CN",
-            )
+            context_kwargs = {
+                "user_agent": ua,
+                "viewport": {"width": 1920, "height": 1080} if not is_wechat else {"width": 390, "height": 844},
+                "locale": "zh-CN",
+            }
+            # 微信公众号:添加 Cookie 绕过反爬
+            if is_wechat and WECHAT_COOKIE:
+                cookies = []
+                for pair in WECHAT_COOKIE.split(";"):
+                    pair = pair.strip()
+                    if "=" in pair:
+                        name, value = pair.split("=", 1)
+                        cookies.append({
+                            "name": name.strip(),
+                            "value": value.strip(),
+                            "domain": ".qq.com",
+                            "path": "/",
+                        })
+                context_kwargs["cookies"] = cookies
+            context = browser.new_context(**context_kwargs)
             # 禁用 webdriver 标志 + 模拟 chrome 属性
             context.add_init_script(
                 "Object.defineProperty(navigator, 'webdriver', {get: () => undefined});"

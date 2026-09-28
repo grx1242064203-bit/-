@@ -20,14 +20,22 @@ logger = logging.getLogger(__name__)
 TABLE_COMPANIES = "公司总表"
 TABLE_POSITIONS = "岗位总表"
 
-# 公司总表字段
+# 公司总表字段(包含源飞书表所有字段 + 统计字段)
 COMPANY_FIELDS = [
     {"name": "公司名称", "type": 1},
     {"name": "行业", "type": 1},
     {"name": "公司类型", "type": 1},
+    {"name": "招聘类型", "type": 1},
+    {"name": "招聘对象", "type": 1},
+    {"name": "目标届数", "type": 1},
+    {"name": "招聘地点", "type": 1},
+    {"name": "学历要求", "type": 1},
+    {"name": "截止日期", "type": 1},
+    {"name": "发布时间", "type": 1},
     {"name": "公告数", "type": 2, "style": {"formatter": "0"}},
     {"name": "岗位数", "type": 2, "style": {"formatter": "0"}},
     {"name": "网申链接", "type": 15},
+    {"name": "公告链接", "type": 15},
 ]
 
 # 岗位总表字段
@@ -111,8 +119,17 @@ class FeishuMasterTableService:
             return None
         return {"link": url, "text": url[:50]}
 
+    @staticmethod
+    def _format_grade(min_grade, max_grade) -> str:
+        """格式化届数范围。"""
+        if not min_grade and not max_grade:
+            return ""
+        if min_grade == max_grade:
+            return f"{min_grade}届"
+        return f"{min_grade}-{max_grade}届"
+
     def export_companies(self, app_token: str, table_id: str, limit: int = 0) -> int:
-        """导出公司总表数据到飞书。返回写入数。"""
+        """导出公司总表数据到飞书(含源表所有字段)。返回写入数。"""
         companies = job_db.get_all_companies()
         if limit:
             companies = companies[:limit]
@@ -121,16 +138,28 @@ class FeishuMasterTableService:
         for c in companies:
             ann_count = job_db.get_announcement_count_by_company(c["id"])
             pos_count = job_db.get_position_count_by_company(c["id"])
+            # 取最新公告的源表字段
+            latest_ann = job_db.get_latest_announcement_by_company(c["id"]) or {}
             record = {
                 "公司名称": c["name"],
                 "行业": c.get("industry", ""),
                 "公司类型": c.get("company_type", ""),
+                "招聘类型": latest_ann.get("recruit_type", ""),
+                "招聘对象": latest_ann.get("recruit_target", ""),
+                "目标届数": self._format_grade(latest_ann.get("min_grade"), latest_ann.get("max_grade")),
+                "招聘地点": latest_ann.get("location", ""),
+                "学历要求": latest_ann.get("education_req", ""),
+                "截止日期": latest_ann.get("deadline", ""),
+                "发布时间": latest_ann.get("publish_time", ""),
                 "公告数": ann_count,
                 "岗位数": pos_count,
             }
-            url = self._url_field(c.get("apply_url", ""))
-            if url:
-                record["网申链接"] = url
+            apply_url = self._url_field(c.get("apply_url", ""))
+            if apply_url:
+                record["网申链接"] = apply_url
+            ann_url = self._url_field(latest_ann.get("announcement_url", ""))
+            if ann_url:
+                record["公告链接"] = ann_url
             records.append(record)
         if not records:
             return 0

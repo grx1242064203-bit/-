@@ -515,6 +515,19 @@ def get_all_companies() -> List[Dict]:
         conn.close()
 
 
+def get_latest_announcement_by_company(company_id: int) -> Dict:
+    """获取公司最新公告(用于公司总表展示源表字段)。"""
+    conn = _get_conn()
+    try:
+        row = conn.execute(
+            "SELECT * FROM announcements WHERE company_id=? ORDER BY id DESC LIMIT 1",
+            (company_id,),
+        ).fetchone()
+        return dict(row) if row else {}
+    finally:
+        conn.close()
+
+
 def get_announcement_count_by_company(company_id: int) -> int:
     """获取公司的公告数量。"""
     conn = _get_conn()

@@ -72,7 +72,14 @@ class LLMClient:
     """DeepSeek LLM 客户端 — 简历解析 + 信息增强"""
 
     def __init__(self, api_key: str = None, model: str = None):
-        self.api_key = api_key or os.getenv("DEEPSEEK_API_KEY", "")
+        # 从 settings 读取(支持 .env 文件),兼容直接传参
+        if not api_key:
+            try:
+                from config import settings
+                api_key = settings.DEEPSEEK_API_KEY
+            except ImportError:
+                api_key = os.getenv("DEEPSEEK_API_KEY", "")
+        self.api_key = api_key or ""
         self.model = model or DEEPSEEK_MODEL
         if not self.api_key:
             logger.warning("DEEPSEEK_API_KEY 未配置,LLM 功能不可用")

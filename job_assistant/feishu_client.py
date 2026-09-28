@@ -440,6 +440,8 @@ class FeishuClient:
         设置文档/表格为「互联网获得链接可查看」。
         用户无需登录飞书,浏览器打开链接即可查看。
 
+        飞书 API: PATCH /open-apis/drive/v2/permissions/{token}/public?type={type}
+
         第一性原理:
         - XHS 店铺用户大概率没有飞书账号,不能要求登录
         - 岗位数据非敏感,可公开查看
@@ -453,8 +455,8 @@ class FeishuClient:
         token = self.resolve_app_token(token)
         try:
             self._request(
-                "POST",
-                f"/open-apis/drive/v1/permissions/{token}/public?type={doc_type}",
+                "PATCH",
+                f"/open-apis/drive/v2/permissions/{token}/public?type={doc_type}",
                 json_body={
                     "external_access_entity": "open",
                     "security_entity": "anyone_can_view",

@@ -17,6 +17,7 @@ import json
 import logging
 import os
 import random
+import re
 import time
 from typing import Optional, Dict, List, Tuple
 from urllib.parse import urlparse
@@ -180,6 +181,10 @@ def _extract_html_text(html: str) -> str:
 # 微信 Cookie(从浏览器复制,用于绕过微信反爬)
 WECHAT_COOKIE = os.getenv("WECHAT_COOKIE", "")
 
+# TikHub API Key(第三方微信文章提取,稳定绕过反爬)
+TIKHUB_API_KEY = os.getenv("TIKHUB_API_KEY", "")
+TIKHUB_API_URL = "https://api.tikhub.io/api/v1/wechat_mp/v2/fetch_article_detail_h5"
+
 # 微信内置浏览器 UA(更接近真实微信环境)
 WECHAT_UA = (
     "Mozilla/5.0 (Linux; Android 13; Pixel 7 Build/TQ3A.230805.001; wv) "
@@ -328,6 +333,114 @@ def fetch_content(url: str, use_cache: bool = True) -> str:
     return result["text"]
 
 
+def _fetch_with_tikhub(url: str) -> Tuple[str, List[str]]:
+    """用 TikHub API 提取微信公众号文章,返回 (正文文字, 本地图片路径列表)。
+
+    TikHub 是第三方微信文章解析服务,稳定绕过微信反爬。
+    返回的 content 可能是文字型(直接有 content_text)或图片型(需后续 VL 识别)。
+
+    注意:
+    - 不加 raw=True,否则图片 URL 可能已加密/失效
+    - 微信图片 CDN 有时效性,必须在 TikHub 返回后立即下载并缓存到本地
+    """
+    if not TIKHUB_API_KEY:
+        raise RuntimeError("未配置 TIKHUB_API_KEY")
+
+    resp = requests.post(
+        TIKHUB_API_URL,
+        headers={
+            "Authorization": f"Bearer {TIKHUB_API_KEY}",
+            "Content-Type": "application/json",
+        },
+        json={"url": url},  # 不加 raw=True
+        timeout=45,
+    )
+    resp.raise_for_status()
+    data = resp.json()
+
+    if data.get("code") != 200:
+        raise RuntimeError(f"TikHub 返回错误: {data.get('message_zh', data.get('message'))}")
+
+    content = data.get("data", {}).get("content") or {}
+    if not content:
+        # 文章可能已删除
+        raise RuntimeError("TikHub 返回空 content,文章可能已删除")
+
+    # 提取文字
+    text = content.get("content_text") or ""
+    if not text:
+        # content_text 为空,尝试从 HTML 提取
+        html = content.get("content_noencode") or ""
+        if html:
+            from bs4 import BeautifulSoup
+            soup = BeautifulSoup(html, "html.parser")
+            text = soup.get_text(separator="\n", strip=True)
+
+    # 提取图片 URL 并立即下载(微信图片 URL 有时效性)
+    image_urls = []
+    html = content.get("content_noencode") or ""
+    if html:
+        from bs4 import BeautifulSoup
+        soup = BeautifulSoup(html, "html.parser")
+        for img in soup.find_all("img"):
+            src = img.get("data-src") or img.get("src")
+            if src and src.startswith("http"):
+                image_urls.append(src)
+
+    # 立即下载图片到本地缓存(URL 可能几分钟后失效)
+    local_images = _download_wechat_images(url, image_urls)
+
+    # 清理多余空白
+    text = re.sub(r"\s+", " ", text).strip() if text else ""
+    return text, local_images
+
+
+def _download_wechat_images(article_url: str, image_urls: List[str]) -> List[str]:
+    """立即下载微信文章图片到本地缓存,返回本地文件路径列表。
+
+    微信图片 CDN(mmbiz.qpic.cn / mmecoa.qpic.cn)URL 有时效性,
+    必须在 TikHub 返回后尽快下载,否则会返回 HTTP 400。
+    """
+    if not image_urls:
+        return []
+
+    img_cache_dir = os.path.join(CACHE_DIR, "images", _url_hash(article_url))
+    os.makedirs(img_cache_dir, exist_ok=True)
+
+    headers = {
+        "User-Agent": "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) "
+                      "AppleWebKit/537.36 (KHTML, like Gecko) "
+                      "Chrome/120.0.0.0 Safari/537.36",
+        "Referer": "https://mp.weixin.qq.com/",
+    }
+
+    local_paths = []
+    for i, img_url in enumerate(image_urls[:MAX_IMAGES]):
+        try:
+            resp = requests.get(img_url, headers=headers, timeout=20)
+            if resp.status_code != 200 or not resp.content:
+                logger.warning(f"图片下载失败 HTTP {resp.status_code}: {img_url[:60]}")
+                continue
+            # 判断格式
+            if resp.content[:8] == b"\x89PNG\r\n\x1a\n":
+                ext = "png"
+            elif resp.content[:3] == b"\xff\xd8\xff":
+                ext = "jpg"
+            elif resp.content[:4] == b"RIFF":
+                ext = "webp"
+            elif resp.content[:6] in (b"GIF87a", b"GIF89a"):
+                ext = "gif"
+            else:
+                ext = "png"  # 默认 png
+            path = os.path.join(img_cache_dir, f"img_{i:02d}.{ext}")
+            with open(path, "wb") as f:
+                f.write(resp.content)
+            local_paths.append(path)
+        except Exception as e:
+            logger.warning(f"图片下载异常: {e}")
+    return local_paths
+
+
 def fetch_content_full(url: str, use_cache: bool = True) -> Dict:
     """
     抓取公告正文,返回 {"text": str, "images": List[str]}。
@@ -358,15 +471,16 @@ def fetch_content_full(url: str, use_cache: bool = True) -> Dict:
             if _is_pdf(url):
                 content = _fetch_with_requests(url)
             elif _is_wechat(url):
-                # 微信优先 requests(更快更稳,首次请求通常成功)
-                content, images = _fetch_wechat_with_requests(url)
-                # 只有当文字和图片都没有时才降级 Playwright
-                if not content and not images:
+                # 微信公众号: TikHub 优先(稳定绕过反爬),失败降级 Playwright+Cookie
+                try:
+                    content, images = _fetch_with_tikhub(url)
+                except Exception as e:
+                    logger.warning(f"TikHub 抓取失败,降级 Playwright: {e}")
                     try:
                         result = _fetch_with_playwright(url)
                         content, images = result
-                    except Exception as e:
-                        logger.warning(f"Playwright 抓取也失败: {e}")
+                    except Exception as e2:
+                        logger.warning(f"Playwright 抓取也失败: {e2}")
             else:
                 # 普通页面:先试 requests(快),失败再试 Playwright
                 try:

@@ -13,6 +13,7 @@ import json
 import logging
 import os
 import re
+import io
 from typing import Dict, List, Optional, Any
 
 import requests
@@ -21,7 +22,7 @@ logger = logging.getLogger(__name__)
 
 DEEPSEEK_API_URL = "https://api.deepseek.com/chat/completions"
 DEEPSEEK_MODEL = "deepseek-chat"
-DEEPSEEK_VL_MODEL = "deepseek-vl"  # 视觉模型,用于图片简历 OCR
+DEEPSEEK_VL_MODEL = "deepseek-v4-flash-vision-exp"  # 视觉模型,用于图片公告 OCR
 
 
 # ========== 简历解析 Prompt ==========
@@ -118,9 +119,11 @@ class LLMClient:
 
     def chat_with_images(self, text: str, image_urls: List[str],
                          temperature: float = 0.1, max_tokens: int = 2000) -> Optional[str]:
-        """调用 deepseek-v4-pro 进行图片识别(多模态),返回文本。失败返回 None。
+        """调用 deepseek-v4-flash-vision-exp 进行图片识别(多模态),返回文本。失败返回 None。
 
         用于公告正文文字过短时,从图片中提取岗位信息。
+        image_urls 支持:本地文件路径、http URL、base64 data URL。
+        图片会自动压缩(宽≤1280px, JPEG quality=80)以控制 API 体积。
         """
         if not self.api_key:
             logger.warning("DEEPSEEK_API_KEY 未配置,跳过 VL 调用")
@@ -128,30 +131,54 @@ class LLMClient:
         if not image_urls:
             return None
         try:
+            import base64
+            import io
             content_parts = [{"type": "text", "text": text}]
-            for img_url in image_urls[:4]:  # 最多 4 张
-                # 支持 base64(data:image/...) 和 http URL
-                if img_url.startswith("data:"):
-                    content_parts.append({
-                        "type": "image_url",
-                        "image_url": {"url": img_url}
-                    })
-                else:
-                    # http URL:先下载再转 base64(避免跨域/referer 问题)
+            for img_ref in image_urls[:4]:  # 最多 4 张
+                raw_bytes = None
+
+                # 1. base64 data URL
+                if img_ref.startswith("data:"):
+                    try:
+                        b64_str = img_ref.split(",", 1)[-1]
+                        raw_bytes = base64.b64decode(b64_str)
+                    except Exception:
+                        continue
+
+                # 2. 本地文件路径
+                elif os.path.isfile(img_ref):
+                    try:
+                        with open(img_ref, "rb") as f:
+                            raw_bytes = f.read()
+                    except Exception as e:
+                        logger.warning(f"读取本地图片失败 {img_ref}: {e}")
+                        continue
+
+                # 3. http URL:下载
+                elif img_ref.startswith("http"):
                     try:
                         img_resp = requests.get(
-                            img_url, timeout=15,
-                            headers={"User-Agent": "Mozilla/5.0", "Referer": "https://mp.weixin.qq.com/"}
+                            img_ref, timeout=15,
+                            headers={"User-Agent": "Mozilla/5.0",
+                                     "Referer": "https://mp.weixin.qq.com/"}
                         )
-                        if img_resp.status_code == 200:
-                            import base64
-                            b64 = base64.b64encode(img_resp.content).decode("utf-8")
-                            content_parts.append({
-                                "type": "image_url",
-                                "image_url": {"url": f"data:image/jpeg;base64,{b64}"}
-                            })
+                        if img_resp.status_code == 200 and img_resp.content:
+                            raw_bytes = img_resp.content
                     except Exception as e:
                         logger.warning(f"图片下载失败: {e}")
+                        continue
+
+                if not raw_bytes:
+                    continue
+
+                # 压缩图片:转 JPEG,宽度≤1280,质量 80
+                b64_data = self._compress_image_to_base64(raw_bytes)
+                if b64_data:
+                    content_parts.append({
+                        "type": "image_url",
+                        "image_url": {"url": f"data:image/jpeg;base64,{b64_data}"}
+                    })
+
             if len(content_parts) == 1:  # 只有文字没有图片
                 return None
             resp = requests.post(
@@ -161,7 +188,7 @@ class LLMClient:
                     "Content-Type": "application/json",
                 },
                 json={
-                    "model": "deepseek-v4-pro",  # VL 模型
+                    "model": DEEPSEEK_VL_MODEL,  # VL 视觉模型
                     "messages": [{"role": "user", "content": content_parts}],
                     "temperature": temperature,
                     "max_tokens": max_tokens,
@@ -174,6 +201,42 @@ class LLMClient:
         except Exception as e:
             logger.error(f"DeepSeek VL 调用失败: {e}")
             return None
+
+    @staticmethod
+    def _compress_image_to_base64(raw_bytes: bytes, max_width: int = 1280,
+                                   quality: int = 80) -> Optional[str]:
+        """压缩图片并返回 base64 字符串。失败返回 None。
+
+        使用 PIL 将图片转为 JPEG,宽度缩放到 max_width 以内,质量 quality。
+        若 PIL 不可用则直接返回原图 base64。
+        """
+        import base64
+        try:
+            from PIL import Image
+            img = Image.open(io.BytesIO(raw_bytes))
+            # 旋转到正确方向(处理 EXIF orientation)
+            try:
+                from PIL import ImageOps
+                img = ImageOps.exif_transpose(img)
+            except Exception:
+                pass
+            img = img.convert("RGB")
+            w, h = img.size
+            if w > max_width:
+                new_h = int(h * max_width / w)
+                img = img.resize((max_width, new_h), Image.LANCZOS)
+            buf = io.BytesIO()
+            img.save(buf, format="JPEG", quality=quality)
+            return base64.b64encode(buf.getvalue()).decode("utf-8")
+        except ImportError:
+            # PIL 不可用,直接返回原图 base64(可能体积较大)
+            return base64.b64encode(raw_bytes).decode("utf-8")
+        except Exception as e:
+            logger.warning(f"图片压缩失败: {e}")
+            try:
+                return base64.b64encode(raw_bytes).decode("utf-8")
+            except Exception:
+                return None
 
     @staticmethod
     def _extract_json(text: str) -> Optional[Dict]:

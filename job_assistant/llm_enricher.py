@@ -218,17 +218,13 @@ class PositionEnricher:
         content = get_cached_content(ann_url) or ""
         if not content:
             content = fetch_content(ann_url)
+
+        # 对抗性优化:微信公众号反爬严重,正文常抓不到。
+        # 但飞书源表的公告标题本身已包含岗位列表(如"投行经理助理,债券承做助理..."),
+        # 因此正文为空时用标题作为 LLM 输入,仍可拆出岗位。
         if not content or len(content) < 30:
-            # 正文抓取失败,降级为标题岗位
-            positions = self._degrade_to_single_position(announcement)
-            job_db.insert_positions(
-                ann_id, announcement["company_id"], company_name,
-                positions, source_url=ann_url,
-            )
-            job_db.update_llm_status(ann_id, "skipped", positions_count=1,
-                                     cache_hash="degraded")
-            logger.info(f"公告 {ann_id} [{company_name}] 正文缺失,降级为标题岗位")
-            return 1
+            logger.info(f"公告 {ann_id} [{company_name}] 正文缺失,用标题拆岗")
+            content = ann_title  # 用标题作为拆岗输入
 
         # 2. LLM 拆岗
         positions = self.extract_positions(content, company=company_name, title=ann_title)

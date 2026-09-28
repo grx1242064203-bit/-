@@ -125,24 +125,63 @@ def _extract_html_text(html: str) -> str:
 
 
 def _fetch_with_playwright(url: str) -> str:
-    """用 Playwright 抓取 JS 渲染页面,返回纯文本。"""
+    """用 Playwright 抓取 JS 渲染页面,返回纯文本。
+
+    反检测措施:
+    1. 真实 User-Agent
+    2. 禁用 navigator.webdriver 标志
+    3. 设置视图大小和语言
+    4. 微信公众号先访问主页建立会话
+    """
     from playwright.sync_api import sync_playwright
     with sync_playwright() as p:
-        browser = p.chromium.launch(headless=True)
+        browser = p.chromium.launch(
+            headless=True,
+            args=[
+                "--disable-blink-features=AutomationControlled",
+                "--no-sandbox",
+                "--disable-dev-shm-usage",
+            ],
+        )
         try:
-            page = browser.new_page()
+            context = browser.new_context(
+                user_agent=(
+                    "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) "
+                    "AppleWebKit/537.36 (KHTML, like Gecko) "
+                    "Chrome/120.0.0.0 Safari/537.36"
+                ),
+                viewport={"width": 1920, "height": 1080},
+                locale="zh-CN",
+            )
+            # 禁用 webdriver 标志
+            context.add_init_script(
+                "Object.defineProperty(navigator, 'webdriver', {get: () => undefined})"
+            )
+            page = context.new_page()
             page.set_default_timeout(FETCH_TIMEOUT * 1000)
-            # 设置 UA 避免部分反爬
             page.set_extra_http_headers({
                 "Accept-Language": "zh-CN,zh;q=0.9",
+                "Accept": "text/html,application/xhtml+xml,application/xml;q=0.9,*/*;q=0.8",
             })
-            page.goto(url, wait_until="networkidle", timeout=FETCH_TIMEOUT * 1000)
-            # 微信公众号:等待正文加载
+
+            # 微信公众号:先访问 mp.weixin.qq.com 建立会话
             if _is_wechat(url):
                 try:
-                    page.wait_for_selector("#js_content", timeout=10000)
+                    page.goto("https://mp.weixin.qq.com/", wait_until="domcontentloaded", timeout=15000)
+                    page.wait_for_timeout(1000)
                 except Exception:
-                    pass  # 选择器未出现也继续,可能页面结构不同
+                    pass
+
+            page.goto(url, wait_until="networkidle", timeout=FETCH_TIMEOUT * 1000)
+            # 微信公众号:等待正文加载并滚动触发懒加载
+            if _is_wechat(url):
+                try:
+                    page.wait_for_selector("#js_content", timeout=15000)
+                    # 滚动到底部触发懒加载
+                    page.evaluate("window.scrollTo(0, document.body.scrollHeight)")
+                    page.wait_for_timeout(2000)
+                except Exception:
+                    pass  # 选择器未出现也继续
             html = page.content()
             return _extract_html_text(html)
         finally:

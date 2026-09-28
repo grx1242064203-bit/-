@@ -268,12 +268,16 @@ def get_announcements_for_crawl(limit: int = 100) -> List[Dict]:
 
 
 def get_announcements_for_llm(limit: int = 100) -> List[Dict]:
-    """获取待 LLM 拆岗的公告(crawl_status=success 且 llm_status=pending)。"""
+    """获取待 LLM 拆岗的公告(llm_status=pending)。
+
+    不再限制 crawl_status:微信公众号反爬导致正文常抓不到,
+    但公告标题本身已含岗位列表,可用标题做 LLM 拆岗。
+    """
     conn = _get_conn()
     try:
         rows = conn.execute(
             """SELECT * FROM announcements
-               WHERE crawl_status = 'success' AND llm_status = 'pending'
+               WHERE llm_status = 'pending'
                ORDER BY id LIMIT ?""",
             (limit,),
         ).fetchall()

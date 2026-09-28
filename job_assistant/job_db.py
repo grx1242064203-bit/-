@@ -366,6 +366,19 @@ def update_crawl_status(announcement_id: int, status: str,
         conn.close()
 
 
+def update_announcement_images(announcement_id: int, images_json: str):
+    """更新公告的图片 URL 列表(JSON 字符串)。"""
+    conn = _get_conn()
+    try:
+        conn.execute(
+            "UPDATE announcements SET content_images=? WHERE id=?",
+            (images_json, announcement_id),
+        )
+        conn.commit()
+    finally:
+        conn.close()
+
+
 def update_llm_status(announcement_id: int, status: str,
                       positions_count: int = 0, cache_hash: str = ""):
     """更新公告 LLM 拆岗状态。status: success/failed/skipped。"""
@@ -480,6 +493,65 @@ def insert_positions(announcement_id: int, company_id: int,
         conn.commit()
         logger.info(f"公告 {announcement_id}: 插入 {inserted}/{len(positions)} 个岗位")
         return inserted
+    finally:
+        conn.close()
+
+
+# ==================== 导出查询(飞书总表) ====================
+
+def get_all_companies() -> List[Dict]:
+    """获取所有公司(含最新公告的网申链接,用于飞书总表导出)。"""
+    conn = _get_conn()
+    try:
+        rows = conn.execute("""
+            SELECT c.*,
+                   (SELECT a.apply_url FROM announcements a
+                    WHERE a.company_id = c.id AND a.apply_url != ''
+                    ORDER BY a.id DESC LIMIT 1) as apply_url
+            FROM companies c ORDER BY c.name
+        """).fetchall()
+        return [dict(r) for r in rows]
+    finally:
+        conn.close()
+
+
+def get_announcement_count_by_company(company_id: int) -> int:
+    """获取公司的公告数量。"""
+    conn = _get_conn()
+    try:
+        row = conn.execute(
+            "SELECT COUNT(*) as c FROM announcements WHERE company_id=?",
+            (company_id,),
+        ).fetchone()
+        return row["c"] if row else 0
+    finally:
+        conn.close()
+
+
+def get_position_count_by_company(company_id: int) -> int:
+    """获取公司的岗位数量。"""
+    conn = _get_conn()
+    try:
+        row = conn.execute(
+            "SELECT COUNT(*) as c FROM positions WHERE company_id=?",
+            (company_id,),
+        ).fetchone()
+        return row["c"] if row else 0
+    finally:
+        conn.close()
+
+
+def get_all_positions_for_export() -> List[Dict]:
+    """获取所有岗位(含公司行业/类型,用于飞书总表导出)。"""
+    conn = _get_conn()
+    try:
+        rows = conn.execute("""
+            SELECT p.*, c.industry, c.company_type
+            FROM positions p
+            JOIN companies c ON p.company_id = c.id
+            ORDER BY p.company_name, p.id
+        """).fetchall()
+        return [dict(r) for r in rows]
     finally:
         conn.close()
 

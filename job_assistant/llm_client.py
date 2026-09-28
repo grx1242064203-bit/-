@@ -85,25 +85,27 @@ class LLMClient:
             logger.warning("DEEPSEEK_API_KEY 未配置,LLM 功能不可用")
 
     def _chat(self, messages: List[Dict], temperature: float = 0.1,
-              max_tokens: int = 2000) -> Optional[str]:
+              max_tokens: int = 2000, json_mode: bool = True) -> Optional[str]:
         """调用 DeepSeek Chat API,返回 assistant 文本内容。失败返回 None。"""
         if not self.api_key:
             logger.warning("DEEPSEEK_API_KEY 未配置,跳过 LLM 调用")
             return None
         try:
+            payload = {
+                "model": self.model,
+                "messages": messages,
+                "temperature": temperature,
+                "max_tokens": max_tokens,
+            }
+            if json_mode:
+                payload["response_format"] = {"type": "json_object"}
             resp = requests.post(
                 DEEPSEEK_API_URL,
                 headers={
                     "Authorization": f"Bearer {self.api_key}",
                     "Content-Type": "application/json",
                 },
-                json={
-                    "model": self.model,
-                    "messages": messages,
-                    "temperature": temperature,
-                    "max_tokens": max_tokens,
-                    "response_format": {"type": "json_object"},
-                },
+                json=payload,
                 timeout=60,
             )
             resp.raise_for_status()
@@ -112,6 +114,45 @@ class LLMClient:
             return content
         except Exception as e:
             logger.error(f"DeepSeek API 调用失败: {e}")
+            return None
+
+    def chat_with_images(self, text: str, image_urls: List[str],
+                         temperature: float = 0.1, max_tokens: int = 2000) -> Optional[str]:
+        """调用 deepseek-v4-pro 进行图片识别(多模态),返回文本。失败返回 None。
+
+        用于公告正文文字过短时,从图片中提取岗位信息。
+        """
+        if not self.api_key:
+            logger.warning("DEEPSEEK_API_KEY 未配置,跳过 VL 调用")
+            return None
+        if not image_urls:
+            return None
+        try:
+            content_parts = [{"type": "text", "text": text}]
+            for img_url in image_urls[:4]:  # 最多 4 张
+                content_parts.append({
+                    "type": "image_url",
+                    "image_url": {"url": img_url}
+                })
+            resp = requests.post(
+                DEEPSEEK_API_URL,
+                headers={
+                    "Authorization": f"Bearer {self.api_key}",
+                    "Content-Type": "application/json",
+                },
+                json={
+                    "model": "deepseek-v4-pro",  # VL 模型
+                    "messages": [{"role": "user", "content": content_parts}],
+                    "temperature": temperature,
+                    "max_tokens": max_tokens,
+                },
+                timeout=120,
+            )
+            resp.raise_for_status()
+            data = resp.json()
+            return data["choices"][0]["message"]["content"]
+        except Exception as e:
+            logger.error(f"DeepSeek VL 调用失败: {e}")
             return None
 
     @staticmethod

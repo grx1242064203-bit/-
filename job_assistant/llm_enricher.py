@@ -22,7 +22,7 @@ from typing import Dict, List, Optional
 from config import settings
 from llm_client import LLMClient
 import job_db
-from content_fetcher import get_cached_content, fetch_content
+from content_fetcher import get_cached_content, fetch_content, fetch_content_full
 
 logger = logging.getLogger(__name__)
 
@@ -229,13 +229,41 @@ class PositionEnricher:
 
         # 1. 获取正文(优先 DB 已存储的 content,其次缓存,最后实时抓取)
         content = announcement.get("content", "") or ""
+        images_json = announcement.get("content_images", "") or ""
         if not content or len(content) < 30:
             content = get_cached_content(ann_url) or ""
         if not content or len(content) < 30:
-            content = fetch_content(ann_url)
+            fetch_result = fetch_content_full(ann_url)
+            content = fetch_result["text"]
+            img_urls = fetch_result["images"]
             # 抓到正文后存 DB,避免重复爬取
             if content and len(content) >= 30:
                 job_db.update_crawl_status(ann_id, "success", content=content)
+            if img_urls:
+                import json as _json
+                job_db.update_announcement_images(ann_id, _json.dumps(img_urls, ensure_ascii=False))
+                images_json = _json.dumps(img_urls, ensure_ascii=False)
+
+        # 2. VL OCR:正文过短(<50字)但有图片时,用 deepseek-v4-pro 识别图片中的岗位信息
+        if (not content or len(content) < 50) and images_json:
+            try:
+                import json as _json
+                img_urls = _json.loads(images_json) if isinstance(images_json, str) else images_json
+                if img_urls:
+                    logger.info(f"公告 {ann_id} [{company_name}] 正文过短,用 VL 识别图片({len(img_urls)}张)")
+                    vl_prompt = (
+                        f"这是{company_name}的招聘公告图片。请提取图片中的所有岗位信息,"
+                        f"包括岗位名称、专业要求、学历要求、工作地点、职责等。"
+                        f"如果图片是长图,请完整识别所有文字内容。"
+                    )
+                    vl_text = self.llm.chat_with_images(vl_prompt, img_urls, max_tokens=3000)
+                    if vl_text and len(vl_text) > 50:
+                        content = vl_text
+                        # 把 VL 识别结果也存到 DB
+                        job_db.update_crawl_status(ann_id, "success", content=content)
+                        logger.info(f"公告 {ann_id} VL 识别成功: {len(vl_text)} 字")
+            except Exception as e:
+                logger.warning(f"公告 {ann_id} VL 识别失败: {e}")
 
         # 对抗性优化:微信公众号反爬严重,正文常抓不到。
         # 但飞书源表的公告标题本身已包含岗位列表(如"投行经理助理,债券承做助理..."),

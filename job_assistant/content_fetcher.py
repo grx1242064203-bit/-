@@ -13,10 +13,12 @@
   → Playwright 或 requests 抓取 → 提取正文文本 → 缓存 → 返回
 """
 import hashlib
+import json
 import logging
 import os
+import random
 import time
-from typing import Optional, Dict
+from typing import Optional, Dict, List, Tuple
 from urllib.parse import urlparse
 
 import requests
@@ -124,16 +126,38 @@ def _extract_html_text(html: str) -> str:
     return "\n".join(lines)
 
 
-def _fetch_with_playwright(url: str) -> str:
-    """用 Playwright 抓取 JS 渲染页面,返回纯文本。
+# 微信内置浏览器 UA(更接近真实微信环境)
+WECHAT_UA = (
+    "Mozilla/5.0 (Linux; Android 13; Pixel 7 Build/TQ3A.230805.001; wv) "
+    "AppleWebKit/537.36 (KHTML, like Gecko) Version/4.0 Chrome/116.0.5845.163 "
+    "Mobile Safari/537.36 MMWEBID/1234 MicroMessenger/8.0.40.2420(0x28002837) "
+    "WeChat/arm64 Weixin NetType/WIFI Language/zh_CN ABI/arm64"
+)
 
-    反检测措施:
-    1. 真实 User-Agent
+# 普通桌面浏览器 UA
+DESKTOP_UA = (
+    "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) "
+    "AppleWebKit/537.36 (KHTML, like Gecko) "
+    "Chrome/120.0.0.0 Safari/537.36"
+)
+
+MAX_IMAGES = 4  # 最多提取 4 张图片
+
+
+def _fetch_with_playwright(url: str) -> Tuple[str, List[str]]:
+    """用 Playwright 抓取 JS 渲染页面,返回 (正文文本, 图片URL列表)。
+
+    反检测措施(借鉴成熟方案):
+    1. 微信公众号用微信内置浏览器 UA,普通页面用桌面 UA
     2. 禁用 navigator.webdriver 标志
-    3. 设置视图大小和语言
+    3. 随机延迟 2-5s(模拟人类操作)
     4. 微信公众号先访问主页建立会话
+    5. 滚动触发懒加载后提取正文+图片
     """
     from playwright.sync_api import sync_playwright
+    is_wechat = _is_wechat(url)
+    ua = WECHAT_UA if is_wechat else DESKTOP_UA
+
     with sync_playwright() as p:
         browser = p.chromium.launch(
             headless=True,
@@ -145,17 +169,14 @@ def _fetch_with_playwright(url: str) -> str:
         )
         try:
             context = browser.new_context(
-                user_agent=(
-                    "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) "
-                    "AppleWebKit/537.36 (KHTML, like Gecko) "
-                    "Chrome/120.0.0.0 Safari/537.36"
-                ),
-                viewport={"width": 1920, "height": 1080},
+                user_agent=ua,
+                viewport={"width": 1920, "height": 1080} if not is_wechat else {"width": 390, "height": 844},
                 locale="zh-CN",
             )
-            # 禁用 webdriver 标志
+            # 禁用 webdriver 标志 + 模拟 chrome 属性
             context.add_init_script(
-                "Object.defineProperty(navigator, 'webdriver', {get: () => undefined})"
+                "Object.defineProperty(navigator, 'webdriver', {get: () => undefined});"
+                "Object.defineProperty(navigator, 'languages', {get: () => ['zh-CN', 'zh']});"
             )
             page = context.new_page()
             page.set_default_timeout(FETCH_TIMEOUT * 1000)
@@ -164,33 +185,82 @@ def _fetch_with_playwright(url: str) -> str:
                 "Accept": "text/html,application/xhtml+xml,application/xml;q=0.9,*/*;q=0.8",
             })
 
+            # 随机延迟 2-5s(模拟人类)
+            time.sleep(random.uniform(2, 5))
+
             # 微信公众号:先访问 mp.weixin.qq.com 建立会话
-            if _is_wechat(url):
+            if is_wechat:
                 try:
                     page.goto("https://mp.weixin.qq.com/", wait_until="domcontentloaded", timeout=15000)
-                    page.wait_for_timeout(1000)
+                    page.wait_for_timeout(random.uniform(1000, 2000))
                 except Exception:
                     pass
 
             page.goto(url, wait_until="networkidle", timeout=FETCH_TIMEOUT * 1000)
+            # 随机延迟
+            page.wait_for_timeout(random.uniform(1500, 3000))
+
+            image_urls = []
             # 微信公众号:等待正文加载并滚动触发懒加载
-            if _is_wechat(url):
+            if is_wechat:
                 try:
                     page.wait_for_selector("#js_content", timeout=15000)
                     # 滚动到底部触发懒加载
                     page.evaluate("window.scrollTo(0, document.body.scrollHeight)")
-                    page.wait_for_timeout(2000)
+                    page.wait_for_timeout(random.uniform(1500, 2500))
+                    # 提取正文图片(最多 MAX_IMAGES 张)
+                    image_urls = page.evaluate("""
+                        () => {
+                            const imgs = document.querySelectorAll('#js_content img');
+                            const urls = [];
+                            for (const img of imgs) {
+                                const src = img.getAttribute('data-src') || img.src;
+                                if (src && src.startsWith('http')) {
+                                    urls.push(src);
+                                    if (urls.length >= %d) break;
+                                }
+                            }
+                            return urls;
+                        }
+                    """ % MAX_IMAGES)
                 except Exception:
                     pass  # 选择器未出现也继续
+            else:
+                # 普通页面:提取 body 内图片
+                try:
+                    image_urls = page.evaluate("""
+                        () => {
+                            const imgs = document.querySelectorAll('img');
+                            const urls = [];
+                            for (const img of imgs) {
+                                const src = img.src;
+                                if (src && src.startsWith('http') && !src.includes('logo') && !src.includes('icon')) {
+                                    urls.push(src);
+                                    if (urls.length >= %d) break;
+                                }
+                            }
+                            return urls;
+                        }
+                    """ % MAX_IMAGES)
+                except Exception:
+                    pass
+
             html = page.content()
-            return _extract_html_text(html)
+            text = _extract_html_text(html)
+            return text, image_urls
         finally:
             browser.close()
 
 
 def fetch_content(url: str, use_cache: bool = True) -> str:
+    """抓取公告正文,返回纯文本。失败返回空字符串。"""
+    result = fetch_content_full(url, use_cache=use_cache)
+    return result["text"]
+
+
+def fetch_content_full(url: str, use_cache: bool = True) -> Dict:
     """
-    抓取公告正文,返回纯文本。失败返回空字符串。
+    抓取公告正文,返回 {"text": str, "images": List[str]}。
 
     策略:
     1. 查缓存(命中直接返回)
@@ -200,7 +270,7 @@ def fetch_content(url: str, use_cache: bool = True) -> str:
     5. 重试 2 次,成功后缓存
     """
     if not url or not url.strip():
-        return ""
+        return {"text": "", "images": []}
     url = url.strip()
 
     # 1. 缓存
@@ -208,10 +278,11 @@ def fetch_content(url: str, use_cache: bool = True) -> str:
         cached = get_cached_content(url)
         if cached is not None:
             logger.debug(f"缓存命中: {url[:60]}")
-            return cached
+            return {"text": cached, "images": []}
 
     # 2. 抓取(带重试)
     content = ""
+    images: List[str] = []
     for attempt in range(MAX_RETRIES + 1):
         try:
             if _is_pdf(url):
@@ -219,7 +290,8 @@ def fetch_content(url: str, use_cache: bool = True) -> str:
             elif _is_wechat(url):
                 # 微信优先 Playwright
                 try:
-                    content = _fetch_with_playwright(url)
+                    result = _fetch_with_playwright(url)
+                    content, images = result
                 except ImportError:
                     logger.warning("Playwright 未安装,降级 requests 抓取微信文章")
                     content = _fetch_with_requests(url)
@@ -231,13 +303,12 @@ def fetch_content(url: str, use_cache: bool = True) -> str:
                 try:
                     content = _fetch_with_requests(url)
                     if len(content) < 100:
-                        # 内容太少,可能需要 JS 渲染
                         raise ValueError("内容过少,尝试 Playwright")
                 except Exception:
                     try:
-                        content = _fetch_with_playwright(url)
+                        result = _fetch_with_playwright(url)
+                        content, images = result
                     except ImportError:
-                        # Playwright 不可用,用已有的 requests 结果
                         if not content:
                             raise
                     except Exception as e:
@@ -251,14 +322,14 @@ def fetch_content(url: str, use_cache: bool = True) -> str:
                 time.sleep(2 ** attempt)
             else:
                 logger.error(f"抓取彻底失败 {url}: {e}")
-                return ""
+                return {"text": "", "images": []}
 
     # 3. 缓存
     if content:
         _save_cache(url, content)
-        logger.info(f"抓取成功: {url[:60]}... ({len(content)} 字符)")
+        logger.info(f"抓取成功: {url[:60]}... ({len(content)} 字符, {len(images)} 图)")
 
-    return content
+    return {"text": content, "images": images}
 
 
 def fetch_announcement_contents(limit: int = 100) -> Dict:
@@ -276,10 +347,15 @@ def fetch_announcement_contents(limit: int = 100) -> Dict:
 
     for ann in announcements:
         url = ann.get("announcement_url", "")
-        content = fetch_content(url)
+        result = fetch_content_full(url)
+        content = result["text"]
+        images = result["images"]
         if content and len(content) > 50:
-            # 正文存入 DB,避免重复爬取
+            # 正文 + 图片URL存入 DB,避免重复爬取
+            images_json = json.dumps(images, ensure_ascii=False) if images else ""
             job_db.update_crawl_status(ann["id"], "success", content=content)
+            if images_json:
+                job_db.update_announcement_images(ann["id"], images_json)
             success += 1
         else:
             job_db.update_crawl_status(ann["id"], "failed", error="内容为空或过短")

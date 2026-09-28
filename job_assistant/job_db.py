@@ -12,6 +12,7 @@
 """
 import sqlite3
 import os
+import json
 import hashlib
 import time
 import logging
@@ -59,6 +60,8 @@ CREATE TABLE IF NOT EXISTS announcements (
     announcement_url TEXT,
     deadline TEXT,
     publish_time TEXT,
+    content TEXT DEFAULT '',
+    content_images TEXT DEFAULT '',
     crawl_status TEXT DEFAULT 'pending',
     crawl_time TEXT,
     crawl_error TEXT,
@@ -84,6 +87,30 @@ CREATE TABLE IF NOT EXISTS positions (
     company_name TEXT NOT NULL,
     position_title TEXT NOT NULL,
     department TEXT,
+    -- 岗位分类
+    job_category TEXT DEFAULT '',
+    job_subcategory TEXT DEFAULT '',
+    -- 技能要求
+    hard_skills TEXT DEFAULT '',
+    soft_skills TEXT DEFAULT '',
+    certifications TEXT DEFAULT '',
+    languages TEXT DEFAULT '',
+    -- 专业要求
+    major_required TEXT DEFAULT '',
+    major_category TEXT DEFAULT '',
+    -- 学历地点
+    min_education TEXT DEFAULT '',
+    city TEXT DEFAULT '',
+    province TEXT DEFAULT '',
+    -- 招聘流程
+    recruitment_process TEXT DEFAULT '',
+    has_written_test INTEGER DEFAULT 0,
+    -- 职责要求
+    responsibilities TEXT DEFAULT '',
+    requirements TEXT DEFAULT '',
+    bonus_points TEXT DEFAULT '',
+    keywords TEXT DEFAULT '',
+    -- 兼容旧字段
     location TEXT,
     education_req TEXT,
     major_req TEXT,
@@ -115,14 +142,46 @@ def _get_conn() -> sqlite3.Connection:
 
 
 def init_db():
-    """初始化数据库(建三表)。"""
+    """初始化数据库(建三表) + 迁移已有表结构。"""
     conn = _get_conn()
     try:
         conn.executescript(SCHEMA)
+        # 迁移:为已有 announcements/positions 表添加新字段
+        _migrate_table(conn, "announcements", [
+            ("content", "TEXT DEFAULT ''"),
+            ("content_images", "TEXT DEFAULT ''"),
+        ])
+        _migrate_table(conn, "positions", [
+            ("job_category", "TEXT DEFAULT ''"),
+            ("job_subcategory", "TEXT DEFAULT ''"),
+            ("hard_skills", "TEXT DEFAULT ''"),
+            ("soft_skills", "TEXT DEFAULT ''"),
+            ("certifications", "TEXT DEFAULT ''"),
+            ("languages", "TEXT DEFAULT ''"),
+            ("major_required", "TEXT DEFAULT ''"),
+            ("major_category", "TEXT DEFAULT ''"),
+            ("min_education", "TEXT DEFAULT ''"),
+            ("city", "TEXT DEFAULT ''"),
+            ("province", "TEXT DEFAULT ''"),
+            ("recruitment_process", "TEXT DEFAULT ''"),
+            ("has_written_test", "INTEGER DEFAULT 0"),
+            ("responsibilities", "TEXT DEFAULT ''"),
+            ("requirements", "TEXT DEFAULT ''"),
+            ("bonus_points", "TEXT DEFAULT ''"),
+            ("keywords", "TEXT DEFAULT ''"),
+        ])
         conn.commit()
         logger.info(f"总数据库已初始化(三表): {DB_PATH}")
     finally:
         conn.close()
+
+
+def _migrate_table(conn, table_name: str, columns: list):
+    """为已有表添加缺失的列(SQLite 不支持 IF NOT EXISTS for ADD COLUMN)。"""
+    existing = {row[1] for row in conn.execute(f"PRAGMA table_info({table_name})")}
+    for col_name, col_def in columns:
+        if col_name not in existing:
+            conn.execute(f"ALTER TABLE {table_name} ADD COLUMN {col_name} {col_def}")
 
 
 def _now() -> str:
@@ -287,14 +346,21 @@ def get_announcements_for_llm(limit: int = 100) -> List[Dict]:
 
 
 def update_crawl_status(announcement_id: int, status: str,
-                        error: str = ""):
-    """更新公告正文抓取状态。status: success/failed/skipped。"""
+                        error: str = "", content: str = ""):
+    """更新公告正文抓取状态,可选存储正文内容。status: success/failed/skipped。"""
     conn = _get_conn()
     try:
-        conn.execute(
-            "UPDATE announcements SET crawl_status=?, crawl_time=?, crawl_error=? WHERE id=?",
-            (status, _now(), error, announcement_id),
-        )
+        if content:
+            conn.execute(
+                """UPDATE announcements SET crawl_status=?, crawl_time=?, crawl_error=?,
+                   content=? WHERE id=?""",
+                (status, _now(), error, content, announcement_id),
+            )
+        else:
+            conn.execute(
+                "UPDATE announcements SET crawl_status=?, crawl_time=?, crawl_error=? WHERE id=?",
+                (status, _now(), error, announcement_id),
+            )
         conn.commit()
     finally:
         conn.close()
@@ -364,20 +430,43 @@ def insert_positions(announcement_id: int, company_id: int,
             title = pos.get("position_title", "").strip()
             if not title:
                 continue
-            location = pos.get("location", "")
+            location = pos.get("location", "") or pos.get("city", "")
             dedup_hash = compute_position_hash(company_name, title, location)
+            # 数组字段序列化为 JSON 字符串
+            def _arr(key):
+                val = pos.get(key, [])
+                if isinstance(val, list):
+                    return json.dumps(val, ensure_ascii=False)
+                return str(val) if val else ""
             try:
                 cur = conn.execute(
                     """INSERT OR IGNORE INTO positions
                        (announcement_id, company_id, company_name, position_title,
-                        department, location, education_req, major_req, jd_summary,
+                        department, job_category, job_subcategory,
+                        hard_skills, soft_skills, certifications, languages,
+                        major_required, major_category,
+                        min_education, city, province,
+                        recruitment_process, has_written_test,
+                        responsibilities, requirements, bonus_points, keywords,
+                        location, education_req, major_req, jd_summary,
                         is_management_trainee, difficulty, apply_url, source_url,
                         dedup_hash, status, created_at)
-                       VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, '在招', ?)""",
+                       VALUES (?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,'在招',?)""",
                     (
                         announcement_id, company_id, company_name, title,
-                        pos.get("department", ""), location,
-                        pos.get("education_req", ""), pos.get("major_req", ""),
+                        pos.get("department", ""),
+                        pos.get("job_category", ""), pos.get("job_subcategory", ""),
+                        _arr("hard_skills"), _arr("soft_skills"),
+                        _arr("certifications"), _arr("languages"),
+                        pos.get("major_required", ""), pos.get("major_category", ""),
+                        pos.get("min_education", ""), pos.get("city", ""), pos.get("province", ""),
+                        pos.get("recruitment_process", ""),
+                        1 if pos.get("has_written_test") else 0,
+                        pos.get("responsibilities", ""), pos.get("requirements", ""),
+                        pos.get("bonus_points", ""), _arr("keywords"),
+                        location,
+                        pos.get("education_req", "") or pos.get("min_education", ""),
+                        pos.get("major_req", "") or pos.get("major_required", ""),
                         pos.get("jd_summary", ""),
                         1 if pos.get("is_management_trainee") else 0,
                         pos.get("difficulty", ""), pos.get("apply_url", ""),

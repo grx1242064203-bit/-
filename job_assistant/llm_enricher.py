@@ -30,37 +30,50 @@ LLM_CACHE_DIR = os.path.join(settings.DATA_DIR, "llm_cache")
 MAX_RETRIES = 3
 API_INTERVAL = 1.0  # 秒,LLM 调用间隔(控成本+避限流)
 
-POSITION_EXTRACT_PROMPT = """你是校招信息解析专家。请从以下招聘公告正文中提取所有可独立投递的具体岗位信息。
+POSITION_EXTRACT_PROMPT = """你是校招信息解析专家。请从以下招聘公告中提取所有可独立投递的具体岗位,并填入结构化字段。
 
 公司: {company}
 公告标题: {title}
 
-公告正文:
+公告内容:
 \"\"\"{content}\"\"\"
 
-请输出 JSON 数组(不要输出任何 JSON 以外的文字):
+请输出 JSON 数组(严格 JSON,不要输出任何 JSON 以外的文字):
 [
   {{
-    "position_title": "岗位名称(如:产品经理/Java开发工程师/管培生)",
-    "department": "部门或条线(如:技术中台/零售金融,无法确定则空字符串)",
-    "location": "工作地点(如:北京/上海,多个用逗号分隔,无明确地点则空)",
-    "education_req": "学历要求(本科/硕士/博士/大专/不限,取最高要求)",
-    "major_req": "专业要求(如:计算机/金融相关/不限,提取关键专业方向)",
-    "jd_summary": "该岗位的职责与要求摘要(80字内)",
+    "position_title": "岗位名称(具体岗位名,如:Java开发工程师/产品经理/管培生,不要用公告标题)",
+    "department": "部门或条线(如:技术中台/零售金融,无法确定填空字符串)",
+    "job_category": "岗位大类(研发/产品/设计/运营/市场/销售/职能/金融/管培/其他,选1个最贴切的)",
+    "job_subcategory": "岗位子类(如:后端开发/算法/前端/测试/数据分析,无法确定填空)",
+    "hard_skills": ["硬技能列表,如:Python/Java/SQL/机器学习,无则空数组"],
+    "soft_skills": ["软技能列表,如:沟通/团队协作,无则空数组"],
+    "certifications": ["证书要求,如:CFA/CPA/法律职业资格,无则空数组"],
+    "languages": ["语言要求,如:英语CET-6,无则空数组"],
+    "major_required": "具体专业要求(如:计算机科学与技术/软件工程,无明确要求填'不限')",
+    "major_category": "专业大类(工科/理科/商科/文科/医科/农学/艺术/不限,选1个)",
+    "min_education": "最低学历(大专/本科/硕士/博士/不限)",
+    "city": "工作城市(如:北京/上海/深圳,多个用逗号分隔,无则空字符串)",
+    "province": "工作省份(如:广东/浙江,无则空字符串)",
+    "recruitment_process": "招聘流程简述(如:网申→笔试→面试→offer,无则空字符串)",
+    "has_written_test": false,
+    "responsibilities": "岗位职责(100字内,无则空字符串)",
+    "requirements": "任职要求(100字内,无则空字符串)",
+    "bonus_points": "加分项(50字内,无则空字符串)",
+    "keywords": ["关键词标签,用于匹配,如:Python/机器学习/大厂,提取3-8个"],
+    "jd_summary": "岗位摘要(60字内)",
     "is_management_trainee": false,
-    "difficulty": "难度评估(最激烈/较为激烈/中等难度/较低难度)",
-    "apply_url": "该岗位独立投递链接(无则空字符串)"
+    "difficulty": "难度(最激烈/较为激烈/中等难度/较低难度)",
+    "apply_url": "独立投递链接(无则空字符串)"
   }}
 ]
 
-提取要求:
-1. 识别公告中所有可独立投递的具体岗位(管培/技术/产品/运营/职能/金融等)
-2. position_title 必须是具体岗位名,不要用"XX集团2027秋招"这种公告标题
-3. 若公告只笼统面向各专业无具体岗位名,提取为1条 position_title="通用校招岗"
-4. is_management_trainee: 管培生/管理培训生/MT/Management Trainee 标记为 true
-5. difficulty: 头部互联网/金融/知名外企=最激烈;中型公司=较为激烈;普通企业=中等难度;冷门=较低难度
-6. apply_url: 仅当公告中有该岗位独立投递链接时填写,否则空字符串(统一用公告网申链接)
-7. 缺失字段填空字符串或 false,不要编造信息
+提取规则:
+1. 识别所有可独立投递的具体岗位;若只有大类无具体岗位名,拆为"通用校招岗"
+2. is_management_trainee: 管培生/管理培训生/MT/培训生 标记为 true
+3. difficulty: 头部互联网/金融/知名外企=最激烈;中型公司=较为激烈;普通=中等;冷门=较低
+4. 信息不足时:字符串字段填空字符串,数组字段填空数组,布尔填 false,不要编造
+5. keywords 必须包含岗位核心技能/方向词,用于后续匹配
+6. min_education 取最低可投递学历(如"本科及以上"填"本科")
 """
 
 
@@ -130,7 +143,7 @@ class PositionEnricher:
             try:
                 result_text = self.llm._chat(
                     [{"role": "user", "content": prompt}],
-                    temperature=0.1, max_tokens=2000,
+                    temperature=0.1, max_tokens=4000,
                 )
                 if not result_text:
                     raise ValueError("LLM 返回空")
@@ -214,10 +227,15 @@ class PositionEnricher:
         ann_title = announcement.get("announcement_title", "")
         ann_url = announcement.get("announcement_url", "")
 
-        # 1. 获取正文(优先缓存)
-        content = get_cached_content(ann_url) or ""
-        if not content:
+        # 1. 获取正文(优先 DB 已存储的 content,其次缓存,最后实时抓取)
+        content = announcement.get("content", "") or ""
+        if not content or len(content) < 30:
+            content = get_cached_content(ann_url) or ""
+        if not content or len(content) < 30:
             content = fetch_content(ann_url)
+            # 抓到正文后存 DB,避免重复爬取
+            if content and len(content) >= 30:
+                job_db.update_crawl_status(ann_id, "success", content=content)
 
         # 对抗性优化:微信公众号反爬严重,正文常抓不到。
         # 但飞书源表的公告标题本身已包含岗位列表(如"投行经理助理,债券承做助理..."),

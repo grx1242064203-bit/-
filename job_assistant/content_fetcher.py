@@ -278,7 +278,8 @@ def fetch_announcement_contents(limit: int = 100) -> Dict:
         url = ann.get("announcement_url", "")
         content = fetch_content(url)
         if content and len(content) > 50:
-            job_db.update_crawl_status(ann["id"], "success")
+            # 正文存入 DB,避免重复爬取
+            job_db.update_crawl_status(ann["id"], "success", content=content)
             success += 1
         else:
             job_db.update_crawl_status(ann["id"], "failed", error="内容为空或过短")

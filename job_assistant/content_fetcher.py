@@ -400,36 +400,72 @@ def fetch_content_full(url: str, use_cache: bool = True) -> Dict:
     return {"text": content, "images": images}
 
 
-def fetch_announcement_contents(limit: int = 100) -> Dict:
+def fetch_announcement_contents(limit: int = 100, workers: int = 1) -> Dict:
     """
     批量抓取待处理公告的正文,更新 crawl_status。
     取 announcements WHERE crawl_status='pending'。
 
+    微信公告正文常为图片(文字0字),只要有图片URL即算成功(后续VL识别)。
+
+    Args:
+        limit: 抓取条数上限
+        workers: 并发线程数(微信风控建议 1-3)
+
     Returns: {"total": N, "success": M, "failed": K}
     """
     import job_db
+    from concurrent.futures import ThreadPoolExecutor, as_completed
+
     announcements = job_db.get_announcements_for_crawl(limit=limit)
     total = len(announcements)
     success = 0
     failed = 0
 
-    for ann in announcements:
+    def _fetch_one(ann: Dict) -> Dict:
         url = ann.get("announcement_url", "")
-        result = fetch_content_full(url)
-        content = result["text"]
-        images = result["images"]
-        if content and len(content) > 50:
-            # 正文 + 图片URL存入 DB,避免重复爬取
-            images_json = json.dumps(images, ensure_ascii=False) if images else ""
-            job_db.update_crawl_status(ann["id"], "success", content=content)
-            if images_json:
-                job_db.update_announcement_images(ann["id"], images_json)
-            success += 1
-        else:
-            job_db.update_crawl_status(ann["id"], "failed", error="内容为空或过短")
-            failed += 1
-        # 控制抓取节奏
-        time.sleep(0.5)
+        try:
+            result = fetch_content_full(url)
+            content = result["text"]
+            images = result["images"]
+            # 微信公告:文字可能为0,但有图片即算成功(后续VL识别)
+            has_content = content and len(content) > 30
+            has_images = bool(images)
+            if has_content or has_images:
+                images_json = json.dumps(images, ensure_ascii=False) if images else ""
+                job_db.update_crawl_status(ann["id"], "success", content=content)
+                if images_json:
+                    job_db.update_announcement_images(ann["id"], images_json)
+                return {"ok": True, "id": ann["id"]}
+            else:
+                job_db.update_crawl_status(ann["id"], "failed", error="内容和图片均为空")
+                return {"ok": False, "id": ann["id"]}
+        except Exception as e:
+            logger.warning(f"抓取失败 ann={ann.get('id')}: {e}")
+            try:
+                job_db.update_crawl_status(ann["id"], "failed", error=str(e)[:200])
+            except Exception:
+                pass
+            return {"ok": False, "id": ann["id"]}
+
+    if workers <= 1:
+        for ann in announcements:
+            r = _fetch_one(ann)
+            if r["ok"]:
+                success += 1
+            else:
+                failed += 1
+            # 微信风控:每条间隔 3-5 秒
+            time.sleep(random.uniform(3, 5))
+    else:
+        # 并发抓取,每线程内部也有间隔
+        with ThreadPoolExecutor(max_workers=workers) as pool:
+            futures = {pool.submit(_fetch_one, ann): ann for ann in announcements}
+            for future in as_completed(futures):
+                r = future.result()
+                if r["ok"]:
+                    success += 1
+                else:
+                    failed += 1
 
     logger.info(f"正文抓取完成: 总计={total} 成功={success} 失败={failed}")
     return {"total": total, "success": success, "failed": failed}

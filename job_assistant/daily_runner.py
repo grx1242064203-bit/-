@@ -29,7 +29,7 @@ logger = logging.getLogger(__name__)
 
 
 def run_daily_pipeline(sync_full: bool = False, crawl_limit: int = 200,
-                       enrich_limit: int = 200) -> Dict:
+                       enrich_limit: int = 200, crawl_workers: int = 1) -> Dict:
     """
     中心化数据管线(每日执行一次,非按用户):
     1. 飞书源表增量同步 → companies + announcements
@@ -62,7 +62,7 @@ def run_daily_pipeline(sync_full: bool = False, crawl_limit: int = 200,
 
     # 2. 正文抓取
     try:
-        result["crawl"] = fetch_announcement_contents(limit=crawl_limit)
+        result["crawl"] = fetch_announcement_contents(limit=crawl_limit, workers=crawl_workers)
         logger.info(f"正文抓取完成: {result['crawl']}")
     except Exception as e:
         logger.error(f"正文抓取失败: {e}")

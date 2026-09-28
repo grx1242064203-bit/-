@@ -174,7 +174,14 @@ class PositionEnricher:
 
     @staticmethod
     def _parse_positions(text: str) -> List[Dict]:
-        """解析 LLM 输出为岗位列表。"""
+        """解析 LLM 输出为岗位列表。
+
+        兼容多种返回格式:
+        1. 直接 JSON 数组: [{...}, {...}]
+        2. 单 JSON 对象: {...}
+        3. DeepSeek json_object 信封: {"type":"json_object","content":"[{...}]"}
+        4. DeepSeek json_object 信封: {"type":"json_object","value":[{...}]}
+        """
         if not text:
             return []
         text = text.strip()
@@ -182,29 +189,69 @@ class PositionEnricher:
         import re
         text = re.sub(r"^```(?:json)?\s*", "", text)
         text = re.sub(r"\s*```$", "", text)
-        # 找 JSON 数组
+        text = text.strip()
+
+        # 先尝试整体解析为 JSON(处理信封格式)
+        try:
+            obj = json.loads(text)
+            if isinstance(obj, list):
+                return [d for d in obj if isinstance(d, dict)]
+            if isinstance(obj, dict):
+                # 信封格式: {"type":"json_object","content":"[...]"}
+                if "content" in obj and isinstance(obj["content"], str):
+                    inner = json.loads(obj["content"])
+                    if isinstance(inner, list):
+                        return [d for d in inner if isinstance(d, dict)]
+                    if isinstance(inner, dict):
+                        return [inner]
+                # 信封格式: {"type":"json_object","value":[...]}
+                if "value" in obj:
+                    val = obj["value"]
+                    if isinstance(val, list):
+                        return [d for d in val if isinstance(d, dict)]
+                    if isinstance(val, dict):
+                        return [val]
+                # 普通单对象
+                return [obj]
+        except json.JSONDecodeError:
+            pass  # 整体解析失败,尝试提取数组
+
+        # 提取 JSON 数组
         start = text.find("[")
         end = text.rfind("]")
-        if start == -1 or end == -1 or end < start:
-            # 尝试单对象 {}
-            start = text.find("{")
-            end = text.rfind("}")
-            if start == -1 or end == -1:
-                return []
+        if start != -1 and end != -1 and end > start:
+            try:
+                data = json.loads(text[start:end + 1])
+                if isinstance(data, list):
+                    return [d for d in data if isinstance(d, dict)]
+                if isinstance(data, dict):
+                    return [data]
+            except json.JSONDecodeError:
+                pass
+
+        # 提取单 JSON 对象
+        start = text.find("{")
+        end = text.rfind("}")
+        if start != -1 and end != -1 and end > start:
             try:
                 obj = json.loads(text[start:end + 1])
-                return [obj] if isinstance(obj, dict) else []
+                if isinstance(obj, dict):
+                    # 再次检查信封
+                    if "content" in obj and isinstance(obj["content"], str):
+                        try:
+                            inner = json.loads(obj["content"])
+                            if isinstance(inner, list):
+                                return [d for d in inner if isinstance(d, dict)]
+                        except json.JSONDecodeError:
+                            pass
+                    if "value" in obj:
+                        val = obj["value"]
+                        if isinstance(val, list):
+                            return [d for d in val if isinstance(d, dict)]
+                    return [obj]
             except json.JSONDecodeError:
-                return []
-        try:
-            data = json.loads(text[start:end + 1])
-            if isinstance(data, list):
-                return [d for d in data if isinstance(d, dict)]
-            if isinstance(data, dict):
-                return [data]
-        except json.JSONDecodeError as e:
-            logger.warning(f"JSON 解析失败: {e}")
-            return []
+                pass
+
         return []
 
     def _degrade_to_single_position(self, announcement: Dict) -> List[Dict]:

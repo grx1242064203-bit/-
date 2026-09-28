@@ -130,10 +130,30 @@ class LLMClient:
         try:
             content_parts = [{"type": "text", "text": text}]
             for img_url in image_urls[:4]:  # 最多 4 张
-                content_parts.append({
-                    "type": "image_url",
-                    "image_url": {"url": img_url}
-                })
+                # 支持 base64(data:image/...) 和 http URL
+                if img_url.startswith("data:"):
+                    content_parts.append({
+                        "type": "image_url",
+                        "image_url": {"url": img_url}
+                    })
+                else:
+                    # http URL:先下载再转 base64(避免跨域/referer 问题)
+                    try:
+                        img_resp = requests.get(
+                            img_url, timeout=15,
+                            headers={"User-Agent": "Mozilla/5.0", "Referer": "https://mp.weixin.qq.com/"}
+                        )
+                        if img_resp.status_code == 200:
+                            import base64
+                            b64 = base64.b64encode(img_resp.content).decode("utf-8")
+                            content_parts.append({
+                                "type": "image_url",
+                                "image_url": {"url": f"data:image/jpeg;base64,{b64}"}
+                            })
+                    except Exception as e:
+                        logger.warning(f"图片下载失败: {e}")
+            if len(content_parts) == 1:  # 只有文字没有图片
+                return None
             resp = requests.post(
                 DEEPSEEK_API_URL,
                 headers={

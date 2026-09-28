@@ -91,6 +91,57 @@ def _fetch_with_requests(url: str) -> str:
     return _extract_html_text(resp.text)
 
 
+def _fetch_wechat_with_requests(url: str) -> Tuple[str, List[str]]:
+    """用 requests 抓取微信公众号文章,返回(正文文字, 图片URL列表)。
+
+    微信风控是频率限制,首次请求通常成功。加随机延迟避免触发。
+    """
+    headers = {
+        "User-Agent": DESKTOP_UA,
+        "Accept": "text/html,application/xhtml+xml,application/xml;q=0.9,*/*;q=0.8",
+        "Accept-Language": "zh-CN,zh;q=0.9",
+    }
+    if WECHAT_COOKIE:
+        headers["Cookie"] = WECHAT_COOKIE
+
+    # 随机延迟 2-5 秒,避免触发频率风控
+    time.sleep(random.uniform(2, 5))
+
+    try:
+        resp = requests.get(url, headers=headers, timeout=FETCH_TIMEOUT, allow_redirects=True)
+        resp.encoding = resp.apparent_encoding or "utf-8"
+        html = resp.text
+
+        # 风控检测
+        if "环境异常" in html or "请输入验证码" in html:
+            logger.warning("微信风控拦截,需 Cookie 或降低频率")
+            return "", []
+
+        soup = BeautifulSoup(html, "html.parser")
+        content_div = soup.find(id="js_content")
+        if not content_div:
+            logger.warning("未找到 js_content 容器")
+            return "", []
+
+        # 提取文字
+        text = content_div.get_text(separator="\n", strip=True)
+
+        # 提取图片(微信图片在 data-src 属性)
+        imgs = content_div.find_all("img")
+        image_urls = []
+        for img in imgs:
+            src = img.get("data-src") or img.get("src") or ""
+            if src and src.startswith("http"):
+                image_urls.append(src)
+            if len(image_urls) >= MAX_IMAGES:
+                break
+
+        return text, image_urls
+    except requests.exceptions.RequestException as e:
+        logger.warning(f"微信文章 requests 抓取失败: {e}")
+        return "", []
+
+
 def _extract_pdf_text(content: bytes) -> str:
     """从 PDF 二进制数据提取文本。"""
     try:
@@ -306,16 +357,15 @@ def fetch_content_full(url: str, use_cache: bool = True) -> Dict:
             if _is_pdf(url):
                 content = _fetch_with_requests(url)
             elif _is_wechat(url):
-                # 微信优先 Playwright
-                try:
-                    result = _fetch_with_playwright(url)
-                    content, images = result
-                except ImportError:
-                    logger.warning("Playwright 未安装,降级 requests 抓取微信文章")
-                    content = _fetch_with_requests(url)
-                except Exception as e:
-                    logger.warning(f"Playwright 抓取失败,降级 requests: {e}")
-                    content = _fetch_with_requests(url)
+                # 微信优先 requests(更快更稳,首次请求通常成功)
+                content, images = _fetch_wechat_with_requests(url)
+                # 只有当文字和图片都没有时才降级 Playwright
+                if not content and not images:
+                    try:
+                        result = _fetch_with_playwright(url)
+                        content, images = result
+                    except Exception as e:
+                        logger.warning(f"Playwright 抓取也失败: {e}")
             else:
                 # 普通页面:先试 requests(快),失败再试 Playwright
                 try:

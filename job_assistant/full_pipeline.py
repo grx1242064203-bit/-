@@ -40,9 +40,9 @@ def run_once(batch: int = BATCH_SIZE) -> dict:
         logger.error(f"[抓取] 失败: {e}")
         result["crawl"] = {"error": str(e)}
 
-    # 2. LLM 拆岗(含 VL)
+    # 2. LLM 拆岗(含 VL),5 并发
     try:
-        result["enrich"] = run_enrichment(limit=batch)
+        result["enrich"] = run_enrichment(limit=batch, max_workers=5)
         logger.info(f"[拆岗] {result['enrich']}")
     except Exception as e:
         logger.error(f"[拆岗] 失败: {e}")

@@ -556,44 +556,66 @@ class PositionEnricher:
             if not pos.get("major_required"):
                 pos["major_required"] = "无明确专业要求"
 
-    def run(self, limit: int = 100) -> Dict:
+    def run(self, limit: int = 100, max_workers: int = 5) -> Dict:
         """
         批量处理待 LLM 拆岗的公告。
         limit=100 用于试跑验证(首次全量前先验证效果)。
+        max_workers: 并发线程数,1=串行,>1=线程池并发。
 
         Returns: {"total": N, "success": M, "degraded": K, "failed": L}
         """
         announcements = job_db.get_announcements_for_llm(limit=limit)
         total = len(announcements)
-        success = 0
-        degraded = 0
-        failed = 0
 
-        for ann in announcements:
+        def _process_one(ann) -> Tuple[str, int]:
+            """处理单条公告,返回 (状态标签, 岗位数)。"""
             try:
                 count = self.enrich_announcement(ann)
                 if count > 0:
-                    # 判断是成功还是降级
                     ann_after = job_db.get_announcement_by_id(ann["id"])
                     if ann_after and ann_after.get("llm_status") == "success":
-                        success += 1
-                    else:
-                        degraded += 1
-                else:
-                    failed += 1
+                        return ("success", count)
+                    return ("degraded", count)
+                return ("failed", 0)
             except Exception as e:
                 logger.error(f"公告 {ann['id']} 处理异常: {e}")
                 job_db.update_llm_status(ann["id"], "failed", error=str(e)[:200])
-                failed += 1
-            time.sleep(API_INTERVAL)
+                return ("failed", 0)
+
+        success = degraded = failed = 0
+
+        if max_workers <= 1:
+            # 串行模式
+            for ann in announcements:
+                label, _ = _process_one(ann)
+                if label == "success":
+                    success += 1
+                elif label == "degraded":
+                    degraded += 1
+                else:
+                    failed += 1
+                time.sleep(API_INTERVAL)
+        else:
+            # 并发模式:线程池
+            from concurrent.futures import ThreadPoolExecutor, as_completed
+            with ThreadPoolExecutor(max_workers=max_workers) as executor:
+                futures = {executor.submit(_process_one, ann): ann for ann in announcements}
+                for future in as_completed(futures):
+                    label, _ = future.result()
+                    if label == "success":
+                        success += 1
+                    elif label == "degraded":
+                        degraded += 1
+                    else:
+                        failed += 1
 
         logger.info(
-            f"LLM 拆岗完成: 总计={total} 成功={success} 降级={degraded} 失败={failed}"
+            f"LLM 拆岗完成: 总计={total} 成功={success} 降级={degraded} 失败={failed} (workers={max_workers})"
         )
         return {"total": total, "success": success, "degraded": degraded, "failed": failed}
 
 
-def run_enrichment(limit: int = 100) -> Dict:
-    """便捷函数:批量 LLM 拆岗。limit 默认 100(试跑验证)。"""
+def run_enrichment(limit: int = 100, max_workers: int = 5) -> Dict:
+    """便捷函数:批量 LLM 拆岗。limit 默认 100(试跑验证)。max_workers 并发线程数。"""
     enricher = PositionEnricher()
-    return enricher.run(limit=limit)
+    return enricher.run(limit=limit, max_workers=max_workers)

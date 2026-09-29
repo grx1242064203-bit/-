@@ -33,6 +33,9 @@ job_assistant/data/crawl_cache/
 job_assistant/data/llm_cache/
 job_assistant/data/*.bak
 job_assistant/data/*.tmp
+# SQLite WAL 临时文件
+job_assistant/data/*.db-shm
+job_assistant/data/*.db-wal
 
 # 敏感配置(用 .env.example 代替)
 job_assistant/.env

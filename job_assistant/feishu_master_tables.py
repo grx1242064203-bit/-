@@ -452,3 +452,55 @@ def create_and_export_master_table(company_limit: int = 0,
     )
     logger.info(f"总表链接: {result['share_url']}")
     return result
+
+
+def sync_to_existing_master_table() -> Dict:
+    """同步数据到已存在的飞书总表(清空后全量重写)。
+
+    用于每日管线:把本地 DB 的公司/岗位/VL失败记录同步到飞书总表。
+    表的 app_token 和 table_id 从 config.settings 读取。
+
+    Returns: {"companies": N, "positions": M, "vl_failures": K}
+    """
+    from config import settings
+    service = FeishuMasterTableService()
+    app_token = settings.MASTER_APP_TOKEN
+    company_table_id = settings.MASTER_COMPANY_TABLE_ID
+    position_table_id = settings.MASTER_POSITION_TABLE_ID
+    vl_failure_table_id = settings.MASTER_VL_FAILURE_TABLE_ID
+
+    if not app_token:
+        logger.warning("MASTER_APP_TOKEN 未配置,跳过总表同步")
+        return {"companies": 0, "positions": 0, "vl_failures": 0}
+
+    result = {"companies": 0, "positions": 0, "vl_failures": 0}
+
+    # 1. 同步公司总表
+    if company_table_id:
+        try:
+            service.client.clear_table_records(app_token, company_table_id)
+            result["companies"] = service.export_companies(app_token, company_table_id)
+        except Exception as e:
+            logger.error(f"同步公司总表失败: {e}")
+
+    # 2. 同步岗位总表
+    if position_table_id:
+        try:
+            service.client.clear_table_records(app_token, position_table_id)
+            result["positions"] = service.export_positions(app_token, position_table_id)
+        except Exception as e:
+            logger.error(f"同步岗位总表失败: {e}")
+
+    # 3. 同步 VL 失败记录表
+    if vl_failure_table_id:
+        try:
+            service.client.clear_table_records(app_token, vl_failure_table_id)
+            result["vl_failures"] = service.export_vl_failures(app_token, vl_failure_table_id)
+        except Exception as e:
+            logger.error(f"同步VL失败记录表失败: {e}")
+
+    logger.info(
+        f"总表同步完成: 公司 {result['companies']} 条, "
+        f"岗位 {result['positions']} 条, VL失败 {result['vl_failures']} 条"
+    )
+    return result

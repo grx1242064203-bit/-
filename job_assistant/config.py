@@ -39,6 +39,12 @@ class Settings:
     SOURCE_APP_TOKEN: str = field(default_factory=lambda: os.getenv("SOURCE_APP_TOKEN", "WfgTb3wE3aSGhesttvack8innbh"))
     SOURCE_TABLE_ID: str = field(default_factory=lambda: os.getenv("SOURCE_TABLE_ID", "tblcBX0o8CIJlQQr"))
 
+    # === 飞书总表(公司+岗位+VL失败记录,供用户直接查看) ===
+    MASTER_APP_TOKEN: str = field(default_factory=lambda: os.getenv("MASTER_APP_TOKEN", "J8qtbBvPdatotysARtbc2XcinDJ"))
+    MASTER_COMPANY_TABLE_ID: str = field(default_factory=lambda: os.getenv("MASTER_COMPANY_TABLE_ID", "tblRsw7CEIvR7dRB"))
+    MASTER_POSITION_TABLE_ID: str = field(default_factory=lambda: os.getenv("MASTER_POSITION_TABLE_ID", "tblwrGXMK17WHzk3"))
+    MASTER_VL_FAILURE_TABLE_ID: str = field(default_factory=lambda: os.getenv("MASTER_VL_FAILURE_TABLE_ID", "tblDVGCS9CbLrqFH"))
+
     # === 服务域名（用于生成客户配置页链接） ===
     SERVICE_BASE_URL: str = field(default_factory=lambda: os.getenv("SERVICE_BASE_URL", "https://zhaopin-helper.xyz"))
 

@@ -76,6 +76,15 @@ def run_daily_pipeline(sync_full: bool = False, crawl_limit: int = 200,
         logger.error(f"LLM 拆岗失败: {e}")
         result["enrich"] = {"error": str(e)}
 
+    # 4. 同步到飞书总表(公司+岗位+VL失败记录)
+    try:
+        from feishu_master_tables import sync_to_existing_master_table
+        result["master_sync"] = sync_to_existing_master_table()
+        logger.info(f"飞书总表同步完成: {result['master_sync']}")
+    except Exception as e:
+        logger.error(f"飞书总表同步失败: {e}")
+        result["master_sync"] = {"error": str(e)}
+
     return result
 
 

@@ -21,6 +21,17 @@ from config import settings
 
 
 @dataclass
+class KeywordTag:
+    """结构化关键词标签 — 简历解析 + 标准化后的产物,用于高精度匹配"""
+    kw: str = ""                   # 原始关键词(简历/LLM 提取)
+    standard: str = ""             # 标准化后 canonical form(归一化)
+    category: str = "other"        # category: hard_skill/soft_skill/tool/framework/domain/cert/education/city/role/project/other
+    weight: float = 1.0            # 权重 0.1-5.0(出现频率/简历位置决定)
+    source: str = "resume_llm"     # source: resume_llm / manual / normalizer
+    resume_section: str = "other"  # 简历出处: education/experience/project/skill/other
+
+
+@dataclass
 class UserProfile:
     """用户画像 — 用于评分匹配(通用化,支持任意专业/职业阶段)"""
     # === 角色分化 ===
@@ -49,6 +60,7 @@ class UserProfile:
     resume_text: str = ""      # 原始简历文本(留档,便于重新解析)
     summary: str = ""          # LLM 生成的候选人一句话画像
     highlights: List[str] = field(default_factory=list)  # 简历亮点(丰富画像展示)
+    structured_keywords: List[KeywordTag] = field(default_factory=list)  # 简历解析出的结构化关键词(新版匹配引擎用)
 
 
 @dataclass

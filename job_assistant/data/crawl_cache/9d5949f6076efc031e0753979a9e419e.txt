@@ -1,0 +1,172 @@
+MiniMax校园招聘
+MiniMax社招
+登录
+搜索
+筛选
+清除
+招聘项目
+2028届实习生招聘
+2027届校园招聘
+MiniMax Top Talent人才计划
+日常实习
+职位类别
+研发
+运营
+产品 / 策划 / 项目
+市场
+设计
+职能 / 支持
+城市
+上海
+北京
+旧金山
+深圳
+中国香港
+东京
+伦敦
+更多
+搜索
+开启新的工作（31）
+AI 招聘实习生（职能方向）
+北京
+校招
+实习
+互联网 / 电子 / 网游
+2027届校园招聘
+告别传统 HR：加入真正的 AI-Native 团队，做“不被定义”的 HR 实习生
+AI Agent 正在快速拆掉所有岗位的壁垒。如果你认为 HR 的本质只是筛选简历、约面试、算考勤，那你可以划走了。
+我们要找的，不是一个按部就班的工具人，而是一个对未来充满好奇、敢于重塑组织规则的“人才与项目投资人”。如果你不甘于只做传统 HR，希望在 AI 浪潮的最前沿搭建未来组织的形态，欢迎加入我们。
+🌟 我们希望你是这样的人
+对 AI 保持极致好奇： 不仅关注技术，更理解并追求 AI 技术能带来的改变。对最新科技动态敏锐，迫不及待想要把它应用到实际工作与组织形态中。
+天生具有分享欲的“破圈者”： 喜欢围绕“人”开展工作，渴望走到台前。愿意做直播交流、参加各类行业峰会打破圈层，用你的影响力和共情力吸引顶尖人才。
+发散思维极强，拒绝被框住： 不甘于“只做 HR”。在 AI Agent 终将打破岗位边界的未来，你将亲自探索人力资源的无限可能性。
+🚀 在这里，你将获得怎样的成长？
+学会“投资”的底层逻辑： 你将学会如何投资自己、投资人才、投资项目。每天深入职能与战略方向的招聘与交付工作，从人才与组织架构的视角，俯瞰业务与企业在 AI-native 技术下的协同与蜕变。
+每天都在思考变化，并亲自落地挑战： 你需要每天对这个世界的剧烈变化保持思考，并将这些思考转化为具体实践，落地执行每一个极具挑战的高难度项目。
+触碰未来的工作范式： 亲身体验真正的 AI-Native 组织是如何协同运作的，并在实践中回答这个时代最关键的问题：在 AI 时代，未来真正有价值的工作到底长什么样？
+📌 我们对你的期待
+具备 Critical Thinking 与独立解题能力： 拒绝盲从。你需要知道，哪怕是 Mentor 给你的任何经验和建议，都带有时代和个人背景的 Bias。你需要有自己的批判性思考，用自己的逻辑解决问题。
+表达力 MAX + AI 工具极客： 善于沟通与精准表达，能够熟练调用各类 AI 工具作为你的能力外挂，让工作效率起飞。
+面向人群： 27、28 届毕业生优先，表现优异者提供实习转正名额。专业不限，岗位形态也绝不局限于传统人力资源。
+门槛（可被打破）： 本科/硕士来自 985/211 或 QS 前 200 院校。但如果你是一个“特别有趣”的人，此条规则对你直接作废。
+Global Marketing
+旧金山
+校招
+正式
+市场 - 品牌
+2027届校园招聘
+About the Role
+We’re looking for a Global Marketing Manager to drive international growth for our AI products. This role bridges product, marketing, and community — executing go-to-market strategies that connect innovation with users worldwide.
+Job Description
+1. Global GTM Strategy Execution: Integrate internal and external channel resources, collaborating with Operations, Growth, Content, and Performance Marketing teams to execute go-to-market strategies for the company's AI products across global markets.
+2. Overseas Product Marketing: Communicate the value propositions of new products and features to international users. Develop and execute comprehensive market entry strategies based on product characteristics and use cases, including product promotion, brand positioning, market penetration, and strategic partnerships.
+3. Content Strategy & Creation: Identify and articulate core product value propositions and key selling points. Demonstrate deep understanding of user needs and target audience characteristics to create platform-specific content tailored to the tone and style of different communities and media channels, including but not limited to Discord, TikTok, Reddit, Instagram, and YouTube.
+大模型算法工程师-预训练-2027届校招
+北京、上海
+校招
+正式
+研发 - 算法
+2027届校园招聘
+我们正在寻找对大模型底层能力建设真正感兴趣的算法工程师，一起参与 MiniMax 通用大模型的预训练体系建设。
+你会负责：
+- 参与大语言模型预训练 / mid-training 相关工作，包括数据构建、训练策略、模型能力分析与迭代；
+- 设计和优化高质量预训练数据体系，包括数据清洗、去重、配比、质量评估和数据飞轮建设；
+- 围绕代码、数学、推理、长上下文、agent 等关键能力方向，推进模型能力提升；
+- 建立训练过程中的评测与诊断方法，定位模型能力短板并推动数据和训练方案优化；
+- 与 infra、后训练、产品和评测团队协作，将前沿研究快速落到真实模型迭代中。
+这个岗位适合对模型能力本身有热爱的人。
+你会离模型最底层的问题很近：数据从哪里来，如何被选择，如何进入训练，如何变成模型的能力。
+大模型算法工程师-2028届实习
+北京、上海
+校招
+实习
+研发 - 算法
+2027届校园招聘
+- LLM / MLLM 的预训练、后训练、对齐和能力增强；
+- 围绕推理、代码、agent、长上下文、多模态等方向，设计数据、训练和评测方案；
+- 分析模型能力变化，定位数据、训练策略、reward、推理策略等因素的影响；
+- 与算法、数据、评测、infra 团队协作，推动模型的极致迭代。
+AI Talent Partner（招聘与运营）
+上海
+校招
+正式
+互联网 / 电子 / 网游
+2027届校园招聘
+我们在找聪明、好奇、能用 AI 提升自己的人。
+不只是 HR，而是让组织变得更聪明的人。
+你可能刚工作几年，也可能在参加校招、甚至还没毕业。
+关键不是年限，而是——思考力、判断力和成长速度。
+你将
+与模型、研发、业务团队合作，推动顶尖人才的招聘与成长
+用 AI 优化招聘与评估机制，提高决策效率与判断质量
+一起思考如何让组织更高效、更具创造力
+参与文化、激励、绩效等体系建设，
+帮助优秀的人加入，也帮助他们在这里变得更好
+我们希望你
+对人和技术都保持好奇心
+聪明、理性、有判断力
+善用 AI 工具提升效率与洞察
+愿意在高标准团队中持续学习与成长
+我们能提供
+与具备前沿认知的技术与业务伙伴共事
+在 AI 原生公司中共同成长的机会
+长期激励机制
+存储平台研发工程师-2027 届
+北京、上海
+校招
+正式
+研发 - 后端开发
+2027届校园招聘
+关于我们
+我们是一家AI大模型公司。训练一个模型需要读多少数据、Checkpoint 存到哪里、几千张卡同时读同一份数据集会发生什么——这些问题最后都会落到存储上。存储平台团队负责公司 PB 级数据的存与取，建设从底层数据结构到上层服务化的自研系统。
+你可能会做什么：
+1、在以下一到两个方向上深入，并在实习或入职初期与导师一起探索与解决存储命题:
+分布式存储内核 数据面与元数据服务的设计与实现。副本与纠删码、一致性协议、索引结构、IO 路径优化、海量小文件与元数据扩展性。这个方向偏底层, 需要你对操作系统、文件系统、网络与存储介质有真实的好奇心；
+2、存储管控与服务化 集群的编排、调度、扩缩容、多租户与配额、数据生命周期管理、迁移与数据流转链路。让一套复杂系统变得可被安全操作，本身是很难的工程问题；
+3、存储运营与效率 容量与性能的建模和推演、成本效率优化、资源画像与水位管理、数据分层策略。这个方向需要你既写得了代码，也算得清账；
+4、稳定性保障可观测体系、异常检测、故障定位与自愈、一致性校验、混沌演练。目标是在系统规模持续增长的同时，把故障影响面持续压小。
+资源调度研发工程师-2027届
+北京、上海
+校招
+正式
+研发 - 后端开发
+2027届校园招聘
+1. 参与 MiniMax CPU 资源调度平台建设，面向大规模 K8s 集群提升资源利用率和任务运行效率。
+2. 参与 kube-scheduler、Volcano、Koordinator 等调度体系的优化与二次开发。
+3. 建设在线 / 离线任务混部、优先级调度、资源画像、弹性伸缩、负载感知调度等能力。
+4. 参与集群容量治理、资源碎片优化、调度稳定性和任务运行质量保障。
+可观测平台研发工程师-2027届
+北京、上海
+校招
+正式
+研发 - 后端开发
+2027届校园招聘
+1. 参与 MiniMax 面向大模型训练、推理和 Agent 场景的新一代可观测平台建设。
+2. 参与指标、日志、Trace、事件等数据采集、存储、查询和分析链路开发。
+3. 建设硬件、网络、存储、训练作业、推理服务等多层信号的统一观测能力。
+4. 参与故障归因、异常检测、成本分析、链路回放等 AI Infra 可观测能力建设。
+K8S 研发工程师-2027届
+北京、上海
+校招
+正式
+研发 - 后端开发
+2027届校园招聘
+1. 参与 MiniMax 大规模 Kubernetes 集群平台建设，支撑训练、推理和在线业务运行。
+2. 参与 Kubernetes 控制器、Operator、调度、网络、存储、资源隔离等核心能力研发。
+3. 建设多集群管理、集群稳定性、故障自愈、容量治理和可观测能力。
+4. 深入生产环境复杂问题，持续提升集群稳定性、资源效率和平台易用性。
+DBA 数据库工程师-2027届
+北京、上海
+校招
+正式
+研发 - 后端开发
+2027届校园招聘
+1. 参与 MiniMax 核心业务数据库体系建设，支撑大模型产品、训练平台、推理平台等业务稳定运行。
+2. 参与数据库高可用、备份恢复、容量治理、性能优化和自动化运维平台建设。
+3. 建设数据库监控、告警、巡检和故障诊断工具，提升数据库问题发现和恢复效率。
+4. 参与 MySQL / PostgreSQL / Redis 等数据库组件的稳定性治理和最佳实践沉淀。
+1
+2
+3
+4
+搜索

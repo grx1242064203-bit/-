@@ -15,7 +15,7 @@ from config import settings
 from models import UserProfile
 from resume_parser import parse_resume_text
 from job_db import get_all_positions_for_export
-from scorer import score_job
+from scorer import score_job, _parse_list_field
 
 RESUMES = [
     ("resume1_AI_Agent_Infra", os.path.join(settings.DATA_DIR, "test_resume_1.txt")),
@@ -58,15 +58,18 @@ def _extract_cities_from_text(text: str) -> List[str]:
 
 
 def build_profile(name: str, resume_text: str) -> UserProfile:
-    """从简历文本构造 UserProfile:LLM 解析 → structured_keywords → profile。"""
+    """从简历文本构造 UserProfile:LLM 解析 → structured_keywords + fit_directions → profile。"""
     print(f"\n[{name}] 解析简历 (text len={len(resume_text)}) ...", flush=True)
-    keywords = parse_resume_text(resume_text)
-    print(f"[{name}] 关键词数: {len(keywords)}", flush=True)
+    result = parse_resume_text(resume_text)
+    keywords = result.get("keywords", []) if isinstance(result, dict) else result
+    fit_dirs = result.get("fit_directions", []) if isinstance(result, dict) else []
+    print(f"[{name}] 关键词数: {len(keywords)}, 适配方向: {[d['direction'] for d in fit_dirs]}", flush=True)
 
     p = UserProfile()
     p.role = "campus"
     p.resume_text = resume_text
     p.structured_keywords = keywords
+    p.fit_directions = fit_dirs
 
     # 从关键词中推断 degree / major / target_cities(轻量补全,不调 LLM)
     for tag in keywords:
@@ -150,8 +153,8 @@ def dump_result(name: str, profile: UserProfile, scored: List[Dict]):
             "dims": s.get("维度分", {}),
             "reasons": s.get("匹配理由", []),
             "role_gated": s.get("方向门槛触发", False),
-            "hard_skills": s.get("hard_skills", [])[:8],
-            "keywords": s.get("keywords", [])[:8],
+            "hard_skills": _parse_list_field(s.get("hard_skills"))[:8],
+            "keywords": _parse_list_field(s.get("keywords"))[:8],
         })
     with open(out_json, "w", encoding="utf-8") as f:
         json.dump({

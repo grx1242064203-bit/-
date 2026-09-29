@@ -22,6 +22,7 @@ from typing import Dict, List, Optional
 from config import settings
 from llm_client import LLMClient
 import job_db
+import job_tree
 from content_fetcher import get_cached_content, fetch_content, fetch_content_full
 
 logger = logging.getLogger(__name__)
@@ -43,8 +44,8 @@ POSITION_EXTRACT_PROMPT = """你是校招信息解析专家。请从以下招聘
   {{
     "position_title": "岗位名称(具体岗位名,如:Java开发工程师/产品经理/管培生,不要用公告标题)",
     "department": "部门或条线(如:技术中台/零售金融,无法确定填空字符串)",
-    "job_category": "岗位大类(研发/产品/设计/运营/市场/销售/职能/金融/管培/其他,选1个最贴切的)",
-    "job_subcategory": "岗位子类(如:后端开发/算法/前端/测试/数据分析,无法确定填空)",
+    "job_category": "岗位大类(从下方岗位类型树的大类名选1个最贴切的)",
+    "job_subcategory": "岗位子类(从下方岗位类型树的子类名选1个最贴切的;若岗位描述不具体无法确定子类,填所属大类名;实在无法判断填空字符串)",
     "hard_skills": ["硬技能列表,如:Python/Java/SQL/机器学习,无则空数组"],
     "soft_skills": ["软技能列表,如:沟通/团队协作,无则空数组"],
     "certifications": ["证书要求,如:CFA/CPA/法律职业资格,无则空数组"],
@@ -68,6 +69,12 @@ POSITION_EXTRACT_PROMPT = """你是校招信息解析专家。请从以下招聘
 ]
 
 提取规则(严格遵守):
+
+【岗位类型树 — job_category / job_subcategory 取值依据】
+{job_tree_block}
+
+★ job_category 必须填上面的大类名;job_subcategory 优先填子类名,若岗位描述不具体无法确定子类则填所属大类名,实在无法判断填空。不要填树以外的自造词。
+
 0. 【核心铁律】只提取公告内容/标题中明确出现的岗位。严禁编造、推断、补充任何未在正文中出现的岗位名称。若正文/标题中没有具体岗位名,输出空数组 []。
 1. 识别所有可独立投递的具体岗位;每个岗位必须是数组中的一个独立对象,严禁把多个岗位名拼成一个字符串。若只有大类无具体岗位名,拆为"通用校招岗"。
 2. is_management_trainee: 管培生/管理培训生/MT/培训生 标记为 true
@@ -181,6 +188,7 @@ class PositionEnricher:
             company=company or "未知",
             title=title or "",
             content=content[:8000],  # 截断控制成本(校招公告通常 2000-6000 字)
+            job_tree_block=job_tree.prompt_block(),
         )
 
         for attempt in range(MAX_RETRIES):

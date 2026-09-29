@@ -61,6 +61,7 @@ class UserProfile:
     summary: str = ""          # LLM 生成的候选人一句话画像
     highlights: List[str] = field(default_factory=list)  # 简历亮点(丰富画像展示)
     structured_keywords: List[KeywordTag] = field(default_factory=list)  # 简历解析出的结构化关键词(新版匹配引擎用)
+    fit_directions: List[Dict] = field(default_factory=list)  # 适配岗位方向列表 [{direction,cat_key,sub_key,category_name,weight,evidence}]
 
 
 @dataclass

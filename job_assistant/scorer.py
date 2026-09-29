@@ -13,6 +13,7 @@ import logging
 from typing import Dict, List, Tuple, Optional, Any
 
 from keyword_normalizer import keyword_set_overlap, normalize as _norm
+import job_tree
 
 logger = logging.getLogger(__name__)
 
@@ -282,31 +283,75 @@ def _match_major(profile, job: Dict, u: Dict) -> Tuple[float, List[str]]:
 
 
 def _match_role(profile, job: Dict, u: Dict) -> Tuple[float, List[str]]:
-    """角色匹配:两边都 normalize 后用 keyword_set_overlap,解决 standard vs raw 不匹配问题。"""
+    """角色方向匹配 v2:基于候选人适配方向(fit_directions) × 岗位树归属。
+
+    第一性原理:方向对齐靠"候选人适配的岗位子类"与"岗位实际归属"的层级匹配,
+    而不是泛化的关键词交集(后者导致 IC验证 因单"证"字假命中)。
+
+    规则:
+    - 岗位子类命中候选人适配子类 → 系数 1.0
+    - 同大类(岗位是大类或同大类其他子类) → 系数 0.6
+    - 跨大类 → 0
+    得分 = max(权重 × 系数) × 100,归到 0-100。
+
+    降级链:
+    1. 有 fit_directions 且岗位能解析归属 → 新逻辑
+    2. 无 fit_directions 但有旧 role 关键词 → 旧关键词交集逻辑
+    3. 啥都没有 → 中性 50
+    """
     reasons: List[str] = []
-    jk = _extract_job_keywords(job)
-    job_roles = list(set(
-        jk["job_category"] + jk["job_subcategory"] + jk["position_title_norm"]
-    ))
 
+    # 1. 解析岗位树归属
+    job_entry = job_tree.resolve_job(job)
+
+    # 2. 取候选人适配方向
+    fit_dirs = getattr(profile, "fit_directions", None) or []
+
+    if fit_dirs and job_entry:
+        best_factor = 0.0
+        best_fit = None
+        for fd in fit_dirs:
+            # fit_direction 存了 sub_key,直接构造 fit_entry
+            fit_entry = {
+                "type": "subcategory",
+                "cat_key": fd.get("cat_key"),
+                "sub_key": fd.get("sub_key"),
+            }
+            factor = job_tree.score_fit(fit_entry, job_entry)
+            w = float(fd.get("weight") or 0.0)
+            contribution = w * factor
+            if contribution > best_factor:
+                best_factor = contribution
+                best_fit = fd
+        score = round(best_factor * 100.0, 1)
+        if best_fit:
+            factor_label = {1.0: "精确子类命中", 0.6: "同大类匹配", 0.0: "跨大类"}.get(
+                job_tree.score_fit(
+                    {"type": "subcategory", "cat_key": best_fit.get("cat_key"),
+                     "sub_key": best_fit.get("sub_key")}, job_entry
+                ), "跨大类"
+            )
+            reasons.append(
+                f"[role] 方向 {factor_label}:岗位「{job_entry.get('sub_name') or job_entry.get('category_name')}」"
+                f"↔ 候选人适配「{best_fit.get('direction')}」(权重{best_fit.get('weight')})"
+                f" — {best_fit.get('evidence', '')}"
+            )
+        else:
+            reasons.append("[role] 候选人适配方向与岗位跨大类")
+        return score, reasons
+
+    # 3. 降级:无 fit_directions,用旧 role 关键词
     user_roles = u.get("role") or []
-    if not user_roles:
-        reasons.append("候选人未明确目标岗位方向")
-        return 60.0, reasons
+    if user_roles:
+        jk = _extract_job_keywords(job)
+        job_roles = list(set(jk["job_category"] + jk["job_subcategory"] + jk["position_title_norm"]))
+        _, _, hits = keyword_set_overlap(user_roles, job_roles)
+        if hits:
+            return 70.0, [f"[role] (降级匹配)方向有交集: {', '.join(f'{a}↔{b}' for a, b in hits[:2])}"]
+        return 30.0, ["[role] (降级匹配)方向差异较大"]
 
-    _, _, hits = keyword_set_overlap(user_roles, job_roles)
-
-    if len(hits) >= 2 or (hits and jk["job_category"] and _norm(job.get("job_category", ""))[0] in user_roles):
-        hit_names = [f"{uk}↔{jk2}" for uk, jk2 in hits]
-        reasons.append(f"岗位方向与候选人目标强匹配: {', '.join(hit_names)}")
-        return 100.0, reasons
-    if hits:
-        hit_names = [f"{uk}↔{jk2}" for uk, jk2 in hits[:2]]
-        reasons.append(f"岗位方向与候选人目标有交集: {', '.join(hit_names)}")
-        return 80.0, reasons
-
-    reasons.append(f"岗位方向与候选人目标方向差异较大")
-    return 30.0, reasons
+    reasons.append("[role] 候选人未明确目标岗位方向")
+    return 50.0, reasons
 
 
 def _match_hard_skill(job: Dict, u: Dict) -> Tuple[float, List[str]]:

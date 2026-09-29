@@ -1,9 +1,17 @@
 """
 全局配置 — 所有敏感信息通过环境变量注入,不硬编码。
+支持 .env 文件(项目根目录),方便本地开发和部署。
 """
 import os
 from dataclasses import dataclass, field
 from typing import Dict, List
+
+# 加载 .env 文件(如果存在),不覆盖已设置的环境变量
+try:
+    from dotenv import load_dotenv
+    load_dotenv(os.path.join(os.path.dirname(__file__), ".env"))
+except ImportError:
+    pass
 
 
 @dataclass
@@ -25,6 +33,17 @@ class Settings:
 
     # === 数据存储 ===
     DATA_DIR: str = field(default_factory=lambda: os.getenv("DATA_DIR", "/opt/job_assistant/data"))
+
+    # === 飞书秋招源表(中心化数据源,每日更新) ===
+    # 来源: https://dcn2fr2wam82.feishu.cn/base/WfgTb3wE3aSGhesttvack8innbh?table=tblcBX0o8CIJlQQr
+    SOURCE_APP_TOKEN: str = field(default_factory=lambda: os.getenv("SOURCE_APP_TOKEN", "WfgTb3wE3aSGhesttvack8innbh"))
+    SOURCE_TABLE_ID: str = field(default_factory=lambda: os.getenv("SOURCE_TABLE_ID", "tblcBX0o8CIJlQQr"))
+
+    # === 飞书总表(公司+岗位+VL失败记录,供用户直接查看) ===
+    MASTER_APP_TOKEN: str = field(default_factory=lambda: os.getenv("MASTER_APP_TOKEN", "J8qtbBvPdatotysARtbc2XcinDJ"))
+    MASTER_COMPANY_TABLE_ID: str = field(default_factory=lambda: os.getenv("MASTER_COMPANY_TABLE_ID", "tblRsw7CEIvR7dRB"))
+    MASTER_POSITION_TABLE_ID: str = field(default_factory=lambda: os.getenv("MASTER_POSITION_TABLE_ID", "tblwrGXMK17WHzk3"))
+    MASTER_VL_FAILURE_TABLE_ID: str = field(default_factory=lambda: os.getenv("MASTER_VL_FAILURE_TABLE_ID", "tblDVGCS9CbLrqFH"))
 
     # === 服务域名（用于生成客户配置页链接） ===
     SERVICE_BASE_URL: str = field(default_factory=lambda: os.getenv("SERVICE_BASE_URL", "https://zhaopin-helper.xyz"))

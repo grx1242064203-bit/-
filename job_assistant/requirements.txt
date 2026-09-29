@@ -3,6 +3,13 @@ beautifulsoup4>=4.12
 # 简历解析:PDF/DOCX 文本提取
 pypdf>=4.0
 python-docx>=1.0
+# 图片处理:VL OCR 前压缩微信公告图片
+Pillow>=10.0
+# 正文抓取:Playwright(微信公众号等 JS 渲染页面)
+playwright>=1.40
+# 环境变量加载
+python-dotenv>=1.0
+# Web 配置页(求职偏好配置 + 简历上传)
+flask>=3.0
 # 可选:搜索 API 二选一
 # tavily-python  # 如需 SDK 形式调用 Tavily
-# flask>=2.0      # 如需本地回调服务

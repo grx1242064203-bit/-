@@ -1,473 +1,535 @@
+
 """
-评分引擎 — 基于 JD 正文与用户画像的匹配评分。
+岗位匹配评分器 v2 — 分层加权 + 同义词归一化 + 匹配理由可解释。
 
-通用化设计(支持任意专业/职业阶段):
-- 岗位类别由用户自定义的 direction_keywords 决定
-- 技能匹配由用户的 core_skills 决定
-- 不再硬编码任何行业关键词
-
-第一原则:评分必须可解释,每个分数项有明确依据。
+修复 v1 bug:
+- hard_skill bucket 只收 category=hard_skill,遗漏 tool/framework/skill
+- skill_all 被 education/city/cert 污染,Jaccard 分母膨胀
+- role 维度用 standard form 匹配中文原始词,永远 30 分
+- 所有维度统一对岗位侧关键词做 normalize,避免 standard vs raw 不匹配
 """
-import re
-import time
-import hashlib
-from datetime import datetime
-from typing import Dict, Any, List
+import json
+import logging
+from typing import Dict, List, Tuple, Optional, Any
 
-from models import UserProfile
+from keyword_normalizer import keyword_set_overlap, normalize as _norm
+import job_tree
+from competitiveness import candidate_competitiveness, company_competitiveness, alignment
+
+logger = logging.getLogger(__name__)
+
+# 权重重新分配(第一性原理:方向对齐 > 技能命中 > 竞争力对齐 > 硬门槛)
+# - role 0.15:求职方向核心偏好
+# - skill 0.15 / hard_skill 0.15:真实技能命中
+# - competitiveness 0.15:候选人档位 vs 岗位档位对齐(冲刺/匹配/保底),中等偏上
+# - education 0.15 / major 0.10:硬门槛
+# - cert 0.05 / city 0.05 / soft_skill 0.05:辅助
+DIMENSION_WEIGHTS = {
+    "skill": 0.15,
+    "hard_skill": 0.15,
+    "cert": 0.05,
+    "education": 0.15,
+    "major": 0.10,
+    "city": 0.05,
+    "role": 0.15,
+    "soft_skill": 0.05,
+    "competitiveness": 0.15,
+}
+
+# 方向硬门槛:role 维度 < ROLE_GATE_THRESHOLD 时,总分上限 = ROLE_GATE_CAP
+# 解决"方向错配但靠技能假命中/泛技能刷分"挤进 Top 的问题
+ROLE_GATE_THRESHOLD = 40.0
+ROLE_GATE_CAP = 45.0
 
 
-def _build_url_field(url: str) -> dict:
-    """构造飞书 URL 字段(type=15)的值。
+def _parse_list_field(v: Any) -> List[str]:
+    """统一反序列化岗位侧 JSON 字符串字段。
 
-    飞书 URL 字段只接受 {"text": str, "link": str} 对象。
-    空字符串或非法 URL 会触发 1254068 URLFieldDetailFail。
-    空值时返回 None(调用方需在写入前剔除 None 值字段)。
+    job_db 返回的 keywords/hard_skills/certifications 等字段是 JSON 字符串
+    (如 '["Python","Java"]'),scorer 必须先反序列化为 list 才能遍历,
+    否则会逐字符拆分('['、'"'、'P'...)导致 match_score 子串假命中。
     """
-    if not url or not isinstance(url, str):
-        return None
-    url = url.strip()
-    if not url:
-        return None
-    # 确保 URL 带协议前缀,否则飞书可能判定为非法
-    if not url.startswith(("http://", "https://")):
-        url = "https://" + url
-    return {"text": url, "link": url}
-
-
-def _to_timestamp_ms(date_str: str) -> int:
-    """将日期字符串转为飞书日期字段(type=5)所需的 Unix 毫秒时间戳。
-
-    飞书日期字段只接受数字(毫秒时间戳),传入字符串会触发 1254064 DatetimeFieldConvFail。
-    解析失败时返回当前时间戳,避免空值导致写入失败。
-    """
-    if not date_str or not isinstance(date_str, str):
-        return int(time.time() * 1000)
-    date_str = date_str.strip()
-    # 尝试多种常见格式
-    for fmt in ("%Y-%m-%d %H:%M:%S", "%Y-%m-%d %H:%M", "%Y-%m-%d",
-                "%Y/%m/%d %H:%M:%S", "%Y/%m/%d"):
+    if v is None:
+        return []
+    if isinstance(v, list):
+        return [str(x).strip() for x in v if str(x).strip()]
+    if isinstance(v, str):
+        s = v.strip()
+        if not s:
+            return []
+        # 尝试 JSON 反序列化
         try:
-            dt = datetime.strptime(date_str, fmt)
-            return int(dt.timestamp() * 1000)
-        except ValueError:
-            continue
-    # 解析失败,返回当前时间戳
-    return int(time.time() * 1000)
+            obj = json.loads(s)
+            if isinstance(obj, list):
+                return [str(x).strip() for x in obj if str(x).strip()]
+        except json.JSONDecodeError:
+            pass
+        # 兜底:逗号分隔(非 JSON 格式的边缘情况)
+        return [x.strip() for x in s.split(",") if x.strip()]
+    return []
+
+EDUCATION_LEVELS = {"大专": 1, "本科": 2, "硕士": 3, "博士": 4}
+
+_SKILL_CATEGORIES = {"hard_skill", "skill", "tool", "framework"}
 
 
-def _normalize_for_hash(text: str) -> str:
+def _norm_list(kws: List[str]) -> List[str]:
+    """批量归一化关键词,未命中词典的保留原始值。"""
+    out = []
+    for k in kws or []:
+        std, hit = _norm(k)
+        out.append(std)
+    return out
+
+
+def _extract_job_keywords(job: Dict) -> Dict[str, List[str]]:
+    """提取岗位侧关键词,统一用 _parse_list_field 反序列化 JSON 字符串字段。
+
+    P0 修复:job_db 返回的 keywords/hard_skills 等是 JSON 字符串,
+    必须先 json.loads 成 list 再 normalize,否则逐字符遍历导致子串假命中。
     """
-    归一化文本用于去重 hash:
-    - 去除括号及括号内内容(如 "产品经理(北京)" → "产品经理")
-    - 去除所有空白字符
-    - 转小写
-    - 去除常见后缀词(如 "招聘", "急招", "热招")
-    """
-    if not text:
-        return ""
-    text = text.lower()
-    # 去除括号及内容: (...) 【...】 [...] （...）
-    text = re.sub(r"[\(\)（）\[\]【】][^\(\)（）\[\]【】]*[\(\)（）\[\]【】]", "", text)
-    # 去除空白
-    text = re.sub(r"\s+", "", text)
-    # 去除常见招聘后缀
-    for suffix in ["招聘", "急招", "热招", "校招", "社招", "实习", "应届"]:
-        text = text.replace(suffix, "")
-    return text.strip()
+    return {
+        "keywords": _norm_list(_parse_list_field(job.get("keywords"))),
+        "hard_skills": _norm_list(_parse_list_field(job.get("hard_skills"))),
+        "soft_skills": _norm_list(_parse_list_field(job.get("soft_skills"))),
+        "certifications": _norm_list(_parse_list_field(job.get("certifications"))),
+        "languages": _norm_list(_parse_list_field(job.get("languages"))),
+        "job_category": _norm_list([job.get("job_category", "")] if job.get("job_category") else []),
+        "job_subcategory": _norm_list([job.get("job_subcategory", "")] if job.get("job_subcategory") else []),
+        "position_title_norm": _norm_list([job.get("position_title", "")] if job.get("position_title") else []),
+    }
 
 
-def _make_hash(company: str, title: str, location: str = "", jd_url: str = "") -> str:
+def _extract_user_keywords(profile) -> Dict[str, List[str]]:
     """
-    生成岗位去重 hash。
+    从 UserProfile 提取结构化关键词,优先 structured_keywords,降级 core_skills。
 
-    第一原则:同一公司同一岗位只显示一次(聚类去重)。
-    因此 hash 仅基于 公司+岗位标题(归一化),不包含地点和 URL。
-    - 归一化:去除括号、空白、招聘后缀,避免"产品经理(北京)"与"产品经理"被判为不同
-    - 不同地点的同一岗位视为同一岗位聚类,保留先入的那条
+    BUCKET 设计关键约束:
+    - hard_skill 包含所有技能/工具/框架/领域类 category(LLM 解析可能标成不同类别)
+    - soft_skill 只收 category=soft_skill
+    - cert/education/city/role 各归其位
+    - skill_all 只含技能类,排除 education/city/cert/role 等非技能词
     """
-    norm_company = _normalize_for_hash(company)
-    norm_title = _normalize_for_hash(title)
-    raw = f"{norm_company}|{norm_title}"
-    return hashlib.md5(raw.encode("utf-8")).hexdigest()[:16]
+    if getattr(profile, "structured_keywords", None):
+        hard_skill: List[str] = []
+        soft_skill: List[str] = []
+        cert: List[str] = []
+        education: List[str] = []
+        city: List[str] = []
+        role: List[str] = []
+        skill_all: List[str] = []
+        domain: List[str] = []
 
-
-def extract_deadline_from_jd(jd_text: str) -> str:
-    """
-    从 JD 文本中用正则提取投递截止日期(校招岗位常用)。
-    返回 YYYY-MM-DD 格式字符串,提取失败返回空字符串。
-    兜底:若正则未命中,返回空(后续可由 LLM 提取,但正则优先避免 API 开销)。
-    """
-    if not jd_text:
-        return ""
-    # 匹配 "截止日期: 2026-10-31" / "截止到 2026/10/31" / "投递截止 2026年10月31日"
-    patterns = [
-        r"截止[日期时间到为]*\s*[:：]?\s*(\d{4})[-/年.](\d{1,2})[-/月.](\d{1,2})",
-        r"投递截止[日期时间到为]*\s*[:：]?\s*(\d{4})[-/年.](\d{1,2})[-/月.](\d{1,2})",
-        r"网申截止[日期时间到为]*\s*[:：]?\s*(\d{4})[-/年.](\d{1,2})[-/月.](\d{1,2})",
-        r"(\d{4})[-/年.](\d{1,2})[-/月.](\d{1,2})\s*[日号]?\s*截止",
-    ]
-    for p in patterns:
-        m = re.search(p, jd_text)
-        if m:
-            try:
-                y, mo, d = int(m.group(1)), int(m.group(2)), int(m.group(3))
-                if 2020 <= y <= 2030 and 1 <= mo <= 12 and 1 <= d <= 31:
-                    return f"{y:04d}-{mo:02d}-{d:02d}"
-            except (ValueError, IndexError):
+        seen = set()
+        for tag in profile.structured_keywords:
+            kw = (tag.get("standard") or tag.get("kw") or "").strip()
+            category = tag.get("category", "other")
+            if not kw or kw in seen:
                 continue
-    return ""
+            seen.add(kw)
 
+            if category in _SKILL_CATEGORIES:
+                hard_skill.append(kw)
+                skill_all.append(kw)
+            elif category == "domain":
+                domain.append(kw)
+            elif category == "soft_skill":
+                soft_skill.append(kw)
+            elif category == "cert":
+                cert.append(kw)
+            elif category == "education":
+                education.append(kw)
+            elif category == "city":
+                city.append(kw)
+            elif category == "role":
+                role.append(kw)
 
-def _has(text: str, keywords: List[str]) -> bool:
-    text_lower = text.lower()
-    return any(str(k).lower() in text_lower for k in keywords)
+        return {
+            "hard_skill": hard_skill, "soft_skill": soft_skill,
+            "cert": cert, "education": education, "city": city,
+            "role": role, "skill_all": skill_all, "domain": domain,
+        }
 
-
-def classify_direction(jd_text: str, title: str,
-                       direction_keywords: Dict[str, List[str]]) -> str:
-    """
-    基于用户自定义的方向关键词判断岗位类别。
-    返回匹配度最高的方向名,无匹配返回"其他"。
-    """
-    combined = (title + " " + jd_text).lower()
-    best_dir = "其他"
-    best_count = 0
-    for direction, keywords in direction_keywords.items():
-        count = sum(1 for k in keywords if str(k).lower() in combined)
-        if count > best_count:
-            best_count = count
-            best_dir = direction
-    return best_dir if best_count > 0 else "其他"
-
-
-def score_skills(jd_text: str, user_skills: List[str]) -> tuple:
-    """
-    技能匹配评分(0-15)。
-    用户每有一个技能在 JD 中出现,得 3 分,上限 15。
-    返回 (分数, 命中技能列表)
-    """
-    score = 0
-    hits = []
-    for skill in user_skills:
-        if skill and skill.lower() in jd_text.lower():
-            score += 3
-            hits.append(skill)
-            if score >= 15:
-                break
-    return min(score, 15), hits
-
-
-def score_industry(jd_text: str, target_industries: List[str]) -> int:
-    """行业匹配(0-10)"""
-    if not target_industries:
-        return 5  # 不限行业给中等分
-    return 10 if _has(jd_text, target_industries) else 0
-
-
-def score_company(company: str, target_companies: List[str]) -> tuple:
-    """
-    公司匹配(0-20)+ 平台层级。
-    如果用户指定了目标公司,命中得 20 分;否则按公司名启发式判断层级。
-    """
-    if target_companies:
-        for c in target_companies:
-            if c.lower() in company.lower():
-                return 20, "目标公司"
-    # 无特定目标时,用通用启发式(知名企业加分)
-    return 10, "其他"
-
-
-def parse_experience(jd_text: str) -> str:
-    """从 JD 提取经验要求"""
-    patterns = [
-        r"(\d+)[-~到](\d+)\s*年", r"(\d+)\s*年以上", r"(\d+)\s*年经验",
-        r"(\d+)\s*years?", r"experience.*?(\d+)", r"应届", r"在校",
-        r"无经验", r"fresh graduate", r"entry level",
-    ]
-    for p in patterns:
-        m = re.search(p, jd_text, re.IGNORECASE)
-        if m:
-            return m.group(0)
-    return "不限"
-
-
-def parse_education(jd_text: str) -> str:
-    if re.search(r"博士|phd|doctor", jd_text, re.IGNORECASE):
-        return "博士"
-    if re.search(r"硕士|master|研究生|mba", jd_text, re.IGNORECASE):
-        return "硕士及以上"
-    if re.search(r"本科|bachelor|学士", jd_text, re.IGNORECASE):
-        return "本科及以上"
-    return "不限"
-
-
-def is_graduate_window(jd_text: str, title: str = "") -> tuple:
-    """
-    判断是否为应届/管培/校招窗口。
-
-    严格判断:必须在 JD 正文(含标题)中找到明确的"接受/要求应届生"的表述,
-    不能仅因为出现"graduate"等英文词就判定。
-
-    年份动态计算:当前年份和下一年份(如 2026年→匹配 2026届/2027届)。
-
-    返回 (是否窗口, 窗口说明)。
-    """
-    from datetime import datetime
-    cur_year = datetime.now().year
-    next_year = cur_year + 1
-    cur_year_short = str(cur_year)[2:]  # 26
-    next_year_short = str(next_year)[2:]  # 27
-
-    combined = (title + "\n" + jd_text)
-    combined_lower = combined.lower()
-
-    # 明确的应届/校招/管培信号(中文优先,最可靠)
-    explicit_campus_kw = [
-        "应届毕业生", "应届生", "校园招聘", "校招", "管培生", "管理培训生",
-        "接受应届生", "招收应届", "面向应届", "仅限应届",
-        "应届可投", "应届生优先",
-        "秋招", "春招", "提前批",
-        # 动态年份届数
-        f"{cur_year}届", f"{next_year}届",
-    ]
-    for kw in explicit_campus_kw:
-        if kw in combined:
-            return True, f"窗口标识: {kw}"
-
-    # 英文明确信号
-    explicit_english_kw = [
-        "graduate program", "management trainee", "analyst program",
-        "campus recruiting", "early career", "rotational program",
-        "fresh graduate", "entry level", "new graduate",
-        f"class of {cur_year}", f"class of {next_year}",
-    ]
-    for kw in explicit_english_kw:
-        if kw in combined_lower:
-            return True, f"窗口标识: {kw}"
-
-    # 明确只限更远届的,不算窗口(如现在 2026 年,只限 2028 届的不算)
-    far_year = next_year + 1
-    if re.search(rf"{far_year}届|class of {far_year}", combined_lower):
-        return False, f"只限{far_year}届"
-
-    return False, "社招岗位"
-
-
-def is_management_trainee(jd_text: str, title: str = "") -> str:
-    """
-    判断是否为管培生项目,返回管培项目类别标签(空字符串表示非管培)。
-    用于校招用户的管培项目跟踪。
-    """
-    combined = (title + " " + jd_text).lower()
-    mt_signals = [
-        ("管培生", "管培生"), ("管理培训生", "管培生"),
-        ("management trainee", "管培生"), ("mt program", "管培生"),
-        ("graduate program", "管培生"), ("analyst program", "管培生"),
-        ("rotational program", "管培生"),
-    ]
-    for signal, label in mt_signals:
-        if signal in combined:
-            return label
-    return ""
-
-
-def score_job(job: Dict[str, str], profile: UserProfile,
-              llm_client=None) -> Dict[str, Any]:
-    """
-    对单条岗位评分(通用版)。
-    job 需含: title, company, jd_text, location, salary, jd_url
-    profile: 用户画像(direction_keywords 驱动分类)
-    llm_client: 可选,传入则用 LLM 深度分析 JD 正文生成摘要和建议
-    """
-    title = job.get("title", "")
-    company = job.get("company", "")
-    jd_text = job.get("jd_text", "")
-    location = job.get("location", "")
-    salary = job.get("salary", "")
-    jd_url = job.get("jd_url", "")
-    posted = job.get("posted", "")
-
-    # 应届窗口 + 管培项目标记(提前计算,供经验评分使用)
-    in_window, window_note = is_graduate_window(jd_text, title)
-    mt_label = is_management_trainee(jd_text, title)
-
-    # 1. 岗位类别(用户自定义方向)
-    direction = classify_direction(jd_text, title, profile.direction_keywords)
-    # 方向匹配分:命中用户目标方向=40,部分命中=25,未命中=10
-    if direction != "其他" and direction in profile.direction_keywords:
-        dir_score = 40
-    elif direction != "其他":
-        dir_score = 25
-    else:
-        dir_score = 10
-
-    # 2. 平台/公司匹配
-    platform_score, platform = score_company(company, profile.target_companies)
-
-    # 3. 经验匹配
-    exp = parse_experience(jd_text)
-    user_exp = profile.experience_years
-    user_role = getattr(profile, "role", "") or ""
-    # 校招窗口岗位:社招用户给低分,校招/实习用户给满分
-    if in_window:
-        if user_role in ("campus", "internship"):
-            exp_score = 15
-        else:
-            exp_score = 5  # 社招用户不适合校招窗口岗位
-    elif "应届" in exp or "在校" in exp or "fresh" in exp.lower() or "entry" in exp.lower():
-        if user_role in ("campus", "internship"):
-            exp_score = 15
-        else:
-            exp_score = 5
-    elif re.search(r"(\d+)", exp):
-        years = int(re.search(r"(\d+)", exp).group(1))
-        if years <= user_exp + 1:
-            exp_score = 15
-        elif years <= user_exp + 3:
-            exp_score = 10
-        else:
-            exp_score = 5
-    else:
-        exp_score = 12
-
-    # 4. 技能匹配(用户自定义技能)
-    skill_score, skill_hits = score_skills(jd_text, profile.core_skills)
-
-    # 5. 学历匹配
-    edu = parse_education(jd_text)
-    user_degree = profile.degree
-    if "博士" in edu:
-        edu_score = 10 if user_degree == "博士" else (7 if user_degree == "硕士" else 3)
-    elif "硕士" in edu:
-        edu_score = 10 if user_degree in ["硕士", "博士"] else 5
-    elif "本科" in edu:
-        edu_score = 10
-    else:
-        edu_score = 8
-
-    # 6. 行业匹配
-    industry_score = score_industry(jd_text, profile.target_industries)
-
-    relevance = dir_score + platform_score + exp_score + skill_score + edu_score + industry_score
-
-    # 难度评分
-    diff = 0
-    if re.search(r"3年|5年|10年|3 years|5 years", exp):
-        diff += 25
-    elif re.search(r"1年|2年|1 year|2 years", exp):
-        diff += 15
-    else:
-        diff += 5
-    if "博士" in edu or "phd" in edu.lower():
-        diff += 25
-    elif "硕士" in edu or "mba" in edu.lower():
-        diff += 15
-    else:
-        diff += 5
-    if platform == "目标公司":
-        diff += 20
-    else:
-        diff += 10
-    # 证书要求
-    cert_kw = ["cfa", "cpa", "frm", "法考", "律师", "注会", "保荐",
-               "accenture", "pmp", "司法考试", "精算"]
-    if _has(jd_text, cert_kw):
-        diff += 10
-        # 用户有证书则降低难度
-        if any(c.lower() in jd_text.lower() for c in profile.target_certificates):
-            diff -= 10
-
-    # 综合推荐度
-    if relevance >= 70:
-        recommend = "优先申请"
-    elif relevance >= 50:
-        recommend = "可申请"
-    elif relevance >= 30:
-        recommend = "观望"
-    else:
-        recommend = "跳过"
-
-    # JD 深度分析:优先用 LLM(基于 JD 正文),降级用正则
-    jd_summary = job.get("jd_summary", "") or ""
-    llm_summary = ""
-    llm_advice = ""
-    if llm_client and jd_text and len(jd_text.strip()) >= 50:
-        try:
-            from dataclasses import asdict
-            profile_dict = asdict(profile) if hasattr(profile, "__dataclass_fields__") else {}
-            analysis = llm_client.analyze_jd(jd_text, title, profile_dict)
-            if analysis.get("jd_summary"):
-                llm_summary = analysis["jd_summary"]
-            if analysis.get("application_advice"):
-                llm_advice = analysis["application_advice"]
-        except Exception as e:
-            logger.debug(f"LLM JD 分析失败,使用降级方案: {e}")
-
-    # 简评:优先 LLM 深度分析,降级用正则匹配
-    if llm_summary:
-        summary = llm_summary
-        if in_window:
-            summary += f" (应届窗口:{window_note})"
-    else:
-        hit_desc = "、".join(skill_hits) if skill_hits else "无直接技能命中"
-        summary = (f"岗位类别:{direction},平台:{platform}。"
-                   f"JD与用户匹配点: {hit_desc}。"
-                   f"经验要求:{exp}(用户{user_exp}年),学历要求:{edu}。")
-        if in_window:
-            summary += f" {window_note}。"
-
-    # 申请建议:优先 LLM,降级用通用建议
-    if llm_advice:
-        advice = llm_advice
-    else:
-        advice_parts = []
-        if skill_hits:
-            advice_parts.append(f"突出以下匹配技能: {'、'.join(skill_hits[:3])}")
-        if profile.school:
-            advice_parts.append(f"强调{profile.school}{profile.degree}背景")
-        if not advice_parts:
-            advice_parts.append("结合自身背景挖掘与JD的交集")
-        advice = "建议投递," + ";".join(advice_parts) + "。"
-
-    # 截止日期(校招岗位常用,正则提取;失败则为空)
-    deadline = extract_deadline_from_jd(jd_text)
-    deadline_ts = _to_timestamp_ms(deadline) if deadline else None
+    old_hard = list(profile.core_skills or [])
+    old_roles: List[str] = []
+    old_certs = list(profile.target_certificates or [])
+    old_cities = list(profile.target_cities or [])
+    for role, kws in (profile.direction_keywords or {}).items():
+        if role in ("role",):
+            old_roles.extend(kws)
+        if role in ("skill", "domain"):
+            old_hard.extend(kws)
 
     return {
-        "岗位标题": title,
-        "公司": company,
-        "行业": job.get("industry", ""),
-        "公司类型": job.get("company_type", ""),
-        "难度": job.get("difficulty", ""),
-        "部门": job.get("department", ""),
-        "地点": location,
-        "薪资范围": salary,
-        "经验要求": exp,
-        "学历要求": edu,
-        # JD摘要:优先 LLM 深度分析,降级用主库预生成的 jd_summary
-        "JD摘要": (llm_summary or job.get("jd_summary", "") or "")[:300],
-        # JD链接 是飞书 URL 字段(type=15),必须传 {"text","link"} 对象。
-        # 空字符串会触发 1254068 URLFieldDetailFail,所以空值时省略该字段。
-        "JD链接": _build_url_field(jd_url),
-        # 抓取日期 是飞书日期字段(type=5),必须传 Unix 毫秒时间戳,不能传字符串。
-        "抓取日期": _to_timestamp_ms(job.get("crawl_date", "")),
-        "发布时间": posted,
-        # 投递截止日期:校招截止提醒用;空值时省略(None 会被 _sanitize_fields 剔除)
-        "投递截止日期": deadline_ts,
-        "岗位类别": direction,
-        "平台层级": platform,
-        # 数字字段必须传 int,否则飞书返回 1254061 NumberFieldConvFail
-        "相关性评分": int(relevance),
-        "难度评分": int(min(diff, 100)),
+        "hard_skill": _norm_list(old_hard),
+        "soft_skill": [],
+        "cert": _norm_list(old_certs),
+        "education": [],
+        "city": _norm_list(old_cities),
+        "role": _norm_list(old_roles),
+        "skill_all": _norm_list(old_hard),
+        "domain": [],
+    }
+
+
+def _education_level(edu: str) -> int:
+    if not edu:
+        return 0
+    for k, v in EDUCATION_LEVELS.items():
+        if k in edu:
+            return v
+    return 0
+
+
+def _match_education(profile, job: Dict) -> Tuple[float, List[str]]:
+    reasons: List[str] = []
+    user_edu = _education_level(profile.degree or "")
+    job_min = _education_level(job.get("min_education", "") or job.get("education_req", ""))
+
+    if not job_min:
+        reasons.append("岗位无明确学历要求")
+        return 60.0, reasons
+
+    if not user_edu:
+        reasons.append("候选人学历未明确")
+        return 60.0, reasons
+
+    if user_edu >= job_min:
+        label = ["", "大专", "本科", "硕士", "博士"][user_edu]
+        reasons.append(f"候选人{label}学历满足岗位最低要求")
+        return 100.0, reasons
+
+    reasons.append(
+        f"候选人学历低于岗位要求(最低要求{list(EDUCATION_LEVELS.keys())[job_min - 1]})"
+    )
+    return 0.0, reasons
+
+
+def _match_city(profile, job: Dict) -> Tuple[float, List[str]]:
+    """城市匹配:无偏好时给中性分 50(而非 100),避免该维度对所有岗位无区分度。"""
+    reasons: List[str] = []
+    target = [c.lower() for c in (profile.target_cities or []) if c]
+    job_city = (job.get("city", "") or job.get("location", "")).lower()
+
+    if not target:
+        reasons.append("候选人无城市偏好(中性)")
+        return 50.0, reasons
+
+    if not job_city:
+        reasons.append("岗位地点未明确")
+        return 50.0, reasons
+
+    for tc in target:
+        if tc in job_city or job_city in tc:
+            reasons.append(f"岗位地点 {job_city} 在候选人目标城市 {tc} 内")
+            return 100.0, reasons
+
+    reasons.append(f"岗位地点 {job_city} 不在候选人目标城市")
+    return 0.0, reasons
+
+
+def _match_cert(profile, job: Dict, u: Dict) -> Tuple[float, List[str]]:
+    reasons: List[str] = []
+    jk = _extract_job_keywords(job)
+    job_certs = jk["certifications"]
+
+    if not job_certs:
+        reasons.append("岗位无证书硬性要求")
+        return 60.0, reasons
+
+    user_certs = u.get("cert") or []
+    _, _, hits = keyword_set_overlap(user_certs, job_certs)
+
+    if len(hits) >= len(job_certs):
+        hit_names = [f"{uk}↔{jk2}" for uk, jk2 in hits]
+        reasons.append(f"候选人持有岗位要求的全部证书: {', '.join(hit_names)}")
+        return 100.0, reasons
+    if hits:
+        reasons.append(f"候选人持有部分岗位证书({len(hits)}/{len(job_certs)})")
+        return 60.0, reasons
+
+    reasons.append(f"岗位要求证书 {', '.join(job_certs)} 候选人均未持有")
+    return 0.0, reasons
+
+
+def _match_major(profile, job: Dict, u: Dict) -> Tuple[float, List[str]]:
+    reasons: List[str] = []
+    job_major_cat = (job.get("major_category") or "").strip()
+    job_major = (job.get("major_required") or "").strip()
+
+    user_major = (profile.major or "").strip()
+    user_edu_tags = u.get("education", [])
+
+    if not job_major_cat or job_major_cat in ("不限", ""):
+        reasons.append("岗位无专业大类限制")
+        return 100.0, reasons
+
+    edu_kw_lower = [t.lower() for t in user_edu_tags + [user_major]]
+    if any(job_major_cat.lower() in kw or kw in job_major_cat.lower() for kw in edu_kw_lower):
+        reasons.append(f"候选人专业属于{job_major_cat}大类")
+        return 100.0, reasons
+
+    if job_major and user_major and (
+        job_major.lower() in user_major.lower()
+        or user_major.lower() in job_major.lower()
+    ):
+        reasons.append(f"候选人专业与岗位直接匹配({user_major})")
+        return 100.0, reasons
+
+    if "不限" in (job_major or "") or "相关" in (job_major or ""):
+        reasons.append(f"岗位接受{job_major}专业")
+        return 80.0, reasons
+
+    reasons.append(f"岗位倾向{job_major_cat}大类/具体{job_major}专业")
+    return 40.0, reasons
+
+
+def _match_role(profile, job: Dict, u: Dict) -> Tuple[float, List[str]]:
+    """角色方向匹配 v2:基于候选人适配方向(fit_directions) × 岗位树归属。
+
+    第一性原理:方向对齐靠"候选人适配的岗位子类"与"岗位实际归属"的层级匹配,
+    而不是泛化的关键词交集(后者导致 IC验证 因单"证"字假命中)。
+
+    规则:
+    - 岗位子类命中候选人适配子类 → 系数 1.0
+    - 同大类(岗位是大类或同大类其他子类) → 系数 0.6
+    - 跨大类 → 0
+    得分 = max(权重 × 系数) × 100,归到 0-100。
+
+    降级链:
+    1. 有 fit_directions 且岗位能解析归属 → 新逻辑
+    2. 无 fit_directions 但有旧 role 关键词 → 旧关键词交集逻辑
+    3. 啥都没有 → 中性 50
+    """
+    reasons: List[str] = []
+
+    # 1. 解析岗位树归属
+    job_entry = job_tree.resolve_job(job)
+
+    # 2. 取候选人适配方向
+    fit_dirs = getattr(profile, "fit_directions", None) or []
+
+    if fit_dirs and job_entry:
+        best_factor = 0.0
+        best_fit = None
+        for fd in fit_dirs:
+            # fit_direction 存了 sub_key,直接构造 fit_entry
+            fit_entry = {
+                "type": "subcategory",
+                "cat_key": fd.get("cat_key"),
+                "sub_key": fd.get("sub_key"),
+            }
+            factor = job_tree.score_fit(fit_entry, job_entry)
+            w = float(fd.get("weight") or 0.0)
+            contribution = w * factor
+            if contribution > best_factor:
+                best_factor = contribution
+                best_fit = fd
+        score = round(best_factor * 100.0, 1)
+        if best_fit:
+            factor_label = {1.0: "精确子类命中", 0.6: "同大类匹配", 0.0: "跨大类"}.get(
+                job_tree.score_fit(
+                    {"type": "subcategory", "cat_key": best_fit.get("cat_key"),
+                     "sub_key": best_fit.get("sub_key")}, job_entry
+                ), "跨大类"
+            )
+            reasons.append(
+                f"[role] 方向 {factor_label}:岗位「{job_entry.get('sub_name') or job_entry.get('category_name')}」"
+                f"↔ 候选人适配「{best_fit.get('direction')}」(权重{best_fit.get('weight')})"
+                f" — {best_fit.get('evidence', '')}"
+            )
+        else:
+            reasons.append("[role] 候选人适配方向与岗位跨大类")
+        return score, reasons
+
+    # 3. 降级:无 fit_directions,用旧 role 关键词
+    user_roles = u.get("role") or []
+    if user_roles:
+        jk = _extract_job_keywords(job)
+        job_roles = list(set(jk["job_category"] + jk["job_subcategory"] + jk["position_title_norm"]))
+        _, _, hits = keyword_set_overlap(user_roles, job_roles)
+        if hits:
+            return 70.0, [f"[role] (降级匹配)方向有交集: {', '.join(f'{a}↔{b}' for a, b in hits[:2])}"]
+        return 30.0, ["[role] (降级匹配)方向差异较大"]
+
+    reasons.append("[role] 候选人未明确目标岗位方向")
+    return 50.0, reasons
+
+
+def _match_hard_skill(job: Dict, u: Dict) -> Tuple[float, List[str]]:
+    jk = _extract_job_keywords(job)
+    job_hard = jk["hard_skills"]
+    reasons: List[str] = []
+
+    if not job_hard:
+        return 0.0, ["岗位无明确硬技能要求(拆岗质量不足)"]
+
+    user_hard = u.get("hard_skill") or []
+    _, jaccard, hits = keyword_set_overlap(user_hard, job_hard)
+
+    coverage = len(hits) / len(job_hard) if job_hard else 0
+    score = min(100.0, coverage * 100.0 + jaccard * 15.0)
+
+    if hits:
+        hit_kws = [f"{uk}↔{jk2}" for uk, jk2 in hits[:5]]
+        reasons.append(f"硬技能命中{len(hits)}/{len(job_hard)}: {', '.join(hit_kws)}")
+    else:
+        reasons.append(
+            f"岗位要求硬技能 {', '.join(job_hard[:5])} 候选人均未命中"
+        )
+
+    return score, reasons
+
+
+def _match_soft_skill(job: Dict, u: Dict) -> Tuple[float, List[str]]:
+    jk = _extract_job_keywords(job)
+    job_soft = jk["soft_skills"]
+    reasons: List[str] = []
+
+    if not job_soft:
+        return 60.0, ["岗位无明确软技能要求"]
+
+    user_soft = u.get("soft_skill") or []
+    _, _, hits = keyword_set_overlap(user_soft, job_soft)
+
+    if hits:
+        reasons.append(f"软技能命中{len(hits)}项")
+        return min(100.0, len(hits) * 25.0)
+
+    return 50.0, ["软技能无法从简历关键词中准确匹配"]
+
+
+def _match_competitiveness(profile, job: Dict) -> Tuple[float, List[str], Dict]:
+    """竞争力对齐:候选人档位 vs 企业/岗位档位 → 冲刺/匹配/保底。
+
+    软信号,不淘汰。对齐分 = 100 - |diff|×1.5,diff=企业分-候选人分。
+    返回 (score, reasons, info) info 含候选人分/企业分/标签。
+    """
+    reasons: List[str] = []
+    cand_score, cand_brk, cand_det = candidate_competitiveness(profile)
+    comp_score, comp_brk, comp_det = company_competitiveness(job)
+    label, align_score = alignment(cand_score, comp_score)
+
+    diff = comp_score - cand_score
+    reasons.append(
+        f"竞争力对齐「{label}」:候选人{cand_score:.0f}分(学校{cand_det['school_tier']}/"
+        f"{cand_det['degree']}/实习{cand_det['internship_level']}/竞赛{cand_det['competition_level']}) "
+        f"↔ 岗位{comp_score:.0f}分(公司地位{comp_det['company_tier']}/"
+        f"{comp_det['job_category']}/门槛{comp_det['min_education']}) 差值{diff:+.0f}"
+    )
+    info = {
+        "candidate_score": cand_score,
+        "company_score": comp_score,
+        "label": label,
+        "candidate_breakdown": cand_brk,
+        "company_breakdown": comp_brk,
+    }
+    return align_score, reasons, info
+
+
+def _match_skill(job: Dict, u: Dict) -> Tuple[float, List[str]]:
+    """综合技能:岗位 keywords + hard_skills 的并集与用户 skill_all 做覆盖度匹配。
+
+    第一性原理:skill 维度应衡量"岗位要求的技能,候选人覆盖了多少"。
+    用 coverage(命中数/岗位技能数) 为主,Jaccard 为辅(防止乱命中刷分)。
+    旧版用 jaccard×200 会导致用户关键词多时 Jaccard 被严重稀释
+    (39 个用户词 vs 3 个岗位词,命中 1 个 → jaccard=1/41 → 仅 4.8 分),
+    使真实命中岗位的 skill 维度反常低分,拖垮整体分。
+
+    空岗位关键词直接给 0 分,避免降级岗位靠无技能要求混上排行榜。
+    """
+    jk = _extract_job_keywords(job)
+    job_all = list(set(jk["keywords"] + jk["hard_skills"]))
+    reasons: List[str] = []
+
+    if not job_all:
+        return 0.0, ["岗位无可用关键词(拆岗质量不足)"]
+
+    user_all = u.get("skill_all") or []
+    _, jaccard, hits = keyword_set_overlap(user_all, job_all)
+
+    coverage = len(hits) / len(job_all) if job_all else 0
+    # coverage 为主(岗位技能覆盖率),jaccard 为辅(奖励高重合度)
+    score = min(100.0, coverage * 100.0 + jaccard * 30.0)
+
+    if hits:
+        hit_kws = [f"{uk}↔{jk2}" for uk, jk2 in hits[:6]]
+        reasons.append(f"关键词命中{len(hits)}/{len(job_all)}: {', '.join(hit_kws)}")
+    else:
+        reasons.append(
+            f"岗位关键词 {', '.join(job_all[:5])} 与候选人无交集"
+        )
+
+    return score, reasons
+
+
+def score_job(job: Dict, profile, llm_client=None) -> Dict:
+    u = _extract_user_keywords(profile)
+
+    dim_scores: Dict[str, float] = {}
+    all_reasons: List[str] = []
+    comp_info: Dict = {}
+
+    for dim_name, result in [
+        ("skill", _match_skill(job, u)),
+        ("hard_skill", _match_hard_skill(job, u)),
+        ("cert", _match_cert(profile, job, u)),
+        ("education", _match_education(profile, job)),
+        ("major", _match_major(profile, job, u)),
+        ("city", _match_city(profile, job)),
+        ("role", _match_role(profile, job, u)),
+        ("soft_skill", _match_soft_skill(job, u)),
+        ("competitiveness", _match_competitiveness(profile, job)),
+    ]:
+        # competitiveness 返回 (score, reasons, info),其余返回 (score, reasons)
+        if dim_name == "competitiveness":
+            score, reasons, comp_info = result
+        else:
+            score, reasons = result
+        dim_scores[dim_name] = score
+        all_reasons.extend([f"[{dim_name}] {r}" for r in reasons])
+
+    total = sum(
+        dim_scores.get(dim, 60.0) * weight
+        for dim, weight in DIMENSION_WEIGHTS.items()
+    )
+
+    score = max(0.0, min(100.0, total))
+
+    # 方向硬门槛:role 维度 < ROLE_GATE_THRESHOLD 表示方向明显错配,
+    # 无论技能分多高,总分上限 = ROLE_GATE_CAP(压到"不建议"档)。
+    # 第一性原理:求职方向是用户最核心偏好,方向不对的岗位对用户无价值,
+    # 不应靠泛技能/字符级假命中挤进 Top 排行。
+    role_score = dim_scores.get("role", 0.0)
+    role_gated = False
+    if role_score < ROLE_GATE_THRESHOLD:
+        if score > ROLE_GATE_CAP:
+            score = ROLE_GATE_CAP
+        role_gated = True
+        all_reasons.append(
+            f"[role] 方向硬门槛触发:role维度{role_score:.0f}<{ROLE_GATE_THRESHOLD:.0f},"
+            f"总分上限{ROLE_GATE_CAP:.0f}"
+        )
+
+    score = round(score, 1)
+
+    hard_gate = dim_scores.get("education", 100.0) > 0
+
+    if score >= 75:
+        recommend = "强烈推荐"
+    elif score >= 55:
+        recommend = "推荐"
+    elif score >= 35:
+        recommend = "可申请"
+    else:
+        recommend = "不建议"
+
+    return {
+        "相关性评分": score,
         "综合推荐度": recommend,
-        "简评": summary,
-        "申请建议": advice,
-        "申请状态": "未投递",
-        # 投递日期:用户标记"已投递"时由更新逻辑写入,初始为空
-        "投递日期": None,
-        "去重hash": _make_hash(company, title, location, jd_url),
-        "应届窗口": "是" if in_window else "否",
-        "是否在招": "是",
-        "管培项目": mt_label,
+        "维度分": dim_scores,
+        "匹配理由": all_reasons[:20],
+        "硬门槛通过": hard_gate,
+        "方向门槛触发": role_gated,
+        "竞争力信息": comp_info,
     }

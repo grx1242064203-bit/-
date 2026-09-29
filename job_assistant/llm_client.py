@@ -13,6 +13,7 @@ import json
 import logging
 import os
 import re
+import io
 from typing import Dict, List, Optional, Any
 
 import requests
@@ -21,7 +22,21 @@ logger = logging.getLogger(__name__)
 
 DEEPSEEK_API_URL = "https://api.deepseek.com/chat/completions"
 DEEPSEEK_MODEL = "deepseek-chat"
-DEEPSEEK_VL_MODEL = "deepseek-vl"  # 视觉模型,用于图片简历 OCR
+DEEPSEEK_VL_MODEL = "deepseek-v4-flash-vision-exp"  # 视觉模型,用于图片公告 OCR
+
+# VL 多策略重试:当默认策略失败时,逐步放宽像素/高度限制 + 缩小切片高度
+# 策略设计(从保守到激进):
+#   1. 默认:切片 2500px,压缩 4M 像素/4000px 高 — 成本低,适合常规图
+#   2. 放宽:切片 1500px,压缩 8M 像素/6000px 高 — 长图切更碎,保留更多细节
+#   3. 激进:切片 1000px,压缩 12M 像素/8000px 高 — 超长图充分切片,质量最高
+VL_STRATEGIES = [
+    {"slice_height": 2500, "slice_max_width": 800,
+     "compress_max_width": 1280, "max_pixels": 4_000_000, "max_height": 4000, "quality": 80},
+    {"slice_height": 1500, "slice_max_width": 1000,
+     "compress_max_width": 1500, "max_pixels": 8_000_000, "max_height": 6000, "quality": 85},
+    {"slice_height": 1000, "slice_max_width": 1200,
+     "compress_max_width": 1800, "max_pixels": 12_000_000, "max_height": 8000, "quality": 90},
+]
 
 
 # ========== 简历解析 Prompt ==========
@@ -72,31 +87,40 @@ class LLMClient:
     """DeepSeek LLM 客户端 — 简历解析 + 信息增强"""
 
     def __init__(self, api_key: str = None, model: str = None):
-        self.api_key = api_key or os.getenv("DEEPSEEK_API_KEY", "")
+        # 从 settings 读取(支持 .env 文件),兼容直接传参
+        if not api_key:
+            try:
+                from config import settings
+                api_key = settings.DEEPSEEK_API_KEY
+            except ImportError:
+                api_key = os.getenv("DEEPSEEK_API_KEY", "")
+        self.api_key = api_key or ""
         self.model = model or DEEPSEEK_MODEL
         if not self.api_key:
             logger.warning("DEEPSEEK_API_KEY 未配置,LLM 功能不可用")
 
     def _chat(self, messages: List[Dict], temperature: float = 0.1,
-              max_tokens: int = 2000) -> Optional[str]:
+              max_tokens: int = 2000, json_mode: bool = True) -> Optional[str]:
         """调用 DeepSeek Chat API,返回 assistant 文本内容。失败返回 None。"""
         if not self.api_key:
             logger.warning("DEEPSEEK_API_KEY 未配置,跳过 LLM 调用")
             return None
         try:
+            payload = {
+                "model": self.model,
+                "messages": messages,
+                "temperature": temperature,
+                "max_tokens": max_tokens,
+            }
+            if json_mode:
+                payload["response_format"] = {"type": "json_object"}
             resp = requests.post(
                 DEEPSEEK_API_URL,
                 headers={
                     "Authorization": f"Bearer {self.api_key}",
                     "Content-Type": "application/json",
                 },
-                json={
-                    "model": self.model,
-                    "messages": messages,
-                    "temperature": temperature,
-                    "max_tokens": max_tokens,
-                    "response_format": {"type": "json_object"},
-                },
+                json=payload,
                 timeout=60,
             )
             resp.raise_for_status()
@@ -106,6 +130,257 @@ class LLMClient:
         except Exception as e:
             logger.error(f"DeepSeek API 调用失败: {e}")
             return None
+
+    def chat_with_images(self, text: str, image_urls: List[str],
+                         temperature: float = 0.1, max_tokens: int = 2000) -> Optional[str]:
+        """调用 deepseek-v4-flash-vision-exp 进行图片识别(多模态),返回文本。失败返回 None。
+
+        用于公告正文文字过短时,从图片中提取岗位信息。
+        image_urls 支持:本地文件路径、http URL、base64 data URL。
+
+        多策略重试:当默认策略(切片2500px+4M像素)失败时,自动尝试放宽像素/高度限制
+        并缩小切片高度(1500px→1000px),最大程度提高识别成功率。
+        超过 4 张图片时分批处理,结果拼接。
+        """
+        if not self.api_key:
+            logger.warning("DEEPSEEK_API_KEY 未配置,跳过 VL 调用")
+            return None
+        if not image_urls:
+            return None
+
+        # 记录每个策略的最后错误,供调用方排查
+        self.last_vl_error = ""
+        last_error = ""
+
+        for strategy_idx, strategy in enumerate(VL_STRATEGIES):
+            # 分批处理(每批最多 4 张),拼接所有批次的识别结果
+            all_texts = []
+            batch_size = 4
+            batch_failed = False
+            for batch_start in range(0, len(image_urls), batch_size):
+                batch = image_urls[batch_start:batch_start + batch_size]
+                batch_text, batch_err = self._chat_with_image_batch(
+                    text, batch, temperature, max_tokens, strategy)
+                if batch_text:
+                    all_texts.append(batch_text)
+                else:
+                    # 该批次失败,记录错误并尝试下一策略
+                    batch_failed = True
+                    last_error = batch_err or f"策略{strategy_idx + 1}批次返回空"
+                    break
+
+            if not batch_failed and all_texts:
+                if strategy_idx > 0:
+                    logger.info(f"VL 策略 {strategy_idx + 1} 成功(策略1失败)")
+                return "\n".join(all_texts)
+
+            # 当前策略整体失败,尝试下一策略
+            self.last_vl_error = last_error
+            logger.warning(
+                f"VL 策略 {strategy_idx + 1} 失败: {last_error[:120]}; "
+                f"尝试下一策略..." if strategy_idx < len(VL_STRATEGIES) - 1
+                else f"VL 所有策略均失败: {last_error[:120]}"
+            )
+
+        return None
+
+    @property
+    def last_vl_error_msg(self) -> str:
+        """获取最近一次 VL 调用的错误信息(供调用方记录 vl_error)。"""
+        return getattr(self, "last_vl_error", "")
+
+    def _chat_with_image_batch(self, text: str, image_urls: List[str],
+                               temperature: float, max_tokens: int,
+                               strategy: Dict = None) -> tuple:
+        """处理一批(最多4张)图片的VL识别。
+
+        Args:
+            strategy: 切片/压缩策略 dict,含 slice_height, slice_max_width,
+                      compress_max_width, max_pixels, max_height, quality。
+                      None 时使用 VL_STRATEGIES[0]。
+
+        Returns:
+            (text, error) — 成功时 text 非空且 error 为空;失败时 text=None,error 为错误描述。
+        """
+        if strategy is None:
+            strategy = VL_STRATEGIES[0]
+        try:
+            import base64
+            content_parts = [{"type": "text", "text": text}]
+            for img_ref in image_urls[:4]:  # 最多 4 张/批
+                raw_bytes = None
+
+                # 1. base64 data URL
+                if img_ref.startswith("data:"):
+                    try:
+                        b64_str = img_ref.split(",", 1)[-1]
+                        raw_bytes = base64.b64decode(b64_str)
+                    except Exception:
+                        continue
+
+                # 2. 本地文件路径
+                elif os.path.isfile(img_ref):
+                    try:
+                        with open(img_ref, "rb") as f:
+                            raw_bytes = f.read()
+                    except Exception as e:
+                        logger.warning(f"读取本地图片失败 {img_ref}: {e}")
+                        continue
+
+                # 3. http URL:下载
+                elif img_ref.startswith("http"):
+                    try:
+                        img_resp = requests.get(
+                            img_ref, timeout=15,
+                            headers={"User-Agent": "Mozilla/5.0",
+                                     "Referer": "https://mp.weixin.qq.com/"}
+                        )
+                        if img_resp.status_code == 200 and img_resp.content:
+                            raw_bytes = img_resp.content
+                    except Exception as e:
+                        logger.warning(f"图片下载失败: {e}")
+                        continue
+
+                if not raw_bytes:
+                    continue
+
+                # 超长图切片(微信长图上万像素高,API会拒绝),按策略切片
+                image_chunks = self.slice_long_image(
+                    raw_bytes,
+                    max_height=strategy["slice_height"],
+                    max_width=strategy["slice_max_width"],
+                )
+                for chunk_bytes in image_chunks:
+                    b64_data = self._compress_image_to_base64(
+                        chunk_bytes,
+                        max_width=strategy["compress_max_width"],
+                        max_pixels=strategy["max_pixels"],
+                        max_height=strategy["max_height"],
+                        quality=strategy["quality"],
+                    )
+                    if b64_data:
+                        content_parts.append({
+                            "type": "image_url",
+                            "image_url": {"url": f"data:image/jpeg;base64,{b64_data}"}
+                        })
+
+            if len(content_parts) == 1:  # 只有文字没有图片
+                return None, "无有效图片"
+            resp = requests.post(
+                DEEPSEEK_API_URL,
+                headers={
+                    "Authorization": f"Bearer {self.api_key}",
+                    "Content-Type": "application/json",
+                },
+                json={
+                    "model": DEEPSEEK_VL_MODEL,  # VL 视觉模型
+                    "messages": [{"role": "user", "content": content_parts}],
+                    "temperature": temperature,
+                    "max_tokens": max_tokens,
+                },
+                timeout=120,
+            )
+            resp.raise_for_status()
+            data = resp.json()
+            return data["choices"][0]["message"]["content"], ""
+        except Exception as e:
+            err_msg = str(e)
+            logger.error(f"DeepSeek VL 调用失败: {err_msg}")
+            return None, err_msg
+
+    @staticmethod
+    def _compress_image_to_base64(raw_bytes: bytes, max_width: int = 1280,
+                                   max_pixels: int = 4_000_000,
+                                   max_height: int = 4000,
+                                   quality: int = 80) -> Optional[str]:
+        """压缩图片并返回 base64 字符串。失败返回 None。
+
+        使用 PIL 将图片转为 JPEG,限制总像素数(max_pixels)和高度(max_height)。
+        若图片超高(如微信长图),会先按宽度等比缩小,再按高度切成多段。
+        返回的是单段压缩后的 base64;超长图由调用方切片后逐段调用。
+        """
+        import base64
+        try:
+            from PIL import Image
+            img = Image.open(io.BytesIO(raw_bytes))
+            # 旋转到正确方向(处理 EXIF orientation)
+            try:
+                from PIL import ImageOps
+                img = ImageOps.exif_transpose(img)
+            except Exception:
+                pass
+            img = img.convert("RGB")
+            w, h = img.size
+            # 若总像素超限,先按宽度等比缩小
+            total_pixels = w * h
+            if total_pixels > max_pixels:
+                scale = (max_pixels / total_pixels) ** 0.5
+                w = max(1, int(w * scale))
+                h = max(1, int(h * scale))
+                img = img.resize((w, h), Image.LANCZOS)
+            # 若宽度超限,再缩宽度
+            if w > max_width:
+                new_h = int(h * max_width / w)
+                img = img.resize((max_width, new_h), Image.LANCZOS)
+            buf = io.BytesIO()
+            img.save(buf, format="JPEG", quality=quality)
+            return base64.b64encode(buf.getvalue()).decode("utf-8")
+        except ImportError:
+            # PIL 不可用,直接返回原图 base64(可能体积较大)
+            return base64.b64encode(raw_bytes).decode("utf-8")
+        except Exception as e:
+            logger.warning(f"图片压缩失败: {e}")
+            try:
+                return base64.b64encode(raw_bytes).decode("utf-8")
+            except Exception:
+                return None
+
+    @staticmethod
+    def slice_long_image(raw_bytes: bytes, max_height: int = 2500,
+                         overlap: int = 100,
+                         max_width: int = 800) -> List[bytes]:
+        """将超长图片按高度切成多段,返回每段的 JPEG 字节列表。
+
+        微信长图动辄上万像素高,DeepSeek VL API 拒绝处理。
+        切片前先按 max_width 缩小宽度,加快处理并减小体积。
+        切片时保留 overlap 像素重叠,避免文字被切断。
+        若图片不超长,返回单元素列表(JPEG 压缩后的原图)。
+        """
+        try:
+            from PIL import Image
+            img = Image.open(io.BytesIO(raw_bytes))
+            try:
+                from PIL import ImageOps
+                img = ImageOps.exif_transpose(img)
+            except Exception:
+                pass
+            img = img.convert("RGB")
+            w, h = img.size
+            # 先缩小宽度,加快后续处理(BILINEAR 比 LANCZOS 快很多)
+            if w > max_width:
+                new_h = int(h * max_width / w)
+                img = img.resize((max_width, new_h), Image.BILINEAR)
+                w, h = img.size
+            if h <= max_height:
+                # 不超长,直接压缩返回
+                buf = io.BytesIO()
+                img.save(buf, format="JPEG", quality=80)
+                return [buf.getvalue()]
+            chunks = []
+            y = 0
+            while y < h:
+                bottom = min(y + max_height, h)
+                chunk = img.crop((0, y, w, bottom))
+                buf = io.BytesIO()
+                chunk.save(buf, format="JPEG", quality=80)
+                chunks.append(buf.getvalue())
+                if bottom >= h:
+                    break  # 最后一段,退出
+                y = bottom - overlap
+            return chunks
+        except Exception as e:
+            logger.warning(f"图片切片失败: {e},使用原图")
+            return [raw_bytes]
 
     @staticmethod
     def _extract_json(text: str) -> Optional[Dict]:

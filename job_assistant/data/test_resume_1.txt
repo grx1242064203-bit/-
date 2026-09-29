@@ -1,0 +1,35 @@
+2027届 | 求职意向: AI Agent / AI Infra / 后端开发
+
+=== 教育经历 ===
+杜克大学 | 研究型大学 | AAU成员 | 硕士 (2025.08 - 2027.05)
+软件工程硕士, GPA 4.00/4.00
+
+东南大学 | 国家双一流 | 原985/211工程 | 本科 (2021.09 - 2025.06)
+软件工程学士, GPA 3.76/4.00
+
+=== 实习经历 ===
+字节跳动 (TikTok) | 广告平台与接口团队 | SWE实习 (2026.05 - 2026.08)
+MCP配置管理平台 Owner | 0→1全栈交付
+背景: 广告API转换为MCP Tools涉及Schema、认证与参数映射,手工配置耗时且需处理文档与后端定义冲突,本人负责内部配置工具。
+指标与效果: 生产交付全栈代码与手册;自动生成400+ API配置,以10个手工配置API为对照,单Tool耗时从2小时以上→20分钟以内;生成成功率约80%,一次通过率约70%。
+职责: 独立主导需求、架构、技术选型与全栈落地,覆盖配置生成、版本管理和权限审批。文档解析→配置生成→校验修正→人工冲突判定,贯通API到Tool的Schema、参数、认证与元数据映射。权限感知审批状态机约束Review/Publish;类Git版本记录结合Three-way Diff、冲突解决与Rollback管理变更。
+技术关键词: MCP / React 17 / Recoil / Flask / SQLAlchemy / Schema / Three-way Diff。
+
+华为技术有限公司 | 无线产品线 | SWE实习 (2024.07 - 2025.01)
+AI测试用例生成 | 前端与关键词提取主要开发者
+背景: 将自然语言测试需求转换为可执行用例,衔接关键词提取、参数生成与组合、多轮修正。
+指标与效果: 系统上线服务100+ 测试工程师;离职前累计约1000条、日均约20条用例,采用率约90%、准确率约95%;对比测试人员反馈的历史耗时,单用例生成效率提升80%+。
+职责: 主要开发Vue 3/Element Plus前端与关键词提取模块,从Prompt、RAG、结构化输出处理测试需求,连接参数生成与迭代修正链路。
+技术关键词: Vue 3 / Element Plus / Prompt / RAG / Structured Output / Keyword Extraction。
+
+=== 技术项目 ===
+EASY CODE | 个人独立开发 | 跨平台CLI Coding Agent (2026.08 - 至今)
+Agent Runtime Owner | 0→1全链交付 | github.com/dd100001000/EASY_CODE
+背景: 长程修复中,历史膨胀推高模型开销,重复调查与测试误判造成无效迭代,频繁审批打断自动化执行。
+指标: 使用GLM-5.3-Flash/High在同一SWE-bench Verified Mini (HAL, 50题)任务集对比自测,Token用量相近,修复成功率≥80%,与Claude Code的绝对差距<5%;支持最高8 Worker隔离协作。
+职责: 独立打通压缩续跑、验证闭环、命令审批与评测隔离;以共享TaskBudget约束主/子Agent及辅助模型调用。上下文成本治理:完整请求测量→召回清退→工具输出引用化→语义压缩;超长字段最多纠正一次后本地降级。Runtime状态固定保留+Journal回放/回读支撑续跑。修复证据闭环:流式解析pytest/unittest/Jest/TAP,分离退出码与测试结论;Progress Guard识别重复调查/失败,只读Reviewer提出可证伪实验。审批与评测隔离:独立审批Agent→限定程序哈希/参数权限的授权复用→失败转人工。
+技术关键词: TypeScript / Node.js / Semantic Compaction / Journal / TaskBudget / Approval Agent / Docker。
+
+=== 奖项与技能 ===
+算法竞赛: Codeforces Rating 2200; ICPC西安站银牌(前30%, 2023.10);江苏省赛金牌(前10%, 2024.04)。
+工程方向: Agent Runtime、MCP配置治理、Context Engineering、成本控制、长程任务恢复与证据驱动验证。

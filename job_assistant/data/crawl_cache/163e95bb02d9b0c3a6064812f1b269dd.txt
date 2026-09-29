@@ -1,0 +1,7 @@
+-->
+<script type="text/javascript">
+/*project config start*/
+/*project config end*/
+</script>
+</body>
+</html>

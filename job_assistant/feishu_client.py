@@ -335,6 +335,30 @@ class FeishuClient:
             f"/open-apis/bitable/v1/apps/{app_token}/tables/{table_id}/records/{record_id}",
         )
 
+    def batch_delete_records(self, app_token: str, table_id: str,
+                             record_ids: List[str]) -> int:
+        """批量删除记录(每批 500 条),返回删除数。"""
+        if not record_ids:
+            return 0
+        app_token = self.resolve_app_token(app_token)
+        deleted = 0
+        for i in range(0, len(record_ids), 500):
+            batch = record_ids[i:i + 500]
+            self._request(
+                "POST",
+                f"/open-apis/bitable/v1/apps/{app_token}/tables/{table_id}/records/batch_delete",
+                json_body={"records": batch},
+            )
+            deleted += len(batch)
+            time.sleep(0.3)
+        return deleted
+
+    def clear_table_records(self, app_token: str, table_id: str) -> int:
+        """清空表中所有记录,返回删除数。"""
+        records = self.search_records(app_token, table_id, "")
+        record_ids = [r.get("record_id", "") for r in records if r.get("record_id")]
+        return self.batch_delete_records(app_token, table_id, record_ids)
+
     def get_record(self, app_token: str, table_id: str, record_id: str) -> Dict:
         """获取单条记录完整字段(用于归档前拉取完整数据)"""
         app_token = self.resolve_app_token(app_token)
@@ -435,6 +459,51 @@ class FeishuClient:
             logger.warning(f"所有权转移失败,降级为分享: {e}")
             self.share_with_user(token, doc_type, open_id, "full_access")
 
+    def set_public_share(self, token: str, doc_type: str = "bitable") -> bool:
+        """
+        设置文档/表格为「互联网获得链接可查看」。
+        用户无需登录飞书,浏览器打开链接即可查看。
+
+        飞书 API: PATCH /open-apis/drive/v2/permissions/{token}/public?type={type}
+
+        第一性原理:
+        - XHS 店铺用户大概率没有飞书账号,不能要求登录
+        - 岗位数据非敏感,可公开查看
+        - 这是降低用户门槛的关键一步(零安装零登录)
+
+        对抗性审查:
+        - 若应用权限不足(部分企业版飞书禁止互联网分享),会报错
+        - 降级方案:分享给特定用户(需用户提供飞书 open_id),但门槛又升回去了
+        - 因此此方法必须成功,否则整个 XHS 直链方案不成立
+        """
+        token = self.resolve_app_token(token)
+        try:
+            self._request(
+                "PATCH",
+                f"/open-apis/drive/v2/permissions/{token}/public?type={doc_type}",
+                json_body={
+                    "external_access_entity": "open",
+                    "security_entity": "anyone_can_view",
+                    "comment_entity": "anyone_can_view",
+                    "share_entity": "anyone",
+                    "link_share_entity": "anyone_readable",
+                },
+            )
+            logger.info(f"已设置互联网链接可查看: {token[:12]}...")
+            return True
+        except RuntimeError as e:
+            logger.error(f"设置互联网分享失败 {token[:12]}...: {e}")
+            raise
+
+    def get_share_url(self, token: str, doc_type: str = "bitable") -> str:
+        """生成文档/表格的访问链接(互联网可查看后,此链接任何人可打开)。"""
+        domain = os.environ.get("FEISHU_DOMAIN", "www.feishu.cn")
+        if doc_type == "bitable":
+            return f"https://{domain}/base/{token}"
+        elif doc_type == "docx":
+            return f"https://{domain}/docx/{token}"
+        return f"https://{domain}/{doc_type}/{token}"
+
     # ---------- 消息推送 ----------
     def send_message(self, open_id: str, text: str) -> bool:
         """向用户发送飞书文本消息(用于 onboarding 后通知配置页链接)"""
@@ -500,6 +569,30 @@ class FeishuClient:
         except RuntimeError as e:
             logger.warning(f"创建视图失败 {view_name}: {e}")
             return ""
+
+    def list_views(self, app_token: str, table_id: str) -> List[Dict]:
+        """列出数据表的所有视图。"""
+        app_token = self.resolve_app_token(app_token)
+        data = self._request(
+            "GET",
+            f"/open-apis/bitable/v1/apps/{app_token}/tables/{table_id}/views",
+        )
+        return data.get("items", [])
+
+    def update_view(self, app_token: str, table_id: str, view_id: str,
+                    property_: Dict) -> bool:
+        """更新视图属性(列宽/排序/筛选等)。成功返回 True。"""
+        app_token = self.resolve_app_token(app_token)
+        try:
+            self._request(
+                "PATCH",
+                f"/open-apis/bitable/v1/apps/{app_token}/tables/{table_id}/views/{view_id}",
+                json_body={"property": property_},
+            )
+            return True
+        except RuntimeError as e:
+            logger.warning(f"更新视图失败 {view_id}: {e}")
+            return False
 
     # ---------- 记录更新(用于投递跟踪等) ----------
     def update_record(self, app_token: str, table_id: str, record_id: str,

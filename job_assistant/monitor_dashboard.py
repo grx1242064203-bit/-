@@ -2,7 +2,8 @@
 import json, time, sqlite3, os
 from flask import Flask, jsonify, render_template_string
 
-DB = os.path.join(os.path.dirname(__file__), "data", "job_assistant.db")
+from config import settings
+DB = os.path.join(settings.DATA_DIR, "jobs.db")
 app = Flask(__name__)
 
 HTML = """<!doctype html>

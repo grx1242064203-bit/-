@@ -321,27 +321,32 @@
     "Micro Services"
   ],
   "backend_development": [
-    "Server Engineer",
-    "Server-side",
-    "后端开发",
-    "Backend Engineer",
-    "后端工程师",
-    "Backend",
     "后端研发",
+    "后端/算法",
+    "Server Engineer",
+    "后端开发/算法",
+    "Backend Engineer",
+    "Backend",
+    "Server-side",
+    "服务端研发",
+    "后端开发",
     "Back-end",
-    "后端",
-    "服务端开发"
+    "服务端开发",
+    "后端类",
+    "后端工程师",
+    "后端"
   ],
   "frontend_development": [
-    "前端",
-    "前端研发",
     "Web前端",
-    "前端工程师",
-    "前端开发",
     "Front-end",
-    "Web开发",
+    "前端开发",
     "Frontend Engineer",
-    "Frontend"
+    "Frontend",
+    "前端研发",
+    "H5开发",
+    "Web开发",
+    "前端",
+    "前端工程师"
   ],
   "fullstack": [
     "全栈开发",
@@ -612,9 +617,7 @@
     "智能体",
     "大模型智能体",
     "Agent算法",
-    "AI Agent研发",
     "Coding Agent",
-    "Agent研发",
     "AI智能体",
     "Agentic"
   ],
@@ -624,23 +627,29 @@
     "模型上下文协议"
   ],
   "algorithm_engineer": [
-    "ML Engineer",
-    "Algorithm",
-    "Algorithmic",
-    "算法工程师",
     "Algorithm Engineer",
-    "算法开发",
     "AI算法",
-    "算法"
+    "算法研发",
+    "算法工程师",
+    "算法开发",
+    "算法",
+    "机器学习算法",
+    "算法研究",
+    "ML Engineer",
+    "Algorithmic",
+    "Algorithm"
   ],
   "ai_engineer": [
-    "AI研发",
+    "AI开发",
+    "AI平台",
+    "AI工程",
+    "AI Platform",
     "AI工程师",
     "AI基础设施",
-    "AI Infra",
-    "AI Platform",
-    "AI算法工程师",
-    "智能体研发"
+    "Agent研发",
+    "AI研发",
+    "智能体研发",
+    "AI Infra"
   ],
   "model_training": [
     "模型训练",
@@ -845,5 +854,14 @@
     "C language",
     "嵌入式C",
     "C/C++"
+  ],
+  "rd": [
+    "研发",
+    "RD",
+    "R&D",
+    "Research and Development",
+    "研发类",
+    "技术研发",
+    "工程研发"
   ]
 }

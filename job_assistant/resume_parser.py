@@ -32,38 +32,54 @@ _RESUME_PARSE_PROMPT = """你是校招简历解析专家。请从以下简历中
     "kw": "原始关键词(从简历中原样摘录,不要改写)",
     "category": "skill|hard_skill|soft_skill|tool|framework|domain|cert|education|city|role|project|language",
     "weight": 1.0 到 5.0 之间的浮点数,
-    "resume_section": "education|experience|project|skill|summary|other"
+    "resume_section": "education|experience|project|skill|summary|other",
+    "inferred": false
   }}
 ]
 
 提取规则(严格遵守,每条都是硬约束):
-1. 只提取简历中明确出现的关键词,严禁编造、推断或补充
+1. ★★ 推断补全规则(本 prompt 最核心) — 当简历中出现某框架/工具/技术产品时,必须**额外输出**其底层语言或关联技术,标记 "inferred": true:
+   - Flask/Django/FastAPI/PyTorch/TensorFlow/NumPy/Pandas → 补 "Python" (hard_skill, inferred=true)
+   - Spring/Spring Boot/Dubbo/Maven → 补 "Java" (hard_skill, inferred=true)
+   - React/Vue/Angular/Next.js/TypeScript → 补 "JavaScript" (hard_skill, inferred=true)
+   - NestJS/Express/Koa → 补 "Node.js" (hard_skill, inferred=true)
+   - PyTorch/CUDA/GPU → 补 "机器学习" 或 "深度学习" (hard_skill, inferred=true)
+   - TensorFlow Lite / TFLite / 量化 / INT8 → 补 "边缘AI" 或 "模型压缩" (skill, inferred=true)
+   - Verilog/VHDL/Quartus → 补 "FPGA开发" (skill, inferred=true)
+   - CMake/Makefile/GCC → 补 "C/C++" (hard_skill, inferred=true)
+   - Keras/ONNX/HuggingFace → 补 "深度学习" (hard_skill, inferred=true)
+   - SLAM/ROS/导航/路径规划 → 补 "机器人" 或 "自动驾驶" (domain 或 skill, inferred=true)
+   ★ 推断补全的 weight = 该框架/工具 weight × 0.7 (因为是推断的,权重略低于显式声明)
+   ★ 推断补全不要重复:如果 Python 已经显式出现过,不要再补一次
+
 2. category 分类标准:
    - hard_skill: 编程语言/框架/技术栈/算法/专业技术,如 Python/Java/Spring/Docker/Kubernetes/React/Vue/机器学习/深度学习/嵌入式/信号处理/FPGA
      ★ 只放**可复用的标准技术术语**,不要放项目专属名词(如"EASY CODE""Semantic Compaction""TaskBudget"这类私有概念)
    - soft_skill: 沟通/团队/领导力/项目管理/敏捷方法
    - tool: 工具软件,如 Git/Jenkins/Postman/Figma
    - framework: 框架,如 Spring/Django/FastAPI/TensorFlow/PyTorch
-   - domain: 行业领域(仅限),如 金融/电商/教育/医疗/智能制造/通信/物联网
+   - domain: 行业领域(仅限),如 金融/电商/教育/医疗/智能制造/通信/物联网/5G/汽车
      ★ 严禁把**公司名/团队名/学校名**放入 domain!公司名、团队名属于 education/other
    - cert: 证书,如 CFA/CPA/法考/PMP/阿里云认证/英语四六级/GRE
    - education: 学校/专业/学历,如 清华大学/计算机科学与技术/硕士
    - city: 城市,如 北京/上海/深圳/杭州
-   - role: 目标岗位/职业方向(标准化!),如 后端开发/数据分析师/产品经理/算法工程师/嵌入式AI开发/AI基础设施研发/软件测试
+   - role: 目标岗位/职业方向(标准化!),如 后端开发/数据分析师/产品经理/算法工程师/嵌入式AI开发/AI基础设施研发/软件测试/硬件工程师
      ★ 用通用岗位名称,不要用简历原文的长句
    - project: 项目名称,如 XX推荐系统/XX风控系统
-   - skill: 通用能力关键词(不属于以上类别的技能),如 分布式缓存/微服务/敏捷开发/系统设计
+   - skill: 通用能力关键词(不属于以上类别的技能),如 分布式缓存/微服务/敏捷开发/系统设计/性能优化
    - language: 语言能力,如 英语/日语/普通话
+
 3. weight 赋值(1.0 到 5.0):
    - 项目经历中作为核心技能且出现多次:4.0-5.0
    - 简历技能列表中明确列出:3.0-4.0
    - 教育背景/实习经历中提到:2.0-3.0
    - 简历中只提一次且不突出:1.0-2.0
+
 4. resume_section 标记关键词在简历中的出处段落
-5. 数量控制:提取 25-50 个关键词,宁精勿滥
+5. 数量控制:显式 25-40 + 推断补全 5-15 = 总计 30-50 个
 6. 证书类关键词要写全称(CFA/CPA/法考/PMP),不要只写缩写
 7. 城市只写明确提到的,不要猜测
-8. role 关键词非常重要:从简历求职意向+项目方向推断 2-4 个最匹配的岗位名称
+8. role 关键词非常重要:从简历求职意向+项目方向推断 2-4 个最匹配的岗位名称(如"后端开发""算法工程师""嵌入式AI开发")
 """
 
 

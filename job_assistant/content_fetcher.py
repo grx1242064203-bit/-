@@ -55,6 +55,19 @@ def get_cached_content(url: str) -> Optional[str]:
     return None
 
 
+def get_cached_images(url: str) -> List[str]:
+    """读取缓存的本地图片路径列表(按文件名排序),不存在返回空列表。"""
+    img_dir = os.path.join(CACHE_DIR, "images", _url_hash(url))
+    if not os.path.isdir(img_dir):
+        return []
+    try:
+        files = sorted(os.listdir(img_dir))
+        return [os.path.join(img_dir, f) for f in files
+                if f.lower().endswith((".jpg", ".jpeg", ".png", ".webp", ".gif"))]
+    except Exception:
+        return []
+
+
 def _save_cache(url: str, content: str):
     """缓存正文内容到文件。"""
     os.makedirs(CACHE_DIR, exist_ok=True)
@@ -456,12 +469,13 @@ def fetch_content_full(url: str, use_cache: bool = True) -> Dict:
         return {"text": "", "images": []}
     url = url.strip()
 
-    # 1. 缓存
+    # 1. 缓存(同时返回本地缓存的图片路径)
     if use_cache:
         cached = get_cached_content(url)
         if cached is not None:
             logger.debug(f"缓存命中: {url[:60]}")
-            return {"text": cached, "images": []}
+            cached_images = get_cached_images(url)
+            return {"text": cached, "images": cached_images}
 
     # 2. 抓取(带重试)
     content = ""

@@ -335,6 +335,30 @@ class FeishuClient:
             f"/open-apis/bitable/v1/apps/{app_token}/tables/{table_id}/records/{record_id}",
         )
 
+    def batch_delete_records(self, app_token: str, table_id: str,
+                             record_ids: List[str]) -> int:
+        """批量删除记录(每批 500 条),返回删除数。"""
+        if not record_ids:
+            return 0
+        app_token = self.resolve_app_token(app_token)
+        deleted = 0
+        for i in range(0, len(record_ids), 500):
+            batch = record_ids[i:i + 500]
+            self._request(
+                "POST",
+                f"/open-apis/bitable/v1/apps/{app_token}/tables/{table_id}/records/batch_delete",
+                json_body={"records": batch},
+            )
+            deleted += len(batch)
+            time.sleep(0.3)
+        return deleted
+
+    def clear_table_records(self, app_token: str, table_id: str) -> int:
+        """清空表中所有记录,返回删除数。"""
+        records = self.search_records(app_token, table_id, "")
+        record_ids = [r.get("record_id", "") for r in records if r.get("record_id")]
+        return self.batch_delete_records(app_token, table_id, record_ids)
+
     def get_record(self, app_token: str, table_id: str, record_id: str) -> Dict:
         """获取单条记录完整字段(用于归档前拉取完整数据)"""
         app_token = self.resolve_app_token(app_token)

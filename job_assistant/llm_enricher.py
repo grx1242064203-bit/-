@@ -67,21 +67,26 @@ POSITION_EXTRACT_PROMPT = """你是校招信息解析专家。请从以下招聘
   }}
 ]
 
-提取规则(严格遵守,违反会导致数据质量问题):
-1. 识别所有可独立投递的具体岗位;若只有大类无具体岗位名,拆为"通用校招岗"
+提取规则(严格遵守):
+1. 识别所有可独立投递的具体岗位;每个岗位必须是数组中的一个独立对象,严禁把多个岗位名拼成一个字符串。若只有大类无具体岗位名,拆为"通用校招岗"。
 2. is_management_trainee: 管培生/管理培训生/MT/培训生 标记为 true
 3. difficulty: 头部互联网/金融/知名外企=最激烈;中型公司=较为激烈;普通=中等;冷门=较低
 4. keywords 必须包含岗位核心技能/方向词,用于后续匹配
 5. min_education 取最低可投递学历(如"本科及以上"填"本科")
-6. 【最重要】严禁编造!如果正文/标题中没有明确提到某字段的信息,该字段必须留空:
-   - responsibilities: 没有明确职责描述就留空,禁止写"负责XX相关工作"这类通用废话
-   - requirements: 没有明确任职要求就留空
-   - major_required: 没有明确专业要求就留空,禁止自动填"不限"(除非正文明确写了"专业不限")
-   - min_education: 没有明确学历要求就留空
-   - city: 没有明确工作地点就留空
-   - hard_skills/soft_skills: 没有明确技能要求就填空数组
-   - jd_summary: 只有在有具体信息时才写,否则留空
-7. 只有正文/标题里明确出现的信息才能填入对应字段,推断的信息不算
+
+6. 【字段填充策略】分三个层次处理,最大化字段填充率:
+   a) 明确信息:正文/标题中明确提到的,直接提取
+   b) 合理推断(允许):根据岗位类型和上下文可合理推断的,填入并标注
+      - 校招岗位学历通常为"本科"(除非明确要求硕士/博士,或明确写"专业不限"),可填"本科"
+      - 技术研发类岗位专业大类通常为"工科",金融类为"商科",设计类为"艺术"
+      - 岗位所在城市可从公司总部或招聘地点推断
+      - 岗位职责可根据岗位名称做简要概括(如"负责Java后端开发工作")
+   c) 无法推断:确实无法确定的,留空(字符串字段)或空数组(数组字段)
+
+7. major_required: 有明确专业要求就填具体专业;没有明确要求但岗位有倾向性(如研发岗),填"计算机相关"等合理范围;完全无要求填"不限"。
+8. responsibilities: 有明确职责就摘录;无明确职责但可从岗位名推断的,写一句简要职责(如"负责产品设计与迭代");完全无法推断才留空。
+9. jd_summary: 基于岗位名+已提取的职责/要求,生成60字内摘要,不要留空。
+10. hard_skills: 从职责/要求中提取技能关键词;无明确技能但可从岗位推断的(如Java岗→["Java"]);完全无法推断才空数组。
 """
 
 
@@ -144,14 +149,14 @@ class PositionEnricher:
         prompt = POSITION_EXTRACT_PROMPT.format(
             company=company or "未知",
             title=title or "",
-            content=content[:4000],  # 截断控制成本
+            content=content[:8000],  # 截断控制成本(校招公告通常 2000-6000 字)
         )
 
         for attempt in range(MAX_RETRIES):
             try:
                 result_text = self.llm._chat(
                     [{"role": "user", "content": prompt}],
-                    temperature=0.1, max_tokens=4000,
+                    temperature=0.1, max_tokens=16000,
                 )
                 if not result_text:
                     raise ValueError("LLM 返回空")
@@ -197,13 +202,27 @@ class PositionEnricher:
             if isinstance(obj, list):
                 return [d for d in obj if isinstance(d, dict)]
             if isinstance(obj, dict):
-                # 信封格式: {"type":"json_object","content":"[...]"}
-                if "content" in obj and isinstance(obj["content"], str):
-                    inner = json.loads(obj["content"])
-                    if isinstance(inner, list):
-                        return [d for d in inner if isinstance(d, dict)]
-                    if isinstance(inner, dict):
-                        return [inner]
+                # 信封格式: {"type":"json_object","content":[...]} (content 直接是数组)
+                if "content" in obj:
+                    c = obj["content"]
+                    if isinstance(c, list):
+                        return [d for d in c if isinstance(d, dict)]
+                    if isinstance(c, dict):
+                        # content 内部可能还有 positions/jobs/data 包裹
+                        for wrap_key in ("positions", "jobs", "data", "items", "result"):
+                            if wrap_key in c:
+                                val = c[wrap_key]
+                                if isinstance(val, list):
+                                    return [d for d in val if isinstance(d, dict)]
+                                if isinstance(val, dict):
+                                    return [val]
+                        return [c]
+                    if isinstance(c, str):
+                        inner = json.loads(c)
+                        if isinstance(inner, list):
+                            return [d for d in inner if isinstance(d, dict)]
+                        if isinstance(inner, dict):
+                            return [inner]
                 # 信封格式: {"type":"json_object","value":[...]}
                 if "value" in obj:
                     val = obj["value"]
@@ -211,6 +230,14 @@ class PositionEnricher:
                         return [d for d in val if isinstance(d, dict)]
                     if isinstance(val, dict):
                         return [val]
+                # LLM 包裹格式: {"positions": [...]} 或 {"jobs": [...]} 或 {"data": [...]}
+                for wrap_key in ("positions", "jobs", "data", "items", "result"):
+                    if wrap_key in obj:
+                        val = obj[wrap_key]
+                        if isinstance(val, list):
+                            return [d for d in val if isinstance(d, dict)]
+                        if isinstance(val, dict):
+                            return [val]
                 # 普通单对象
                 return [obj]
         except json.JSONDecodeError:
@@ -236,14 +263,22 @@ class PositionEnricher:
             try:
                 obj = json.loads(text[start:end + 1])
                 if isinstance(obj, dict):
-                    # 再次检查信封
-                    if "content" in obj and isinstance(obj["content"], str):
-                        try:
-                            inner = json.loads(obj["content"])
-                            if isinstance(inner, list):
-                                return [d for d in inner if isinstance(d, dict)]
-                        except json.JSONDecodeError:
-                            pass
+                    # 再次检查信封(content 可能是 list/dict/str)
+                    if "content" in obj:
+                        c = obj["content"]
+                        if isinstance(c, list):
+                            return [d for d in c if isinstance(d, dict)]
+                        if isinstance(c, dict):
+                            return [c]
+                        if isinstance(c, str):
+                            try:
+                                inner = json.loads(c)
+                                if isinstance(inner, list):
+                                    return [d for d in inner if isinstance(d, dict)]
+                                if isinstance(inner, dict):
+                                    return [inner]
+                            except json.JSONDecodeError:
+                                pass
                     if "value" in obj:
                         val = obj["value"]
                         if isinstance(val, list):
@@ -299,24 +334,48 @@ class PositionEnricher:
                 job_db.update_announcement_images(ann_id, _json.dumps(img_urls, ensure_ascii=False))
                 images_json = _json.dumps(img_urls, ensure_ascii=False)
 
-        # 2. VL OCR:正文过短(<50字)但有图片时,用 deepseek-v4-pro 识别图片中的岗位信息
-        if (not content or len(content) < 50) and images_json:
+        # 1.5 获取本地所有缓存图片(可能比 DB 中存储的更全)
+        from content_fetcher import get_cached_images
+        local_images = get_cached_images(ann_url)
+        # 合并 DB 中的图片和本地图片(去重)
+        import json as _json
+        db_images = []
+        if images_json:
             try:
-                import json as _json
-                img_urls = _json.loads(images_json) if isinstance(images_json, str) else images_json
-                if img_urls:
-                    logger.info(f"公告 {ann_id} [{company_name}] 正文过短,用 VL 识别图片({len(img_urls)}张)")
-                    vl_prompt = (
-                        f"这是{company_name}的招聘公告图片。请提取图片中的所有岗位信息,"
-                        f"包括岗位名称、专业要求、学历要求、工作地点、职责等。"
-                        f"如果图片是长图,请完整识别所有文字内容。"
-                    )
-                    vl_text = self.llm.chat_with_images(vl_prompt, img_urls, max_tokens=3000)
-                    if vl_text and len(vl_text) > 50:
-                        content = vl_text
-                        # 把 VL 识别结果也存到 DB
-                        job_db.update_crawl_status(ann_id, "success", content=content)
-                        logger.info(f"公告 {ann_id} VL 识别成功: {len(vl_text)} 字")
+                db_images = _json.loads(images_json) if isinstance(images_json, str) else images_json
+            except Exception:
+                db_images = []
+        all_images = list(dict.fromkeys(db_images + local_images))  # 去重保序
+
+        # 2. VL OCR:判断是否需要(重新)识别图片
+        # 触发条件:正文过短(<100字) 或 正文是低质量VL结果(含"没有包含具体岗位"等) 或 正文明显只有公司介绍
+        # 或 正文主要是微信UI元素(视频/小程序/赞/在看/分享等)
+        _low_quality_vl = any(kw in content for kw in [
+            "没有包含具体的岗位", "均没有包含", "仅属于招聘宣传",
+            "公司介绍", "点击公众号下方菜单栏",
+        ])
+        # 检测微信文章底部UI噪声(大量"赞/在看/分享/留言/收藏/视频/小程序"等无意义文字)
+        _ui_noise_count = sum(content.count(kw) for kw in
+                              ["轻点两下", "取消赞", "在看", "分享", "留言", "收藏", "小程序", "听过", "视频号"])
+        _is_ui_noise = _ui_noise_count >= 3 and len(content) < 2000
+        need_vl = (len(content) < 100) or _low_quality_vl or _is_ui_noise
+
+        if need_vl and all_images:
+            try:
+                logger.info(f"公告 {ann_id} [{company_name}] 重新VL识别({len(all_images)}张图, "
+                            f"正文{len(content)}字, low_quality={_low_quality_vl})")
+                vl_prompt = (
+                    f"这是{company_name}的招聘公告图片。请逐张识别图片中的所有文字内容,"
+                    f"特别关注:岗位名称、专业要求、学历要求、工作地点、岗位职责、任职要求等。"
+                    f"如果图片是长图,请完整识别所有文字。按图片顺序输出全部文字。"
+                )
+                vl_text = self.llm.chat_with_images(vl_prompt, all_images, max_tokens=4000)
+                if vl_text and len(vl_text) > 50:
+                    content = vl_text
+                    # 把 VL 识别结果和完整图片列表存到 DB
+                    job_db.update_crawl_status(ann_id, "success", content=content)
+                    job_db.update_announcement_images(ann_id, _json.dumps(all_images, ensure_ascii=False))
+                    logger.info(f"公告 {ann_id} VL 识别成功: {len(vl_text)} 字")
             except Exception as e:
                 logger.warning(f"公告 {ann_id} VL 识别失败: {e}")
 

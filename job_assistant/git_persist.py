@@ -12,6 +12,17 @@ logger = logging.getLogger(__name__)
 REPO_DIR = os.path.dirname(os.path.abspath(__file__))
 
 
+def _ensure_git_config():
+    """确保 git user 已配置(沙箱重置后会丢失)。"""
+    for key, val in [("user.email", "agent@trae.ai"), ("user.name", "Trae Agent")]:
+        r = subprocess.run(
+            ["git", "config", key, val],
+            cwd=REPO_DIR, capture_output=True, text=True, timeout=10,
+        )
+    subprocess.run(["git", "config", "pull.rebase", "false"],
+                   cwd=REPO_DIR, capture_output=True, timeout=10)
+
+
 def git_commit_and_push(message: str = None) -> bool:
     """
     自动 add + commit + push。
@@ -19,6 +30,7 @@ def git_commit_and_push(message: str = None) -> bool:
     返回是否成功。
     """
     try:
+        _ensure_git_config()
         if message is None:
             now = datetime.now().strftime("%Y-%m-%d %H:%M")
             message = f"auto: data snapshot @ {now}"

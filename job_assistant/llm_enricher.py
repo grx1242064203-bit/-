@@ -68,6 +68,7 @@ POSITION_EXTRACT_PROMPT = """你是校招信息解析专家。请从以下招聘
 ]
 
 提取规则(严格遵守):
+0. 【核心铁律】只提取公告内容/标题中明确出现的岗位。严禁编造、推断、补充任何未在正文中出现的岗位名称。若正文/标题中没有具体岗位名,输出空数组 []。
 1. 识别所有可独立投递的具体岗位;每个岗位必须是数组中的一个独立对象,严禁把多个岗位名拼成一个字符串。若只有大类无具体岗位名,拆为"通用校招岗"。
 2. is_management_trainee: 管培生/管理培训生/MT/培训生 标记为 true
 3. difficulty: 头部互联网/金融/知名外企=最激烈;中型公司=较为激烈;普通=中等;冷门=较低
@@ -90,9 +91,32 @@ POSITION_EXTRACT_PROMPT = """你是校招信息解析专家。请从以下招聘
 """
 
 
-def _content_hash(content: str) -> str:
-    """计算内容 hash,作为 LLM 缓存键。"""
-    return hashlib.md5(content.encode("utf-8")).hexdigest()
+def _content_hash(content: str, company: str = "", title: str = "") -> str:
+    """计算内容 hash,作为 LLM 缓存键。
+
+    关键设计: hash 必须包含 company 和 title,而非仅 content。
+    原因:微信反爬会导致大量公告的 content 完全相同(都是"环境异常"垃圾页),
+    若仅按 content 缓存,不同公司会共用同一份 LLM 结果,造成跨公司岗位污染。
+    """
+    key = f"{company}||{title}||{content}"
+    return hashlib.md5(key.encode("utf-8")).hexdigest()
+
+
+# 垃圾内容特征(微信反爬/UI噪声),命中则视为无正文
+_GARBAGE_CONTENT_MARKERS = [
+    "环境异常", "当前环境异常", "完成验证后即可继续访问", "去验证",
+    "点击公众号下方菜单栏", "轻点两下取消赞", "轻点两下取消在看",
+]
+
+
+def _is_garbage_content(content: str) -> bool:
+    """判断 content 是否为反爬垃圾/UI噪声,不能作为拆岗依据。"""
+    if not content or len(content.strip()) < 10:
+        return True
+    for marker in _GARBAGE_CONTENT_MARKERS:
+        if marker in content:
+            return True
+    return False
 
 
 def _llm_cache_path(content_hash: str) -> str:
@@ -131,19 +155,26 @@ class PositionEnricher:
                           title: str = "") -> List[Dict]:
         """
         从公告正文用 LLM 提取岗位列表。
-        带缓存:相同内容 hash 不重复调用。
+        带缓存:相同 (company+title+content) hash 不重复调用。
         失败返回空列表(由调用方降级处理)。
+
+        关键防幻觉设计:
+        1. 缓存键包含 company+title+content,防止不同公司共用垃圾内容的缓存
+        2. 提取后校验岗位名是否出现在源文本中,过滤纯幻觉岗位
         """
         if not content or len(content.strip()) < 30:
             return []
 
-        c_hash = _content_hash(content)
+        # 源文本(用于岗位名回查校验,防止 LLM 编造不存在的岗位)
+        source_text = f"{title}\n{content}"
+
+        c_hash = _content_hash(content, company=company, title=title)
 
         # 1. 查缓存
         cached = _get_cached_llm_result(c_hash)
         if cached is not None:
             logger.debug(f"LLM 缓存命中: {company} ({len(cached)} 岗位)")
-            return cached
+            return self._validate_positions(cached, source_text)
 
         # 2. 调用 LLM(带重试)
         prompt = POSITION_EXTRACT_PROMPT.format(
@@ -163,10 +194,15 @@ class PositionEnricher:
 
                 positions = self._parse_positions(result_text)
                 if positions:
-                    _save_llm_result(c_hash, positions)
-                    return positions
-                # 解析为空,可能是 LLM 输出异常,重试
-                logger.warning(f"LLM 输出解析为空(尝试 {attempt + 1}): {result_text[:200]}")
+                    # 校验岗位名是否出现在源文本中,过滤幻觉
+                    positions = self._validate_positions(positions, source_text)
+                    if positions:
+                        _save_llm_result(c_hash, positions)
+                        return positions
+                    logger.warning(f"LLM 提取岗位全部未通过源文本校验(尝试 {attempt + 1})")
+                else:
+                    # 解析为空,可能是 LLM 输出异常,重试
+                    logger.warning(f"LLM 输出解析为空(尝试 {attempt + 1}): {result_text[:200]}")
             except Exception as e:
                 logger.warning(f"LLM 拆岗失败(尝试 {attempt + 1}/{MAX_RETRIES}) [{company}]: {e}")
                 if attempt < MAX_RETRIES - 1:
@@ -176,6 +212,44 @@ class PositionEnricher:
                     return []
 
         return []
+
+    @staticmethod
+    def _validate_positions(positions: List[Dict], source_text: str) -> List[Dict]:
+        """校验岗位名是否出现在源文本中,过滤 LLM 编造的幻觉岗位。
+
+        策略:
+        - 岗位名必须在 source_text(title+content) 中出现(子串匹配)
+        - 允许"通用校招岗"通过(这是降级兜底,非幻觉)
+        - 岗位名中常见分隔符(、/,)拆分后,只要任一片段命中即通过
+          (因为 LLM 可能输出"Java开发工程师"而原文是"Java 开发工程师")
+        """
+        if not positions:
+            return []
+        # 预处理源文本:去空白,方便匹配
+        text_norm = source_text.replace(" ", "").replace("\u3000", "").replace("\n", "")
+        valid = []
+        for pos in positions:
+            title = (pos.get("position_title") or "").strip()
+            if not title:
+                continue
+            # 兜底岗位直接通过
+            if title in ("通用校招岗", "校招岗位"):
+                valid.append(pos)
+                continue
+            # 去掉常见后缀再匹配
+            title_norm = title.replace(" ", "").replace("\u3000", "")
+            # 整体匹配
+            if title_norm in text_norm:
+                valid.append(pos)
+                continue
+            # 拆分匹配(、/, 等分隔符)
+            parts = [p for p in title_norm.replace("、", "/").replace(",", "/").split("/") if p]
+            if any(p and len(p) >= 2 and p in text_norm for p in parts):
+                valid.append(pos)
+                continue
+            # 未命中源文本 → 幻觉,丢弃
+            logger.debug(f"过滤幻觉岗位: {title} (未在源文本中找到)")
+        return valid
 
     @staticmethod
     def _parse_positions(text: str) -> List[Dict]:
@@ -347,9 +421,13 @@ class PositionEnricher:
                 db_images = []
         all_images = list(dict.fromkeys(db_images + local_images))  # 去重保序
 
+        # 1.6 垃圾内容检测:微信反爬返回"环境异常"等,不能作为拆岗依据
+        content_is_garbage = _is_garbage_content(content)
+
         # 2. VL OCR:判断是否需要(重新)识别图片
         # 触发条件:正文过短(<100字) 或 正文是低质量VL结果(含"没有包含具体岗位"等) 或 正文明显只有公司介绍
         # 或 正文主要是微信UI元素(视频/小程序/赞/在看/分享等)
+        # 或 内容是反爬垃圾
         _low_quality_vl = any(kw in content for kw in [
             "没有包含具体的岗位", "均没有包含", "仅属于招聘宣传",
             "公司介绍", "点击公众号下方菜单栏",
@@ -358,12 +436,12 @@ class PositionEnricher:
         _ui_noise_count = sum(content.count(kw) for kw in
                               ["轻点两下", "取消赞", "在看", "分享", "留言", "收藏", "小程序", "听过", "视频号"])
         _is_ui_noise = _ui_noise_count >= 3 and len(content) < 2000
-        need_vl = (len(content) < 100) or _low_quality_vl or _is_ui_noise
+        need_vl = (len(content) < 100) or _low_quality_vl or _is_ui_noise or content_is_garbage
 
         if need_vl and all_images:
             try:
                 logger.info(f"公告 {ann_id} [{company_name}] 重新VL识别({len(all_images)}张图, "
-                            f"正文{len(content)}字, low_quality={_low_quality_vl})")
+                            f"正文{len(content)}字, garbage={content_is_garbage})")
                 vl_prompt = (
                     f"这是{company_name}的招聘公告图片。请逐张识别图片中的所有文字内容,"
                     f"特别关注:岗位名称、专业要求、学历要求、工作地点、岗位职责、任职要求等。"
@@ -372,6 +450,7 @@ class PositionEnricher:
                 vl_text = self.llm.chat_with_images(vl_prompt, all_images, max_tokens=4000)
                 if vl_text and len(vl_text) > 50:
                     content = vl_text
+                    content_is_garbage = _is_garbage_content(content)
                     # 把 VL 识别结果和完整图片列表存到 DB
                     job_db.update_crawl_status(ann_id, "success", content=content)
                     job_db.update_announcement_images(ann_id, _json.dumps(all_images, ensure_ascii=False))
@@ -381,14 +460,15 @@ class PositionEnricher:
 
         # 对抗性优化:微信公众号反爬严重,正文常抓不到。
         # 但飞书源表的公告标题本身已包含岗位列表(如"投行经理助理,债券承做助理..."),
-        # 因此正文为空时用标题作为 LLM 输入,仍可拆出岗位。
-        if not content or len(content) < 30:
-            logger.info(f"公告 {ann_id} [{company_name}] 正文缺失,用标题拆岗")
-            content = ann_title  # 用标题作为拆岗输入
+        # 因此正文缺失或为垃圾时,用标题作为 LLM 输入,仍可拆出岗位。
+        # 关键:绝不能把"环境异常"等垃圾内容传给 LLM,否则会产生幻觉。
+        if not content or len(content) < 30 or content_is_garbage:
+            logger.info(f"公告 {ann_id} [{company_name}] 正文缺失/垃圾,用标题拆岗")
+            content = ann_title or ""  # 用标题作为拆岗输入
 
         # 2. LLM 拆岗
         positions = self.extract_positions(content, company=company_name, title=ann_title)
-        c_hash = _content_hash(content)
+        c_hash = _content_hash(content, company=company_name, title=ann_title)
 
         if not positions:
             # LLM 失败,降级

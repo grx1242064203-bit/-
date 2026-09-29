@@ -38,6 +38,7 @@ SOURCE_FIELD_MAP = {
     "announcement_url": "网申公告",
     "deadline": "投递截止日期",
     "publish_time": "发布时间",
+    "apply_update": "网申更新",
 }
 
 # 字段名候选(源表字段名可能因版本不同有细微差异,按优先级匹配)
@@ -54,6 +55,7 @@ FIELD_ALIASES = {
     "announcement_url": ["网申公告", "公告链接", "招聘公告", "详情链接"],
     "deadline": ["投递截止日期", "截止日期", "截止时间", "网申截止"],
     "publish_time": ["发布时间", "发布日期", "公告时间"],
+    "apply_update": ["网申更新", "网申更新时间", "更新时间"],
 }
 
 
@@ -233,6 +235,7 @@ class FeishuSourceSync:
             "announcement_url": _extract_url(fields, "announcement_url"),
             "deadline": _extract_datetime(fields, "deadline"),
             "publish_time": _extract_datetime(fields, "publish_time"),
+            "apply_update": _extract_datetime(fields, "apply_update"),
             "last_modified": last_modified_str,
         }
         ann_id, is_new = job_db.upsert_announcement(ann_data, company_id)

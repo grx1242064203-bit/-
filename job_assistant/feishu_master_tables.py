@@ -2,12 +2,15 @@
 飞书总表服务 — 把 companies 和 positions 总库导出到飞书多维表格,供用户直接查看。
 
 设计原则(第一性原理):
-1. 一张多维表格包含「公司总表」+「岗位总表」两个子表
+1. 一张多维表格包含「27届秋招启动公司汇总」+「27届校招岗位汇总」两个子表
 2. 设置为「互联网获得链接可查看」— 用户无需飞书账号,浏览器打开即看
-3. 增量写入:先查重再插入,避免重复
-4. 批量写入(每批 500 条),控制 API 调用频率
+3. 分类/类型类字段使用单选(带颜色标签),可筛选,与数据源表格样式一致
+4. 增量写入:先查重再插入,避免重复
+5. 批量写入(每批 500 条),控制 API 调用频率
 """
+import json
 import logging
+import os
 import time
 from typing import Dict, List
 
@@ -16,46 +19,87 @@ from feishu_client import FeishuClient
 
 logger = logging.getLogger(__name__)
 
-# 表名
-TABLE_COMPANIES = "公司总表"
-TABLE_POSITIONS = "岗位总表"
+# 加载映射配置(行业/公司类型/招聘类型的选项)
+_MAPPINGS_PATH = os.path.join(os.path.dirname(__file__), "mappings.json")
+with open(_MAPPINGS_PATH, "r", encoding="utf-8") as _f:
+    _MAPPINGS = json.load(_f)
 
-# 公司总表字段(包含源飞书表所有字段 + 统计字段)
+# 行业选项(带颜色)
+INDUSTRY_OPTIONS = [{"name": c["name"]} for c in _MAPPINGS["industry_categories"]]
+# 公司类型选项
+COMPANY_TYPE_OPTIONS = [{"name": c["name"]} for c in _MAPPINGS["company_type_categories"]]
+# 招聘类型选项
+RECRUIT_TYPE_OPTIONS = [{"name": t} for t in _MAPPINGS["recruit_types"]]
+# 学历要求选项(汇总源表与岗位表常见值)
+EDUCATION_OPTIONS = [
+    {"name": "专科起"}, {"name": "大专起"}, {"name": "本科起"},
+    {"name": "硕士起"}, {"name": "博士起"}, {"name": "博士"},
+    {"name": "本科"}, {"name": "硕士"}, {"name": "不限"}, {"name": "详见公告"},
+]
+# 岗位分类选项
+JOB_CATEGORY_OPTIONS = [
+    {"name": "产品"}, {"name": "研发"}, {"name": "设计"}, {"name": "运营"},
+    {"name": "职能"}, {"name": "销售"}, {"name": "金融"}, {"name": "管培"},
+    {"name": "其他"},
+]
+# 专业大类选项
+MAJOR_CATEGORY_OPTIONS = [
+    {"name": "工科"}, {"name": "理科"}, {"name": "文科"}, {"name": "商科"},
+    {"name": "医科"}, {"name": "艺术"}, {"name": "不限"}, {"name": "其他"},
+]
+# 难度选项
+DIFFICULTY_OPTIONS = [
+    {"name": "简单"}, {"name": "中等难度"}, {"name": "较为激烈"}, {"name": "困难"},
+]
+# 是否管培选项
+YESNO_OPTIONS = [{"name": "是"}, {"name": "否"}]
+
+# 表名
+TABLE_COMPANIES = "27届秋招启动公司汇总"
+TABLE_POSITIONS = "27届校招岗位汇总"
+
+# 公司总表字段
+# 字段顺序: 公司名称 → 网申更新 → 行业 → 公司类型 → 招聘类型 → 招聘对象 →
+#           招聘地点 → 学历要求 → 截止日期 → 发布时间 → 网申链接 → 公告链接
 COMPANY_FIELDS = [
     {"name": "公司名称", "type": 1},
-    {"name": "行业", "type": 1},
-    {"name": "公司类型", "type": 1},
-    {"name": "招聘类型", "type": 1},
-    {"name": "招聘对象", "type": 1},
-    {"name": "目标届数", "type": 1},
+    {"name": "网申更新", "type": 5},
+    {"name": "行业", "type": 3, "options": INDUSTRY_OPTIONS},
+    {"name": "公司类型", "type": 3, "options": COMPANY_TYPE_OPTIONS},
+    {"name": "招聘类型", "type": 3, "options": RECRUIT_TYPE_OPTIONS},
+    {"name": "招聘对象", "type": 3},
     {"name": "招聘地点", "type": 1},
-    {"name": "学历要求", "type": 1},
-    {"name": "截止日期", "type": 1},
-    {"name": "发布时间", "type": 1},
-    {"name": "公告数", "type": 2, "style": {"formatter": "0"}},
-    {"name": "岗位数", "type": 2, "style": {"formatter": "0"}},
+    {"name": "学历要求", "type": 3, "options": EDUCATION_OPTIONS},
+    {"name": "截止日期", "type": 5},
+    {"name": "发布时间", "type": 5},
     {"name": "网申链接", "type": 15},
     {"name": "公告链接", "type": 15},
 ]
 
 # 岗位总表字段
+# 字段顺序: 岗位标题 → 网申更新 → 公司名称 → 公司行业 → 公司类型 → 招聘流程 →
+#           岗位分类 → 岗位子类 → 最低学历 → 专业要求 → 专业大类 → 城市 →
+#           硬技能 → 关键词 → 是否管培 → 难度 → JD摘要 → 投递链接 → 公告链接
 POSITION_FIELDS = [
     {"name": "岗位标题", "type": 1},
-    {"name": "公司", "type": 1},
-    {"name": "岗位分类", "type": 1},
+    {"name": "网申更新", "type": 5},
+    {"name": "公司名称", "type": 1},
+    {"name": "公司行业", "type": 3, "options": INDUSTRY_OPTIONS},
+    {"name": "公司类型", "type": 3, "options": COMPANY_TYPE_OPTIONS},
+    {"name": "招聘流程", "type": 1},
+    {"name": "岗位分类", "type": 3, "options": JOB_CATEGORY_OPTIONS},
     {"name": "岗位子类", "type": 1},
-    {"name": "最低学历", "type": 1},
+    {"name": "最低学历", "type": 3, "options": EDUCATION_OPTIONS},
     {"name": "专业要求", "type": 1},
-    {"name": "专业大类", "type": 1},
+    {"name": "专业大类", "type": 3, "options": MAJOR_CATEGORY_OPTIONS},
     {"name": "城市", "type": 1},
     {"name": "硬技能", "type": 1},
     {"name": "关键词", "type": 1},
-    {"name": "是否管培", "type": 3, "options": [{"name": "是"}, {"name": "否"}]},
-    {"name": "难度", "type": 1},
+    {"name": "是否管培", "type": 3, "options": YESNO_OPTIONS},
+    {"name": "难度", "type": 3, "options": DIFFICULTY_OPTIONS},
     {"name": "JD摘要", "type": 1},
     {"name": "投递链接", "type": 15},
-    {"name": "公司行业", "type": 1},
-    {"name": "公司类型", "type": 1},
+    {"name": "公告链接", "type": 15},
 ]
 
 
@@ -65,7 +109,7 @@ class FeishuMasterTableService:
     def __init__(self, client: FeishuClient = None):
         self.client = client or FeishuClient()
 
-    def create_master_bitable(self, name: str = "校招岗位总表") -> Dict:
+    def create_master_bitable(self, name: str = "27届校招汇总表") -> Dict:
         """创建总表多维表格,返回 app_token 和子表 ID。"""
         app_token = self.client.create_bitable(name)
         logger.info(f"创建总表多维表格: {name} -> {app_token}")
@@ -120,6 +164,19 @@ class FeishuMasterTableService:
         return {"link": url, "text": url[:50]}
 
     @staticmethod
+    def _date_to_ts(date_str: str) -> int:
+        """将 YYYY-MM-DD 字符串转为毫秒时间戳(飞书日期字段需要)。"""
+        if not date_str:
+            return None
+        try:
+            # 兼容 YYYY/MM/DD 格式
+            date_str = date_str.replace("/", "-")
+            t = time.strptime(date_str[:10], "%Y-%m-%d")
+            return int(time.mktime(t) * 1000)
+        except (ValueError, TypeError):
+            return None
+
+    @staticmethod
     def _format_grade(min_grade, max_grade) -> str:
         """格式化届数范围。"""
         if not min_grade and not max_grade:
@@ -136,23 +193,19 @@ class FeishuMasterTableService:
 
         records = []
         for c in companies:
-            ann_count = job_db.get_announcement_count_by_company(c["id"])
-            pos_count = job_db.get_position_count_by_company(c["id"])
             # 取最新公告的源表字段
             latest_ann = job_db.get_latest_announcement_by_company(c["id"]) or {}
             record = {
                 "公司名称": c["name"],
+                "网申更新": self._date_to_ts(latest_ann.get("apply_update", "")),
                 "行业": c.get("industry", ""),
                 "公司类型": c.get("company_type", ""),
                 "招聘类型": latest_ann.get("recruit_type", ""),
                 "招聘对象": latest_ann.get("recruit_target", ""),
-                "目标届数": self._format_grade(latest_ann.get("min_grade"), latest_ann.get("max_grade")),
                 "招聘地点": latest_ann.get("location", ""),
                 "学历要求": latest_ann.get("education_req", ""),
-                "截止日期": latest_ann.get("deadline", ""),
-                "发布时间": latest_ann.get("publish_time", ""),
-                "公告数": ann_count,
-                "岗位数": pos_count,
+                "截止日期": self._date_to_ts(latest_ann.get("deadline", "")),
+                "发布时间": self._date_to_ts(latest_ann.get("publish_time", "")),
             }
             apply_url = self._url_field(c.get("apply_url", ""))
             if apply_url:
@@ -177,7 +230,11 @@ class FeishuMasterTableService:
         for p in positions:
             record = {
                 "岗位标题": p["position_title"],
-                "公司": p["company_name"],
+                "网申更新": self._date_to_ts(p.get("apply_update", "")),
+                "公司名称": p["company_name"],
+                "公司行业": p.get("industry", ""),
+                "公司类型": p.get("company_type", ""),
+                "招聘流程": p.get("recruitment_process", ""),
                 "岗位分类": p.get("job_category", ""),
                 "岗位子类": p.get("job_subcategory", ""),
                 "最低学历": p.get("min_education", "") or p.get("education_req", ""),
@@ -189,12 +246,13 @@ class FeishuMasterTableService:
                 "是否管培": "是" if p.get("is_management_trainee") else "否",
                 "难度": p.get("difficulty", ""),
                 "JD摘要": p.get("jd_summary", ""),
-                "公司行业": p.get("industry", ""),
-                "公司类型": p.get("company_type", ""),
             }
             url = self._url_field(p.get("apply_url", "") or p.get("source_url", ""))
             if url:
                 record["投递链接"] = url
+            ann_url = self._url_field(p.get("announcement_url", ""))
+            if ann_url:
+                record["公告链接"] = ann_url
             records.append(record)
         if not records:
             return 0

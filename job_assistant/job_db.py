@@ -60,6 +60,7 @@ CREATE TABLE IF NOT EXISTS announcements (
     announcement_url TEXT,
     deadline TEXT,
     publish_time TEXT,
+    apply_update TEXT,
     content TEXT DEFAULT '',
     content_images TEXT DEFAULT '',
     crawl_status TEXT DEFAULT 'pending',
@@ -150,6 +151,7 @@ def init_db():
         _migrate_table(conn, "announcements", [
             ("content", "TEXT DEFAULT ''"),
             ("content_images", "TEXT DEFAULT ''"),
+            ("apply_update", "TEXT"),
         ])
         _migrate_table(conn, "positions", [
             ("job_category", "TEXT DEFAULT ''"),
@@ -267,7 +269,7 @@ def upsert_announcement(data: Dict, company_id: int) -> Tuple[int, bool]:
                    company_id=?, company_name=?, announcement_title=?, recruit_type=?,
                    recruit_target=?, min_grade=?, max_grade=?, industry_raw=?,
                    company_type_raw=?, location=?, education_req=?, apply_url=?,
-                   announcement_url=?, deadline=?, publish_time=?,
+                   announcement_url=?, deadline=?, publish_time=?, apply_update=?,
                    last_modified=?, synced_at=?
                    WHERE id=?""",
                 (
@@ -278,8 +280,8 @@ def upsert_announcement(data: Dict, company_id: int) -> Tuple[int, bool]:
                     data.get("company_type_raw", ""), data.get("location", ""),
                     data.get("education_req", ""), data.get("apply_url", ""),
                     data.get("announcement_url", ""), data.get("deadline", ""),
-                    data.get("publish_time", ""), data.get("last_modified", ""),
-                    now, row["id"],
+                    data.get("publish_time", ""), data.get("apply_update", ""),
+                    data.get("last_modified", ""), now, row["id"],
                 ),
             )
             conn.commit()
@@ -290,8 +292,8 @@ def upsert_announcement(data: Dict, company_id: int) -> Tuple[int, bool]:
                    (feishu_record_id, company_id, company_name, announcement_title,
                     recruit_type, recruit_target, min_grade, max_grade, industry_raw,
                     company_type_raw, location, education_req, apply_url,
-                    announcement_url, deadline, publish_time, last_modified, synced_at)
-                   VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)""",
+                    announcement_url, deadline, publish_time, apply_update, last_modified, synced_at)
+                   VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)""",
                 (
                     record_id, company_id, data.get("company_name", ""),
                     data.get("announcement_title", ""), data.get("recruit_type", ""),
@@ -300,7 +302,8 @@ def upsert_announcement(data: Dict, company_id: int) -> Tuple[int, bool]:
                     data.get("company_type_raw", ""), data.get("location", ""),
                     data.get("education_req", ""), data.get("apply_url", ""),
                     data.get("announcement_url", ""), data.get("deadline", ""),
-                    data.get("publish_time", ""), data.get("last_modified", ""), now,
+                    data.get("publish_time", ""), data.get("apply_update", ""),
+                    data.get("last_modified", ""), now,
                 ),
             )
             conn.commit()
@@ -555,13 +558,15 @@ def get_position_count_by_company(company_id: int) -> int:
 
 
 def get_all_positions_for_export() -> List[Dict]:
-    """获取所有岗位(含公司行业/类型,用于飞书总表导出)。"""
+    """获取所有岗位(含公司行业/类型、公告网申更新/链接,用于飞书总表导出)。"""
     conn = _get_conn()
     try:
         rows = conn.execute("""
-            SELECT p.*, c.industry, c.company_type
+            SELECT p.*, c.industry, c.company_type,
+                   a.apply_update, a.announcement_url
             FROM positions p
             JOIN companies c ON p.company_id = c.id
+            JOIN announcements a ON p.announcement_id = a.id
             ORDER BY p.company_name, p.id
         """).fetchall()
         return [dict(r) for r in rows]

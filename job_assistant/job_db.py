@@ -69,6 +69,8 @@ CREATE TABLE IF NOT EXISTS announcements (
     llm_status TEXT DEFAULT 'pending',
     llm_time TEXT,
     llm_cache_hash TEXT,
+    vl_status TEXT DEFAULT 'pending',
+    vl_error TEXT,
     positions_count INTEGER DEFAULT 0,
     last_modified TEXT NOT NULL,
     synced_at TEXT NOT NULL,
@@ -152,6 +154,8 @@ def init_db():
             ("content", "TEXT DEFAULT ''"),
             ("content_images", "TEXT DEFAULT ''"),
             ("apply_update", "TEXT"),
+            ("vl_status", "TEXT DEFAULT 'pending'"),
+            ("vl_error", "TEXT"),
         ])
         _migrate_table(conn, "positions", [
             ("job_category", "TEXT DEFAULT ''"),
@@ -393,6 +397,36 @@ def update_llm_status(announcement_id: int, status: str,
             (status, _now(), positions_count, cache_hash, announcement_id),
         )
         conn.commit()
+    finally:
+        conn.close()
+
+
+def update_vl_status(announcement_id: int, status: str, error: str = ""):
+    """更新公告 VL 识别状态。status: success/failed/not_needed。"""
+    conn = _get_conn()
+    try:
+        conn.execute(
+            """UPDATE announcements SET vl_status=?, vl_error=? WHERE id=?""",
+            (status, error[:300], announcement_id),
+        )
+        conn.commit()
+    finally:
+        conn.close()
+
+
+def get_vl_failed_announcements() -> List[Dict]:
+    """获取所有 VL 识别失败的公告(vl_status=failed),用于导出飞书失败记录表。"""
+    conn = _get_conn()
+    try:
+        rows = conn.execute(
+            """SELECT id, company_name, announcement_title, announcement_url,
+                      apply_url, apply_update, vl_error, content_images,
+                      length(content) as content_len
+               FROM announcements
+               WHERE vl_status = 'failed'
+               ORDER BY id DESC"""
+        ).fetchall()
+        return [dict(r) for r in rows]
     finally:
         conn.close()
 

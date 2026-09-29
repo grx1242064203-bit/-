@@ -454,9 +454,27 @@ class PositionEnricher:
                     # 把 VL 识别结果和完整图片列表存到 DB
                     job_db.update_crawl_status(ann_id, "success", content=content)
                     job_db.update_announcement_images(ann_id, _json.dumps(all_images, ensure_ascii=False))
+                    job_db.update_vl_status(ann_id, "success")
                     logger.info(f"公告 {ann_id} VL 识别成功: {len(vl_text)} 字")
+                else:
+                    # VL 所有策略(切片+放宽像素)均失败 → 标记 vl_status=failed
+                    # 不立即走兜底降级,先记录失败,便于后续排查与飞书表统计
+                    vl_error = self.llm.last_vl_error_msg or "VL识别返回空(已尝试多策略切片)"
+                    job_db.update_vl_status(ann_id, "failed", error=vl_error)
+                    logger.warning(
+                        f"公告 {ann_id} VL 识别失败(已尝试多策略): {vl_error[:120]}"
+                    )
             except Exception as e:
-                logger.warning(f"公告 {ann_id} VL 识别失败: {e}")
+                vl_error = str(e)
+                job_db.update_vl_status(ann_id, "failed", error=vl_error)
+                logger.warning(f"公告 {ann_id} VL 识别异常: {e}")
+        elif need_vl and not all_images:
+            # 需要 VL 但没有图片 → 标记为 failed(无法识别图片公告)
+            job_db.update_vl_status(ann_id, "failed", error="需要VL识别但无可用图片")
+            logger.warning(f"公告 {ann_id} 需要VL但无图片,标记vl_status=failed")
+        else:
+            # 不需要 VL(正文足够)→ 标记 not_needed,与 success 区分
+            job_db.update_vl_status(ann_id, "not_needed")
 
         # 对抗性优化:微信公众号反爬严重,正文常抓不到。
         # 但飞书源表的公告标题本身已包含岗位列表(如"投行经理助理,债券承做助理..."),
@@ -473,6 +491,8 @@ class PositionEnricher:
         if not positions:
             # LLM 失败,降级
             positions = self._degrade_to_single_position(announcement)
+            # 降级岗位也应用字段兜底(避免空字段)
+            self._apply_field_fallback(positions, announcement)
             job_db.insert_positions(
                 ann_id, announcement["company_id"], company_name,
                 positions, source_url=ann_url,
@@ -481,6 +501,10 @@ class PositionEnricher:
                                      cache_hash="degraded")
             logger.warning(f"公告 {ann_id} [{company_name}] LLM 拆岗失败,降级")
             return len(positions)
+
+        # 2.5 字段兜底:VL/正文成功拆出岗位后,若部分字段公告中确实没有,
+        #     用公告级数据或统一话术填充,避免空字段影响匹配。
+        self._apply_field_fallback(positions, announcement)
 
         # 3. 写 positions 表
         # 补充投递链接(岗位无独立链接时用公告链接)
@@ -497,6 +521,25 @@ class PositionEnricher:
                                  cache_hash=c_hash)
         logger.info(f"公告 {ann_id} [{company_name}] 拆出 {inserted} 个岗位")
         return inserted
+
+    @staticmethod
+    def _apply_field_fallback(positions: List[Dict], announcement: Dict):
+        """字段兜底:岗位部分字段为空时,用公告级数据或统一话术填充。
+
+        填充规则:
+        - city 空 → 公告级 location
+        - min_education 空 → 公告级 education_req
+        - major_required 空 → "无明确专业要求"
+        """
+        ann_location = announcement.get("location", "") or ""
+        ann_education = announcement.get("education_req", "") or ""
+        for pos in positions:
+            if not pos.get("city") and ann_location:
+                pos["city"] = ann_location
+            if not pos.get("min_education") and ann_education:
+                pos["min_education"] = ann_education
+            if not pos.get("major_required"):
+                pos["major_required"] = "无明确专业要求"
 
     def run(self, limit: int = 100) -> Dict:
         """

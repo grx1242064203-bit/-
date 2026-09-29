@@ -57,6 +57,24 @@ YESNO_OPTIONS = [{"name": "是"}, {"name": "否"}]
 # 表名
 TABLE_COMPANIES = "27届秋招启动公司汇总"
 TABLE_POSITIONS = "27届校招岗位汇总"
+TABLE_VL_FAILURES = "VL识别失败记录"
+
+# VL 失败记录表字段
+VL_FAILURE_FIELDS = [
+    {"name": "公司名称", "type": 1},
+    {"name": "公告标题", "type": 1},
+    {"name": "网申更新", "type": 5},
+    {"name": "VL错误信息", "type": 1},
+    {"name": "图片数量", "type": 2},
+    {"name": "正文长度", "type": 2},
+    {"name": "公告链接", "type": 15},
+    {"name": "网申链接", "type": 15},
+]
+
+VL_FAILURE_COL_WIDTHS = {
+    "公司名称": 120, "公告标题": 200, "网申更新": 90, "VL错误信息": 300,
+    "图片数量": 70, "正文长度": 80, "公告链接": 120, "网申链接": 120,
+}
 
 # 公司总表字段
 # 字段顺序: 公司名称 → 网申更新 → 行业 → 公司类型 → 招聘类型 → 招聘对象 →
@@ -141,6 +159,11 @@ class FeishuMasterTableService:
         self._create_fields(app_token, position_table_id, POSITION_FIELDS, "岗位标题")
         self._setup_view(app_token, position_table_id, POSITION_COL_WIDTHS, "网申更新")
 
+        # 创建 VL 识别失败记录表
+        vl_failure_table_id = self.client.create_table(app_token, TABLE_VL_FAILURES)
+        self._create_fields(app_token, vl_failure_table_id, VL_FAILURE_FIELDS, "公司名称")
+        self._setup_view(app_token, vl_failure_table_id, VL_FAILURE_COL_WIDTHS, "网申更新")
+
         # 设置互联网可查看
         self.client.set_public_share(app_token, doc_type="bitable")
         share_url = self.client.get_share_url(app_token, doc_type="bitable")
@@ -150,6 +173,7 @@ class FeishuMasterTableService:
             "app_token": app_token,
             "company_table_id": company_table_id,
             "position_table_id": position_table_id,
+            "vl_failure_table_id": vl_failure_table_id,
             "share_url": share_url,
         }
 
@@ -358,6 +382,55 @@ class FeishuMasterTableService:
         logger.info(f"岗位总表写入 {len(ids)}/{len(records)} 条")
         return len(ids)
 
+    def export_vl_failures(self, app_token: str, table_id: str) -> int:
+        """导出 VL 识别失败的公告到飞书记录表。返回写入数。
+
+        只导出 vl_status=failed 的公告,便于排查哪些公告的图片无法被 VL 识别。
+        """
+        announcements = job_db.get_vl_failed_announcements()
+
+        records = []
+        for ann in announcements:
+            # 计算图片数量
+            img_count = 0
+            images_json = ann.get("content_images", "") or ""
+            if images_json:
+                try:
+                    import json as _json
+                    imgs = _json.loads(images_json)
+                    img_count = len(imgs) if isinstance(imgs, list) else 0
+                except Exception:
+                    pass
+
+            record = {
+                "公司名称": ann.get("company_name", ""),
+                "公告标题": ann.get("announcement_title", ""),
+                "网申更新": self._date_to_ts(ann.get("apply_update", "")),
+                "VL错误信息": (ann.get("vl_error", "") or "")[:300],
+                "图片数量": img_count,
+                "正文长度": ann.get("content_len", 0) or 0,
+                "_sort_key": ann.get("apply_update", "") or "",
+            }
+            ann_url = self._url_field(ann.get("announcement_url", ""))
+            if ann_url:
+                record["公告链接"] = ann_url
+            apply_url = self._url_field(ann.get("apply_url", ""))
+            if apply_url:
+                record["网申链接"] = apply_url
+            records.append(record)
+
+        # 按网申更新降序排序
+        records.sort(key=lambda r: r.get("_sort_key", "") or "", reverse=True)
+        for r in records:
+            r.pop("_sort_key", None)
+
+        if not records:
+            logger.info("无 VL 失败记录,跳过导出")
+            return 0
+        ids = self.client.batch_create_records(app_token, table_id, records)
+        logger.info(f"VL 失败记录表写入 {len(ids)}/{len(records)} 条")
+        return len(ids)
+
 
 def create_and_export_master_table(company_limit: int = 0,
                                    position_limit: int = 0) -> Dict:
@@ -368,8 +441,14 @@ def create_and_export_master_table(company_limit: int = 0,
         result["app_token"], result["company_table_id"], limit=company_limit)
     n_positions = service.export_positions(
         result["app_token"], result["position_table_id"], limit=position_limit)
+    n_vl_failures = service.export_vl_failures(
+        result["app_token"], result["vl_failure_table_id"])
     result["companies_written"] = n_companies
     result["positions_written"] = n_positions
-    logger.info(f"总表导出完成: 公司 {n_companies} 条, 岗位 {n_positions} 条")
+    result["vl_failures_written"] = n_vl_failures
+    logger.info(
+        f"总表导出完成: 公司 {n_companies} 条, 岗位 {n_positions} 条, "
+        f"VL失败 {n_vl_failures} 条"
+    )
     logger.info(f"总表链接: {result['share_url']}")
     return result

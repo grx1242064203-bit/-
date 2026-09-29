@@ -254,7 +254,11 @@ class FeishuMasterTableService:
         return [c for c in location.replace("、", " ").replace(",", " ").split() if c]
 
     def export_companies(self, app_token: str, table_id: str, limit: int = 0) -> int:
-        """导出公司总表数据到飞书(含源表所有字段)。返回写入数。"""
+        """导出公司总表数据到飞书(含源表所有字段)。返回写入数。
+
+        注意:飞书 API 的 PATCH view 不支持设置 sort/column_width,
+        因此通过写入前排序保证默认展示顺序为「网申更新降序」。
+        """
         companies = job_db.get_all_companies()
         if limit:
             companies = companies[:limit]
@@ -263,9 +267,10 @@ class FeishuMasterTableService:
         for c in companies:
             # 取最新公告的源表字段
             latest_ann = job_db.get_latest_announcement_by_company(c["id"]) or {}
+            apply_update = latest_ann.get("apply_update", "")
             record = {
                 "公司名称": c["name"],
-                "网申更新": self._date_to_ts(latest_ann.get("apply_update", "")),
+                "网申更新": self._date_to_ts(apply_update),
                 "行业": c.get("industry", ""),
                 "公司类型": c.get("company_type", ""),
                 "招聘类型": latest_ann.get("recruit_type", ""),
@@ -274,6 +279,7 @@ class FeishuMasterTableService:
                 "学历要求": latest_ann.get("education_req", ""),
                 "截止日期": latest_ann.get("deadline", ""),
                 "招聘岗位": latest_ann.get("announcement_title", ""),
+                "_sort_key": apply_update or "",  # 临时排序键
             }
             apply_url = self._url_field(c.get("apply_url", ""))
             if apply_url:
@@ -282,6 +288,13 @@ class FeishuMasterTableService:
             if ann_url:
                 record["公告链接"] = ann_url
             records.append(record)
+
+        # 按网申更新降序排序(最新在前),空值排最后
+        records.sort(key=lambda r: r.get("_sort_key", "") or "", reverse=True)
+        # 移除临时排序键
+        for r in records:
+            r.pop("_sort_key", None)
+
         if not records:
             return 0
         ids = self.client.batch_create_records(app_token, table_id, records)
@@ -289,7 +302,11 @@ class FeishuMasterTableService:
         return len(ids)
 
     def export_positions(self, app_token: str, table_id: str, limit: int = 0) -> int:
-        """导出岗位总表数据到飞书。返回写入数。"""
+        """导出岗位总表数据到飞书。返回写入数。
+
+        注意:飞书 API 的 PATCH view 不支持设置 sort/column_width,
+        因此通过写入前排序保证默认展示顺序为「网申更新降序」。
+        """
         positions = job_db.get_all_positions_for_export()
         if limit:
             positions = positions[:limit]
@@ -300,9 +317,10 @@ class FeishuMasterTableService:
             title = p["position_title"] or "通用校招岗"
             company = p["company_name"] or ""
             display_title = f"{title}-{company}" if company else title
+            apply_update = p.get("apply_update", "")
             record = {
                 "岗位标题": display_title,
-                "网申更新": self._date_to_ts(p.get("apply_update", "")),
+                "网申更新": self._date_to_ts(apply_update),
                 "公司名称": p["company_name"],
                 "公司行业": p.get("industry", ""),
                 "公司类型": p.get("company_type", ""),
@@ -318,6 +336,7 @@ class FeishuMasterTableService:
                 "是否管培": "是" if p.get("is_management_trainee") else "否",
                 "难度": p.get("difficulty", ""),
                 "JD摘要": p.get("jd_summary", ""),
+                "_sort_key": apply_update or "",  # 临时排序键
             }
             url = self._url_field(p.get("apply_url", "") or p.get("source_url", ""))
             if url:
@@ -326,6 +345,13 @@ class FeishuMasterTableService:
             if ann_url:
                 record["公告链接"] = ann_url
             records.append(record)
+
+        # 按网申更新降序排序(最新在前),空值排最后
+        records.sort(key=lambda r: r.get("_sort_key", "") or "", reverse=True)
+        # 移除临时排序键
+        for r in records:
+            r.pop("_sort_key", None)
+
         if not records:
             return 0
         ids = self.client.batch_create_records(app_token, table_id, records)

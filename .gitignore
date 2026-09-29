@@ -22,3 +22,17 @@ dist-ssr
 *.njsproj
 *.sln
 *.sw?
+
+# Python
+__pycache__/
+*.pyc
+*.pyo
+
+# 运行时缓存(可重新生成,不入库)
+job_assistant/data/crawl_cache/
+job_assistant/data/llm_cache/
+job_assistant/data/*.bak
+job_assistant/data/*.tmp
+
+# 敏感配置(用 .env.example 代替)
+job_assistant/.env

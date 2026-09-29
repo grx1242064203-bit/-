@@ -15,99 +15,310 @@
       "subcategories": {
         "cv": {
           "name": "CV算法",
-          "aliases": ["计算机视觉", "视觉算法", "图像算法", "视觉"],
-          "hard_skills": ["PyTorch", "深度学习", "OpenCV", "图像处理", "CNN", "目标检测", "图像分割"],
+          "aliases": [
+            "计算机视觉",
+            "视觉算法",
+            "图像算法",
+            "视觉"
+          ],
+          "hard_skills": [
+            "PyTorch",
+            "深度学习",
+            "OpenCV",
+            "图像处理",
+            "CNN",
+            "目标检测",
+            "图像分割"
+          ],
           "education": "硕士为主,顶会论文显著加分",
-          "majors": ["计算机", "电子信息", "自动化"],
-          "evidence": ["CVPR/ICCV/ECCV论文", "CV科研项目", "算法竞赛获奖"]
+          "majors": [
+            "计算机",
+            "电子信息",
+            "自动化"
+          ],
+          "evidence": [
+            "CVPR/ICCV/ECCV论文",
+            "CV科研项目",
+            "算法竞赛获奖"
+          ]
         },
         "nlp": {
           "name": "NLP算法",
-          "aliases": ["自然语言处理", "文本算法", "自然语言"],
-          "hard_skills": ["PyTorch", "NLP", "文本处理", "BERT", "Transformer", "文本生成"],
+          "aliases": [
+            "自然语言处理",
+            "文本算法",
+            "自然语言"
+          ],
+          "hard_skills": [
+            "PyTorch",
+            "NLP",
+            "文本处理",
+            "BERT",
+            "Transformer",
+            "文本生成"
+          ],
           "education": "硕士为主,顶会论文加分",
-          "majors": ["计算机", "电子信息"],
-          "evidence": ["ACL/EMNLP论文", "NLP项目", "机器翻译/对话系统经验"]
+          "majors": [
+            "计算机",
+            "电子信息"
+          ],
+          "evidence": [
+            "ACL/EMNLP论文",
+            "NLP项目",
+            "机器翻译/对话系统经验"
+          ]
         },
         "multimodal": {
           "name": "多模态算法",
-          "aliases": ["多模态", "VLM", "视频生成", "数字人"],
-          "hard_skills": ["PyTorch", "多模态大模型", "扩散模型", "VAE", "GAN", "视频生成"],
+          "aliases": [
+            "多模态",
+            "VLM",
+            "视频生成",
+            "数字人"
+          ],
+          "hard_skills": [
+            "PyTorch",
+            "多模态大模型",
+            "扩散模型",
+            "VAE",
+            "GAN",
+            "视频生成"
+          ],
           "education": "硕士+顶会论文优先",
-          "majors": ["计算机"],
-          "evidence": ["多模态论文", "生成模型项目", "理想/小米式多模态基座研究经验"]
+          "majors": [
+            "计算机"
+          ],
+          "evidence": [
+            "多模态论文",
+            "生成模型项目",
+            "理想/小米式多模态基座研究经验"
+          ]
         },
         "llm": {
           "name": "大模型算法",
-          "aliases": ["大语言模型", "LLM算法", "预训练", "基座模型"],
-          "hard_skills": ["PyTorch", "Transformer", "预训练", "微调", "RLHF", "分布式训练"],
+          "aliases": [
+            "大语言模型",
+            "LLM算法",
+            "预训练",
+            "基座模型"
+          ],
+          "hard_skills": [
+            "PyTorch",
+            "Transformer",
+            "预训练",
+            "微调",
+            "RLHF",
+            "分布式训练"
+          ],
           "education": "硕士+顶会论文优先",
-          "majors": ["计算机"],
-          "evidence": ["大模型论文", "开源模型贡献", "预训练/SFT/RLHF项目"]
+          "majors": [
+            "计算机"
+          ],
+          "evidence": [
+            "大模型论文",
+            "开源模型贡献",
+            "预训练/SFT/RLHF项目"
+          ]
         },
         "recommendation": {
           "name": "推荐搜索算法",
-          "aliases": ["推荐算法", "搜索算法", "排序模型", "召回"],
-          "hard_skills": ["PyTorch", "排序模型", "特征工程", "CTR预估", "召回策略", "Spark"],
+          "aliases": [
+            "推荐算法",
+            "搜索算法",
+            "排序模型",
+            "召回"
+          ],
+          "hard_skills": [
+            "PyTorch",
+            "排序模型",
+            "特征工程",
+            "CTR预估",
+            "召回策略",
+            "Spark"
+          ],
           "education": "硕士为主",
-          "majors": ["计算机", "统计"],
-          "evidence": ["推荐系统项目", "Kaggle竞赛", "大厂推荐实习"]
+          "majors": [
+            "计算机",
+            "统计"
+          ],
+          "evidence": [
+            "推荐系统项目",
+            "Kaggle竞赛",
+            "大厂推荐实习"
+          ]
         },
         "speech": {
           "name": "语音算法",
-          "aliases": ["语音识别", "语音合成", "TTS", "ASR", "声学"],
-          "hard_skills": ["PyTorch", "语音信号处理", "声学模型", "音频理解"],
+          "aliases": [
+            "语音识别",
+            "语音合成",
+            "TTS",
+            "ASR",
+            "声学",
+            "音频算法"
+          ],
+          "hard_skills": [
+            "PyTorch",
+            "语音信号处理",
+            "声学模型",
+            "音频理解"
+          ],
           "education": "硕士为主",
-          "majors": ["电子信息", "计算机"],
-          "evidence": ["语音论文", "语音项目", "数字人/音频生成经验"]
+          "majors": [
+            "电子信息",
+            "计算机"
+          ],
+          "evidence": [
+            "语音论文",
+            "语音项目",
+            "数字人/音频生成经验"
+          ]
         },
         "ml": {
           "name": "机器学习算法",
-          "aliases": ["机器学习", "数据算法", "通用算法", "算法工程师", "AI算法", "算法类"],
-          "hard_skills": ["Python", "Scikit-learn", "统计学习", "特征工程", "XGBoost"],
+          "aliases": [
+            "机器学习",
+            "数据算法",
+            "通用算法",
+            "算法工程师",
+            "AI算法",
+            "算法类",
+            "算法",
+            "人工智能",
+            "软件算法"
+          ],
+          "hard_skills": [
+            "Python",
+            "Scikit-learn",
+            "统计学习",
+            "特征工程",
+            "XGBoost"
+          ],
           "education": "硕士为主",
-          "majors": ["计算机", "统计", "数学"],
-          "evidence": ["ML项目", "数学建模竞赛", "数据竞赛获奖"]
+          "majors": [
+            "计算机",
+            "统计",
+            "数学"
+          ],
+          "evidence": [
+            "ML项目",
+            "数学建模竞赛",
+            "数据竞赛获奖"
+          ]
         },
         "reinforcement": {
           "name": "强化学习算法",
-          "aliases": ["强化学习", "RL", "决策算法"],
-          "hard_skills": ["PyTorch", "强化学习", "MPC", "决策优化"],
+          "aliases": [
+            "强化学习",
+            "RL",
+            "决策算法"
+          ],
+          "hard_skills": [
+            "PyTorch",
+            "强化学习",
+            "MPC",
+            "决策优化"
+          ],
           "education": "硕士为主",
-          "majors": ["计算机", "自动化"],
-          "evidence": ["RL论文", "游戏AI/机器人决策项目"]
+          "majors": [
+            "计算机",
+            "自动化"
+          ],
+          "evidence": [
+            "RL论文",
+            "游戏AI/机器人决策项目"
+          ]
         },
         "operations_research": {
           "name": "运筹优化算法",
-          "aliases": ["运筹学", "优化算法", "调度算法", "组合优化"],
-          "hard_skills": ["运筹优化", "线性规划", "启发式算法", "C++", "Gurobi"],
+          "aliases": [
+            "运筹学",
+            "优化算法",
+            "调度算法",
+            "组合优化"
+          ],
+          "hard_skills": [
+            "运筹优化",
+            "线性规划",
+            "启发式算法",
+            "C++",
+            "Gurobi"
+          ],
           "education": "硕士为主",
-          "majors": ["数学", "运筹学", "计算机"],
-          "evidence": ["优化竞赛", "调度/路径优化项目"]
+          "majors": [
+            "数学",
+            "运筹学",
+            "计算机"
+          ],
+          "evidence": [
+            "优化竞赛",
+            "调度/路径优化项目"
+          ]
         },
         "communication": {
           "name": "通信算法",
-          "aliases": ["信道估计", "信号处理算法", "物理层", "5G算法"],
-          "hard_skills": ["信号处理", "通信原理", "MATLAB", "信道建模", "5G"],
+          "aliases": [
+            "信道估计",
+            "信号处理算法",
+            "物理层",
+            "5G算法"
+          ],
+          "hard_skills": [
+            "信号处理",
+            "通信原理",
+            "MATLAB",
+            "信道建模",
+            "5G"
+          ],
           "education": "硕士为主",
-          "majors": ["通信工程", "电子信息"],
-          "evidence": ["通信论文", "信道估计/CSI反馈项目"]
+          "majors": [
+            "通信工程",
+            "电子信息"
+          ],
+          "evidence": [
+            "通信论文",
+            "信道估计/CSI反馈项目"
+          ]
         },
         "world_model": {
           "name": "世界模型算法",
-          "aliases": ["世界模型"],
-          "hard_skills": ["PyTorch", "世界模型", "生成模型", "视频预测"],
+          "aliases": [
+            "世界模型"
+          ],
+          "hard_skills": [
+            "PyTorch",
+            "世界模型",
+            "生成模型",
+            "视频预测"
+          ],
           "education": "硕士+顶会优先",
-          "majors": ["计算机"],
-          "evidence": ["世界模型论文", "具身智能研究经验"]
+          "majors": [
+            "计算机"
+          ],
+          "evidence": [
+            "世界模型论文",
+            "具身智能研究经验"
+          ]
         },
         "general_phd": {
           "name": "理工科博士研究岗",
-          "aliases": ["博士", "博士后研究员", "研究科学家"],
-          "hard_skills": ["科研能力", "论文发表"],
+          "aliases": [
+            "博士",
+            "博士后研究员",
+            "研究科学家"
+          ],
+          "hard_skills": [
+            "科研能力",
+            "论文发表"
+          ],
           "education": "博士",
-          "majors": ["理工科"],
-          "evidence": ["一作论文", "国家级项目经历"]
+          "majors": [
+            "理工科"
+          ],
+          "evidence": [
+            "一作论文",
+            "国家级项目经历"
+          ]
         }
       }
     },
@@ -117,51 +328,163 @@
       "subcategories": {
         "agent_dev": {
           "name": "AI Agent开发",
-          "aliases": ["Agent研发", "AI Agent", "Agent工程师", "Agent Harness", "智能体", "Agent算法-开发"],
-          "hard_skills": ["LLM", "Agent框架", "Prompt工程", "RAG", "MCP", "TypeScript", "Python", "LangChain"],
+          "aliases": [
+            "Agent研发",
+            "AI Agent",
+            "Agent工程师",
+            "Agent Harness",
+            "智能体",
+            "Agent算法-开发"
+          ],
+          "hard_skills": [
+            "LLM",
+            "Agent框架",
+            "Prompt工程",
+            "RAG",
+            "MCP",
+            "TypeScript",
+            "Python",
+            "LangChain"
+          ],
           "education": "本科+,重项目",
-          "majors": ["计算机", "软件工程"],
-          "evidence": ["Agent开源项目", "CLI/Coding Agent开发经验", "MCP工具链经验"]
+          "majors": [
+            "计算机",
+            "软件工程"
+          ],
+          "evidence": [
+            "Agent开源项目",
+            "CLI/Coding Agent开发经验",
+            "MCP工具链经验"
+          ]
         },
         "ai_infra": {
           "name": "AI Infra",
-          "aliases": ["AI基础设施", "推理引擎", "模型优化", "高性能AI", "AI Infra"],
-          "hard_skills": ["CUDA", "分布式训练", "推理优化", "算子开发", "C++", "Triton", "TensorRT", "vLLM"],
+          "aliases": [
+            "AI基础设施",
+            "推理引擎",
+            "模型优化",
+            "高性能AI",
+            "AI Infra"
+          ],
+          "hard_skills": [
+            "CUDA",
+            "分布式训练",
+            "推理优化",
+            "算子开发",
+            "C++",
+            "Triton",
+            "TensorRT",
+            "vLLM"
+          ],
           "education": "本科+,顶尖公司硕士+",
-          "majors": ["计算机"],
-          "evidence": ["推理引擎贡献", "高性能计算项目", "CUDA/算子优化经验"]
+          "majors": [
+            "计算机"
+          ],
+          "evidence": [
+            "推理引擎贡献",
+            "高性能计算项目",
+            "CUDA/算子优化经验"
+          ]
         },
         "llm_app": {
           "name": "大模型应用开发",
-          "aliases": ["AI应用开发", "AI开发工程师", "AIGC开发", "AI工程师", "AI应用工程师", "AI算法工程师"],
-          "hard_skills": ["LLM API", "RAG", "Prompt工程", "向量数据库", "LangChain", "Python"],
+          "aliases": [
+            "AI应用开发",
+            "AI开发工程师",
+            "AIGC开发",
+            "AI工程师",
+            "AI应用工程师",
+            "AI算法工程师",
+            "AI开发",
+            "AI应用",
+            "AI软件"
+          ],
+          "hard_skills": [
+            "LLM API",
+            "RAG",
+            "Prompt工程",
+            "向量数据库",
+            "LangChain",
+            "Python"
+          ],
           "education": "本科+",
-          "majors": ["计算机"],
-          "evidence": ["LLM应用项目", "RAG系统落地经验"]
+          "majors": [
+            "计算机"
+          ],
+          "evidence": [
+            "LLM应用项目",
+            "RAG系统落地经验"
+          ]
         },
         "mlops": {
           "name": "MLOps/AI部署",
-          "aliases": ["模型部署", "机器学习平台", "AI部署工程师"],
-          "hard_skills": ["Docker", "Kubernetes", "CI/CD", "模型服务化", "ONNX", "TensorRT", "灰度发布"],
+          "aliases": [
+            "模型部署",
+            "机器学习平台",
+            "AI部署工程师"
+          ],
+          "hard_skills": [
+            "Docker",
+            "Kubernetes",
+            "CI/CD",
+            "模型服务化",
+            "ONNX",
+            "TensorRT",
+            "灰度发布"
+          ],
           "education": "本科+",
-          "majors": ["计算机"],
-          "evidence": ["模型部署项目", "MLOps平台建设经验"]
+          "majors": [
+            "计算机"
+          ],
+          "evidence": [
+            "模型部署项目",
+            "MLOps平台建设经验"
+          ]
         },
         "ai_data": {
           "name": "AI数据工程",
-          "aliases": ["数据管线", "具身数据评估", "AI数据挖掘"],
-          "hard_skills": ["Python", "Spark", "数据清洗", "标注体系", "数据质量"],
+          "aliases": [
+            "数据管线",
+            "具身数据评估",
+            "AI数据挖掘"
+          ],
+          "hard_skills": [
+            "Python",
+            "Spark",
+            "数据清洗",
+            "标注体系",
+            "数据质量"
+          ],
           "education": "本科+",
-          "majors": ["计算机", "统计"],
-          "evidence": ["大规模数据处理项目", "自动驾驶/具身数据经验"]
+          "majors": [
+            "计算机",
+            "统计"
+          ],
+          "evidence": [
+            "大规模数据处理项目",
+            "自动驾驶/具身数据经验"
+          ]
         },
         "algorithm_eng": {
           "name": "算法工程化",
-          "aliases": ["算法应用工程师", "算法架构"],
-          "hard_skills": ["C++", "模型部署", "工程优化", "算法落地"],
+          "aliases": [
+            "算法应用工程师",
+            "算法架构"
+          ],
+          "hard_skills": [
+            "C++",
+            "模型部署",
+            "工程优化",
+            "算法落地"
+          ],
           "education": "本科+",
-          "majors": ["计算机"],
-          "evidence": ["算法工程化项目", "性能优化经验"]
+          "majors": [
+            "计算机"
+          ],
+          "evidence": [
+            "算法工程化项目",
+            "性能优化经验"
+          ]
         }
       }
     },
@@ -171,107 +494,347 @@
       "subcategories": {
         "backend": {
           "name": "后端开发",
-          "aliases": ["服务端开发", "服务端研发", "Java开发", "C++开发", "Golang开发", "软件开发工程师", "软件工程师", "软件开发"],
-          "hard_skills": ["Java", "Go", "C++", "Python", "Spring", "分布式", "MySQL", "Redis", "微服务"],
+          "aliases": [
+            "服务端开发",
+            "服务端研发",
+            "Java开发",
+            "C++开发",
+            "Golang开发",
+            "软件开发工程师",
+            "软件工程师",
+            "软件开发",
+            "应用开发",
+            "系统开发"
+          ],
+          "hard_skills": [
+            "Java",
+            "Go",
+            "C++",
+            "Python",
+            "Spring",
+            "分布式",
+            "MySQL",
+            "Redis",
+            "微服务"
+          ],
           "education": "本科+",
-          "majors": ["计算机", "软件工程"],
-          "evidence": ["后端项目", "大厂实习", "高并发系统经验"]
+          "majors": [
+            "计算机",
+            "软件工程"
+          ],
+          "evidence": [
+            "后端项目",
+            "大厂实习",
+            "高并发系统经验"
+          ]
         },
         "frontend": {
           "name": "前端开发",
-          "aliases": ["Web前端", "前端研发", "Web开发"],
-          "hard_skills": ["JavaScript", "TypeScript", "React", "Vue", "Node.js", "Webpack"],
+          "aliases": [
+            "Web前端",
+            "前端研发",
+            "Web开发",
+            "前端"
+          ],
+          "hard_skills": [
+            "JavaScript",
+            "TypeScript",
+            "React",
+            "Vue",
+            "Node.js",
+            "Webpack"
+          ],
           "education": "本科+",
-          "majors": ["计算机"],
-          "evidence": ["前端项目", "开源组件贡献"]
+          "majors": [
+            "计算机"
+          ],
+          "evidence": [
+            "前端项目",
+            "开源组件贡献"
+          ]
         },
         "fullstack": {
           "name": "全栈开发",
-          "aliases": ["全栈工程师"],
-          "hard_skills": ["前端栈", "后端栈", "数据库", "部署"],
+          "aliases": [
+            "全栈工程师",
+            "全栈开发"
+          ],
+          "hard_skills": [
+            "前端栈",
+            "后端栈",
+            "数据库",
+            "部署"
+          ],
           "education": "本科+",
-          "majors": ["计算机"],
-          "evidence": ["全栈项目", "独立产品交付经验"]
+          "majors": [
+            "计算机"
+          ],
+          "evidence": [
+            "全栈项目",
+            "独立产品交付经验"
+          ]
         },
         "mobile": {
           "name": "客户端/移动端开发",
-          "aliases": ["客户端研发", "iOS开发", "Android开发", "移动端"],
-          "hard_skills": ["Kotlin", "Swift", "Java", "Flutter", "React Native"],
+          "aliases": [
+            "客户端研发",
+            "iOS开发",
+            "Android开发",
+            "移动端",
+            "客户端开发"
+          ],
+          "hard_skills": [
+            "Kotlin",
+            "Swift",
+            "Java",
+            "Flutter",
+            "React Native"
+          ],
           "education": "本科+",
-          "majors": ["计算机"],
-          "evidence": ["App项目", "性能优化经验"]
+          "majors": [
+            "计算机"
+          ],
+          "evidence": [
+            "App项目",
+            "性能优化经验"
+          ]
         },
         "game_dev": {
           "name": "游戏开发",
-          "aliases": ["游戏客户端", "游戏服务端", "引擎开发"],
-          "hard_skills": ["C++", "C#", "Unity", "Unreal", "Lua", "图形学"],
+          "aliases": [
+            "游戏客户端",
+            "游戏服务端",
+            "引擎开发",
+            "引擎研发"
+          ],
+          "hard_skills": [
+            "C++",
+            "C#",
+            "Unity",
+            "Unreal",
+            "Lua",
+            "图形学"
+          ],
           "education": "本科+",
-          "majors": ["计算机", "数字媒体"],
-          "evidence": ["游戏Demo", "引擎/Mod开发经验", "GameJam获奖"]
+          "majors": [
+            "计算机",
+            "数字媒体"
+          ],
+          "evidence": [
+            "游戏Demo",
+            "引擎/Mod开发经验",
+            "GameJam获奖"
+          ]
         },
         "test_dev": {
           "name": "测试开发",
-          "aliases": ["测试开发工程师", "自动化测试", "质量研发"],
-          "hard_skills": ["Python", "自动化测试", "pytest", "Selenium", "性能测试", "CI"],
+          "aliases": [
+            "测试开发工程师",
+            "自动化测试",
+            "质量研发"
+          ],
+          "hard_skills": [
+            "Python",
+            "自动化测试",
+            "pytest",
+            "Selenium",
+            "性能测试",
+            "CI"
+          ],
           "education": "本科+",
-          "majors": ["计算机"],
-          "evidence": ["测试框架开发", "自动化工具项目"]
+          "majors": [
+            "计算机"
+          ],
+          "evidence": [
+            "测试框架开发",
+            "自动化工具项目"
+          ]
         },
         "devops": {
           "name": "运维/SRE",
-          "aliases": ["运维开发", "DevOps", "SRE", "基础设施研发"],
-          "hard_skills": ["Linux", "Docker", "Kubernetes", "CI/CD", "Shell", "监控体系", "Terraform"],
+          "aliases": [
+            "运维开发",
+            "DevOps",
+            "SRE",
+            "基础设施研发",
+            "运维",
+            "集控运维"
+          ],
+          "hard_skills": [
+            "Linux",
+            "Docker",
+            "Kubernetes",
+            "CI/CD",
+            "Shell",
+            "监控体系",
+            "Terraform"
+          ],
           "education": "本科+",
-          "majors": ["计算机"],
-          "evidence": ["运维自动化项目", "云原生经验"]
+          "majors": [
+            "计算机"
+          ],
+          "evidence": [
+            "运维自动化项目",
+            "云原生经验"
+          ]
         },
         "security": {
           "name": "网络安全",
-          "aliases": ["安全工程师", "渗透测试", "安全研究员"],
-          "hard_skills": ["网络安全", "渗透测试", "逆向工程", "密码学", "漏洞挖掘"],
+          "aliases": [
+            "安全工程师",
+            "渗透测试",
+            "安全研究员",
+            "安全"
+          ],
+          "hard_skills": [
+            "网络安全",
+            "渗透测试",
+            "逆向工程",
+            "密码学",
+            "漏洞挖掘"
+          ],
           "education": "本科+",
-          "majors": ["计算机", "网络空间安全"],
-          "evidence": ["CTF竞赛获奖", "CVE/漏洞提交", "红蓝对抗经验"]
+          "majors": [
+            "计算机",
+            "网络空间安全"
+          ],
+          "evidence": [
+            "CTF竞赛获奖",
+            "CVE/漏洞提交",
+            "红蓝对抗经验"
+          ]
         },
         "embedded_sw": {
           "name": "嵌入式软件",
-          "aliases": ["嵌入式软件开发", "单片机开发", "固件开发", "嵌入式工程师", "嵌入式"],
-          "hard_skills": ["C", "C++", "RTOS", "MCU", "Linux驱动", "串口", "CAN"],
+          "aliases": [
+            "嵌入式软件开发",
+            "单片机开发",
+            "固件开发",
+            "嵌入式工程师",
+            "嵌入式",
+            "嵌入式开发",
+            "嵌入式测试"
+          ],
+          "hard_skills": [
+            "C",
+            "C++",
+            "RTOS",
+            "MCU",
+            "Linux驱动",
+            "串口",
+            "CAN"
+          ],
           "education": "本科+",
-          "majors": ["电子信息", "计算机", "自动化"],
-          "evidence": ["单片机/RTOS项目", "驱动开发经验", "智能车/电赛获奖"]
+          "majors": [
+            "电子信息",
+            "计算机",
+            "自动化"
+          ],
+          "evidence": [
+            "单片机/RTOS项目",
+            "驱动开发经验",
+            "智能车/电赛获奖"
+          ]
         },
         "hpc": {
           "name": "高性能计算",
-          "aliases": ["HPC", "并行计算", "数值计算"],
-          "hard_skills": ["C++", "并行计算", "CUDA", "MPI", "数值优化"],
+          "aliases": [
+            "HPC",
+            "并行计算",
+            "数值计算"
+          ],
+          "hard_skills": [
+            "C++",
+            "并行计算",
+            "CUDA",
+            "MPI",
+            "数值优化"
+          ],
           "education": "硕士+",
-          "majors": ["计算机", "数学"],
-          "evidence": ["HPC项目", "超算竞赛获奖"]
+          "majors": [
+            "计算机",
+            "数学"
+          ],
+          "evidence": [
+            "HPC项目",
+            "超算竞赛获奖"
+          ]
         },
         "qa": {
           "name": "软件测试",
-          "aliases": ["测试工程师", "功能测试", "产品测试", "软件测评"],
-          "hard_skills": ["测试用例设计", "缺陷管理", "自动化基础"],
+          "aliases": [
+            "测试工程师",
+            "功能测试",
+            "产品测试",
+            "软件测评",
+            "测试"
+          ],
+          "hard_skills": [
+            "测试用例设计",
+            "缺陷管理",
+            "自动化基础"
+          ],
           "education": "本科+",
-          "majors": ["计算机相关"],
-          "evidence": ["测试实习", "质量工具使用经验"]
+          "majors": [
+            "计算机相关"
+          ],
+          "evidence": [
+            "测试实习",
+            "质量工具使用经验"
+          ]
         },
         "system_eng": {
           "name": "系统工程师",
-          "aliases": ["系统研发", "系统集成", "系统架构"],
-          "hard_skills": ["系统架构", "C/C++", "Linux", "系统集成"],
+          "aliases": [
+            "系统研发",
+            "系统集成",
+            "系统架构",
+            "系统设计",
+            "系统软件"
+          ],
+          "hard_skills": [
+            "系统架构",
+            "C/C++",
+            "Linux",
+            "系统集成"
+          ],
           "education": "本科+",
-          "majors": ["计算机", "电子信息"],
-          "evidence": ["系统级项目经验"]
+          "majors": [
+            "计算机",
+            "电子信息"
+          ],
+          "evidence": [
+            "系统级项目经验"
+          ]
         },
         "fae": {
           "name": "应用工程师FAE",
-          "aliases": ["现场应用工程师", "技术支持工程师", "系统应用工程师", "应用工程师"],
-          "hard_skills": ["硬件调试", "客户对接", "技术方案", "问题定位"],
+          "aliases": [
+            "现场应用工程师",
+            "技术支持工程师",
+            "系统应用工程师",
+            "应用工程师",
+            "技术支持",
+            "应用工程",
+            "现场应用",
+            "服务工程师"
+          ],
+          "hard_skills": [
+            "硬件调试",
+            "客户对接",
+            "技术方案",
+            "问题定位"
+          ],
           "education": "本科+",
-          "majors": ["电子信息", "计算机"],
-          "evidence": ["技术支持实习", "硬件平台使用经验", "沟通能力"]
+          "majors": [
+            "电子信息",
+            "计算机"
+          ],
+          "evidence": [
+            "技术支持实习",
+            "硬件平台使用经验",
+            "沟通能力"
+          ]
         }
       }
     },
@@ -281,35 +844,99 @@
       "subcategories": {
         "data_analyst": {
           "name": "数据分析",
-          "aliases": ["数据分析师", "商业分析-数据方向"],
-          "hard_skills": ["SQL", "Python", "Excel", "Tableau", "统计分析", "AB测试"],
+          "aliases": [
+            "数据分析师",
+            "商业分析-数据方向"
+          ],
+          "hard_skills": [
+            "SQL",
+            "Python",
+            "Excel",
+            "Tableau",
+            "统计分析",
+            "AB测试"
+          ],
           "education": "本科+",
-          "majors": ["统计", "数学", "经济", "计算机"],
-          "evidence": ["数据分析项目", "数据实习", "数学建模竞赛"]
+          "majors": [
+            "统计",
+            "数学",
+            "经济",
+            "计算机"
+          ],
+          "evidence": [
+            "数据分析项目",
+            "数据实习",
+            "数学建模竞赛"
+          ]
         },
         "data_mining": {
           "name": "数据挖掘",
-          "aliases": ["数据挖掘工程师"],
-          "hard_skills": ["Python", "机器学习", "SQL", "特征工程", "Spark"],
+          "aliases": [
+            "数据挖掘工程师"
+          ],
+          "hard_skills": [
+            "Python",
+            "机器学习",
+            "SQL",
+            "特征工程",
+            "Spark"
+          ],
           "education": "本科+",
-          "majors": ["计算机", "统计"],
-          "evidence": ["挖掘项目", "数据竞赛获奖"]
+          "majors": [
+            "计算机",
+            "统计"
+          ],
+          "evidence": [
+            "挖掘项目",
+            "数据竞赛获奖"
+          ]
         },
         "data_eng": {
           "name": "数据工程",
-          "aliases": ["数据开发", "ETL工程师", "数仓工程师"],
-          "hard_skills": ["Spark", "Hive", "SQL", "数据仓库", "Airflow", "Flink"],
+          "aliases": [
+            "数据开发",
+            "ETL工程师",
+            "数仓工程师"
+          ],
+          "hard_skills": [
+            "Spark",
+            "Hive",
+            "SQL",
+            "数据仓库",
+            "Airflow",
+            "Flink"
+          ],
           "education": "本科+",
-          "majors": ["计算机"],
-          "evidence": ["数据管道项目", "大数据平台经验"]
+          "majors": [
+            "计算机"
+          ],
+          "evidence": [
+            "数据管道项目",
+            "大数据平台经验"
+          ]
         },
         "bi": {
           "name": "BI商业智能",
-          "aliases": ["BI工程师", "商业智能"],
-          "hard_skills": ["SQL", "Tableau", "PowerBI", "可视化", "指标体系"],
+          "aliases": [
+            "BI工程师",
+            "商业智能"
+          ],
+          "hard_skills": [
+            "SQL",
+            "Tableau",
+            "PowerBI",
+            "可视化",
+            "指标体系"
+          ],
           "education": "本科+",
-          "majors": ["统计", "信息管理"],
-          "evidence": ["BI报表项目", "可视化作品"]
+          "majors": [
+            "统计",
+            "信息管理"
+          ],
+          "evidence": [
+            "BI报表项目",
+            "可视化作品"
+          ]
         }
       }
     },
@@ -319,107 +946,326 @@
       "subcategories": {
         "ic_digital": {
           "name": "数字IC设计",
-          "aliases": ["数字IC", "数字设计", "芯片设计", "高速接口设计", "芯片架构设计", "逻辑设计", "数字中端", "BES"],
-          "hard_skills": ["Verilog", "RTL", "SystemVerilog", "综合时序", "低功耗设计"],
+          "aliases": [
+            "数字IC",
+            "数字设计",
+            "芯片设计",
+            "高速接口设计",
+            "芯片架构设计",
+            "逻辑设计",
+            "数字中端",
+            "BES"
+          ],
+          "hard_skills": [
+            "Verilog",
+            "RTL",
+            "SystemVerilog",
+            "综合时序",
+            "低功耗设计"
+          ],
           "education": "硕士为主",
-          "majors": ["微电子", "集成电路", "电子工程"],
-          "evidence": ["流片经验", "IC设计竞赛", "RTL项目"]
+          "majors": [
+            "微电子",
+            "集成电路",
+            "电子工程"
+          ],
+          "evidence": [
+            "流片经验",
+            "IC设计竞赛",
+            "RTL项目"
+          ]
         },
         "ic_analog": {
           "name": "模拟IC设计",
-          "aliases": ["模拟IC", "模拟电路设计", "模拟设计", "射频IC设计", "射频模拟设计"],
-          "hard_skills": ["模拟电路", "Cadence", "电路设计", "OPA/ADC/DAC设计"],
+          "aliases": [
+            "模拟IC",
+            "模拟电路设计",
+            "模拟设计",
+            "射频IC设计",
+            "射频模拟设计"
+          ],
+          "hard_skills": [
+            "模拟电路",
+            "Cadence",
+            "电路设计",
+            "OPA/ADC/DAC设计"
+          ],
           "education": "硕士为主",
-          "majors": ["微电子", "EE"],
-          "evidence": ["tapeout经验", "模拟电路项目", "版图理解"]
+          "majors": [
+            "微电子",
+            "EE"
+          ],
+          "evidence": [
+            "tapeout经验",
+            "模拟电路项目",
+            "版图理解"
+          ]
         },
         "ic_verify": {
           "name": "IC验证",
-          "aliases": ["数字IC验证", "芯片验证", "验证工程师-IC", "数字验证"],
-          "hard_skills": ["SystemVerilog", "UVM", "EDA", "C++", "形式验证"],
+          "aliases": [
+            "数字IC验证",
+            "芯片验证",
+            "验证工程师-IC",
+            "数字验证"
+          ],
+          "hard_skills": [
+            "SystemVerilog",
+            "UVM",
+            "EDA",
+            "C++",
+            "形式验证"
+          ],
           "education": "硕士为主",
-          "majors": ["微电子", "EE"],
-          "evidence": ["验证环境项目", "UVM平台搭建经验"]
+          "majors": [
+            "微电子",
+            "EE"
+          ],
+          "evidence": [
+            "验证环境项目",
+            "UVM平台搭建经验"
+          ]
         },
         "dft": {
           "name": "DFT可测性设计",
-          "aliases": ["DFT工程师", "可测性设计"],
-          "hard_skills": ["Verilog", "MBIST", "SCAN", "JTAG", "Synopsys", "Mentor"],
+          "aliases": [
+            "DFT工程师",
+            "可测性设计"
+          ],
+          "hard_skills": [
+            "Verilog",
+            "MBIST",
+            "SCAN",
+            "JTAG",
+            "Synopsys",
+            "Mentor"
+          ],
           "education": "硕士",
-          "majors": ["微电子", "EE"],
-          "evidence": ["DFT项目", "SoC测试流程经验"]
+          "majors": [
+            "微电子",
+            "EE"
+          ],
+          "evidence": [
+            "DFT项目",
+            "SoC测试流程经验"
+          ]
         },
         "backend_design": {
           "name": "数字后端",
-          "aliases": ["数字IC后端", "物理设计", "后端工程师-芯片"],
-          "hard_skills": ["EDA工具", "布局布线", "时序收敛", "物理验证"],
+          "aliases": [
+            "数字IC后端",
+            "物理设计",
+            "后端工程师-芯片",
+            "后端设计",
+            "数字后端设计"
+          ],
+          "hard_skills": [
+            "EDA工具",
+            "布局布线",
+            "时序收敛",
+            "物理验证"
+          ],
           "education": "硕士为主",
-          "majors": ["微电子"],
-          "evidence": ["后端流程项目", "P&R经验"]
+          "majors": [
+            "微电子"
+          ],
+          "evidence": [
+            "后端流程项目",
+            "P&R经验"
+          ]
         },
         "layout": {
           "name": "模拟版图设计",
-          "aliases": ["版图设计", "版图工程师"],
-          "hard_skills": ["Cadence", "版图设计", "DRC/LVS", "匹配技术"],
+          "aliases": [
+            "版图设计",
+            "版图工程师"
+          ],
+          "hard_skills": [
+            "Cadence",
+            "版图设计",
+            "DRC/LVS",
+            "匹配技术"
+          ],
           "education": "本科+",
-          "majors": ["微电子"],
-          "evidence": ["版图项目", "模拟版图经验"]
+          "majors": [
+            "微电子"
+          ],
+          "evidence": [
+            "版图项目",
+            "模拟版图经验"
+          ]
         },
         "device": {
           "name": "器件工程师",
-          "aliases": ["器件开发", "PDK工程师", "器件物理"],
-          "hard_skills": ["器件物理", "TCAD", "Semiconductor", "PDK开发"],
+          "aliases": [
+            "器件开发",
+            "PDK工程师",
+            "器件物理",
+            "器件",
+            "器件研发",
+            "器件建模"
+          ],
+          "hard_skills": [
+            "器件物理",
+            "TCAD",
+            "Semiconductor",
+            "PDK开发"
+          ],
           "education": "硕士/博士",
-          "majors": ["微电子", "物理"],
-          "evidence": ["器件论文", "工艺-器件协同项目"]
+          "majors": [
+            "微电子",
+            "物理"
+          ],
+          "evidence": [
+            "器件论文",
+            "工艺-器件协同项目"
+          ]
         },
         "packaging": {
           "name": "封装设计",
-          "aliases": ["封装工程师", "先进封装", "封装仿真"],
-          "hard_skills": ["封装工艺", "热仿真", "应力分析", "SiP"],
+          "aliases": [
+            "封装工程师",
+            "先进封装",
+            "封装仿真"
+          ],
+          "hard_skills": [
+            "封装工艺",
+            "热仿真",
+            "应力分析",
+            "SiP"
+          ],
           "education": "硕士为主",
-          "majors": ["材料", "机械", "微电子"],
-          "evidence": ["封装项目", "先进封装研究经验"]
+          "majors": [
+            "材料",
+            "机械",
+            "微电子"
+          ],
+          "evidence": [
+            "封装项目",
+            "先进封装研究经验"
+          ]
         },
         "process_semi": {
           "name": "半导体工艺",
-          "aliases": ["外延工艺", "工艺开发-半导体", "Fab工艺"],
-          "hard_skills": ["半导体工艺", "薄膜/光刻/刻蚀", "Fab运营", "良率"],
+          "aliases": [
+            "外延工艺",
+            "工艺开发-半导体",
+            "Fab工艺"
+          ],
+          "hard_skills": [
+            "半导体工艺",
+            "薄膜/光刻/刻蚀",
+            "Fab运营",
+            "良率"
+          ],
           "education": "硕士为主",
-          "majors": ["材料", "化学", "微电子"],
-          "evidence": ["Fab实习", "工艺实验经验"]
+          "majors": [
+            "材料",
+            "化学",
+            "微电子"
+          ],
+          "evidence": [
+            "Fab实习",
+            "工艺实验经验"
+          ]
         },
         "pie": {
           "name": "工艺整合PIE",
-          "aliases": ["工艺整合", "PIE工程师", "TD-PIE"],
-          "hard_skills": ["工艺整合", "良率管控", "跨工艺模块协同", "8D分析"],
+          "aliases": [
+            "工艺整合",
+            "PIE工程师",
+            "TD-PIE",
+            "制程整合"
+          ],
+          "hard_skills": [
+            "工艺整合",
+            "良率管控",
+            "跨工艺模块协同",
+            "8D分析"
+          ],
           "education": "硕士为主",
-          "majors": ["微电子", "材料"],
-          "evidence": ["Fab工艺整合经验", "良率提升项目"]
+          "majors": [
+            "微电子",
+            "材料"
+          ],
+          "evidence": [
+            "Fab工艺整合经验",
+            "良率提升项目"
+          ]
         },
         "yield_fa": {
           "name": "良率/失效分析",
-          "aliases": ["良率提升", "失效分析", "可靠性分析", "良率工程师"],
-          "hard_skills": ["失效分析FA", "可靠性工程", "8D", "SEM/FIB", "数据统计"],
+          "aliases": [
+            "良率提升",
+            "失效分析",
+            "可靠性分析",
+            "良率工程师"
+          ],
+          "hard_skills": [
+            "失效分析FA",
+            "可靠性工程",
+            "8D",
+            "SEM/FIB",
+            "数据统计"
+          ],
           "education": "硕士为主",
-          "majors": ["微电子", "材料", "物理"],
-          "evidence": ["FA项目", "可靠性认证经验"]
+          "majors": [
+            "微电子",
+            "材料",
+            "物理"
+          ],
+          "evidence": [
+            "FA项目",
+            "可靠性认证经验"
+          ]
         },
         "ate": {
           "name": "芯片测试开发",
-          "aliases": ["量产测试", "ATE测试开发", "测试工程师-芯片"],
-          "hard_skills": ["ATE平台", "测试程序开发", "C++", "测试机台"],
+          "aliases": [
+            "量产测试",
+            "ATE测试开发",
+            "测试工程师-芯片"
+          ],
+          "hard_skills": [
+            "ATE平台",
+            "测试程序开发",
+            "C++",
+            "测试机台"
+          ],
           "education": "本科+",
-          "majors": ["电子信息"],
-          "evidence": ["测试程序项目", "机台使用经验"]
+          "majors": [
+            "电子信息"
+          ],
+          "evidence": [
+            "测试程序项目",
+            "机台使用经验"
+          ]
         },
         "fpga": {
           "name": "FPGA开发",
-          "aliases": ["FPGA工程师", "FPGA设计"],
-          "hard_skills": ["Verilog", "VHDL", "Quartus", "Vivado", "时序约束"],
+          "aliases": [
+            "FPGA工程师",
+            "FPGA设计",
+            "FPGA",
+            "FPGA开发"
+          ],
+          "hard_skills": [
+            "Verilog",
+            "VHDL",
+            "Quartus",
+            "Vivado",
+            "时序约束"
+          ],
           "education": "本科+",
-          "majors": ["电子", "通信"],
-          "evidence": ["FPGA项目", "高速接口经验", "电赛获奖"]
+          "majors": [
+            "电子",
+            "通信"
+          ],
+          "evidence": [
+            "FPGA项目",
+            "高速接口经验",
+            "电赛获奖"
+          ]
         }
       }
     },
@@ -429,75 +1275,230 @@
       "subcategories": {
         "hw_design": {
           "name": "硬件工程师",
-          "aliases": ["硬件开发", "电路设计", "硬件设计", "电子工程师"],
-          "hard_skills": ["电路设计", "PCB", "原理图", "Altium", "电源设计", "示波器调试"],
+          "aliases": [
+            "硬件开发",
+            "电路设计",
+            "硬件设计",
+            "电子工程师",
+            "硬件",
+            "硬件研发",
+            "电子设计",
+            "电子开发"
+          ],
+          "hard_skills": [
+            "电路设计",
+            "PCB",
+            "原理图",
+            "Altium",
+            "电源设计",
+            "示波器调试"
+          ],
           "education": "本科+",
-          "majors": ["电子信息", "电气"],
-          "evidence": ["硬件项目", "电赛获奖", "多板卡调试经验"]
+          "majors": [
+            "电子信息",
+            "电气"
+          ],
+          "evidence": [
+            "硬件项目",
+            "电赛获奖",
+            "多板卡调试经验"
+          ]
         },
         "embedded_hw": {
           "name": "嵌入式硬件",
-          "aliases": ["嵌入式硬件工程师"],
-          "hard_skills": ["原理图", "PCB", "单片机外围", "传感器接口"],
+          "aliases": [
+            "嵌入式硬件工程师"
+          ],
+          "hard_skills": [
+            "原理图",
+            "PCB",
+            "单片机外围",
+            "传感器接口"
+          ],
           "education": "本科+",
-          "majors": ["电子信息"],
-          "evidence": ["嵌入式硬件项目"]
+          "majors": [
+            "电子信息"
+          ],
+          "evidence": [
+            "嵌入式硬件项目"
+          ]
         },
         "ee_power": {
           "name": "电气/电力电子",
-          "aliases": ["电气工程师", "电力电子", "电源工程师"],
-          "hard_skills": ["电力电子", "开关电源", "电机驱动", "逆变器", "电气设计"],
+          "aliases": [
+            "电气工程师",
+            "电力电子",
+            "电源工程师",
+            "电源设计",
+            "电源开发",
+            "电气设计",
+            "电气研发"
+          ],
+          "hard_skills": [
+            "电力电子",
+            "开关电源",
+            "电机驱动",
+            "逆变器",
+            "电气设计"
+          ],
           "education": "本科+",
-          "majors": ["电气工程"],
-          "evidence": ["电源项目", "电气设计经验"]
+          "majors": [
+            "电气工程"
+          ],
+          "evidence": [
+            "电源项目",
+            "电气设计经验"
+          ]
         },
         "motor": {
           "name": "电机工程师",
-          "aliases": ["电机设计", "电机研发"],
-          "hard_skills": ["电机设计", "电磁仿真", "FOC控制", "电机建模"],
+          "aliases": [
+            "电机设计",
+            "电机研发",
+            "电机开发"
+          ],
+          "hard_skills": [
+            "电机设计",
+            "电磁仿真",
+            "FOC控制",
+            "电机建模"
+          ],
           "education": "硕士为主",
-          "majors": ["电气工程", "电机"],
-          "evidence": ["电机项目", "电磁仿真经验"]
+          "majors": [
+            "电气工程",
+            "电机"
+          ],
+          "evidence": [
+            "电机项目",
+            "电磁仿真经验"
+          ]
         },
         "rf_antenna": {
           "name": "射频/天线工程师",
-          "aliases": ["射频工程师", "射频开发", "天线工程师"],
-          "hard_skills": ["射频电路", "天线设计", "微波技术", "HFSS", "矢量网络仪"],
+          "aliases": [
+            "射频工程师",
+            "射频开发",
+            "天线工程师",
+            "射频",
+            "射频设计",
+            "射频电路设计"
+          ],
+          "hard_skills": [
+            "射频电路",
+            "天线设计",
+            "微波技术",
+            "HFSS",
+            "矢量网络仪"
+          ],
           "education": "硕士为主",
-          "majors": ["电磁场", "微波", "电子信息"],
-          "evidence": ["射频项目", "天线仿真经验"]
+          "majors": [
+            "电磁场",
+            "微波",
+            "电子信息"
+          ],
+          "evidence": [
+            "射频项目",
+            "天线仿真经验"
+          ]
         },
         "signal_integrity": {
           "name": "信号完整性",
-          "aliases": ["SI工程师", "信号完整性工程师"],
-          "hard_skills": ["SI/PI仿真", "高速电路", "示波器分析", "眼图"],
+          "aliases": [
+            "SI工程师",
+            "信号完整性工程师"
+          ],
+          "hard_skills": [
+            "SI/PI仿真",
+            "高速电路",
+            "示波器分析",
+            "眼图"
+          ],
           "education": "硕士为主",
-          "majors": ["电子信息"],
-          "evidence": ["高速板设计经验", "SI仿真项目"]
+          "majors": [
+            "电子信息"
+          ],
+          "evidence": [
+            "高速板设计经验",
+            "SI仿真项目"
+          ]
         },
         "thermal": {
           "name": "热设计工程师",
-          "aliases": ["热仿真", "散热设计"],
-          "hard_skills": ["热仿真", "Icepak", "CFD", "散热方案"],
+          "aliases": [
+            "热仿真",
+            "散热设计",
+            "热设计",
+            "热管理"
+          ],
+          "hard_skills": [
+            "热仿真",
+            "Icepak",
+            "CFD",
+            "散热方案"
+          ],
           "education": "硕士为主",
-          "majors": ["机械", "热能"],
-          "evidence": ["热设计项目", "CFD经验"]
+          "majors": [
+            "机械",
+            "热能"
+          ],
+          "evidence": [
+            "热设计项目",
+            "CFD经验"
+          ]
         },
         "optics": {
           "name": "光学工程师",
-          "aliases": ["光学设计", "激光工程师"],
-          "hard_skills": ["光学设计", "Zemax", "激光技术", "光路搭建"],
+          "aliases": [
+            "光学设计",
+            "激光工程师",
+            "光学"
+          ],
+          "hard_skills": [
+            "光学设计",
+            "Zemax",
+            "激光技术",
+            "光路搭建"
+          ],
           "education": "硕士为主",
-          "majors": ["光学", "物理"],
-          "evidence": ["光学项目", "光机电一体化经验"]
+          "majors": [
+            "光学",
+            "物理"
+          ],
+          "evidence": [
+            "光学项目",
+            "光机电一体化经验"
+          ]
         },
         "mechanical": {
           "name": "机械/结构工程师",
-          "aliases": ["机械工程师", "结构工程师", "结构设计", "机械结构", "机械研发", "机电设计师"],
-          "hard_skills": ["SolidWorks", "CAD", "机械设计", "有限元分析", "公差分析", "材料力学"],
+          "aliases": [
+            "机械工程师",
+            "结构工程师",
+            "结构设计",
+            "机械结构",
+            "机械研发",
+            "机电设计师",
+            "机械设计",
+            "机械工程",
+            "结构开发"
+          ],
+          "hard_skills": [
+            "SolidWorks",
+            "CAD",
+            "机械设计",
+            "有限元分析",
+            "公差分析",
+            "材料力学"
+          ],
           "education": "本科+",
-          "majors": ["机械"],
-          "evidence": ["机械设计项目", "结构优化经验", "机械竞赛获奖"]
+          "majors": [
+            "机械"
+          ],
+          "evidence": [
+            "机械设计项目",
+            "结构优化经验",
+            "机械竞赛获奖"
+          ]
         }
       }
     },
@@ -507,91 +1508,286 @@
       "subcategories": {
         "embodied": {
           "name": "具身智能",
-          "aliases": ["具身智能算法", "具身Agent", "具身研发", "机器人算法", "具身智能"],
-          "hard_skills": ["强化学习", "VLA大模型", "机器人学习", "仿真环境", "PyTorch"],
+          "aliases": [
+            "具身智能算法",
+            "具身Agent",
+            "具身研发",
+            "机器人算法",
+            "具身智能"
+          ],
+          "hard_skills": [
+            "强化学习",
+            "VLA大模型",
+            "机器人学习",
+            "仿真环境",
+            "PyTorch"
+          ],
           "education": "硕士+顶会优先",
-          "majors": ["计算机", "自动化"],
-          "evidence": ["具身论文", "机器人学习项目", "Isaac/MuJoCo经验"]
+          "majors": [
+            "计算机",
+            "自动化"
+          ],
+          "evidence": [
+            "具身论文",
+            "机器人学习项目",
+            "Isaac/MuJoCo经验"
+          ]
         },
         "slam": {
           "name": "SLAM算法",
-          "aliases": ["SLAM工程师", "同步定位与建图"],
-          "hard_skills": ["C++", "SLAM", "点云处理", "ORB/LOAM", "多传感器融合", "ROS"],
+          "aliases": [
+            "SLAM工程师",
+            "同步定位与建图"
+          ],
+          "hard_skills": [
+            "C++",
+            "SLAM",
+            "点云处理",
+            "ORB/LOAM",
+            "多传感器融合",
+            "ROS"
+          ],
           "education": "硕士为主",
-          "majors": ["计算机", "自动化"],
-          "evidence": ["SLAM项目", "激光/视觉SLAM经验"]
+          "majors": [
+            "计算机",
+            "自动化"
+          ],
+          "evidence": [
+            "SLAM项目",
+            "激光/视觉SLAM经验"
+          ]
         },
         "navigation": {
           "name": "导航/规划算法",
-          "aliases": ["导航算法", "规划算法", "路径规划"],
-          "hard_skills": ["C++", "规划算法", "A*/RRT", "ROS", "行为决策"],
+          "aliases": [
+            "导航算法",
+            "规划算法",
+            "路径规划"
+          ],
+          "hard_skills": [
+            "C++",
+            "规划算法",
+            "A*/RRT",
+            "ROS",
+            "行为决策"
+          ],
           "education": "硕士为主",
-          "majors": ["计算机", "自动化"],
-          "evidence": ["导航规划项目", "机器人比赛经验"]
+          "majors": [
+            "计算机",
+            "自动化"
+          ],
+          "evidence": [
+            "导航规划项目",
+            "机器人比赛经验"
+          ]
         },
         "motion_control": {
           "name": "运动控制算法",
-          "aliases": ["运控算法", "力位混合控制", "阻抗控制", "WBC", "控制算法"],
-          "hard_skills": ["C++", "控制理论", "MPC", "阻抗/导纳控制", "动力学建模"],
+          "aliases": [
+            "运控算法",
+            "力位混合控制",
+            "阻抗控制",
+            "WBC",
+            "控制算法"
+          ],
+          "hard_skills": [
+            "C++",
+            "控制理论",
+            "MPC",
+            "阻抗/导纳控制",
+            "动力学建模"
+          ],
           "education": "硕士为主",
-          "majors": ["自动化", "机械"],
-          "evidence": ["运控项目", "机器人控制经验", "RoboMaster获奖"]
+          "majors": [
+            "自动化",
+            "机械"
+          ],
+          "evidence": [
+            "运控项目",
+            "机器人控制经验",
+            "RoboMaster获奖"
+          ]
         },
         "perception": {
           "name": "感知算法",
-          "aliases": ["融合感知", "感知工程师", "传感器算法"],
-          "hard_skills": ["C++", "点云处理", "目标检测", "多传感器融合", "BEV"],
+          "aliases": [
+            "融合感知",
+            "感知工程师",
+            "传感器算法"
+          ],
+          "hard_skills": [
+            "C++",
+            "点云处理",
+            "目标检测",
+            "多传感器融合",
+            "BEV"
+          ],
           "education": "硕士为主",
-          "majors": ["计算机", "自动化"],
-          "evidence": ["感知项目", "自动驾驶实习"]
+          "majors": [
+            "计算机",
+            "自动化"
+          ],
+          "evidence": [
+            "感知项目",
+            "自动驾驶实习"
+          ]
         },
         "av": {
           "name": "自动驾驶",
-          "aliases": ["自动驾驶算法", "规控工程师", "智能驾驶"],
-          "hard_skills": ["C++", "ROS", "规控算法", "仿真平台", "CARLA"],
+          "aliases": [
+            "自动驾驶算法",
+            "规控工程师",
+            "智能驾驶"
+          ],
+          "hard_skills": [
+            "C++",
+            "ROS",
+            "规控算法",
+            "仿真平台",
+            "CARLA"
+          ],
           "education": "硕士为主",
-          "majors": ["计算机", "自动化"],
-          "evidence": ["AV实习", "规控项目"]
+          "majors": [
+            "计算机",
+            "自动化"
+          ],
+          "evidence": [
+            "AV实习",
+            "规控项目"
+          ]
         },
         "drone": {
           "name": "无人机",
-          "aliases": ["无人机技术", "飞控工程师", "飞控算法"],
-          "hard_skills": ["C++", "PX4", "飞控算法", "传感器数据处理", "航空航天原理"],
+          "aliases": [
+            "无人机技术",
+            "飞控工程师",
+            "飞控算法"
+          ],
+          "hard_skills": [
+            "C++",
+            "PX4",
+            "飞控算法",
+            "传感器数据处理",
+            "航空航天原理"
+          ],
           "education": "本科+",
-          "majors": ["航空航天", "自动化"],
-          "evidence": ["无人机项目", "飞控调试经验", "航模/无人机竞赛"]
+          "majors": [
+            "航空航天",
+            "自动化"
+          ],
+          "evidence": [
+            "无人机项目",
+            "飞控调试经验",
+            "航模/无人机竞赛"
+          ]
         },
         "robot_sw": {
           "name": "机器人软件",
-          "aliases": ["机器人软件工程师", "ROS开发", "机器人系统集成"],
-          "hard_skills": ["C++", "Python", "ROS", "中间件", "机器人SDK"],
+          "aliases": [
+            "机器人软件工程师",
+            "ROS开发",
+            "机器人系统集成"
+          ],
+          "hard_skills": [
+            "C++",
+            "Python",
+            "ROS",
+            "中间件",
+            "机器人SDK"
+          ],
           "education": "本科+",
-          "majors": ["计算机", "自动化"],
-          "evidence": ["ROS项目", "机器人系统集成经验"]
+          "majors": [
+            "计算机",
+            "自动化"
+          ],
+          "evidence": [
+            "ROS项目",
+            "机器人系统集成经验"
+          ]
         },
         "edge_ai": {
           "name": "边缘AI/嵌入式AI",
-          "aliases": ["端侧部署", "模型轻量化", "嵌入式AI", "端智能"],
-          "hard_skills": ["TensorFlow Lite", "模型量化", "C++", "NCNN", "MNN", "嵌入式部署", "模型压缩"],
+          "aliases": [
+            "端侧部署",
+            "模型轻量化",
+            "嵌入式AI",
+            "端智能"
+          ],
+          "hard_skills": [
+            "TensorFlow Lite",
+            "模型量化",
+            "C++",
+            "NCNN",
+            "MNN",
+            "嵌入式部署",
+            "模型压缩"
+          ],
           "education": "硕士为主",
-          "majors": ["电子信息", "计算机"],
-          "evidence": ["边缘部署项目", "量化/剪枝经验", "嵌入式+ML交叉背景"]
+          "majors": [
+            "电子信息",
+            "计算机"
+          ],
+          "evidence": [
+            "边缘部署项目",
+            "量化/剪枝经验",
+            "嵌入式+ML交叉背景"
+          ]
         },
         "motor_ctrl": {
           "name": "电机控制算法",
-          "aliases": ["电机控制", "FOC算法"],
-          "hard_skills": ["C", "FOC", "电机建模", "控制理论", "STM32"],
+          "aliases": [
+            "电机控制",
+            "FOC算法"
+          ],
+          "hard_skills": [
+            "C",
+            "FOC",
+            "电机建模",
+            "控制理论",
+            "STM32"
+          ],
           "education": "硕士为主",
-          "majors": ["电气", "自动化"],
-          "evidence": ["电机控制项目", "驱动器开发经验"]
+          "majors": [
+            "电气",
+            "自动化"
+          ],
+          "evidence": [
+            "电机控制项目",
+            "驱动器开发经验"
+          ]
         },
         "defense_tech": {
           "name": "军工/系统总体设计",
-          "aliases": ["总体设计", "作战管理", "体系设计", "飞行器设计", "智能探测", "智能系统总体", "数字孪生", "军工", "装备研制"],
-          "hard_skills": ["系统工程", "总体方案设计", "需求分解", "仿真评估", "论证"],
+          "aliases": [
+            "总体设计",
+            "作战管理",
+            "体系设计",
+            "飞行器设计",
+            "智能探测",
+            "智能系统总体",
+            "数字孪生",
+            "军工",
+            "装备研制"
+          ],
+          "hard_skills": [
+            "系统工程",
+            "总体方案设计",
+            "需求分解",
+            "仿真评估",
+            "论证"
+          ],
           "education": "硕士+,研究所偏好博士",
-          "majors": ["航空航天", "兵器科学", "控制", "电子信息"],
-          "evidence": ["院所项目经历", "国防科技创新竞赛", "系统工程论文"]
+          "majors": [
+            "航空航天",
+            "兵器科学",
+            "控制",
+            "电子信息"
+          ],
+          "evidence": [
+            "院所项目经历",
+            "国防科技创新竞赛",
+            "系统工程论文"
+          ]
         }
       }
     },
@@ -601,83 +1797,273 @@
       "subcategories": {
         "ibd": {
           "name": "投行",
-          "aliases": ["投资银行", "IBD", "债券承做", "股权衍生品", "EQD", "固定收益", "FICC", "投行经理助理"],
-          "hard_skills": ["财务建模", "估值分析", "承做流程", "PPT", "Excel"],
+          "aliases": [
+            "投资银行",
+            "IBD",
+            "债券承做",
+            "股权衍生品",
+            "EQD",
+            "固定收益",
+            "FICC",
+            "投行经理助理"
+          ],
+          "hard_skills": [
+            "财务建模",
+            "估值分析",
+            "承做流程",
+            "PPT",
+            "Excel"
+          ],
           "education": "金融硕士为主,名校偏好",
-          "majors": ["金融", "经济", "会计", "法学"],
-          "evidence": ["投行实习", "CPA/CFA进度", "法考", "债承项目经验"]
+          "majors": [
+            "金融",
+            "经济",
+            "会计",
+            "法学"
+          ],
+          "evidence": [
+            "投行实习",
+            "CPA/CFA进度",
+            "法考",
+            "债承项目经验"
+          ]
         },
         "research": {
           "name": "行业研究",
-          "aliases": ["研究助理", "行研", "总量研究", "行业研究员", "战略研究", "债券研究"],
-          "hard_skills": ["行业分析", "财务分析", "报告撰写", "Wind/Bloomberg", "数据建模"],
+          "aliases": [
+            "研究助理",
+            "行研",
+            "总量研究",
+            "行业研究员",
+            "战略研究",
+            "债券研究",
+            "信用研究"
+          ],
+          "hard_skills": [
+            "行业分析",
+            "财务分析",
+            "报告撰写",
+            "Wind/Bloomberg",
+            "数据建模"
+          ],
           "education": "金融硕士为主,理工+金融复合背景强",
-          "majors": ["金融", "经济", "理工+金融"],
-          "evidence": ["行研实习", "深度报告作品", "卖方研究经验"]
+          "majors": [
+            "金融",
+            "经济",
+            "理工+金融"
+          ],
+          "evidence": [
+            "行研实习",
+            "深度报告作品",
+            "卖方研究经验"
+          ]
         },
         "quant": {
           "name": "量化研究",
-          "aliases": ["量化研究员", "高频因子", "量化-基本面", "量化-AI算法", "金融工程", "AI量化"],
-          "hard_skills": ["Python", "C++", "统计", "金融工程", "机器学习", "因子挖掘", "组合优化"],
+          "aliases": [
+            "量化研究员",
+            "高频因子",
+            "量化-基本面",
+            "量化-AI算法",
+            "金融工程",
+            "AI量化"
+          ],
+          "hard_skills": [
+            "Python",
+            "C++",
+            "统计",
+            "金融工程",
+            "机器学习",
+            "因子挖掘",
+            "组合优化"
+          ],
           "education": "理工硕士为主(数学/物理/统计/CS)",
-          "majors": ["数学", "物理", "统计", "金融工程", "计算机"],
-          "evidence": ["量化实习", "量化竞赛获奖", "因子/策略研究经验"]
+          "majors": [
+            "数学",
+            "物理",
+            "统计",
+            "金融工程",
+            "计算机"
+          ],
+          "evidence": [
+            "量化实习",
+            "量化竞赛获奖",
+            "因子/策略研究经验"
+          ]
         },
         "risk": {
           "name": "风控",
-          "aliases": ["风控", "风险控制", "授信审批", "操作风险", "科技风险", "征信"],
-          "hard_skills": ["SQL", "Python", "统计", "风控模型", "征信分析", "巴塞尔协议"],
+          "aliases": [
+            "风控",
+            "风险控制",
+            "授信审批",
+            "操作风险",
+            "科技风险",
+            "征信"
+          ],
+          "hard_skills": [
+            "SQL",
+            "Python",
+            "统计",
+            "风控模型",
+            "征信分析",
+            "巴塞尔协议"
+          ],
           "education": "金融/统计硕士为主",
-          "majors": ["金融", "统计", "数学"],
-          "evidence": ["风控实习", "银行/消金风控经验", "数据分析项目"]
+          "majors": [
+            "金融",
+            "统计",
+            "数学"
+          ],
+          "evidence": [
+            "风控实习",
+            "银行/消金风控经验",
+            "数据分析项目"
+          ]
         },
         "asset": {
           "name": "资管/投资",
-          "aliases": ["投资经理", "投资管理", "战略投资", "投融资", "产融"],
-          "hard_skills": ["投资分析", "估值", "组合管理", "尽调"],
+          "aliases": [
+            "投资经理",
+            "投资管理",
+            "战略投资",
+            "投融资",
+            "产融"
+          ],
+          "hard_skills": [
+            "投资分析",
+            "估值",
+            "组合管理",
+            "尽调"
+          ],
           "education": "金融硕士+",
-          "majors": ["金融", "经济"],
-          "evidence": ["投资实习", "一级/二级项目经验"]
+          "majors": [
+            "金融",
+            "经济"
+          ],
+          "evidence": [
+            "投资实习",
+            "一级/二级项目经验"
+          ]
         },
         "bank_mt": {
           "name": "银行管培",
-          "aliases": ["总行管培生", "分行校招生", "华金新锐", "金融管培生", "分支机构-管培"],
-          "hard_skills": ["综合素质", "轮岗适应", "金融基础"],
+          "aliases": [
+            "总行管培生",
+            "分行校招生",
+            "华金新锐",
+            "金融管培生",
+            "分支机构-管培"
+          ],
+          "hard_skills": [
+            "综合素质",
+            "轮岗适应",
+            "金融基础"
+          ],
           "education": "本科+,部分要求硕士",
-          "majors": ["金融/经济为主,专业宽泛"],
-          "evidence": ["学生干部", "银行实习", "轮岗适应能力"]
+          "majors": [
+            "金融/经济为主,专业宽泛"
+          ],
+          "evidence": [
+            "学生干部",
+            "银行实习",
+            "轮岗适应能力"
+          ]
         },
         "bank_fintech": {
           "name": "金融科技",
-          "aliases": ["总行科技专培生", "金融数智", "金融科技岗"],
-          "hard_skills": ["Java", "Python", "SQL", "数据分析", "金融业务理解"],
+          "aliases": [
+            "总行科技专培生",
+            "金融数智",
+            "金融科技岗"
+          ],
+          "hard_skills": [
+            "Java",
+            "Python",
+            "SQL",
+            "数据分析",
+            "金融业务理解"
+          ],
           "education": "本科+",
-          "majors": ["计算机", "金融+技术复合"],
-          "evidence": ["技术项目", "金融机构科技实习"]
+          "majors": [
+            "计算机",
+            "金融+技术复合"
+          ],
+          "evidence": [
+            "技术项目",
+            "金融机构科技实习"
+          ]
         },
         "bank_ops": {
           "name": "银行网点/业务岗",
-          "aliases": ["分支机构工作人员", "保全岗", "消保分析", "柜员", "业务主办"],
-          "hard_skills": ["客户服务", "合规意识", "业务操作"],
+          "aliases": [
+            "分支机构工作人员",
+            "保全岗",
+            "消保分析",
+            "柜员",
+            "业务主办",
+            "银行校招生"
+          ],
+          "hard_skills": [
+            "客户服务",
+            "合规意识",
+            "业务操作"
+          ],
           "education": "本科",
-          "majors": ["不限,经济金融优先"],
-          "evidence": ["银行实习", "服务类经历"]
+          "majors": [
+            "不限,经济金融优先"
+          ],
+          "evidence": [
+            "银行实习",
+            "服务类经历"
+          ]
         },
         "sales_trading": {
           "name": "销售交易/机构业务",
-          "aliases": ["销售交易", "机构业务", "IED", "机构销售"],
-          "hard_skills": ["市场敏感度", "客户沟通", "交易执行"],
+          "aliases": [
+            "销售交易",
+            "机构业务",
+            "IED",
+            "机构销售"
+          ],
+          "hard_skills": [
+            "市场敏感度",
+            "客户沟通",
+            "交易执行"
+          ],
           "education": "本科+",
-          "majors": ["金融", "经济"],
-          "evidence": ["券商实习", "市场研究经验"]
+          "majors": [
+            "金融",
+            "经济"
+          ],
+          "evidence": [
+            "券商实习",
+            "市场研究经验"
+          ]
         },
         "fin_general": {
           "name": "财经管理",
-          "aliases": ["财经类", "财务管理-金融", "融资专员", "博士后研究员-金融"],
-          "hard_skills": ["财务", "金融综合", "研究能力"],
+          "aliases": [
+            "财经类",
+            "财务管理-金融",
+            "融资专员",
+            "博士后研究员-金融"
+          ],
+          "hard_skills": [
+            "财务",
+            "金融综合",
+            "研究能力"
+          ],
           "education": "硕士为主",
-          "majors": ["金融", "财务", "经济"],
-          "evidence": ["金融机构实习", "研究经历"]
+          "majors": [
+            "金融",
+            "财务",
+            "经济"
+          ],
+          "evidence": [
+            "金融机构实习",
+            "研究经历"
+          ]
         }
       }
     },
@@ -687,75 +2073,213 @@
       "subcategories": {
         "pm_user": {
           "name": "用户产品经理",
-          "aliases": ["产品经理", "用户产品", "C端产品", "产品工程师", "产品管理"],
-          "hard_skills": ["需求分析", "原型设计", "用户研究", "Axure", "数据分析"],
+          "aliases": [
+            "产品经理",
+            "用户产品",
+            "C端产品",
+            "产品工程师",
+            "产品管理"
+          ],
+          "hard_skills": [
+            "需求分析",
+            "原型设计",
+            "用户研究",
+            "Axure",
+            "数据分析"
+          ],
           "education": "本科+",
-          "majors": ["不限,计算机/商科常见"],
-          "evidence": ["产品实习", "作品集", "从0到1项目"]
+          "majors": [
+            "不限,计算机/商科常见"
+          ],
+          "evidence": [
+            "产品实习",
+            "作品集",
+            "从0到1项目"
+          ]
         },
         "pm_software": {
           "name": "软件产品经理",
-          "aliases": ["软件产品", "B端产品", "IT产品"],
-          "hard_skills": ["需求文档", "B端业务理解", "项目管理", "SaaS"],
+          "aliases": [
+            "软件产品",
+            "B端产品",
+            "IT产品"
+          ],
+          "hard_skills": [
+            "需求文档",
+            "B端业务理解",
+            "项目管理",
+            "SaaS"
+          ],
           "education": "本科+",
-          "majors": ["计算机", "信息管理"],
-          "evidence": ["B端实习", "需求分析项目"]
+          "majors": [
+            "计算机",
+            "信息管理"
+          ],
+          "evidence": [
+            "B端实习",
+            "需求分析项目"
+          ]
         },
         "pm_ai": {
           "name": "AI产品经理",
-          "aliases": ["AI产品", "AIGC产品", "AI Native规划师"],
-          "hard_skills": ["AI技术理解", "Prompt工程", "大模型能力边界", "AI工作流设计"],
+          "aliases": [
+            "AI产品",
+            "AIGC产品",
+            "AI Native规划师"
+          ],
+          "hard_skills": [
+            "AI技术理解",
+            "Prompt工程",
+            "大模型能力边界",
+            "AI工作流设计"
+          ],
           "education": "本科+",
-          "majors": ["计算机", "不限"],
-          "evidence": ["AI产品实习", "AIGC作品", "技术背景转型"]
+          "majors": [
+            "计算机",
+            "不限"
+          ],
+          "evidence": [
+            "AI产品实习",
+            "AIGC作品",
+            "技术背景转型"
+          ]
         },
         "pm_hardware": {
           "name": "硬件产品经理",
-          "aliases": ["硬件产品", "具身产品经理"],
-          "hard_skills": ["硬件研发流程", "供应链理解", "产品定义"],
+          "aliases": [
+            "硬件产品",
+            "具身产品经理"
+          ],
+          "hard_skills": [
+            "硬件研发流程",
+            "供应链理解",
+            "产品定义"
+          ],
           "education": "本科+",
-          "majors": ["电子", "机械"],
-          "evidence": ["硬件产品实习", "产品定义项目"]
+          "majors": [
+            "电子",
+            "机械"
+          ],
+          "evidence": [
+            "硬件产品实习",
+            "产品定义项目"
+          ]
         },
         "pm_biz": {
           "name": "商业产品经理",
-          "aliases": ["商业产品", "商业化", "广告产品"],
-          "hard_skills": ["商业化", "广告变现", "数据分析", "商业模型"],
+          "aliases": [
+            "商业产品",
+            "商业化",
+            "广告产品"
+          ],
+          "hard_skills": [
+            "商业化",
+            "广告变现",
+            "数据分析",
+            "商业模型"
+          ],
           "education": "本科+",
-          "majors": ["不限"],
-          "evidence": ["商业化实习", "增长项目"]
+          "majors": [
+            "不限"
+          ],
+          "evidence": [
+            "商业化实习",
+            "增长项目"
+          ]
         },
         "pm_data": {
           "name": "数据产品经理",
-          "aliases": ["数据产品"],
-          "hard_skills": ["数据治理", "数据平台", "SQL", "指标体系"],
+          "aliases": [
+            "数据产品"
+          ],
+          "hard_skills": [
+            "数据治理",
+            "数据平台",
+            "SQL",
+            "指标体系"
+          ],
           "education": "本科+",
-          "majors": ["计算机", "统计"],
-          "evidence": ["数据产品实习", "平台建设经验"]
+          "majors": [
+            "计算机",
+            "统计"
+          ],
+          "evidence": [
+            "数据产品实习",
+            "平台建设经验"
+          ]
         },
         "solution": {
           "name": "解决方案/售前经理",
-          "aliases": ["解决方案经理", "方案经理", "解决方案"],
-          "hard_skills": ["方案设计", "客户沟通", "PoC", "技术理解"],
+          "aliases": [
+            "解决方案经理",
+            "方案经理",
+            "解决方案"
+          ],
+          "hard_skills": [
+            "方案设计",
+            "客户沟通",
+            "PoC",
+            "技术理解"
+          ],
           "education": "本科+",
-          "majors": ["计算机", "电子信息"],
-          "evidence": ["售前实习", "方案撰写经验"]
+          "majors": [
+            "计算机",
+            "电子信息"
+          ],
+          "evidence": [
+            "售前实习",
+            "方案撰写经验"
+          ]
         },
         "game_design": {
           "name": "游戏策划",
-          "aliases": ["系统策划", "数值策划", "战斗策划", "关卡策划", "游戏设计师"],
-          "hard_skills": ["游戏设计", "数值建模", "关卡设计", "Excel建模", "玩法分析"],
+          "aliases": [
+            "系统策划",
+            "数值策划",
+            "战斗策划",
+            "关卡策划",
+            "游戏设计师"
+          ],
+          "hard_skills": [
+            "游戏设计",
+            "数值建模",
+            "关卡设计",
+            "Excel建模",
+            "玩法分析"
+          ],
           "education": "本科+",
-          "majors": ["不限,热爱游戏"],
-          "evidence": ["游戏分析报告", "Mod/独立游戏作品", "游戏经历深度"]
+          "majors": [
+            "不限,热爱游戏"
+          ],
+          "evidence": [
+            "游戏分析报告",
+            "Mod/独立游戏作品",
+            "游戏经历深度"
+          ]
         },
         "proj_mgmt": {
           "name": "项目管理",
-          "aliases": ["PM项目管理", "项目经理", "具身项目经理", "项目管理类"],
-          "hard_skills": ["项目管理", "敏捷方法", "风险管理", "PMP", "跨部门协同"],
+          "aliases": [
+            "PM项目管理",
+            "项目经理",
+            "具身项目经理",
+            "项目管理类"
+          ],
+          "hard_skills": [
+            "项目管理",
+            "敏捷方法",
+            "风险管理",
+            "PMP",
+            "跨部门协同"
+          ],
           "education": "本科+",
-          "majors": ["不限"],
-          "evidence": ["PMO实习", "复杂项目主导经验"]
+          "majors": [
+            "不限"
+          ],
+          "evidence": [
+            "PMO实习",
+            "复杂项目主导经验"
+          ]
         }
       }
     },
@@ -765,59 +2289,181 @@
       "subcategories": {
         "game_art": {
           "name": "游戏美术",
-          "aliases": ["原画设计师", "角色模型", "场景模型", "三维模型", "角色原画"],
-          "hard_skills": ["绘画", "Blender", "ZBrush", "原画", "PBR流程"],
+          "aliases": [
+            "原画设计师",
+            "角色模型",
+            "场景模型",
+            "三维模型",
+            "角色原画",
+            "原画",
+            "3D建模"
+          ],
+          "hard_skills": [
+            "绘画",
+            "Blender",
+            "ZBrush",
+            "原画",
+            "PBR流程"
+          ],
           "education": "本科为主",
-          "majors": ["美术"],
-          "evidence": ["作品集", "游戏美术项目", "美术功底"]
+          "majors": [
+            "美术"
+          ],
+          "evidence": [
+            "作品集",
+            "游戏美术项目",
+            "美术功底"
+          ]
         },
         "ta": {
           "name": "技术美术TA",
-          "aliases": ["技术美术", "Technical Artist"],
-          "hard_skills": ["C++", "C#", "Shader", "Unity", "Unreal", "渲染管线", "GPU优化"],
+          "aliases": [
+            "技术美术",
+            "Technical Artist"
+          ],
+          "hard_skills": [
+            "C++",
+            "C#",
+            "Shader",
+            "Unity",
+            "Unreal",
+            "渲染管线",
+            "GPU优化"
+          ],
           "education": "本科+,美术+技术复合",
-          "majors": ["数字媒体", "计算机", "美术"],
-          "evidence": ["TA作品", "Shader/引擎项目", "图形学理解"]
+          "majors": [
+            "数字媒体",
+            "计算机",
+            "美术"
+          ],
+          "evidence": [
+            "TA作品",
+            "Shader/引擎项目",
+            "图形学理解"
+          ]
         },
         "vfx": {
           "name": "特效/动画设计",
-          "aliases": ["特效设计师", "动作设计师", "动画设计"],
-          "hard_skills": ["特效制作", "动画", "AE", "骨骼绑定"],
+          "aliases": [
+            "特效设计师",
+            "动作设计师",
+            "动画设计"
+          ],
+          "hard_skills": [
+            "特效制作",
+            "动画",
+            "AE",
+            "骨骼绑定"
+          ],
           "education": "本科",
-          "majors": ["美术", "动画"],
-          "evidence": ["特效作品集", "动画项目"]
+          "majors": [
+            "美术",
+            "动画"
+          ],
+          "evidence": [
+            "特效作品集",
+            "动画项目"
+          ]
         },
         "uiux": {
           "name": "UI/UX设计",
-          "aliases": ["交互设计", "UI设计", "用户体验", "游戏UI", "游戏UX", "交互设计师"],
-          "hard_skills": ["Figma", "交互设计", "用户研究", "设计系统", "原型"],
+          "aliases": [
+            "交互设计",
+            "UI设计",
+            "用户体验",
+            "游戏UI",
+            "游戏UX",
+            "交互设计师"
+          ],
+          "hard_skills": [
+            "Figma",
+            "交互设计",
+            "用户研究",
+            "设计系统",
+            "原型"
+          ],
           "education": "本科",
-          "majors": ["设计", "人机交互"],
-          "evidence": ["作品集", "UX项目", "可用性研究经验"]
+          "majors": [
+            "设计",
+            "人机交互"
+          ],
+          "evidence": [
+            "作品集",
+            "UX项目",
+            "可用性研究经验"
+          ]
         },
         "visual": {
           "name": "视觉/品牌设计",
-          "aliases": ["视觉设计师", "平面设计", "品牌设计", "广告视频设计"],
-          "hard_skills": ["Photoshop", "Illustrator", "品牌设计", "视觉体系"],
+          "aliases": [
+            "视觉设计师",
+            "平面设计",
+            "品牌设计",
+            "广告视频设计"
+          ],
+          "hard_skills": [
+            "Photoshop",
+            "Illustrator",
+            "品牌设计",
+            "视觉体系"
+          ],
           "education": "本科",
-          "majors": ["视觉传达"],
-          "evidence": ["视觉作品集", "品牌项目"]
+          "majors": [
+            "视觉传达"
+          ],
+          "evidence": [
+            "视觉作品集",
+            "品牌项目"
+          ]
         },
         "industrial": {
           "name": "工业设计",
-          "aliases": ["工业设计师", "产品设计", "工业与交互"],
-          "hard_skills": ["工业设计", "CMF", "建模渲染", "设计思维"],
+          "aliases": [
+            "工业设计师",
+            "产品设计",
+            "工业与交互"
+          ],
+          "hard_skills": [
+            "工业设计",
+            "CMF",
+            "建模渲染",
+            "设计思维"
+          ],
           "education": "本科",
-          "majors": ["工业设计"],
-          "evidence": ["红点/iF获奖", "作品集", "量产设计经验"]
+          "majors": [
+            "工业设计"
+          ],
+          "evidence": [
+            "红点/iF获奖",
+            "作品集",
+            "量产设计经验"
+          ]
         },
         "content": {
           "name": "内容创意",
-          "aliases": ["视频编导", "拍摄剪辑", "视频创意制作", "剪辑师", "声音设计"],
-          "hard_skills": ["Premiere", "剪映", "编导策划", "分镜", "AE"],
+          "aliases": [
+            "视频编导",
+            "拍摄剪辑",
+            "视频创意制作",
+            "剪辑师",
+            "声音设计"
+          ],
+          "hard_skills": [
+            "Premiere",
+            "剪映",
+            "编导策划",
+            "分镜",
+            "AE"
+          ],
           "education": "本科",
-          "majors": ["传媒", "设计"],
-          "evidence": ["视频作品", "自媒体运营经验"]
+          "majors": [
+            "传媒",
+            "设计"
+          ],
+          "evidence": [
+            "视频作品",
+            "自媒体运营经验"
+          ]
         }
       }
     },
@@ -827,51 +2473,152 @@
       "subcategories": {
         "process_mfg": {
           "name": "制造工艺",
-          "aliases": ["工艺工程师", "工艺工程", "精益生产", "外延工艺-制造"],
-          "hard_skills": ["工艺优化", "IE工业工程", "精益工具", "6Sigma"],
+          "aliases": [
+            "工艺工程师",
+            "工艺工程",
+            "精益生产",
+            "外延工艺-制造",
+            "工艺",
+            "工艺技术",
+            "工艺研发"
+          ],
+          "hard_skills": [
+            "工艺优化",
+            "IE工业工程",
+            "精益工具",
+            "6Sigma"
+          ],
           "education": "本科+",
-          "majors": ["工科"],
-          "evidence": ["工厂实习", "工艺改善项目"]
+          "majors": [
+            "工科"
+          ],
+          "evidence": [
+            "工厂实习",
+            "工艺改善项目"
+          ]
         },
         "quality": {
           "name": "质量工程师",
-          "aliases": ["质量管理", "供应商质量SQE", "客户质量", "质量体系"],
-          "hard_skills": ["质量工具", "8D", "ISO9001", "IATF16949", "SPC", "FMEA"],
+          "aliases": [
+            "质量管理",
+            "供应商质量SQE",
+            "客户质量",
+            "质量体系",
+            "质量控制",
+            "品质管理",
+            "质量"
+          ],
+          "hard_skills": [
+            "质量工具",
+            "8D",
+            "ISO9001",
+            "IATF16949",
+            "SPC",
+            "FMEA"
+          ],
           "education": "本科+",
-          "majors": ["工科"],
-          "evidence": ["质量实习", "体系搭建经验"]
+          "majors": [
+            "工科"
+          ],
+          "evidence": [
+            "质量实习",
+            "体系搭建经验"
+          ]
         },
         "reliability_mfg": {
           "name": "可靠性/测试工程",
-          "aliases": ["可靠性工程师", "硬件测试", "产品测试工程师", "生产测试维护"],
-          "hard_skills": ["可靠性分析", "测试设计", "环境试验", "MTBF"],
+          "aliases": [
+            "可靠性工程师",
+            "硬件测试",
+            "产品测试工程师",
+            "生产测试维护",
+            "可靠性"
+          ],
+          "hard_skills": [
+            "可靠性分析",
+            "测试设计",
+            "环境试验",
+            "MTBF"
+          ],
           "education": "本科+",
-          "majors": ["工科"],
-          "evidence": ["测试项目", "可靠性认证经验"]
+          "majors": [
+            "工科"
+          ],
+          "evidence": [
+            "测试项目",
+            "可靠性认证经验"
+          ]
         },
         "production": {
           "name": "生产管理",
-          "aliases": ["生产计划", "量产管理", "生产运营"],
-          "hard_skills": ["生产排程", "ERP", "物料管理", "产能规划"],
+          "aliases": [
+            "生产计划",
+            "量产管理",
+            "生产运营"
+          ],
+          "hard_skills": [
+            "生产排程",
+            "ERP",
+            "物料管理",
+            "产能规划"
+          ],
           "education": "本科+",
-          "majors": ["工业工程", "工科"],
-          "evidence": ["生产实习", "计划体系经验"]
+          "majors": [
+            "工业工程",
+            "工科"
+          ],
+          "evidence": [
+            "生产实习",
+            "计划体系经验"
+          ]
         },
         "equipment": {
           "name": "设备工程师",
-          "aliases": ["机务维修", "运行控制", "设备维护", "装备开发", "环保装备"],
-          "hard_skills": ["设备维护", "自动化设备", "故障诊断", "PLC"],
+          "aliases": [
+            "机务维修",
+            "运行控制",
+            "设备维护",
+            "装备开发",
+            "环保装备"
+          ],
+          "hard_skills": [
+            "设备维护",
+            "自动化设备",
+            "故障诊断",
+            "PLC"
+          ],
           "education": "本科+",
-          "majors": ["机械", "电气"],
-          "evidence": ["设备实习", "维修经验"]
+          "majors": [
+            "机械",
+            "电气"
+          ],
+          "evidence": [
+            "设备实习",
+            "维修经验"
+          ]
         },
         "material_rnd": {
           "name": "材料研发",
-          "aliases": ["材料研发工程师", "材料工程师"],
-          "hard_skills": ["材料表征", "XRD/SEM", "实验设计", "材料合成"],
+          "aliases": [
+            "材料研发工程师",
+            "材料工程师"
+          ],
+          "hard_skills": [
+            "材料表征",
+            "XRD/SEM",
+            "实验设计",
+            "材料合成"
+          ],
           "education": "硕士+",
-          "majors": ["材料", "化学", "物理"],
-          "evidence": ["材料论文", "表征项目经验"]
+          "majors": [
+            "材料",
+            "化学",
+            "物理"
+          ],
+          "evidence": [
+            "材料论文",
+            "表征项目经验"
+          ]
         }
       }
     },
@@ -881,75 +2628,222 @@
       "subcategories": {
         "user_ops": {
           "name": "用户运营",
-          "aliases": ["用户运营", "社群运营", "用户体验运营"],
-          "hard_skills": ["用户增长", "社群管理", "数据分析", "活动策划"],
+          "aliases": [
+            "用户运营",
+            "社群运营",
+            "用户体验运营"
+          ],
+          "hard_skills": [
+            "用户增长",
+            "社群管理",
+            "数据分析",
+            "活动策划"
+          ],
           "education": "本科",
-          "majors": ["不限"],
-          "evidence": ["运营实习", "自媒体/社群运营经验"]
+          "majors": [
+            "不限"
+          ],
+          "evidence": [
+            "运营实习",
+            "自媒体/社群运营经验"
+          ]
         },
         "content_ops": {
           "name": "内容运营",
-          "aliases": ["内容运营", "内容策划"],
-          "hard_skills": ["内容策划", "文案", "数据分析"],
+          "aliases": [
+            "内容运营",
+            "内容策划"
+          ],
+          "hard_skills": [
+            "内容策划",
+            "文案",
+            "数据分析"
+          ],
           "education": "本科",
-          "majors": ["传媒", "中文", "不限"],
-          "evidence": ["内容运营实习", "爆款内容经验"]
+          "majors": [
+            "传媒",
+            "中文",
+            "不限"
+          ],
+          "evidence": [
+            "内容运营实习",
+            "爆款内容经验"
+          ]
         },
         "product_ops": {
           "name": "产品运营",
-          "aliases": ["产品运营", "商家运营", "品类运营", "商品运营", "策略运营", "游戏运营", "线上运营"],
-          "hard_skills": ["数据分析", "策略制定", "商家管理", "Excel/SQL"],
+          "aliases": [
+            "产品运营",
+            "商家运营",
+            "品类运营",
+            "商品运营",
+            "策略运营",
+            "游戏运营",
+            "线上运营",
+            "电商运营"
+          ],
+          "hard_skills": [
+            "数据分析",
+            "策略制定",
+            "商家管理",
+            "Excel/SQL"
+          ],
           "education": "本科",
-          "majors": ["不限"],
-          "evidence": ["电商/平台运营实习", "增长案例"]
+          "majors": [
+            "不限"
+          ],
+          "evidence": [
+            "电商/平台运营实习",
+            "增长案例"
+          ]
         },
         "strategy_ops": {
           "name": "战略/经营分析",
-          "aliases": ["战略运营", "经营分析-运营", "商业分析-运营"],
-          "hard_skills": ["商业分析", "战略规划", "数据建模", "PPT"],
+          "aliases": [
+            "战略运营",
+            "经营分析-运营",
+            "商业分析-运营"
+          ],
+          "hard_skills": [
+            "商业分析",
+            "战略规划",
+            "数据建模",
+            "PPT"
+          ],
           "education": "本科+,硕士优先",
-          "majors": ["商科", "统计"],
-          "evidence": ["咨询/战投实习", "商业分析项目"]
+          "majors": [
+            "商科",
+            "统计"
+          ],
+          "evidence": [
+            "咨询/战投实习",
+            "商业分析项目"
+          ]
         },
         "supply_chain": {
           "name": "供应链",
-          "aliases": ["供应链管理", "供应链商务", "采购-供应链"],
-          "hard_skills": ["供应链管理", "ERP", "S&OP", "库存管理"],
+          "aliases": [
+            "供应链管理",
+            "供应链商务",
+            "采购-供应链"
+          ],
+          "hard_skills": [
+            "供应链管理",
+            "ERP",
+            "S&OP",
+            "库存管理"
+          ],
           "education": "本科+",
-          "majors": ["物流", "工业工程"],
-          "evidence": ["供应链实习", "计划/采购经验"]
+          "majors": [
+            "物流",
+            "工业工程"
+          ],
+          "evidence": [
+            "供应链实习",
+            "计划/采购经验"
+          ]
         },
         "logistics": {
           "name": "物流运营",
-          "aliases": ["货代", "国际快递", "驿站管理", "车辆调度", "国际物流"],
-          "hard_skills": ["物流运营", "货代流程", "调度优化"],
+          "aliases": [
+            "货代",
+            "国际快递",
+            "驿站管理",
+            "车辆调度",
+            "国际物流",
+            "物流"
+          ],
+          "hard_skills": [
+            "物流运营",
+            "货代流程",
+            "调度优化"
+          ],
           "education": "本科",
-          "majors": ["物流", "不限"],
-          "evidence": ["物流实习", "跨境/快递经验"]
+          "majors": [
+            "物流",
+            "不限"
+          ],
+          "evidence": [
+            "物流实习",
+            "跨境/快递经验"
+          ]
         },
         "edu_ops": {
           "name": "教育运营",
-          "aliases": ["学科运营", "教学管理", "课程规划师", "督学"],
-          "hard_skills": ["教学管理", "课程设计", "学员服务"],
+          "aliases": [
+            "学科运营",
+            "教学管理",
+            "课程规划师",
+            "督学"
+          ],
+          "hard_skills": [
+            "教学管理",
+            "课程设计",
+            "学员服务"
+          ],
           "education": "本科",
-          "majors": ["教育学", "学科相关"],
-          "evidence": ["教学经验", "教培实习"]
+          "majors": [
+            "教育学",
+            "学科相关"
+          ],
+          "evidence": [
+            "教学经验",
+            "教培实习"
+          ]
         },
         "teacher": {
           "name": "教师/教学",
-          "aliases": ["教师", "老师", "主讲", "竞赛教练", "SAT教师", "雅思教师", "托福教师", "二讲", "授课", "教学研究"],
-          "hard_skills": ["学科知识", "教学设计", "课堂管理", "家校沟通"],
+          "aliases": [
+            "教师",
+            "老师",
+            "主讲",
+            "竞赛教练",
+            "SAT教师",
+            "雅思教师",
+            "托福教师",
+            "二讲",
+            "授课",
+            "教学研究",
+            "学科教师",
+            "学科教学"
+          ],
+          "hard_skills": [
+            "学科知识",
+            "教学设计",
+            "课堂管理",
+            "家校沟通"
+          ],
           "education": "本科,师范/学科背景",
-          "majors": ["学科相关", "师范"],
-          "evidence": ["家教/机构授课经验", "教师资格证", "学科功底(竞赛获奖)"]
+          "majors": [
+            "学科相关",
+            "师范"
+          ],
+          "evidence": [
+            "家教/机构授课经验",
+            "教师资格证",
+            "学科功底(竞赛获奖)"
+          ]
         },
         "compliance_ops": {
           "name": "合规运营",
-          "aliases": ["合规运营", "合规专员"],
-          "hard_skills": ["合规审查", "流程管理", "监管政策"],
+          "aliases": [
+            "合规运营",
+            "合规专员"
+          ],
+          "hard_skills": [
+            "合规审查",
+            "流程管理",
+            "监管政策"
+          ],
           "education": "本科+",
-          "majors": ["法律", "金融"],
-          "evidence": ["合规实习", "政策研究经验"]
+          "majors": [
+            "法律",
+            "金融"
+          ],
+          "evidence": [
+            "合规实习",
+            "政策研究经验"
+          ]
         }
       }
     },
@@ -959,35 +2853,93 @@
       "subcategories": {
         "mt_tech": {
           "name": "技术管培",
-          "aliases": ["智能感知与控制管培", "机电液管培", "技术应用管培", "理工科博士-管培"],
-          "hard_skills": ["工科技术基础", "轮岗适应", "技术管理"],
+          "aliases": [
+            "智能感知与控制管培",
+            "机电液管培",
+            "技术应用管培",
+            "理工科博士-管培"
+          ],
+          "hard_skills": [
+            "工科技术基础",
+            "轮岗适应",
+            "技术管理"
+          ],
           "education": "硕士优先",
-          "majors": ["工科"],
-          "evidence": ["学生干部", "技术项目", "综合素养"]
+          "majors": [
+            "工科"
+          ],
+          "evidence": [
+            "学生干部",
+            "技术项目",
+            "综合素养"
+          ]
         },
         "mt_biz": {
           "name": "商业管培",
-          "aliases": ["经营管理培训生", "UMC", "市场推广管培", "运营管理方向", "供应链商务管培", "商务管培", "金融管培-综合", "产品管培生", "运营管培生", "设计管培生", "管培生"],
-          "hard_skills": ["商业素养", "轮岗适应", "沟通协调"],
+          "aliases": [
+            "经营管理培训生",
+            "UMC",
+            "市场推广管培",
+            "运营管理方向",
+            "供应链商务管培",
+            "商务管培",
+            "金融管培-综合",
+            "产品管培生",
+            "运营管培生",
+            "设计管培生",
+            "管培生"
+          ],
+          "hard_skills": [
+            "商业素养",
+            "轮岗适应",
+            "沟通协调"
+          ],
           "education": "本科+",
-          "majors": ["不限,商科偏好"],
-          "evidence": ["学生干部", "名企实习", "领导力经历"]
+          "majors": [
+            "不限,商科偏好"
+          ],
+          "evidence": [
+            "学生干部",
+            "名企实习",
+            "领导力经历"
+          ]
         },
         "mt_quality": {
           "name": "质量管培",
-          "aliases": ["质量管培生"],
-          "hard_skills": ["质量体系", "质量管理", "轮岗"],
+          "aliases": [
+            "质量管培生"
+          ],
+          "hard_skills": [
+            "质量体系",
+            "质量管理",
+            "轮岗"
+          ],
           "education": "本科+",
-          "majors": ["工科"],
-          "evidence": ["质量相关实习"]
+          "majors": [
+            "工科"
+          ],
+          "evidence": [
+            "质量相关实习"
+          ]
         },
         "mt_energy": {
           "name": "能源/新能源管培",
-          "aliases": ["绿色动力与新能源管培", "新能源管培"],
-          "hard_skills": ["新能源知识", "轮岗"],
+          "aliases": [
+            "绿色动力与新能源管培",
+            "新能源管培"
+          ],
+          "hard_skills": [
+            "新能源知识",
+            "轮岗"
+          ],
           "education": "本科+",
-          "majors": ["能源", "工科"],
-          "evidence": ["能源行业实习"]
+          "majors": [
+            "能源",
+            "工科"
+          ],
+          "evidence": [
+            "能源行业实习"
+          ]
         }
       }
     },
@@ -997,67 +2949,204 @@
       "subcategories": {
         "hr": {
           "name": "人力资源",
-          "aliases": ["HR", "HRBP", "人力资源", "人事", "薪酬绩效", "招聘", "培训开发", "HR管培", "人资", "人力"],
-          "hard_skills": ["HR六大模块", "招聘面试", "薪酬体系", "HRIS"],
+          "aliases": [
+            "HR",
+            "HRBP",
+            "人力资源",
+            "人事",
+            "薪酬绩效",
+            "招聘",
+            "培训开发",
+            "HR管培",
+            "人资",
+            "人力"
+          ],
+          "hard_skills": [
+            "HR六大模块",
+            "招聘面试",
+            "薪酬体系",
+            "HRIS"
+          ],
           "education": "本科+",
-          "majors": ["人力资源", "心理学", "不限"],
-          "evidence": ["HR实习", "学生组织HR经验"]
+          "majors": [
+            "人力资源",
+            "心理学",
+            "不限"
+          ],
+          "evidence": [
+            "HR实习",
+            "学生组织HR经验"
+          ]
         },
         "finance_acc": {
           "name": "财务",
-          "aliases": ["财务专员", "财务", "出纳", "会计核算", "业财分析", "管理财务", "财务管理实习生", "会计"],
-          "hard_skills": ["会计", "财务分析", "Excel", "ERP", "CPA科目"],
+          "aliases": [
+            "财务专员",
+            "财务",
+            "出纳",
+            "会计核算",
+            "业财分析",
+            "管理财务",
+            "财务管理实习生",
+            "会计",
+            "财务管理",
+            "财务会计"
+          ],
+          "hard_skills": [
+            "会计",
+            "财务分析",
+            "Excel",
+            "ERP",
+            "CPA科目"
+          ],
           "education": "本科+",
-          "majors": ["会计", "财务"],
-          "evidence": ["财务实习", "四大/企业财务经验", "CPA进度"]
+          "majors": [
+            "会计",
+            "财务"
+          ],
+          "evidence": [
+            "财务实习",
+            "四大/企业财务经验",
+            "CPA进度"
+          ]
         },
         "legal": {
           "name": "法务",
-          "aliases": ["法务", "法务助理", "法务经理", "知识产权", "审计风控法务岗"],
-          "hard_skills": ["法律法规", "合同审查", "诉讼支持", "知识产权"],
+          "aliases": [
+            "法务",
+            "法务助理",
+            "法务经理",
+            "知识产权",
+            "审计风控法务岗"
+          ],
+          "hard_skills": [
+            "法律法规",
+            "合同审查",
+            "诉讼支持",
+            "知识产权"
+          ],
           "education": "本科+,法学",
-          "majors": ["法学"],
-          "evidence": ["法考", "律所/法务实习"]
+          "majors": [
+            "法学"
+          ],
+          "evidence": [
+            "法考",
+            "律所/法务实习"
+          ]
         },
         "audit": {
           "name": "审计",
-          "aliases": ["审计岗", "内部审计", "审计风控"],
-          "hard_skills": ["审计程序", "内控", "数据分析", "CPA"],
+          "aliases": [
+            "审计岗",
+            "内部审计",
+            "审计风控"
+          ],
+          "hard_skills": [
+            "审计程序",
+            "内控",
+            "数据分析",
+            "CPA"
+          ],
           "education": "本科+",
-          "majors": ["会计", "审计"],
-          "evidence": ["事务所实习", "审计项目经验"]
+          "majors": [
+            "会计",
+            "审计"
+          ],
+          "evidence": [
+            "事务所实习",
+            "审计项目经验"
+          ]
         },
         "admin": {
           "name": "行政",
-          "aliases": ["行政专员", "综合行政", "党群", "综合干事", "行政"],
-          "hard_skills": ["行政管理", "会务组织", "公文写作"],
+          "aliases": [
+            "行政专员",
+            "综合行政",
+            "党群",
+            "综合干事",
+            "行政"
+          ],
+          "hard_skills": [
+            "行政管理",
+            "会务组织",
+            "公文写作"
+          ],
           "education": "本科",
-          "majors": ["不限"],
-          "evidence": ["行政实习", "学生干部"]
+          "majors": [
+            "不限"
+          ],
+          "evidence": [
+            "行政实习",
+            "学生干部"
+          ]
         },
         "procurement": {
           "name": "采购",
-          "aliases": ["采购工程师", "采购专员", "采购类"],
-          "hard_skills": ["采购流程", "供应商管理", "谈判", "成本分析"],
+          "aliases": [
+            "采购工程师",
+            "采购专员",
+            "采购类"
+          ],
+          "hard_skills": [
+            "采购流程",
+            "供应商管理",
+            "谈判",
+            "成本分析"
+          ],
           "education": "本科+",
-          "majors": ["工科", "供应链"],
-          "evidence": ["采购实习", "供应商项目"]
+          "majors": [
+            "工科",
+            "供应链"
+          ],
+          "evidence": [
+            "采购实习",
+            "供应商项目"
+          ]
         },
         "biz_analysis": {
           "name": "经营/商业分析",
-          "aliases": ["经营分析", "商业分析", "战略类", "战略研究-职能", "业务管理"],
-          "hard_skills": ["商业分析", "财务建模", "数据可视化", "行业研究"],
+          "aliases": [
+            "经营分析",
+            "商业分析",
+            "战略类",
+            "战略研究-职能",
+            "业务管理"
+          ],
+          "hard_skills": [
+            "商业分析",
+            "财务建模",
+            "数据可视化",
+            "行业研究"
+          ],
           "education": "硕士优先",
-          "majors": ["商科", "统计"],
-          "evidence": ["咨询/战投实习", "分析报告作品"]
+          "majors": [
+            "商科",
+            "统计"
+          ],
+          "evidence": [
+            "咨询/战投实习",
+            "分析报告作品"
+          ]
         },
         "customs": {
           "name": "关务/国际贸易",
-          "aliases": ["关务", "国际贸易"],
-          "hard_skills": ["关务流程", "外贸单证", "进出口合规"],
+          "aliases": [
+            "关务",
+            "国际贸易"
+          ],
+          "hard_skills": [
+            "关务流程",
+            "外贸单证",
+            "进出口合规"
+          ],
           "education": "本科",
-          "majors": ["国际贸易", "物流"],
-          "evidence": ["关务/外贸实习"]
+          "majors": [
+            "国际贸易",
+            "物流"
+          ],
+          "evidence": [
+            "关务/外贸实习"
+          ]
         }
       }
     },
@@ -1067,51 +3156,156 @@
       "subcategories": {
         "tech_sales": {
           "name": "技术销售",
-          "aliases": ["销售工程师", "技术销售", "销售管理", "售后工程师", "国内销售"],
-          "hard_skills": ["技术理解", "客户开发", "方案讲解", "CRM"],
+          "aliases": [
+            "销售工程师",
+            "技术销售",
+            "销售管理",
+            "售后工程师",
+            "国内销售",
+            "销售"
+          ],
+          "hard_skills": [
+            "技术理解",
+            "客户开发",
+            "方案讲解",
+            "CRM"
+          ],
           "education": "本科+",
-          "majors": ["工科"],
-          "evidence": ["销售实习", "技术+沟通双能力"]
+          "majors": [
+            "工科"
+          ],
+          "evidence": [
+            "销售实习",
+            "技术+沟通双能力"
+          ]
         },
         "pre_sales": {
           "name": "售前工程师",
-          "aliases": ["售前", "海外售前", "售前咨询", "技术支持-售前"],
-          "hard_skills": ["方案设计", "PoC", "招投标", "技术沟通"],
+          "aliases": [
+            "售前",
+            "海外售前",
+            "售前咨询",
+            "技术支持-售前"
+          ],
+          "hard_skills": [
+            "方案设计",
+            "PoC",
+            "招投标",
+            "技术沟通"
+          ],
           "education": "本科+",
-          "majors": ["计算机", "电子信息"],
-          "evidence": ["售前实习", "方案撰写经验"]
+          "majors": [
+            "计算机",
+            "电子信息"
+          ],
+          "evidence": [
+            "售前实习",
+            "方案撰写经验"
+          ]
         },
         "account_sales": {
           "name": "客户经理/大客户销售",
-          "aliases": ["客户经理", "大客户销售", "渠道销售", "零售代表", "渠道"],
-          "hard_skills": ["客户关系", "销售漏斗", "谈判", "客情维护"],
+          "aliases": [
+            "客户经理",
+            "大客户销售",
+            "渠道销售",
+            "零售代表",
+            "渠道"
+          ],
+          "hard_skills": [
+            "客户关系",
+            "销售漏斗",
+            "谈判",
+            "客情维护"
+          ],
           "education": "本科",
-          "majors": ["不限"],
-          "evidence": ["销售实习", "客户资源", "业绩证明"]
+          "majors": [
+            "不限"
+          ],
+          "evidence": [
+            "销售实习",
+            "客户资源",
+            "业绩证明"
+          ]
         },
         "overseas_sales": {
           "name": "海外销售",
-          "aliases": ["海外销售", "全球销售", "海外售后", "国际销售"],
-          "hard_skills": ["外语沟通", "跨文化", "海外市场开发", "外贸流程"],
+          "aliases": [
+            "海外销售",
+            "全球销售",
+            "海外售后",
+            "国际销售"
+          ],
+          "hard_skills": [
+            "外语沟通",
+            "跨文化",
+            "海外市场开发",
+            "外贸流程"
+          ],
           "education": "本科+,外语要求高",
-          "majors": ["外语", "国贸", "不限"],
-          "evidence": ["海外经历", "小语种能力", "外贸实习"]
+          "majors": [
+            "外语",
+            "国贸",
+            "不限"
+          ],
+          "evidence": [
+            "海外经历",
+            "小语种能力",
+            "外贸实习"
+          ]
         },
         "bd": {
           "name": "商务拓展BD",
-          "aliases": ["商务拓展", "BD", "商务管培-拓展", "商务"],
-          "hard_skills": ["商务谈判", "合作伙伴开发", "市场洞察"],
+          "aliases": [
+            "商务拓展",
+            "BD",
+            "商务管培-拓展",
+            "商务"
+          ],
+          "hard_skills": [
+            "商务谈判",
+            "合作伙伴开发",
+            "市场洞察"
+          ],
           "education": "本科",
-          "majors": ["不限"],
-          "evidence": ["BD实习", "合作项目主导"]
+          "majors": [
+            "不限"
+          ],
+          "evidence": [
+            "BD实习",
+            "合作项目主导"
+          ]
         },
         "marketing": {
           "name": "市场营销",
-          "aliases": ["市场营销", "市场", "整合营销", "广告投放", "品牌", "市场拓展", "营销", "市场专员"],
-          "hard_skills": ["营销策划", "广告投放", "品牌管理", "数据分析", "新媒体"],
+          "aliases": [
+            "市场营销",
+            "市场",
+            "整合营销",
+            "广告投放",
+            "品牌",
+            "市场拓展",
+            "营销",
+            "市场专员",
+            "品牌宣传"
+          ],
+          "hard_skills": [
+            "营销策划",
+            "广告投放",
+            "品牌管理",
+            "数据分析",
+            "新媒体"
+          ],
           "education": "本科",
-          "majors": ["市场营销", "传媒"],
-          "evidence": ["营销实习", " campaign案例", "新媒体运营经验"]
+          "majors": [
+            "市场营销",
+            "传媒"
+          ],
+          "evidence": [
+            "营销实习",
+            " campaign案例",
+            "新媒体运营经验"
+          ]
         }
       }
     }

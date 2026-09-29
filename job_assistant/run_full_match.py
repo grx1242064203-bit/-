@@ -153,6 +153,9 @@ def dump_result(name: str, profile: UserProfile, scored: List[Dict]):
             "dims": s.get("维度分", {}),
             "reasons": s.get("匹配理由", []),
             "role_gated": s.get("方向门槛触发", False),
+            "comp_label": (s.get("竞争力信息") or {}).get("label", ""),
+            "candidate_score": (s.get("竞争力信息") or {}).get("candidate_score", 0),
+            "company_score": (s.get("竞争力信息") or {}).get("company_score", 0),
             "hard_skills": _parse_list_field(s.get("hard_skills"))[:8],
             "keywords": _parse_list_field(s.get("keywords"))[:8],
         })
@@ -178,17 +181,17 @@ def dump_result(name: str, profile: UserProfile, scored: List[Dict]):
     for k, v in DIMENSION_WEIGHTS.items():
         lines.append(f"- {k}: {v}")
     lines.append("\n## Top 50 推荐\n")
-    lines.append("| # | 分数 | 推荐度 | 门槛 | 公司 | 岗位 | 城市 | 方向 | 学历 | skill | hard | role | city | edu |")
-    lines.append("|---|------|--------|------|------|------|------|------|------|-------|------|------|------|-----|")
+    lines.append("| # | 分数 | 推荐度 | 对齐 | 门槛 | 公司 | 岗位 | 城市 | 方向 | skill | hard | role | comp |")
+    lines.append("|---|------|--------|------|------|------|------|------|------|-------|------|------|------|")
     for s in slim:
         d = s["dims"]
-        gate = "⚠️方向" if s.get("role_gated") else ""
+        gate = "方向" if s.get("role_gated") else ""
+        comp = s.get("comp_label", "")
         lines.append(
-            f"| {s['rank']} | {s['score']:.1f} | {s['recommend']} | {gate} | {s['company']} | "
+            f"| {s['rank']} | {s['score']:.1f} | {s['recommend']} | {comp} | {gate} | {s['company']} | "
             f"{s['position']} | {s['city'] or '-'} | {s['job_category'] or '-'} | "
-            f"{s['education_req'] or '-'} | "
             f"{d.get('skill',0):.0f} | {d.get('hard_skill',0):.0f} | "
-            f"{d.get('role',0):.0f} | {d.get('city',0):.0f} | {d.get('education',0):.0f} |"
+            f"{d.get('role',0):.0f} | {d.get('competitiveness',0):.0f} |"
         )
 
     # 全量分数分布(对抗性审查用)

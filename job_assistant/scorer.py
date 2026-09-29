@@ -14,24 +14,26 @@ from typing import Dict, List, Tuple, Optional, Any
 
 from keyword_normalizer import keyword_set_overlap, normalize as _norm
 import job_tree
+from competitiveness import candidate_competitiveness, company_competitiveness, alignment
 
 logger = logging.getLogger(__name__)
 
-# 权重重新分配(第一性原理:方向对齐 > 真实技能命中 > 硬门槛 > 其他)
-# - role 0.05→0.15:求职方向是用户最核心偏好,必须显著影响排序
-# - cert 0.10→0.05:多数岗位无证书要求,降权避免空岗位被过度奖励/惩罚
-# - city 0.10→0.05:多数用户无明确城市偏好,降权
-# - major 0.05→0.10:专业匹配是硬门槛之一,提权
-# - skill 0.30→0.25:为 role 让出权重,仍是最大单项
+# 权重重新分配(第一性原理:方向对齐 > 技能命中 > 竞争力对齐 > 硬门槛)
+# - role 0.15:求职方向核心偏好
+# - skill 0.20 / hard_skill 0.15:真实技能命中(让出部分给 competitiveness)
+# - competitiveness 0.10:候选人档位 vs 岗位档位对齐(冲刺/匹配/保底),中等偏上
+# - education 0.15 / major 0.10:硬门槛
+# - cert 0.05 / city 0.05 / soft_skill 0.05:辅助
 DIMENSION_WEIGHTS = {
-    "skill": 0.25,
-    "hard_skill": 0.20,
+    "skill": 0.20,
+    "hard_skill": 0.15,
     "cert": 0.05,
     "education": 0.15,
     "major": 0.10,
     "city": 0.05,
     "role": 0.15,
     "soft_skill": 0.05,
+    "competitiveness": 0.10,
 }
 
 # 方向硬门槛:role 维度 < ROLE_GATE_THRESHOLD 时,总分上限 = ROLE_GATE_CAP
@@ -397,6 +399,34 @@ def _match_soft_skill(job: Dict, u: Dict) -> Tuple[float, List[str]]:
     return 50.0, ["软技能无法从简历关键词中准确匹配"]
 
 
+def _match_competitiveness(profile, job: Dict) -> Tuple[float, List[str], Dict]:
+    """竞争力对齐:候选人档位 vs 企业/岗位档位 → 冲刺/匹配/保底。
+
+    软信号,不淘汰。对齐分 = 100 - |diff|×1.5,diff=企业分-候选人分。
+    返回 (score, reasons, info) info 含候选人分/企业分/标签。
+    """
+    reasons: List[str] = []
+    cand_score, cand_brk, cand_det = candidate_competitiveness(profile)
+    comp_score, comp_brk, comp_det = company_competitiveness(job)
+    label, align_score = alignment(cand_score, comp_score)
+
+    diff = comp_score - cand_score
+    reasons.append(
+        f"竞争力对齐「{label}」:候选人{cand_score:.0f}分(学校{cand_det['school_tier']}/"
+        f"{cand_det['degree']}/实习{cand_det['internship_level']}/竞赛{cand_det['competition_level']}) "
+        f"↔ 岗位{comp_score:.0f}分({comp_det['company_type']}/{comp_det['job_category']}/"
+        f"门槛{comp_det['min_education'] or '不限'}) 差值{diff:+.0f}"
+    )
+    info = {
+        "candidate_score": cand_score,
+        "company_score": comp_score,
+        "label": label,
+        "candidate_breakdown": cand_brk,
+        "company_breakdown": comp_brk,
+    }
+    return align_score, reasons, info
+
+
 def _match_skill(job: Dict, u: Dict) -> Tuple[float, List[str]]:
     """综合技能:岗位 keywords + hard_skills 的并集与用户 skill_all 做覆盖度匹配。
 
@@ -438,8 +468,9 @@ def score_job(job: Dict, profile, llm_client=None) -> Dict:
 
     dim_scores: Dict[str, float] = {}
     all_reasons: List[str] = []
+    comp_info: Dict = {}
 
-    for dim_name, (score, reasons) in [
+    for dim_name, result in [
         ("skill", _match_skill(job, u)),
         ("hard_skill", _match_hard_skill(job, u)),
         ("cert", _match_cert(profile, job, u)),
@@ -448,7 +479,13 @@ def score_job(job: Dict, profile, llm_client=None) -> Dict:
         ("city", _match_city(profile, job)),
         ("role", _match_role(profile, job, u)),
         ("soft_skill", _match_soft_skill(job, u)),
+        ("competitiveness", _match_competitiveness(profile, job)),
     ]:
+        # competitiveness 返回 (score, reasons, info),其余返回 (score, reasons)
+        if dim_name == "competitiveness":
+            score, reasons, comp_info = result
+        else:
+            score, reasons = result
         dim_scores[dim_name] = score
         all_reasons.extend([f"[{dim_name}] {r}" for r in reasons])
 
@@ -494,4 +531,5 @@ def score_job(job: Dict, profile, llm_client=None) -> Dict:
         "匹配理由": all_reasons[:20],
         "硬门槛通过": hard_gate,
         "方向门槛触发": role_gated,
+        "竞争力信息": comp_info,
     }

@@ -8,51 +8,7 @@
   "top50": [
     {
       "rank": 1,
-      "score": 83.2,
-      "recommend": "强烈推荐",
-      "company": "南芯科技",
-      "position": "AI应用工程师",
-      "city": "上海,成都,深圳,北京,西安,南京,珠海,杭州,苏州",
-      "job_category": "研发",
-      "education_req": "本科",
-      "deadline": null,
-      "apply_url": "hr-candidate@southchip.com",
-      "dims": {
-        "skill": 78.0,
-        "hard_skill": 100.0,
-        "cert": 60.0,
-        "education": 100.0,
-        "major": 80.0,
-        "city": 50.0,
-        "role": 85.0,
-        "soft_skill": 50.0
-      },
-      "reasons": [
-        "[skill] 关键词命中3/4: deep_learning↔deep_learning, machine_learning↔machine_learning, python↔python",
-        "[hard_skill] 硬技能命中3/3: deep_learning↔deep_learning, machine_learning↔machine_learning, python↔python",
-        "[cert] 岗位无证书硬性要求",
-        "[education] 候选人硕士学历满足岗位最低要求",
-        "[major] 岗位接受计算机/人工智能相关专业",
-        "[city] 候选人无城市偏好(中性)",
-        "[role] [role] 方向 精确子类命中:岗位「大模型应用开发」↔ 候选人适配「大模型应用开发」(权重0.85) — 华为实习用Prompt/RAG/Structured Output做测试用例生成,字节实习做MCP Tools配置生成,均属大模型应用落地。",
-        "[soft_skill] 软技能无法从简历关键词中准确匹配"
-      ],
-      "role_gated": false,
-      "hard_skills": [
-        "机器学习",
-        "Python",
-        "深度学习"
-      ],
-      "keywords": [
-        "AI",
-        "机器学习",
-        "Python",
-        "深度学习"
-      ]
-    },
-    {
-      "rank": 2,
-      "score": 83.2,
+      "score": 83.0,
       "recommend": "强烈推荐",
       "company": "多益网络",
       "position": "AI应用开发工程师",
@@ -69,7 +25,8 @@
         "major": 80.0,
         "city": 50.0,
         "role": 85.0,
-        "soft_skill": 50.0
+        "soft_skill": 50.0,
+        "competitiveness": 86.5
       },
       "reasons": [
         "[skill] 关键词命中3/4: deep_learning↔deep_learning, machine_learning↔machine_learning, python↔python",
@@ -79,9 +36,13 @@
         "[major] 岗位接受计算机相关专业",
         "[city] 候选人无城市偏好(中性)",
         "[role] [role] 方向 精确子类命中:岗位「大模型应用开发」↔ 候选人适配「大模型应用开发」(权重0.85) — 华为实习用Prompt/RAG/Structured Output做测试用例生成,字节实习做MCP Tools配置生成,均属大模型应用落地。",
-        "[soft_skill] 软技能无法从简历关键词中准确匹配"
+        "[soft_skill] 软技能无法从简历关键词中准确匹配",
+        "[competitiveness] 竞争力对齐「匹配」:候选人83分(学校overseas_top/硕士/实习大厂/竞赛国际级) ↔ 岗位74分(民企/AI工程/门槛本科) 差值-9"
       ],
       "role_gated": false,
+      "comp_label": "匹配",
+      "candidate_score": 83,
+      "company_score": 74,
       "hard_skills": [
         "Python",
         "机器学习",
@@ -95,8 +56,57 @@
       ]
     },
     {
+      "rank": 2,
+      "score": 81.5,
+      "recommend": "强烈推荐",
+      "company": "南芯科技",
+      "position": "AI应用工程师",
+      "city": "上海,成都,深圳,北京,西安,南京,珠海,杭州,苏州",
+      "job_category": "研发",
+      "education_req": "本科",
+      "deadline": null,
+      "apply_url": "hr-candidate@southchip.com",
+      "dims": {
+        "skill": 78.0,
+        "hard_skill": 100.0,
+        "cert": 60.0,
+        "education": 100.0,
+        "major": 80.0,
+        "city": 50.0,
+        "role": 85.0,
+        "soft_skill": 50.0,
+        "competitiveness": 71.5
+      },
+      "reasons": [
+        "[skill] 关键词命中3/4: deep_learning↔deep_learning, machine_learning↔machine_learning, python↔python",
+        "[hard_skill] 硬技能命中3/3: deep_learning↔deep_learning, machine_learning↔machine_learning, python↔python",
+        "[cert] 岗位无证书硬性要求",
+        "[education] 候选人硕士学历满足岗位最低要求",
+        "[major] 岗位接受计算机/人工智能相关专业",
+        "[city] 候选人无城市偏好(中性)",
+        "[role] [role] 方向 精确子类命中:岗位「大模型应用开发」↔ 候选人适配「大模型应用开发」(权重0.85) — 华为实习用Prompt/RAG/Structured Output做测试用例生成,字节实习做MCP Tools配置生成,均属大模型应用落地。",
+        "[soft_skill] 软技能无法从简历关键词中准确匹配",
+        "[competitiveness] 竞争力对齐「保底」:候选人83分(学校overseas_top/硕士/实习大厂/竞赛国际级) ↔ 岗位64分(民企/AI工程/门槛本科) 差值-19"
+      ],
+      "role_gated": false,
+      "comp_label": "保底",
+      "candidate_score": 83,
+      "company_score": 64,
+      "hard_skills": [
+        "机器学习",
+        "Python",
+        "深度学习"
+      ],
+      "keywords": [
+        "AI",
+        "机器学习",
+        "Python",
+        "深度学习"
+      ]
+    },
+    {
       "rank": 3,
-      "score": 83.2,
+      "score": 81.5,
       "recommend": "强烈推荐",
       "company": "峰岹科技-海外留学生招聘",
       "position": "AI工程师",
@@ -113,7 +123,8 @@
         "major": 80.0,
         "city": 50.0,
         "role": 85.0,
-        "soft_skill": 50.0
+        "soft_skill": 50.0,
+        "competitiveness": 71.5
       },
       "reasons": [
         "[skill] 关键词命中3/4: deep_learning↔deep_learning, machine_learning↔machine_learning, python↔python",
@@ -123,9 +134,13 @@
         "[major] 岗位接受计算机、人工智能、自动化等相关专业专业",
         "[city] 候选人无城市偏好(中性)",
         "[role] [role] 方向 精确子类命中:岗位「大模型应用开发」↔ 候选人适配「大模型应用开发」(权重0.85) — 华为实习用Prompt/RAG/Structured Output做测试用例生成,字节实习做MCP Tools配置生成,均属大模型应用落地。",
-        "[soft_skill] 软技能无法从简历关键词中准确匹配"
+        "[soft_skill] 软技能无法从简历关键词中准确匹配",
+        "[competitiveness] 竞争力对齐「保底」:候选人83分(学校overseas_top/硕士/实习大厂/竞赛国际级) ↔ 岗位64分(民企/AI工程/门槛本科) 差值-19"
       ],
       "role_gated": false,
+      "comp_label": "保底",
+      "candidate_score": 83,
+      "company_score": 64,
       "hard_skills": [
         "机器学习",
         "深度学习",
@@ -140,7 +155,7 @@
     },
     {
       "rank": 4,
-      "score": 79.5,
+      "score": 78.5,
       "recommend": "强烈推荐",
       "company": "宇树科技",
       "position": "AI算法工程师",
@@ -157,7 +172,8 @@
         "major": 80.0,
         "city": 50.0,
         "role": 85.0,
-        "soft_skill": 50.0
+        "soft_skill": 50.0,
+        "competitiveness": 71.5
       },
       "reasons": [
         "[skill] 关键词命中3/5: deep_learning↔deep_learning, machine_learning↔machine_learning, python↔python",
@@ -167,9 +183,13 @@
         "[major] 岗位接受计算机相关专业",
         "[city] 候选人无城市偏好(中性)",
         "[role] [role] 方向 精确子类命中:岗位「大模型应用开发」↔ 候选人适配「大模型应用开发」(权重0.85) — 华为实习用Prompt/RAG/Structured Output做测试用例生成,字节实习做MCP Tools配置生成,均属大模型应用落地。",
-        "[soft_skill] 软技能无法从简历关键词中准确匹配"
+        "[soft_skill] 软技能无法从简历关键词中准确匹配",
+        "[competitiveness] 竞争力对齐「保底」:候选人83分(学校overseas_top/硕士/实习大厂/竞赛国际级) ↔ 岗位64分(民企/AI工程/门槛本科) 差值-19"
       ],
       "role_gated": false,
+      "comp_label": "保底",
+      "candidate_score": 83,
+      "company_score": 64,
       "hard_skills": [
         "机器学习",
         "深度学习",
@@ -184,96 +204,7 @@
     },
     {
       "rank": 5,
-      "score": 78.5,
-      "recommend": "强烈推荐",
-      "company": "四方股份",
-      "position": "AI开发工程师",
-      "city": "北京,武汉,南京,湖州,保定,深圳,西安",
-      "job_category": "研发",
-      "education_req": "本科",
-      "deadline": null,
-      "apply_url": "https://sf-auto.zhiye.com/Campus",
-      "dims": {
-        "skill": 78.0,
-        "hard_skill": 76.5,
-        "cert": 60.0,
-        "education": 100.0,
-        "major": 80.0,
-        "city": 50.0,
-        "role": 85.0,
-        "soft_skill": 50.0
-      },
-      "reasons": [
-        "[skill] 关键词命中3/4: deep_learning↔deep_learning, machine_learning↔machine_learning, python↔python",
-        "[hard_skill] 硬技能命中3/4: deep_learning↔deep_learning, machine_learning↔machine_learning, python↔python",
-        "[cert] 岗位无证书硬性要求",
-        "[education] 候选人硕士学历满足岗位最低要求",
-        "[major] 岗位接受计算机/人工智能相关专业",
-        "[city] 候选人无城市偏好(中性)",
-        "[role] [role] 方向 精确子类命中:岗位「大模型应用开发」↔ 候选人适配「大模型应用开发」(权重0.85) — 华为实习用Prompt/RAG/Structured Output做测试用例生成,字节实习做MCP Tools配置生成,均属大模型应用落地。",
-        "[soft_skill] 软技能无法从简历关键词中准确匹配"
-      ],
-      "role_gated": false,
-      "hard_skills": [
-        "Python",
-        "机器学习",
-        "深度学习",
-        "AI"
-      ],
-      "keywords": [
-        "AI",
-        "机器学习",
-        "深度学习",
-        "Python"
-      ]
-    },
-    {
-      "rank": 6,
-      "score": 78.0,
-      "recommend": "强烈推荐",
-      "company": "新中大科技",
-      "position": "REACT前端开发工程师",
-      "city": "杭州,太原",
-      "job_category": "研发",
-      "education_req": "本科",
-      "deadline": null,
-      "apply_url": "https://app.mokahr.com/campus-recruitment/newgrand/151701?locale=zh-CN#/",
-      "dims": {
-        "skill": 77.8125,
-        "hard_skill": 100.0,
-        "cert": 60.0,
-        "education": 100.0,
-        "major": 80.0,
-        "city": 50.0,
-        "role": 46.8,
-        "soft_skill": 60.0
-      },
-      "reasons": [
-        "[skill] 关键词命中3/4: React 17↔react, Vue 3↔vue, javascript↔javascript",
-        "[hard_skill] 硬技能命中3/3: React 17↔react, Vue 3↔vue, javascript↔javascript",
-        "[cert] 岗位无证书硬性要求",
-        "[education] 候选人硕士学历满足岗位最低要求",
-        "[major] 岗位接受计算机等相关专业专业",
-        "[city] 候选人无城市偏好(中性)",
-        "[role] [role] 方向 同大类匹配:岗位「前端开发」↔ 候选人适配「后端开发」(权重0.78) — 字节实习用Flask/SQLAlchemy全栈交付配置管理平台,实现权限审批状态机与类Git版本管理;EASY_CODE用TypeScript/Node.js构建Runtime。",
-        "[soft_skill] 岗位无明确软技能要求"
-      ],
-      "role_gated": false,
-      "hard_skills": [
-        "React",
-        "JavaScript",
-        "Vue"
-      ],
-      "keywords": [
-        "React",
-        "前端",
-        "JavaScript",
-        "Vue"
-      ]
-    },
-    {
-      "rank": 7,
-      "score": 75.5,
+      "score": 78.3,
       "recommend": "强烈推荐",
       "company": "东吴证券",
       "position": "AI开发工程师",
@@ -290,7 +221,8 @@
         "major": 100.0,
         "city": 50.0,
         "role": 85.0,
-        "soft_skill": 50.0
+        "soft_skill": 50.0,
+        "competitiveness": 95.5
       },
       "reasons": [
         "[skill] 关键词命中4/8: deep_learning↔deep_learning, machine_learning↔machine_learning, python↔python, javascript↔java",
@@ -300,9 +232,13 @@
         "[major] 候选人专业与岗位直接匹配(软件工程)",
         "[city] 候选人无城市偏好(中性)",
         "[role] [role] 方向 精确子类命中:岗位「大模型应用开发」↔ 候选人适配「大模型应用开发」(权重0.85) — 华为实习用Prompt/RAG/Structured Output做测试用例生成,字节实习做MCP Tools配置生成,均属大模型应用落地。",
-        "[soft_skill] 软技能无法从简历关键词中准确匹配"
+        "[soft_skill] 软技能无法从简历关键词中准确匹配",
+        "[competitiveness] 竞争力对齐「匹配」:候选人83分(学校overseas_top/硕士/实习大厂/竞赛国际级) ↔ 岗位86分(国央企/AI工程/门槛硕士) 差值+3"
       ],
       "role_gated": false,
+      "comp_label": "匹配",
+      "candidate_score": 83,
+      "company_score": 86,
       "hard_skills": [
         "Python",
         "Java",
@@ -319,9 +255,59 @@
       ]
     },
     {
-      "rank": 8,
-      "score": 74.8,
-      "recommend": "推荐",
+      "rank": 6,
+      "score": 78.0,
+      "recommend": "强烈推荐",
+      "company": "四方股份",
+      "position": "AI开发工程师",
+      "city": "北京,武汉,南京,湖州,保定,深圳,西安",
+      "job_category": "研发",
+      "education_req": "本科",
+      "deadline": null,
+      "apply_url": "https://sf-auto.zhiye.com/Campus",
+      "dims": {
+        "skill": 78.0,
+        "hard_skill": 76.5,
+        "cert": 60.0,
+        "education": 100.0,
+        "major": 80.0,
+        "city": 50.0,
+        "role": 85.0,
+        "soft_skill": 50.0,
+        "competitiveness": 71.5
+      },
+      "reasons": [
+        "[skill] 关键词命中3/4: deep_learning↔deep_learning, machine_learning↔machine_learning, python↔python",
+        "[hard_skill] 硬技能命中3/4: deep_learning↔deep_learning, machine_learning↔machine_learning, python↔python",
+        "[cert] 岗位无证书硬性要求",
+        "[education] 候选人硕士学历满足岗位最低要求",
+        "[major] 岗位接受计算机/人工智能相关专业",
+        "[city] 候选人无城市偏好(中性)",
+        "[role] [role] 方向 精确子类命中:岗位「大模型应用开发」↔ 候选人适配「大模型应用开发」(权重0.85) — 华为实习用Prompt/RAG/Structured Output做测试用例生成,字节实习做MCP Tools配置生成,均属大模型应用落地。",
+        "[soft_skill] 软技能无法从简历关键词中准确匹配",
+        "[competitiveness] 竞争力对齐「保底」:候选人83分(学校overseas_top/硕士/实习大厂/竞赛国际级) ↔ 岗位64分(民企/AI工程/门槛本科) 差值-19"
+      ],
+      "role_gated": false,
+      "comp_label": "保底",
+      "candidate_score": 83,
+      "company_score": 64,
+      "hard_skills": [
+        "Python",
+        "机器学习",
+        "深度学习",
+        "AI"
+      ],
+      "keywords": [
+        "AI",
+        "机器学习",
+        "深度学习",
+        "Python"
+      ]
+    },
+    {
+      "rank": 7,
+      "score": 76.5,
+      "recommend": "强烈推荐",
       "company": "深圳方正微电子",
       "position": "AI开发工程师",
       "city": "深圳",
@@ -337,7 +323,8 @@
         "major": 80.0,
         "city": 50.0,
         "role": 85.0,
-        "soft_skill": 50.0
+        "soft_skill": 50.0,
+        "competitiveness": 86.5
       },
       "reasons": [
         "[skill] 关键词命中3/5: deep_learning↔deep_learning, machine_learning↔machine_learning, python↔python",
@@ -347,9 +334,13 @@
         "[major] 岗位接受计算机/人工智能/数学等相关专业专业",
         "[city] 候选人无城市偏好(中性)",
         "[role] [role] 方向 精确子类命中:岗位「大模型应用开发」↔ 候选人适配「大模型应用开发」(权重0.85) — 华为实习用Prompt/RAG/Structured Output做测试用例生成,字节实习做MCP Tools配置生成,均属大模型应用落地。",
-        "[soft_skill] 软技能无法从简历关键词中准确匹配"
+        "[soft_skill] 软技能无法从简历关键词中准确匹配",
+        "[competitiveness] 竞争力对齐「匹配」:候选人83分(学校overseas_top/硕士/实习大厂/竞赛国际级) ↔ 岗位74分(国央企/AI工程/门槛本科) 差值-9"
       ],
       "role_gated": false,
+      "comp_label": "匹配",
+      "candidate_score": 83,
+      "company_score": 74,
       "hard_skills": [
         "Python",
         "机器学习",
@@ -364,53 +355,57 @@
       ]
     },
     {
-      "rank": 9,
-      "score": 72.8,
-      "recommend": "推荐",
-      "company": "DJI 大疆",
-      "position": "大前端开发工程师",
-      "city": "深圳,上海,北京",
+      "rank": 8,
+      "score": 76.4,
+      "recommend": "强烈推荐",
+      "company": "新中大科技",
+      "position": "REACT前端开发工程师",
+      "city": "杭州,太原",
       "job_category": "研发",
       "education_req": "本科",
       "deadline": null,
-      "apply_url": "careers.dji.com",
+      "apply_url": "https://app.mokahr.com/campus-recruitment/newgrand/151701?locale=zh-CN#/",
       "dims": {
         "skill": 77.8125,
-        "hard_skill": 76.40625,
+        "hard_skill": 100.0,
         "cert": 60.0,
         "education": 100.0,
         "major": 80.0,
         "city": 50.0,
         "role": 46.8,
-        "soft_skill": 50.0
+        "soft_skill": 60.0,
+        "competitiveness": 73.0
       },
       "reasons": [
         "[skill] 关键词命中3/4: React 17↔react, Vue 3↔vue, javascript↔javascript",
-        "[hard_skill] 硬技能命中3/4: React 17↔react, Vue 3↔vue, javascript↔javascript",
+        "[hard_skill] 硬技能命中3/3: React 17↔react, Vue 3↔vue, javascript↔javascript",
         "[cert] 岗位无证书硬性要求",
         "[education] 候选人硕士学历满足岗位最低要求",
-        "[major] 岗位接受计算机相关专业",
+        "[major] 岗位接受计算机等相关专业专业",
         "[city] 候选人无城市偏好(中性)",
         "[role] [role] 方向 同大类匹配:岗位「前端开发」↔ 候选人适配「后端开发」(权重0.78) — 字节实习用Flask/SQLAlchemy全栈交付配置管理平台,实现权限审批状态机与类Git版本管理;EASY_CODE用TypeScript/Node.js构建Runtime。",
-        "[soft_skill] 软技能无法从简历关键词中准确匹配"
+        "[soft_skill] 岗位无明确软技能要求",
+        "[competitiveness] 竞争力对齐「保底」:候选人83分(学校overseas_top/硕士/实习大厂/竞赛国际级) ↔ 岗位65分(民企/开发/门槛本科) 差值-18"
       ],
       "role_gated": false,
+      "comp_label": "保底",
+      "candidate_score": 83,
+      "company_score": 65,
       "hard_skills": [
-        "前端",
-        "JavaScript",
         "React",
+        "JavaScript",
         "Vue"
       ],
       "keywords": [
+        "React",
         "前端",
         "JavaScript",
-        "React",
         "Vue"
       ]
     },
     {
-      "rank": 10,
-      "score": 72.3,
+      "rank": 9,
+      "score": 73.7,
       "recommend": "推荐",
       "company": "杰华特",
       "position": "AI工程师",
@@ -427,7 +422,8 @@
         "major": 80.0,
         "city": 50.0,
         "role": 85.0,
-        "soft_skill": 50.0
+        "soft_skill": 50.0,
+        "competitiveness": 79.0
       },
       "reasons": [
         "[skill] 关键词命中3/6: deep_learning↔deep_learning, machine_learning↔machine_learning, python↔python",
@@ -437,9 +433,13 @@
         "[major] 岗位接受计算机科学（人工智能、机器学习）/微电子学与固体电子学/集成电路工程/电子科学与技术等相关专业专业",
         "[city] 候选人无城市偏好(中性)",
         "[role] [role] 方向 精确子类命中:岗位「大模型应用开发」↔ 候选人适配「大模型应用开发」(权重0.85) — 华为实习用Prompt/RAG/Structured Output做测试用例生成,字节实习做MCP Tools配置生成,均属大模型应用落地。",
-        "[soft_skill] 软技能无法从简历关键词中准确匹配"
+        "[soft_skill] 软技能无法从简历关键词中准确匹配",
+        "[competitiveness] 竞争力对齐「保底」:候选人83分(学校overseas_top/硕士/实习大厂/竞赛国际级) ↔ 岗位69分(民企/AI工程/门槛硕士) 差值-14"
       ],
       "role_gated": false,
+      "comp_label": "保底",
+      "candidate_score": 83,
+      "company_score": 69,
       "hard_skills": [
         "人工智能",
         "机器学习",
@@ -455,134 +455,8 @@
       ]
     },
     {
-      "rank": 11,
-      "score": 71.3,
-      "recommend": "推荐",
-      "company": "微步在线",
-      "position": "Java工程师",
-      "city": "北京,上海,苏州,杭州,深圳,广州,成都,昆明,济南,香港",
-      "job_category": "研发",
-      "education_req": "本科",
-      "deadline": null,
-      "apply_url": "https://app.mokahr.com/campus-recruitment/threatbook/39679?locale=zh-CN#/jobs?commitment0=&page=1&anchorName=jobsList",
-      "dims": {
-        "skill": 34.27083333333333,
-        "hard_skill": 100.0,
-        "cert": 60.0,
-        "education": 100.0,
-        "major": 80.0,
-        "city": 50.0,
-        "role": 78.0,
-        "soft_skill": 50.0
-      },
-      "reasons": [
-        "[skill] 关键词命中1/3: javascript↔java",
-        "[hard_skill] 硬技能命中1/1: javascript↔java",
-        "[cert] 岗位无证书硬性要求",
-        "[education] 候选人硕士学历满足岗位最低要求",
-        "[major] 岗位接受计算机相关专业",
-        "[city] 候选人无城市偏好(中性)",
-        "[role] [role] 方向 精确子类命中:岗位「后端开发」↔ 候选人适配「后端开发」(权重0.78) — 字节实习用Flask/SQLAlchemy全栈交付配置管理平台,实现权限审批状态机与类Git版本管理;EASY_CODE用TypeScript/Node.js构建Runtime。",
-        "[soft_skill] 软技能无法从简历关键词中准确匹配"
-      ],
-      "role_gated": false,
-      "hard_skills": [
-        "Java"
-      ],
-      "keywords": [
-        "Java",
-        "后端开发",
-        "研发"
-      ]
-    },
-    {
-      "rank": 12,
-      "score": 71.3,
-      "recommend": "推荐",
-      "company": "微步在线",
-      "position": "Python工程师",
-      "city": "北京,上海,苏州,杭州,深圳,广州,成都,昆明,济南,香港",
-      "job_category": "研发",
-      "education_req": "本科",
-      "deadline": null,
-      "apply_url": "https://app.mokahr.com/campus-recruitment/threatbook/39679?locale=zh-CN#/jobs?commitment0=&page=1&anchorName=jobsList",
-      "dims": {
-        "skill": 34.3010752688172,
-        "hard_skill": 100.0,
-        "cert": 60.0,
-        "education": 100.0,
-        "major": 80.0,
-        "city": 50.0,
-        "role": 78.0,
-        "soft_skill": 50.0
-      },
-      "reasons": [
-        "[skill] 关键词命中1/3: python↔python",
-        "[hard_skill] 硬技能命中1/1: python↔python",
-        "[cert] 岗位无证书硬性要求",
-        "[education] 候选人硕士学历满足岗位最低要求",
-        "[major] 岗位接受计算机相关专业",
-        "[city] 候选人无城市偏好(中性)",
-        "[role] [role] 方向 精确子类命中:岗位「后端开发」↔ 候选人适配「后端开发」(权重0.78) — 字节实习用Flask/SQLAlchemy全栈交付配置管理平台,实现权限审批状态机与类Git版本管理;EASY_CODE用TypeScript/Node.js构建Runtime。",
-        "[soft_skill] 软技能无法从简历关键词中准确匹配"
-      ],
-      "role_gated": false,
-      "hard_skills": [
-        "Python"
-      ],
-      "keywords": [
-        "Python",
-        "后端开发",
-        "研发"
-      ]
-    },
-    {
-      "rank": 13,
-      "score": 70.8,
-      "recommend": "推荐",
-      "company": "中兴通讯",
-      "position": "AI算法工程师",
-      "city": "深圳 南京 西安 上海 北京 武汉 长沙 成都 天津 重庆 广州 河源 兰州 昆明 杭州 三亚 济南 贵阳 长春 南昌",
-      "job_category": "研发",
-      "education_req": "本科",
-      "deadline": null,
-      "apply_url": "job.zte.com.cn",
-      "dims": {
-        "skill": 51.935483870967744,
-        "hard_skill": 67.66666666666666,
-        "cert": 60.0,
-        "education": 100.0,
-        "major": 80.0,
-        "city": 50.0,
-        "role": 85.0,
-        "soft_skill": 60.0
-      },
-      "reasons": [
-        "[skill] 关键词命中2/4: deep_learning↔deep_learning, machine_learning↔machine_learning",
-        "[hard_skill] 硬技能命中2/3: deep_learning↔deep_learning, machine_learning↔machine_learning",
-        "[cert] 岗位无证书硬性要求",
-        "[education] 候选人硕士学历满足岗位最低要求",
-        "[major] 岗位接受计算机相关专业",
-        "[city] 候选人无城市偏好(中性)",
-        "[role] [role] 方向 精确子类命中:岗位「大模型应用开发」↔ 候选人适配「大模型应用开发」(权重0.85) — 华为实习用Prompt/RAG/Structured Output做测试用例生成,字节实习做MCP Tools配置生成,均属大模型应用落地。",
-        "[soft_skill] 岗位无明确软技能要求"
-      ],
-      "role_gated": false,
-      "hard_skills": [
-        "AI算法",
-        "机器学习",
-        "深度学习"
-      ],
-      "keywords": [
-        "AI算法",
-        "机器学习",
-        "深度学习",
-        "研发"
-      ]
-    },
-    {
-      "rank": 14,
-      "score": 69.4,
+      "rank": 10,
+      "score": 72.7,
       "recommend": "推荐",
       "company": "拼多多集团",
       "position": "AI Agent研发工程师",
@@ -599,7 +473,8 @@
         "major": 80.0,
         "city": 50.0,
         "role": 98.0,
-        "soft_skill": 50.0
+        "soft_skill": 50.0,
+        "competitiveness": 86.5
       },
       "reasons": [
         "[skill] 关键词命中3/7: deep_learning↔deep_learning, machine_learning↔machine_learning, python↔python",
@@ -609,9 +484,13 @@
         "[major] 岗位接受计算机相关专业",
         "[city] 候选人无城市偏好(中性)",
         "[role] [role] 方向 精确子类命中:岗位「AI Agent开发」↔ 候选人适配「AI Agent开发」(权重0.98) — 独立开发跨平台CLI Coding Agent(EASY_CODE),负责Agent Runtime、上下文压缩、审批Agent与评测隔离;字节MCP配置管理平台Owner,贯通API到Tool的Schema/认证映射。",
-        "[soft_skill] 软技能无法从简历关键词中准确匹配"
+        "[soft_skill] 软技能无法从简历关键词中准确匹配",
+        "[competitiveness] 竞争力对齐「匹配」:候选人83分(学校overseas_top/硕士/实习大厂/竞赛国际级) ↔ 岗位74分(民企/AI工程/门槛本科) 差值-9"
       ],
       "role_gated": false,
+      "comp_label": "匹配",
+      "candidate_score": 83,
+      "company_score": 74,
       "hard_skills": [
         "Python",
         "机器学习",
@@ -627,55 +506,58 @@
       ]
     },
     {
-      "rank": 15,
-      "score": 69.2,
+      "rank": 11,
+      "score": 72.3,
       "recommend": "推荐",
-      "company": "固胜科技",
-      "position": "AI算法工程师",
-      "city": "深圳",
+      "company": "DJI 大疆",
+      "position": "大前端开发工程师",
+      "city": "深圳,上海,北京",
       "job_category": "研发",
       "education_req": "本科",
       "deadline": null,
-      "apply_url": "https://www.mozaracing.cn/recruitment/",
+      "apply_url": "careers.dji.com",
       "dims": {
-        "skill": 52.8125,
-        "hard_skill": 61.45161290322581,
+        "skill": 77.8125,
+        "hard_skill": 76.40625,
         "cert": 60.0,
         "education": 100.0,
         "major": 80.0,
         "city": 50.0,
-        "role": 85.0,
-        "soft_skill": 50.0
+        "role": 46.8,
+        "soft_skill": 50.0,
+        "competitiveness": 73.0
       },
       "reasons": [
-        "[skill] 关键词命中3/6: deep_learning↔deep_learning, machine_learning↔machine_learning, python↔python",
-        "[hard_skill] 硬技能命中3/5: deep_learning↔deep_learning, machine_learning↔machine_learning, python↔python",
+        "[skill] 关键词命中3/4: React 17↔react, Vue 3↔vue, javascript↔javascript",
+        "[hard_skill] 硬技能命中3/4: React 17↔react, Vue 3↔vue, javascript↔javascript",
         "[cert] 岗位无证书硬性要求",
         "[education] 候选人硕士学历满足岗位最低要求",
-        "[major] 岗位接受计算机、人工智能相关专业",
+        "[major] 岗位接受计算机相关专业",
         "[city] 候选人无城市偏好(中性)",
-        "[role] [role] 方向 精确子类命中:岗位「大模型应用开发」↔ 候选人适配「大模型应用开发」(权重0.85) — 华为实习用Prompt/RAG/Structured Output做测试用例生成,字节实习做MCP Tools配置生成,均属大模型应用落地。",
-        "[soft_skill] 软技能无法从简历关键词中准确匹配"
+        "[role] [role] 方向 同大类匹配:岗位「前端开发」↔ 候选人适配「后端开发」(权重0.78) — 字节实习用Flask/SQLAlchemy全栈交付配置管理平台,实现权限审批状态机与类Git版本管理;EASY_CODE用TypeScript/Node.js构建Runtime。",
+        "[soft_skill] 软技能无法从简历关键词中准确匹配",
+        "[competitiveness] 竞争力对齐「保底」:候选人83分(学校overseas_top/硕士/实习大厂/竞赛国际级) ↔ 岗位65分(民企/开发/门槛本科) 差值-18"
       ],
       "role_gated": false,
+      "comp_label": "保底",
+      "candidate_score": 83,
+      "company_score": 65,
       "hard_skills": [
-        "机器学习",
-        "深度学习",
-        "Python",
-        "C++",
-        "算法"
+        "前端",
+        "JavaScript",
+        "React",
+        "Vue"
       ],
       "keywords": [
-        "AI",
-        "算法",
-        "机器学习",
-        "Python",
-        "深度学习"
+        "前端",
+        "JavaScript",
+        "React",
+        "Vue"
       ]
     },
     {
-      "rank": 16,
-      "score": 69.2,
+      "rank": 12,
+      "score": 72.2,
       "recommend": "推荐",
       "company": "点点互动",
       "position": "AI算法工程师",
@@ -692,7 +574,8 @@
         "major": 80.0,
         "city": 50.0,
         "role": 85.0,
-        "soft_skill": 50.0
+        "soft_skill": 50.0,
+        "competitiveness": 86.5
       },
       "reasons": [
         "[skill] 关键词命中3/6: deep_learning↔deep_learning, machine_learning↔machine_learning, python↔python",
@@ -702,9 +585,13 @@
         "[major] 岗位接受计算机相关专业",
         "[city] 候选人无城市偏好(中性)",
         "[role] [role] 方向 精确子类命中:岗位「大模型应用开发」↔ 候选人适配「大模型应用开发」(权重0.85) — 华为实习用Prompt/RAG/Structured Output做测试用例生成,字节实习做MCP Tools配置生成,均属大模型应用落地。",
-        "[soft_skill] 软技能无法从简历关键词中准确匹配"
+        "[soft_skill] 软技能无法从简历关键词中准确匹配",
+        "[competitiveness] 竞争力对齐「匹配」:候选人83分(学校overseas_top/硕士/实习大厂/竞赛国际级) ↔ 岗位74分(民企/AI工程/门槛本科) 差值-9"
       ],
       "role_gated": false,
+      "comp_label": "匹配",
+      "candidate_score": 83,
+      "company_score": 74,
       "hard_skills": [
         "机器学习",
         "深度学习",
@@ -721,276 +608,149 @@
       ]
     },
     {
-      "rank": 17,
-      "score": 69.0,
+      "rank": 13,
+      "score": 71.9,
       "recommend": "推荐",
-      "company": "游族网络",
-      "position": "前端开发 AI方向",
-      "city": "上海",
+      "company": "中兴通讯",
+      "position": "AI算法工程师",
+      "city": "深圳 南京 西安 上海 北京 武汉 长沙 成都 天津 重庆 广州 河源 兰州 昆明 杭州 三亚 济南 贵阳 长春 南昌",
       "job_category": "研发",
       "education_req": "本科",
       "deadline": null,
-      "apply_url": "https://campus.yoozoo.com/jobs",
+      "apply_url": "job.zte.com.cn",
       "dims": {
-        "skill": 62.72727272727273,
-        "hard_skill": 76.40625,
-        "cert": 60.0,
-        "education": 100.0,
-        "major": 80.0,
-        "city": 50.0,
-        "role": 46.8,
-        "soft_skill": 50.0
-      },
-      "reasons": [
-        "[skill] 关键词命中3/5: React 17↔react, Vue 3↔vue, javascript↔javascript",
-        "[hard_skill] 硬技能命中3/4: React 17↔react, Vue 3↔vue, javascript↔javascript",
-        "[cert] 岗位无证书硬性要求",
-        "[education] 候选人硕士学历满足岗位最低要求",
-        "[major] 岗位接受计算机相关专业",
-        "[city] 候选人无城市偏好(中性)",
-        "[role] [role] 方向 同大类匹配:岗位「前端开发」↔ 候选人适配「后端开发」(权重0.78) — 字节实习用Flask/SQLAlchemy全栈交付配置管理平台,实现权限审批状态机与类Git版本管理;EASY_CODE用TypeScript/Node.js构建Runtime。",
-        "[soft_skill] 软技能无法从简历关键词中准确匹配"
-      ],
-      "role_gated": false,
-      "hard_skills": [
-        "JavaScript",
-        "React",
-        "Vue",
-        "AI"
-      ],
-      "keywords": [
-        "前端开发",
-        "AI",
-        "JavaScript",
-        "React"
-      ]
-    },
-    {
-      "rank": 18,
-      "score": 68.7,
-      "recommend": "推荐",
-      "company": "谱星航天",
-      "position": "应用软件设计师",
-      "city": "长春",
-      "job_category": "研发",
-      "education_req": "硕士",
-      "deadline": null,
-      "apply_url": "https://mp.weixin.qq.com/s/-BRmNfK_w_HPId-jdndPGg",
-      "dims": {
-        "skill": 41.81818181818182,
-        "hard_skill": 67.63440860215053,
-        "cert": 60.0,
-        "education": 100.0,
-        "major": 100.0,
-        "city": 50.0,
-        "role": 78.0,
-        "soft_skill": 50.0
-      },
-      "reasons": [
-        "[skill] 关键词命中2/5: python↔python, javascript↔java",
-        "[hard_skill] 硬技能命中2/3: python↔python, javascript↔java",
-        "[cert] 岗位无证书硬性要求",
-        "[education] 候选人硕士学历满足岗位最低要求",
-        "[major] 候选人专业与岗位直接匹配(软件工程)",
-        "[city] 候选人无城市偏好(中性)",
-        "[role] [role] 方向 精确子类命中:岗位「后端开发」↔ 候选人适配「后端开发」(权重0.78) — 字节实习用Flask/SQLAlchemy全栈交付配置管理平台,实现权限审批状态机与类Git版本管理;EASY_CODE用TypeScript/Node.js构建Runtime。",
-        "[soft_skill] 软技能无法从简历关键词中准确匹配"
-      ],
-      "role_gated": false,
-      "hard_skills": [
-        "应用软件开发",
-        "Java",
-        "Python"
-      ],
-      "keywords": [
-        "应用软件",
-        "Java",
-        "Python",
-        "卫星软件"
-      ]
-    },
-    {
-      "rank": 19,
-      "score": 68.3,
-      "recommend": "推荐",
-      "company": "禾迈股份",
-      "position": "AI工程师",
-      "city": "杭州,苏州",
-      "job_category": "研发",
-      "education_req": "本科",
-      "deadline": null,
-      "apply_url": "https://app.mokahr.com/campus-recruitment/hoymiles/70377?locale=zh-CN#/jobs?page=1&anchorName=jobsList",
-      "dims": {
-        "skill": 52.8125,
-        "hard_skill": 76.5,
-        "cert": 60.0,
-        "education": 100.0,
-        "major": 40.0,
-        "city": 50.0,
-        "role": 85.0,
-        "soft_skill": 50.0
-      },
-      "reasons": [
-        "[skill] 关键词命中3/6: deep_learning↔deep_learning, machine_learning↔machine_learning, python↔python",
-        "[hard_skill] 硬技能命中3/4: deep_learning↔deep_learning, machine_learning↔machine_learning, python↔python",
-        "[cert] 岗位无证书硬性要求",
-        "[education] 候选人硕士学历满足岗位最低要求",
-        "[major] 岗位倾向工科大类/具体电力电子、电气、自动化、机械等理工类专业专业",
-        "[city] 候选人无城市偏好(中性)",
-        "[role] [role] 方向 精确子类命中:岗位「大模型应用开发」↔ 候选人适配「大模型应用开发」(权重0.85) — 华为实习用Prompt/RAG/Structured Output做测试用例生成,字节实习做MCP Tools配置生成,均属大模型应用落地。",
-        "[soft_skill] 软技能无法从简历关键词中准确匹配"
-      ],
-      "role_gated": false,
-      "hard_skills": [
-        "Python",
-        "深度学习",
-        "机器学习",
-        "TensorFlow/PyTorch"
-      ],
-      "keywords": [
-        "AI",
-        "人工智能",
-        "深度学习",
-        "机器学习",
-        "Python"
-      ]
-    },
-    {
-      "rank": 20,
-      "score": 67.9,
-      "recommend": "推荐",
-      "company": "固胜科技",
-      "position": "软件开发工程师",
-      "city": "武汉",
-      "job_category": "研发",
-      "education_req": "本科",
-      "deadline": null,
-      "apply_url": "https://www.mozaracing.cn/recruitment/",
-      "dims": {
-        "skill": 51.875,
-        "hard_skill": 50.9375,
-        "cert": 60.0,
-        "education": 100.0,
-        "major": 100.0,
-        "city": 50.0,
-        "role": 78.0,
-        "soft_skill": 50.0
-      },
-      "reasons": [
-        "[skill] 关键词命中2/4: python↔python, javascript↔java",
-        "[hard_skill] 硬技能命中2/4: python↔python, javascript↔java",
-        "[cert] 岗位无证书硬性要求",
-        "[education] 候选人硕士学历满足岗位最低要求",
-        "[major] 候选人专业与岗位直接匹配(软件工程)",
-        "[city] 候选人无城市偏好(中性)",
-        "[role] [role] 方向 精确子类命中:岗位「后端开发」↔ 候选人适配「后端开发」(权重0.78) — 字节实习用Flask/SQLAlchemy全栈交付配置管理平台,实现权限审批状态机与类Git版本管理;EASY_CODE用TypeScript/Node.js构建Runtime。",
-        "[soft_skill] 软技能无法从简历关键词中准确匹配"
-      ],
-      "role_gated": false,
-      "hard_skills": [
-        "Java",
-        "C++",
-        "Python",
-        "软件开发"
-      ],
-      "keywords": [
-        "软件开发",
-        "Java",
-        "C++",
-        "Python"
-      ]
-    },
-    {
-      "rank": 21,
-      "score": 67.8,
-      "recommend": "推荐",
-      "company": "武汉文旅集团",
-      "position": "AI 应用研发工程师",
-      "city": "武汉",
-      "job_category": "研发",
-      "education_req": "本科",
-      "deadline": null,
-      "apply_url": "https://www.whzsrc.com/hanpintong/societyProcalmationDetail/cbQkdwNXuWuuJB3eeCD8v6gwKZmKdTS_ZN6TVxvJNDZICCsz6WRaF-SOxY9piCTeX4TUT1sKbvqbH7Sk5YSl-A~~",
-      "dims": {
-        "skill": 41.875,
+        "skill": 51.935483870967744,
         "hard_skill": 67.66666666666666,
         "cert": 60.0,
         "education": 100.0,
         "major": 80.0,
         "city": 50.0,
         "role": 85.0,
-        "soft_skill": 50.0
+        "soft_skill": 60.0,
+        "competitiveness": 71.5
       },
       "reasons": [
-        "[skill] 关键词命中2/5: machine_learning↔machine_learning, python↔python",
-        "[hard_skill] 硬技能命中2/3: machine_learning↔machine_learning, python↔python",
+        "[skill] 关键词命中2/4: deep_learning↔deep_learning, machine_learning↔machine_learning",
+        "[hard_skill] 硬技能命中2/3: deep_learning↔deep_learning, machine_learning↔machine_learning",
         "[cert] 岗位无证书硬性要求",
         "[education] 候选人硕士学历满足岗位最低要求",
         "[major] 岗位接受计算机相关专业",
         "[city] 候选人无城市偏好(中性)",
         "[role] [role] 方向 精确子类命中:岗位「大模型应用开发」↔ 候选人适配「大模型应用开发」(权重0.85) — 华为实习用Prompt/RAG/Structured Output做测试用例生成,字节实习做MCP Tools配置生成,均属大模型应用落地。",
-        "[soft_skill] 软技能无法从简历关键词中准确匹配"
+        "[soft_skill] 岗位无明确软技能要求",
+        "[competitiveness] 竞争力对齐「保底」:候选人83分(学校overseas_top/硕士/实习大厂/竞赛国际级) ↔ 岗位64分(民企/AI工程/门槛本科) 差值-19"
       ],
       "role_gated": false,
+      "comp_label": "保底",
+      "candidate_score": 83,
+      "company_score": 64,
       "hard_skills": [
-        "Python",
+        "AI算法",
         "机器学习",
-        "AI应用开发"
+        "深度学习"
       ],
       "keywords": [
-        "AI",
-        "Python",
+        "AI算法",
         "机器学习",
+        "深度学习",
         "研发"
       ]
     },
     {
-      "rank": 22,
-      "score": 67.8,
+      "rank": 14,
+      "score": 71.9,
       "recommend": "推荐",
-      "company": "阳光电源",
-      "position": "AI应用",
-      "city": "合肥,上海,南京,西安",
+      "company": "微步在线",
+      "position": "Java工程师",
+      "city": "北京,上海,苏州,杭州,深圳,广州,成都,昆明,济南,香港",
       "job_category": "研发",
       "education_req": "本科",
       "deadline": null,
-      "apply_url": "https://app.mokahr.com/campus-recruitment/sungrow/94416#/",
+      "apply_url": "https://app.mokahr.com/campus-recruitment/threatbook/39679?locale=zh-CN#/jobs?commitment0=&page=1&anchorName=jobsList",
       "dims": {
-        "skill": 41.875,
-        "hard_skill": 67.66666666666666,
+        "skill": 34.27083333333333,
+        "hard_skill": 100.0,
         "cert": 60.0,
         "education": 100.0,
         "major": 80.0,
         "city": 50.0,
-        "role": 85.0,
-        "soft_skill": 50.0
+        "role": 78.0,
+        "soft_skill": 50.0,
+        "competitiveness": 73.0
       },
       "reasons": [
-        "[skill] 关键词命中2/5: machine_learning↔machine_learning, python↔python",
-        "[hard_skill] 硬技能命中2/3: machine_learning↔machine_learning, python↔python",
+        "[skill] 关键词命中1/3: javascript↔java",
+        "[hard_skill] 硬技能命中1/1: javascript↔java",
         "[cert] 岗位无证书硬性要求",
         "[education] 候选人硕士学历满足岗位最低要求",
-        "[major] 岗位接受计算机/人工智能相关专业",
+        "[major] 岗位接受计算机相关专业",
         "[city] 候选人无城市偏好(中性)",
-        "[role] [role] 方向 精确子类命中:岗位「大模型应用开发」↔ 候选人适配「大模型应用开发」(权重0.85) — 华为实习用Prompt/RAG/Structured Output做测试用例生成,字节实习做MCP Tools配置生成,均属大模型应用落地。",
-        "[soft_skill] 软技能无法从简历关键词中准确匹配"
+        "[role] [role] 方向 精确子类命中:岗位「后端开发」↔ 候选人适配「后端开发」(权重0.78) — 字节实习用Flask/SQLAlchemy全栈交付配置管理平台,实现权限审批状态机与类Git版本管理;EASY_CODE用TypeScript/Node.js构建Runtime。",
+        "[soft_skill] 软技能无法从简历关键词中准确匹配",
+        "[competitiveness] 竞争力对齐「保底」:候选人83分(学校overseas_top/硕士/实习大厂/竞赛国际级) ↔ 岗位65分(民企/开发/门槛本科) 差值-18"
       ],
       "role_gated": false,
+      "comp_label": "保底",
+      "candidate_score": 83,
+      "company_score": 65,
       "hard_skills": [
-        "人工智能",
-        "机器学习",
-        "Python"
+        "Java"
       ],
       "keywords": [
-        "AI",
-        "人工智能",
-        "机器学习",
+        "Java",
+        "后端开发",
         "研发"
       ]
     },
     {
-      "rank": 23,
-      "score": 67.4,
+      "rank": 15,
+      "score": 71.9,
+      "recommend": "推荐",
+      "company": "微步在线",
+      "position": "Python工程师",
+      "city": "北京,上海,苏州,杭州,深圳,广州,成都,昆明,济南,香港",
+      "job_category": "研发",
+      "education_req": "本科",
+      "deadline": null,
+      "apply_url": "https://app.mokahr.com/campus-recruitment/threatbook/39679?locale=zh-CN#/jobs?commitment0=&page=1&anchorName=jobsList",
+      "dims": {
+        "skill": 34.3010752688172,
+        "hard_skill": 100.0,
+        "cert": 60.0,
+        "education": 100.0,
+        "major": 80.0,
+        "city": 50.0,
+        "role": 78.0,
+        "soft_skill": 50.0,
+        "competitiveness": 73.0
+      },
+      "reasons": [
+        "[skill] 关键词命中1/3: python↔python",
+        "[hard_skill] 硬技能命中1/1: python↔python",
+        "[cert] 岗位无证书硬性要求",
+        "[education] 候选人硕士学历满足岗位最低要求",
+        "[major] 岗位接受计算机相关专业",
+        "[city] 候选人无城市偏好(中性)",
+        "[role] [role] 方向 精确子类命中:岗位「后端开发」↔ 候选人适配「后端开发」(权重0.78) — 字节实习用Flask/SQLAlchemy全栈交付配置管理平台,实现权限审批状态机与类Git版本管理;EASY_CODE用TypeScript/Node.js构建Runtime。",
+        "[soft_skill] 软技能无法从简历关键词中准确匹配",
+        "[competitiveness] 竞争力对齐「保底」:候选人83分(学校overseas_top/硕士/实习大厂/竞赛国际级) ↔ 岗位65分(民企/开发/门槛本科) 差值-18"
+      ],
+      "role_gated": false,
+      "comp_label": "保底",
+      "candidate_score": 83,
+      "company_score": 65,
+      "hard_skills": [
+        "Python"
+      ],
+      "keywords": [
+        "Python",
+        "后端开发",
+        "研发"
+      ]
+    },
+    {
+      "rank": 16,
+      "score": 71.6,
       "recommend": "推荐",
       "company": "东吴证券",
       "position": "AI算法工程师",
@@ -1007,7 +767,8 @@
         "major": 80.0,
         "city": 50.0,
         "role": 85.0,
-        "soft_skill": 50.0
+        "soft_skill": 50.0,
+        "competitiveness": 95.5
       },
       "reasons": [
         "[skill] 关键词命中3/7: deep_learning↔deep_learning, machine_learning↔machine_learning, python↔python",
@@ -1017,9 +778,13 @@
         "[major] 岗位接受计算机、人工智能、数学等相关专业专业",
         "[city] 候选人无城市偏好(中性)",
         "[role] [role] 方向 精确子类命中:岗位「大模型应用开发」↔ 候选人适配「大模型应用开发」(权重0.85) — 华为实习用Prompt/RAG/Structured Output做测试用例生成,字节实习做MCP Tools配置生成,均属大模型应用落地。",
-        "[soft_skill] 软技能无法从简历关键词中准确匹配"
+        "[soft_skill] 软技能无法从简历关键词中准确匹配",
+        "[competitiveness] 竞争力对齐「匹配」:候选人83分(学校overseas_top/硕士/实习大厂/竞赛国际级) ↔ 岗位86分(国央企/AI工程/门槛硕士) 差值+3"
       ],
       "role_gated": false,
+      "comp_label": "匹配",
+      "candidate_score": 83,
+      "company_score": 86,
       "hard_skills": [
         "Python",
         "机器学习",
@@ -1036,93 +801,109 @@
       ]
     },
     {
-      "rank": 24,
-      "score": 67.1,
+      "rank": 17,
+      "score": 70.9,
       "recommend": "推荐",
-      "company": "新中大科技",
-      "position": "JAVA开发工程师",
-      "city": "杭州,太原",
+      "company": "武汉文旅集团",
+      "position": "AI 应用研发工程师",
+      "city": "武汉",
       "job_category": "研发",
       "education_req": "本科",
       "deadline": null,
-      "apply_url": "https://app.mokahr.com/campus-recruitment/newgrand/151701?locale=zh-CN#/",
+      "apply_url": "https://www.whzsrc.com/hanpintong/societyProcalmationDetail/cbQkdwNXuWuuJB3eeCD8v6gwKZmKdTS_ZN6TVxvJNDZICCsz6WRaF-SOxY9piCTeX4TUT1sKbvqbH7Sk5YSl-A~~",
       "dims": {
-        "skill": 34.27083333333333,
-        "hard_skill": 100.0,
+        "skill": 41.875,
+        "hard_skill": 67.66666666666666,
         "cert": 60.0,
         "education": 100.0,
         "major": 80.0,
         "city": 50.0,
-        "role": 46.8,
-        "soft_skill": 60.0
+        "role": 85.0,
+        "soft_skill": 50.0,
+        "competitiveness": 86.5
       },
       "reasons": [
-        "[skill] 关键词命中1/3: javascript↔java",
-        "[hard_skill] 硬技能命中1/1: javascript↔java",
-        "[cert] 岗位无证书硬性要求",
-        "[education] 候选人硕士学历满足岗位最低要求",
-        "[major] 岗位接受计算机相关专业专业",
-        "[city] 候选人无城市偏好(中性)",
-        "[role] [role] 方向 同大类匹配:岗位「开发」↔ 候选人适配「后端开发」(权重0.78) — 字节实习用Flask/SQLAlchemy全栈交付配置管理平台,实现权限审批状态机与类Git版本管理;EASY_CODE用TypeScript/Node.js构建Runtime。",
-        "[soft_skill] 岗位无明确软技能要求"
-      ],
-      "role_gated": false,
-      "hard_skills": [
-        "Java"
-      ],
-      "keywords": [
-        "Java",
-        "后端开发",
-        "开发工程师"
-      ]
-    },
-    {
-      "rank": 25,
-      "score": 66.7,
-      "recommend": "推荐",
-      "company": "歌尔丹拿",
-      "position": "软件研发实习生",
-      "city": "北京,上海,深圳,南京,苏州,青岛,潍坊",
-      "job_category": "研发",
-      "education_req": "本科",
-      "deadline": null,
-      "apply_url": "https://k13pqewe7i.jobs.feishu.cn/641372/m/?spread=K38FMZW",
-      "dims": {
-        "skill": 41.81818181818182,
-        "hard_skill": 67.63440860215053,
-        "cert": 60.0,
-        "education": 100.0,
-        "major": 80.0,
-        "city": 50.0,
-        "role": 78.0,
-        "soft_skill": 50.0
-      },
-      "reasons": [
-        "[skill] 关键词命中2/5: python↔python, javascript↔java",
-        "[hard_skill] 硬技能命中2/3: python↔python, javascript↔java",
+        "[skill] 关键词命中2/5: machine_learning↔machine_learning, python↔python",
+        "[hard_skill] 硬技能命中2/3: machine_learning↔machine_learning, python↔python",
         "[cert] 岗位无证书硬性要求",
         "[education] 候选人硕士学历满足岗位最低要求",
         "[major] 岗位接受计算机相关专业",
         "[city] 候选人无城市偏好(中性)",
-        "[role] [role] 方向 精确子类命中:岗位「后端开发」↔ 候选人适配「后端开发」(权重0.78) — 字节实习用Flask/SQLAlchemy全栈交付配置管理平台,实现权限审批状态机与类Git版本管理;EASY_CODE用TypeScript/Node.js构建Runtime。",
-        "[soft_skill] 软技能无法从简历关键词中准确匹配"
+        "[role] [role] 方向 精确子类命中:岗位「大模型应用开发」↔ 候选人适配「大模型应用开发」(权重0.85) — 华为实习用Prompt/RAG/Structured Output做测试用例生成,字节实习做MCP Tools配置生成,均属大模型应用落地。",
+        "[soft_skill] 软技能无法从简历关键词中准确匹配",
+        "[competitiveness] 竞争力对齐「匹配」:候选人83分(学校overseas_top/硕士/实习大厂/竞赛国际级) ↔ 岗位74分(国央企/AI工程/门槛本科) 差值-9"
       ],
       "role_gated": false,
+      "comp_label": "匹配",
+      "candidate_score": 83,
+      "company_score": 74,
       "hard_skills": [
-        "Java",
         "Python",
-        "C++"
+        "机器学习",
+        "AI应用开发"
       ],
       "keywords": [
-        "软件开发",
-        "Java",
+        "AI",
         "Python",
-        "实习生"
+        "机器学习",
+        "研发"
       ]
     },
     {
-      "rank": 26,
-      "score": 66.4,
+      "rank": 18,
+      "score": 70.7,
+      "recommend": "推荐",
+      "company": "固胜科技",
+      "position": "AI算法工程师",
+      "city": "深圳",
+      "job_category": "研发",
+      "education_req": "本科",
+      "deadline": null,
+      "apply_url": "https://www.mozaracing.cn/recruitment/",
+      "dims": {
+        "skill": 52.8125,
+        "hard_skill": 61.45161290322581,
+        "cert": 60.0,
+        "education": 100.0,
+        "major": 80.0,
+        "city": 50.0,
+        "role": 85.0,
+        "soft_skill": 50.0,
+        "competitiveness": 71.5
+      },
+      "reasons": [
+        "[skill] 关键词命中3/6: deep_learning↔deep_learning, machine_learning↔machine_learning, python↔python",
+        "[hard_skill] 硬技能命中3/5: deep_learning↔deep_learning, machine_learning↔machine_learning, python↔python",
+        "[cert] 岗位无证书硬性要求",
+        "[education] 候选人硕士学历满足岗位最低要求",
+        "[major] 岗位接受计算机、人工智能相关专业",
+        "[city] 候选人无城市偏好(中性)",
+        "[role] [role] 方向 精确子类命中:岗位「大模型应用开发」↔ 候选人适配「大模型应用开发」(权重0.85) — 华为实习用Prompt/RAG/Structured Output做测试用例生成,字节实习做MCP Tools配置生成,均属大模型应用落地。",
+        "[soft_skill] 软技能无法从简历关键词中准确匹配",
+        "[competitiveness] 竞争力对齐「保底」:候选人83分(学校overseas_top/硕士/实习大厂/竞赛国际级) ↔ 岗位64分(民企/AI工程/门槛本科) 差值-19"
+      ],
+      "role_gated": false,
+      "comp_label": "保底",
+      "candidate_score": 83,
+      "company_score": 64,
+      "hard_skills": [
+        "机器学习",
+        "深度学习",
+        "Python",
+        "C++",
+        "算法"
+      ],
+      "keywords": [
+        "AI",
+        "算法",
+        "机器学习",
+        "Python",
+        "深度学习"
+      ]
+    },
+    {
+      "rank": 19,
+      "score": 70.4,
       "recommend": "推荐",
       "company": "拼多多集团-PDD",
       "position": "AI Agent研发工程师",
@@ -1139,7 +920,8 @@
         "major": 80.0,
         "city": 50.0,
         "role": 98.0,
-        "soft_skill": 50.0
+        "soft_skill": 50.0,
+        "competitiveness": 86.5
       },
       "reasons": [
         "[skill] 关键词命中2/5: machine_learning↔machine_learning, python↔python",
@@ -1149,9 +931,13 @@
         "[major] 岗位接受计算机相关专业",
         "[city] 候选人无城市偏好(中性)",
         "[role] [role] 方向 精确子类命中:岗位「AI Agent开发」↔ 候选人适配「AI Agent开发」(权重0.98) — 独立开发跨平台CLI Coding Agent(EASY_CODE),负责Agent Runtime、上下文压缩、审批Agent与评测隔离;字节MCP配置管理平台Owner,贯通API到Tool的Schema/认证映射。",
-        "[soft_skill] 软技能无法从简历关键词中准确匹配"
+        "[soft_skill] 软技能无法从简历关键词中准确匹配",
+        "[competitiveness] 竞争力对齐「匹配」:候选人83分(学校overseas_top/硕士/实习大厂/竞赛国际级) ↔ 岗位74分(民企/AI工程/门槛本科) 差值-9"
       ],
       "role_gated": false,
+      "comp_label": "匹配",
+      "candidate_score": 83,
+      "company_score": 74,
       "hard_skills": [
         "AI",
         "Agent",
@@ -1166,189 +952,107 @@
       ]
     },
     {
-      "rank": 27,
-      "score": 65.9,
+      "rank": 20,
+      "score": 69.4,
       "recommend": "推荐",
-      "company": "恒玄科技",
-      "position": "软件工程师(AI)",
-      "city": "上海",
+      "company": "阳光电源",
+      "position": "AI应用",
+      "city": "合肥,上海,南京,西安",
       "job_category": "研发",
       "education_req": "本科",
       "deadline": null,
-      "apply_url": "https://bestechnic.zhiye.com/campus/jobs?memory={}&silence=1",
+      "apply_url": "https://app.mokahr.com/campus-recruitment/sungrow/94416#/",
       "dims": {
-        "skill": 51.935483870967744,
-        "hard_skill": 50.96774193548387,
+        "skill": 41.875,
+        "hard_skill": 67.66666666666666,
         "cert": 60.0,
         "education": 100.0,
         "major": 80.0,
         "city": 50.0,
-        "role": 78.0,
-        "soft_skill": 50.0
+        "role": 85.0,
+        "soft_skill": 50.0,
+        "competitiveness": 71.5
       },
       "reasons": [
-        "[skill] 关键词命中2/4: machine_learning↔machine_learning, python↔python",
-        "[hard_skill] 硬技能命中2/4: machine_learning↔machine_learning, python↔python",
+        "[skill] 关键词命中2/5: machine_learning↔machine_learning, python↔python",
+        "[hard_skill] 硬技能命中2/3: machine_learning↔machine_learning, python↔python",
         "[cert] 岗位无证书硬性要求",
         "[education] 候选人硕士学历满足岗位最低要求",
         "[major] 岗位接受计算机/人工智能相关专业",
         "[city] 候选人无城市偏好(中性)",
-        "[role] [role] 方向 精确子类命中:岗位「后端开发」↔ 候选人适配「后端开发」(权重0.78) — 字节实习用Flask/SQLAlchemy全栈交付配置管理平台,实现权限审批状态机与类Git版本管理;EASY_CODE用TypeScript/Node.js构建Runtime。",
-        "[soft_skill] 软技能无法从简历关键词中准确匹配"
-      ],
-      "role_gated": false,
-      "hard_skills": [
-        "AI",
-        "机器学习",
-        "Python",
-        "C++"
-      ],
-      "keywords": [
-        "AI",
-        "机器学习",
-        "Python",
-        "C++"
-      ]
-    },
-    {
-      "rank": 28,
-      "score": 65.9,
-      "recommend": "推荐",
-      "company": "瑞泊",
-      "position": "后端开发实习生",
-      "city": "北京",
-      "job_category": "研发",
-      "education_req": "本科",
-      "deadline": null,
-      "apply_url": "hr@xraybot.com",
-      "dims": {
-        "skill": 51.875,
-        "hard_skill": 50.9375,
-        "cert": 60.0,
-        "education": 100.0,
-        "major": 80.0,
-        "city": 50.0,
-        "role": 78.0,
-        "soft_skill": 50.0
-      },
-      "reasons": [
-        "[skill] 关键词命中2/4: python↔python, javascript↔java",
-        "[hard_skill] 硬技能命中2/4: python↔python, javascript↔java",
-        "[cert] 岗位无证书硬性要求",
-        "[education] 候选人硕士学历满足岗位最低要求",
-        "[major] 岗位接受计算机相关专业",
-        "[city] 候选人无城市偏好(中性)",
-        "[role] [role] 方向 精确子类命中:岗位「后端开发」↔ 候选人适配「后端开发」(权重0.78) — 字节实习用Flask/SQLAlchemy全栈交付配置管理平台,实现权限审批状态机与类Git版本管理;EASY_CODE用TypeScript/Node.js构建Runtime。",
-        "[soft_skill] 软技能无法从简历关键词中准确匹配"
-      ],
-      "role_gated": false,
-      "hard_skills": [
-        "后端开发",
-        "Java",
-        "Python",
-        "数据库"
-      ],
-      "keywords": [
-        "后端",
-        "Java",
-        "Python",
-        "数据库"
-      ]
-    },
-    {
-      "rank": 29,
-      "score": 65.3,
-      "recommend": "推荐",
-      "company": "深圳方正微电子",
-      "position": "系统开发工程师",
-      "city": "深圳",
-      "job_category": "研发",
-      "education_req": "本科",
-      "deadline": null,
-      "apply_url": "https://founderic.zhiye.com/Campus",
-      "dims": {
-        "skill": 41.81818181818182,
-        "hard_skill": 50.9375,
-        "cert": 60.0,
-        "education": 100.0,
-        "major": 100.0,
-        "city": 50.0,
-        "role": 78.0,
-        "soft_skill": 50.0
-      },
-      "reasons": [
-        "[skill] 关键词命中2/5: python↔python, javascript↔java",
-        "[hard_skill] 硬技能命中2/4: python↔python, javascript↔java",
-        "[cert] 岗位无证书硬性要求",
-        "[education] 候选人硕士学历满足岗位最低要求",
-        "[major] 候选人专业与岗位直接匹配(软件工程)",
-        "[city] 候选人无城市偏好(中性)",
-        "[role] [role] 方向 精确子类命中:岗位「后端开发」↔ 候选人适配「后端开发」(权重0.78) — 字节实习用Flask/SQLAlchemy全栈交付配置管理平台,实现权限审批状态机与类Git版本管理;EASY_CODE用TypeScript/Node.js构建Runtime。",
-        "[soft_skill] 软技能无法从简历关键词中准确匹配"
-      ],
-      "role_gated": false,
-      "hard_skills": [
-        "Java",
-        "Python",
-        "数据库",
-        "系统设计"
-      ],
-      "keywords": [
-        "系统开发",
-        "Java",
-        "Python",
-        "数据库"
-      ]
-    },
-    {
-      "rank": 30,
-      "score": 65.1,
-      "recommend": "推荐",
-      "company": "三未信安",
-      "position": "AI应用工程师",
-      "city": "济南",
-      "job_category": "研发",
-      "education_req": "本科",
-      "deadline": null,
-      "apply_url": "https://sansec.zhiye.com/",
-      "dims": {
-        "skill": 40.14705882352941,
-        "hard_skill": 76.5,
-        "cert": 60.0,
-        "education": 100.0,
-        "major": 40.0,
-        "city": 50.0,
-        "role": 85.0,
-        "soft_skill": 50.0
-      },
-      "reasons": [
-        "[skill] 关键词命中3/8: deep_learning↔deep_learning, machine_learning↔machine_learning, python↔python",
-        "[hard_skill] 硬技能命中3/4: deep_learning↔deep_learning, machine_learning↔machine_learning, python↔python",
-        "[cert] 岗位无证书硬性要求",
-        "[education] 候选人硕士学历满足岗位最低要求",
-        "[major] 岗位倾向工科大类/具体理工类专业专业",
-        "[city] 候选人无城市偏好(中性)",
         "[role] [role] 方向 精确子类命中:岗位「大模型应用开发」↔ 候选人适配「大模型应用开发」(权重0.85) — 华为实习用Prompt/RAG/Structured Output做测试用例生成,字节实习做MCP Tools配置生成,均属大模型应用落地。",
-        "[soft_skill] 软技能无法从简历关键词中准确匹配"
+        "[soft_skill] 软技能无法从简历关键词中准确匹配",
+        "[competitiveness] 竞争力对齐「保底」:候选人83分(学校overseas_top/硕士/实习大厂/竞赛国际级) ↔ 岗位64分(民企/AI工程/门槛本科) 差值-19"
       ],
       "role_gated": false,
+      "comp_label": "保底",
+      "candidate_score": 83,
+      "company_score": 64,
       "hard_skills": [
-        "Python",
+        "人工智能",
         "机器学习",
-        "深度学习",
-        "AI应用开发"
+        "Python"
       ],
       "keywords": [
         "AI",
         "人工智能",
         "机器学习",
-        "济南",
-        "校招"
+        "研发"
       ]
     },
     {
-      "rank": 31,
-      "score": 64.7,
+      "rank": 21,
+      "score": 69.3,
+      "recommend": "推荐",
+      "company": "游族网络",
+      "position": "前端开发 AI方向",
+      "city": "上海",
+      "job_category": "研发",
+      "education_req": "本科",
+      "deadline": null,
+      "apply_url": "https://campus.yoozoo.com/jobs",
+      "dims": {
+        "skill": 62.72727272727273,
+        "hard_skill": 76.40625,
+        "cert": 60.0,
+        "education": 100.0,
+        "major": 80.0,
+        "city": 50.0,
+        "role": 46.8,
+        "soft_skill": 50.0,
+        "competitiveness": 73.0
+      },
+      "reasons": [
+        "[skill] 关键词命中3/5: React 17↔react, Vue 3↔vue, javascript↔javascript",
+        "[hard_skill] 硬技能命中3/4: React 17↔react, Vue 3↔vue, javascript↔javascript",
+        "[cert] 岗位无证书硬性要求",
+        "[education] 候选人硕士学历满足岗位最低要求",
+        "[major] 岗位接受计算机相关专业",
+        "[city] 候选人无城市偏好(中性)",
+        "[role] [role] 方向 同大类匹配:岗位「前端开发」↔ 候选人适配「后端开发」(权重0.78) — 字节实习用Flask/SQLAlchemy全栈交付配置管理平台,实现权限审批状态机与类Git版本管理;EASY_CODE用TypeScript/Node.js构建Runtime。",
+        "[soft_skill] 软技能无法从简历关键词中准确匹配",
+        "[competitiveness] 竞争力对齐「保底」:候选人83分(学校overseas_top/硕士/实习大厂/竞赛国际级) ↔ 岗位65分(民企/开发/门槛本科) 差值-18"
+      ],
+      "role_gated": false,
+      "comp_label": "保底",
+      "candidate_score": 83,
+      "company_score": 65,
+      "hard_skills": [
+        "JavaScript",
+        "React",
+        "Vue",
+        "AI"
+      ],
+      "keywords": [
+        "前端开发",
+        "AI",
+        "JavaScript",
+        "React"
+      ]
+    },
+    {
+      "rank": 22,
+      "score": 69.0,
       "recommend": "推荐",
       "company": "拼多多集团",
       "position": "AIAgent研发工程师",
@@ -1365,7 +1069,8 @@
         "major": 80.0,
         "city": 50.0,
         "role": 98.0,
-        "soft_skill": 50.0
+        "soft_skill": 50.0,
+        "competitiveness": 86.5
       },
       "reasons": [
         "[skill] 关键词命中2/6: machine_learning↔machine_learning, python↔python",
@@ -1375,9 +1080,13 @@
         "[major] 岗位接受计算机相关专业",
         "[city] 候选人无城市偏好(中性)",
         "[role] [role] 方向 精确子类命中:岗位「AI Agent开发」↔ 候选人适配「AI Agent开发」(权重0.98) — 独立开发跨平台CLI Coding Agent(EASY_CODE),负责Agent Runtime、上下文压缩、审批Agent与评测隔离;字节MCP配置管理平台Owner,贯通API到Tool的Schema/认证映射。",
-        "[soft_skill] 软技能无法从简历关键词中准确匹配"
+        "[soft_skill] 软技能无法从简历关键词中准确匹配",
+        "[competitiveness] 竞争力对齐「匹配」:候选人83分(学校overseas_top/硕士/实习大厂/竞赛国际级) ↔ 岗位74分(民企/AI工程/门槛本科) 差值-9"
       ],
       "role_gated": false,
+      "comp_label": "匹配",
+      "candidate_score": 83,
+      "company_score": 74,
       "hard_skills": [
         "AI",
         "Agent",
@@ -1393,100 +1102,404 @@
       ]
     },
     {
-      "rank": 32,
-      "score": 63.3,
+      "rank": 23,
+      "score": 69.0,
       "recommend": "推荐",
-      "company": "中国兵器工业集团第二〇二研究所",
-      "position": "软件开发",
-      "city": "咸阳",
+      "company": "谱星航天",
+      "position": "应用软件设计师",
+      "city": "长春",
       "job_category": "研发",
       "education_req": "硕士",
       "deadline": null,
-      "apply_url": "https://mp.weixin.qq.com/s/FVLBuT8Egi_GTD2i5TrBNg",
+      "apply_url": "https://mp.weixin.qq.com/s/-BRmNfK_w_HPId-jdndPGg",
       "dims": {
         "skill": 41.81818181818182,
-        "hard_skill": 40.90909090909091,
+        "hard_skill": 67.63440860215053,
         "cert": 60.0,
         "education": 100.0,
         "major": 100.0,
         "city": 50.0,
         "role": 78.0,
-        "soft_skill": 50.0
+        "soft_skill": 50.0,
+        "competitiveness": 58.0
       },
       "reasons": [
         "[skill] 关键词命中2/5: python↔python, javascript↔java",
-        "[hard_skill] 硬技能命中2/5: python↔python, javascript↔java",
+        "[hard_skill] 硬技能命中2/3: python↔python, javascript↔java",
         "[cert] 岗位无证书硬性要求",
         "[education] 候选人硕士学历满足岗位最低要求",
         "[major] 候选人专业与岗位直接匹配(软件工程)",
         "[city] 候选人无城市偏好(中性)",
         "[role] [role] 方向 精确子类命中:岗位「后端开发」↔ 候选人适配「后端开发」(权重0.78) — 字节实习用Flask/SQLAlchemy全栈交付配置管理平台,实现权限审批状态机与类Git版本管理;EASY_CODE用TypeScript/Node.js构建Runtime。",
-        "[soft_skill] 软技能无法从简历关键词中准确匹配"
+        "[soft_skill] 软技能无法从简历关键词中准确匹配",
+        "[competitiveness] 竞争力对齐「保底」:候选人83分(学校overseas_top/硕士/实习大厂/竞赛国际级) ↔ 岗位55分(民企/开发/门槛硕士) 差值-28"
       ],
       "role_gated": false,
+      "comp_label": "保底",
+      "candidate_score": 83,
+      "company_score": 55,
+      "hard_skills": [
+        "应用软件开发",
+        "Java",
+        "Python"
+      ],
+      "keywords": [
+        "应用软件",
+        "Java",
+        "Python",
+        "卫星软件"
+      ]
+    },
+    {
+      "rank": 24,
+      "score": 68.9,
+      "recommend": "推荐",
+      "company": "禾迈股份",
+      "position": "AI工程师",
+      "city": "杭州,苏州",
+      "job_category": "研发",
+      "education_req": "本科",
+      "deadline": null,
+      "apply_url": "https://app.mokahr.com/campus-recruitment/hoymiles/70377?locale=zh-CN#/jobs?page=1&anchorName=jobsList",
+      "dims": {
+        "skill": 52.8125,
+        "hard_skill": 76.5,
+        "cert": 60.0,
+        "education": 100.0,
+        "major": 40.0,
+        "city": 50.0,
+        "role": 85.0,
+        "soft_skill": 50.0,
+        "competitiveness": 71.5
+      },
+      "reasons": [
+        "[skill] 关键词命中3/6: deep_learning↔deep_learning, machine_learning↔machine_learning, python↔python",
+        "[hard_skill] 硬技能命中3/4: deep_learning↔deep_learning, machine_learning↔machine_learning, python↔python",
+        "[cert] 岗位无证书硬性要求",
+        "[education] 候选人硕士学历满足岗位最低要求",
+        "[major] 岗位倾向工科大类/具体电力电子、电气、自动化、机械等理工类专业专业",
+        "[city] 候选人无城市偏好(中性)",
+        "[role] [role] 方向 精确子类命中:岗位「大模型应用开发」↔ 候选人适配「大模型应用开发」(权重0.85) — 华为实习用Prompt/RAG/Structured Output做测试用例生成,字节实习做MCP Tools配置生成,均属大模型应用落地。",
+        "[soft_skill] 软技能无法从简历关键词中准确匹配",
+        "[competitiveness] 竞争力对齐「保底」:候选人83分(学校overseas_top/硕士/实习大厂/竞赛国际级) ↔ 岗位64分(民企/AI工程/门槛本科) 差值-19"
+      ],
+      "role_gated": false,
+      "comp_label": "保底",
+      "candidate_score": 83,
+      "company_score": 64,
+      "hard_skills": [
+        "Python",
+        "深度学习",
+        "机器学习",
+        "TensorFlow/PyTorch"
+      ],
+      "keywords": [
+        "AI",
+        "人工智能",
+        "深度学习",
+        "机器学习",
+        "Python"
+      ]
+    },
+    {
+      "rank": 25,
+      "score": 68.5,
+      "recommend": "推荐",
+      "company": "固胜科技",
+      "position": "软件开发工程师",
+      "city": "武汉",
+      "job_category": "研发",
+      "education_req": "本科",
+      "deadline": null,
+      "apply_url": "https://www.mozaracing.cn/recruitment/",
+      "dims": {
+        "skill": 51.875,
+        "hard_skill": 50.9375,
+        "cert": 60.0,
+        "education": 100.0,
+        "major": 100.0,
+        "city": 50.0,
+        "role": 78.0,
+        "soft_skill": 50.0,
+        "competitiveness": 58.0
+      },
+      "reasons": [
+        "[skill] 关键词命中2/4: python↔python, javascript↔java",
+        "[hard_skill] 硬技能命中2/4: python↔python, javascript↔java",
+        "[cert] 岗位无证书硬性要求",
+        "[education] 候选人硕士学历满足岗位最低要求",
+        "[major] 候选人专业与岗位直接匹配(软件工程)",
+        "[city] 候选人无城市偏好(中性)",
+        "[role] [role] 方向 精确子类命中:岗位「后端开发」↔ 候选人适配「后端开发」(权重0.78) — 字节实习用Flask/SQLAlchemy全栈交付配置管理平台,实现权限审批状态机与类Git版本管理;EASY_CODE用TypeScript/Node.js构建Runtime。",
+        "[soft_skill] 软技能无法从简历关键词中准确匹配",
+        "[competitiveness] 竞争力对齐「保底」:候选人83分(学校overseas_top/硕士/实习大厂/竞赛国际级) ↔ 岗位55分(民企/开发/门槛本科) 差值-28"
+      ],
+      "role_gated": false,
+      "comp_label": "保底",
+      "candidate_score": 83,
+      "company_score": 55,
       "hard_skills": [
         "Java",
         "C++",
         "Python",
-        "软件开发",
-        "数据库"
+        "软件开发"
       ],
       "keywords": [
+        "软件开发",
         "Java",
         "C++",
-        "Python",
-        "软件开发"
+        "Python"
       ]
     },
     {
-      "rank": 33,
-      "score": 63.3,
+      "rank": 26,
+      "score": 68.5,
       "recommend": "推荐",
-      "company": "黑龙江省农村信用社联合社",
-      "position": "软件开发岗",
-      "city": "哈尔滨",
+      "company": "歌尔丹拿",
+      "position": "软件研发实习生",
+      "city": "北京,上海,深圳,南京,苏州,青岛,潍坊",
       "job_category": "研发",
       "education_req": "本科",
       "deadline": null,
-      "apply_url": "https://hljnxzp2026.zhaopin.com/zk/",
+      "apply_url": "https://k13pqewe7i.jobs.feishu.cn/641372/m/?spread=K38FMZW",
       "dims": {
         "skill": 41.81818181818182,
-        "hard_skill": 50.9375,
+        "hard_skill": 67.63440860215053,
         "cert": 60.0,
         "education": 100.0,
         "major": 80.0,
         "city": 50.0,
         "role": 78.0,
-        "soft_skill": 50.0
+        "soft_skill": 50.0,
+        "competitiveness": 73.0
+      },
+      "reasons": [
+        "[skill] 关键词命中2/5: python↔python, javascript↔java",
+        "[hard_skill] 硬技能命中2/3: python↔python, javascript↔java",
+        "[cert] 岗位无证书硬性要求",
+        "[education] 候选人硕士学历满足岗位最低要求",
+        "[major] 岗位接受计算机相关专业",
+        "[city] 候选人无城市偏好(中性)",
+        "[role] [role] 方向 精确子类命中:岗位「后端开发」↔ 候选人适配「后端开发」(权重0.78) — 字节实习用Flask/SQLAlchemy全栈交付配置管理平台,实现权限审批状态机与类Git版本管理;EASY_CODE用TypeScript/Node.js构建Runtime。",
+        "[soft_skill] 软技能无法从简历关键词中准确匹配",
+        "[competitiveness] 竞争力对齐「保底」:候选人83分(学校overseas_top/硕士/实习大厂/竞赛国际级) ↔ 岗位65分(外企/开发/门槛本科) 差值-18"
+      ],
+      "role_gated": false,
+      "comp_label": "保底",
+      "candidate_score": 83,
+      "company_score": 65,
+      "hard_skills": [
+        "Java",
+        "Python",
+        "C++"
+      ],
+      "keywords": [
+        "软件开发",
+        "Java",
+        "Python",
+        "实习生"
+      ]
+    },
+    {
+      "rank": 27,
+      "score": 68.0,
+      "recommend": "推荐",
+      "company": "深圳方正微电子",
+      "position": "系统开发工程师",
+      "city": "深圳",
+      "job_category": "研发",
+      "education_req": "本科",
+      "deadline": null,
+      "apply_url": "https://founderic.zhiye.com/Campus",
+      "dims": {
+        "skill": 41.81818181818182,
+        "hard_skill": 50.9375,
+        "cert": 60.0,
+        "education": 100.0,
+        "major": 100.0,
+        "city": 50.0,
+        "role": 78.0,
+        "soft_skill": 50.0,
+        "competitiveness": 73.0
       },
       "reasons": [
         "[skill] 关键词命中2/5: python↔python, javascript↔java",
         "[hard_skill] 硬技能命中2/4: python↔python, javascript↔java",
         "[cert] 岗位无证书硬性要求",
         "[education] 候选人硕士学历满足岗位最低要求",
-        "[major] 岗位接受计算机相关专业",
+        "[major] 候选人专业与岗位直接匹配(软件工程)",
         "[city] 候选人无城市偏好(中性)",
         "[role] [role] 方向 精确子类命中:岗位「后端开发」↔ 候选人适配「后端开发」(权重0.78) — 字节实习用Flask/SQLAlchemy全栈交付配置管理平台,实现权限审批状态机与类Git版本管理;EASY_CODE用TypeScript/Node.js构建Runtime。",
-        "[soft_skill] 软技能无法从简历关键词中准确匹配"
+        "[soft_skill] 软技能无法从简历关键词中准确匹配",
+        "[competitiveness] 竞争力对齐「保底」:候选人83分(学校overseas_top/硕士/实习大厂/竞赛国际级) ↔ 岗位65分(国央企/开发/门槛本科) 差值-18"
       ],
       "role_gated": false,
+      "comp_label": "保底",
+      "candidate_score": 83,
+      "company_score": 65,
       "hard_skills": [
         "Java",
         "Python",
-        "SQL",
-        "软件开发"
+        "数据库",
+        "系统设计"
       ],
       "keywords": [
-        "软件开发",
+        "系统开发",
         "Java",
         "Python",
-        "SQL",
-        "后端开发"
+        "数据库"
       ]
     },
     {
-      "rank": 34,
-      "score": 62.0,
+      "rank": 28,
+      "score": 68.0,
+      "recommend": "推荐",
+      "company": "瑞泊",
+      "position": "后端开发实习生",
+      "city": "北京",
+      "job_category": "研发",
+      "education_req": "本科",
+      "deadline": null,
+      "apply_url": "hr@xraybot.com",
+      "dims": {
+        "skill": 51.875,
+        "hard_skill": 50.9375,
+        "cert": 60.0,
+        "education": 100.0,
+        "major": 80.0,
+        "city": 50.0,
+        "role": 78.0,
+        "soft_skill": 50.0,
+        "competitiveness": 73.0
+      },
+      "reasons": [
+        "[skill] 关键词命中2/4: python↔python, javascript↔java",
+        "[hard_skill] 硬技能命中2/4: python↔python, javascript↔java",
+        "[cert] 岗位无证书硬性要求",
+        "[education] 候选人硕士学历满足岗位最低要求",
+        "[major] 岗位接受计算机相关专业",
+        "[city] 候选人无城市偏好(中性)",
+        "[role] [role] 方向 精确子类命中:岗位「后端开发」↔ 候选人适配「后端开发」(权重0.78) — 字节实习用Flask/SQLAlchemy全栈交付配置管理平台,实现权限审批状态机与类Git版本管理;EASY_CODE用TypeScript/Node.js构建Runtime。",
+        "[soft_skill] 软技能无法从简历关键词中准确匹配",
+        "[competitiveness] 竞争力对齐「保底」:候选人83分(学校overseas_top/硕士/实习大厂/竞赛国际级) ↔ 岗位65分(民企/开发/门槛本科) 差值-18"
+      ],
+      "role_gated": false,
+      "comp_label": "保底",
+      "candidate_score": 83,
+      "company_score": 65,
+      "hard_skills": [
+        "后端开发",
+        "Java",
+        "Python",
+        "数据库"
+      ],
+      "keywords": [
+        "后端",
+        "Java",
+        "Python",
+        "数据库"
+      ]
+    },
+    {
+      "rank": 29,
+      "score": 67.9,
+      "recommend": "推荐",
+      "company": "三未信安",
+      "position": "AI应用工程师",
+      "city": "济南",
+      "job_category": "研发",
+      "education_req": "本科",
+      "deadline": null,
+      "apply_url": "https://sansec.zhiye.com/",
+      "dims": {
+        "skill": 40.14705882352941,
+        "hard_skill": 76.5,
+        "cert": 60.0,
+        "education": 100.0,
+        "major": 40.0,
+        "city": 50.0,
+        "role": 85.0,
+        "soft_skill": 50.0,
+        "competitiveness": 86.5
+      },
+      "reasons": [
+        "[skill] 关键词命中3/8: deep_learning↔deep_learning, machine_learning↔machine_learning, python↔python",
+        "[hard_skill] 硬技能命中3/4: deep_learning↔deep_learning, machine_learning↔machine_learning, python↔python",
+        "[cert] 岗位无证书硬性要求",
+        "[education] 候选人硕士学历满足岗位最低要求",
+        "[major] 岗位倾向工科大类/具体理工类专业专业",
+        "[city] 候选人无城市偏好(中性)",
+        "[role] [role] 方向 精确子类命中:岗位「大模型应用开发」↔ 候选人适配「大模型应用开发」(权重0.85) — 华为实习用Prompt/RAG/Structured Output做测试用例生成,字节实习做MCP Tools配置生成,均属大模型应用落地。",
+        "[soft_skill] 软技能无法从简历关键词中准确匹配",
+        "[competitiveness] 竞争力对齐「匹配」:候选人83分(学校overseas_top/硕士/实习大厂/竞赛国际级) ↔ 岗位74分(民企/AI工程/门槛本科) 差值-9"
+      ],
+      "role_gated": false,
+      "comp_label": "匹配",
+      "candidate_score": 83,
+      "company_score": 74,
+      "hard_skills": [
+        "Python",
+        "机器学习",
+        "深度学习",
+        "AI应用开发"
+      ],
+      "keywords": [
+        "AI",
+        "人工智能",
+        "机器学习",
+        "济南",
+        "校招"
+      ]
+    },
+    {
+      "rank": 30,
+      "score": 67.7,
+      "recommend": "推荐",
+      "company": "新中大科技",
+      "position": "JAVA开发工程师",
+      "city": "杭州,太原",
+      "job_category": "研发",
+      "education_req": "本科",
+      "deadline": null,
+      "apply_url": "https://app.mokahr.com/campus-recruitment/newgrand/151701?locale=zh-CN#/",
+      "dims": {
+        "skill": 34.27083333333333,
+        "hard_skill": 100.0,
+        "cert": 60.0,
+        "education": 100.0,
+        "major": 80.0,
+        "city": 50.0,
+        "role": 46.8,
+        "soft_skill": 60.0,
+        "competitiveness": 73.0
+      },
+      "reasons": [
+        "[skill] 关键词命中1/3: javascript↔java",
+        "[hard_skill] 硬技能命中1/1: javascript↔java",
+        "[cert] 岗位无证书硬性要求",
+        "[education] 候选人硕士学历满足岗位最低要求",
+        "[major] 岗位接受计算机相关专业专业",
+        "[city] 候选人无城市偏好(中性)",
+        "[role] [role] 方向 同大类匹配:岗位「开发」↔ 候选人适配「后端开发」(权重0.78) — 字节实习用Flask/SQLAlchemy全栈交付配置管理平台,实现权限审批状态机与类Git版本管理;EASY_CODE用TypeScript/Node.js构建Runtime。",
+        "[soft_skill] 岗位无明确软技能要求",
+        "[competitiveness] 竞争力对齐「保底」:候选人83分(学校overseas_top/硕士/实习大厂/竞赛国际级) ↔ 岗位65分(民企/开发/门槛本科) 差值-18"
+      ],
+      "role_gated": false,
+      "comp_label": "保底",
+      "candidate_score": 83,
+      "company_score": 65,
+      "hard_skills": [
+        "Java"
+      ],
+      "keywords": [
+        "Java",
+        "后端开发",
+        "开发工程师"
+      ]
+    },
+    {
+      "rank": 31,
+      "score": 67.3,
       "recommend": "推荐",
       "company": "拼多多集团-PDD",
       "position": "AI Infra研发工程师",
@@ -1503,7 +1516,8 @@
         "major": 80.0,
         "city": 50.0,
         "role": 88.0,
-        "soft_skill": 50.0
+        "soft_skill": 50.0,
+        "competitiveness": 94.0
       },
       "reasons": [
         "[skill] 关键词命中2/7: machine_learning↔machine_learning, python↔python",
@@ -1513,9 +1527,13 @@
         "[major] 岗位接受计算机相关专业",
         "[city] 候选人无城市偏好(中性)",
         "[role] [role] 方向 精确子类命中:岗位「AI Infra」↔ 候选人适配「AI Infra」(权重0.88) — EASY_CODE中实现TaskBudget约束、Journal回放续跑、Docker评测隔离与上下文成本治理,具备Agent Runtime与Infra层工程能力。",
-        "[soft_skill] 软技能无法从简历关键词中准确匹配"
+        "[soft_skill] 软技能无法从简历关键词中准确匹配",
+        "[competitiveness] 竞争力对齐「匹配」:候选人83分(学校overseas_top/硕士/实习大厂/竞赛国际级) ↔ 岗位79分(民企/AI工程/门槛硕士) 差值-4"
       ],
       "role_gated": false,
+      "comp_label": "匹配",
+      "candidate_score": 83,
+      "company_score": 79,
       "hard_skills": [
         "AI Infra",
         "分布式系统",
@@ -1530,191 +1548,109 @@
       ]
     },
     {
-      "rank": 35,
-      "score": 61.7,
+      "rank": 32,
+      "score": 67.1,
       "recommend": "推荐",
-      "company": "拓竹科技",
-      "position": "生产软件开发",
-      "city": "深圳",
+      "company": "黑龙江省农村信用社联合社",
+      "position": "软件开发岗",
+      "city": "哈尔滨",
       "job_category": "研发",
       "education_req": "本科",
       "deadline": null,
-      "apply_url": "https://bambulab.jobs.feishu.cn/campus/?keywords=&category=&location=&project=7644414177830455588&type=&job_hot_flag=&current=1&limit=10&functionCategory=&tag=",
-      "dims": {
-        "skill": 35.09803921568627,
-        "hard_skill": 50.9375,
-        "cert": 60.0,
-        "education": 100.0,
-        "major": 80.0,
-        "city": 50.0,
-        "role": 78.0,
-        "soft_skill": 50.0
-      },
-      "reasons": [
-        "[skill] 关键词命中2/6: python↔python, javascript↔java",
-        "[hard_skill] 硬技能命中2/4: python↔python, javascript↔java",
-        "[cert] 岗位无证书硬性要求",
-        "[education] 候选人硕士学历满足岗位最低要求",
-        "[major] 岗位接受计算机相关专业",
-        "[city] 候选人无城市偏好(中性)",
-        "[role] [role] 方向 精确子类命中:岗位「后端开发」↔ 候选人适配「后端开发」(权重0.78) — 字节实习用Flask/SQLAlchemy全栈交付配置管理平台,实现权限审批状态机与类Git版本管理;EASY_CODE用TypeScript/Node.js构建Runtime。",
-        "[soft_skill] 软技能无法从简历关键词中准确匹配"
-      ],
-      "role_gated": false,
-      "hard_skills": [
-        "软件开发",
-        "Python",
-        "Java",
-        "数据库"
-      ],
-      "keywords": [
-        "生产软件",
-        "软件开发",
-        "Python",
-        "深圳"
-      ]
-    },
-    {
-      "rank": 36,
-      "score": 61.6,
-      "recommend": "推荐",
-      "company": "中电锦江",
-      "position": "软件设计师",
-      "city": "成都",
-      "job_category": "研发",
-      "education_req": "硕士",
-      "deadline": null,
-      "apply_url": "https://mp.weixin.qq.com/s/Vf_rAneDi62eISDVjnijkw",
-      "dims": {
-        "skill": 26.666666666666668,
-        "hard_skill": 50.9375,
-        "cert": 60.0,
-        "education": 100.0,
-        "major": 100.0,
-        "city": 50.0,
-        "role": 78.0,
-        "soft_skill": 50.0
-      },
-      "reasons": [
-        "[skill] 关键词命中2/8: python↔python, javascript↔java",
-        "[hard_skill] 硬技能命中2/4: python↔python, javascript↔java",
-        "[cert] 岗位无证书硬性要求",
-        "[education] 候选人硕士学历满足岗位最低要求",
-        "[major] 候选人专业与岗位直接匹配(软件工程)",
-        "[city] 候选人无城市偏好(中性)",
-        "[role] [role] 方向 精确子类命中:岗位「后端开发」↔ 候选人适配「后端开发」(权重0.78) — 字节实习用Flask/SQLAlchemy全栈交付配置管理平台,实现权限审批状态机与类Git版本管理;EASY_CODE用TypeScript/Node.js构建Runtime。",
-        "[soft_skill] 软技能无法从简历关键词中准确匹配"
-      ],
-      "role_gated": false,
-      "hard_skills": [
-        "C/C++",
-        "Java",
-        "Python",
-        "嵌入式软件"
-      ],
-      "keywords": [
-        "软件开发",
-        "C++",
-        "Java",
-        "嵌入式",
-        "军工"
-      ]
-    },
-    {
-      "rank": 37,
-      "score": 61.3,
-      "recommend": "推荐",
-      "company": "DJI 大疆",
-      "position": "后端开发工程师",
-      "city": "深圳,上海,北京",
-      "job_category": "研发",
-      "education_req": "本科",
-      "deadline": null,
-      "apply_url": "careers.dji.com",
+      "apply_url": "https://hljnxzp2026.zhaopin.com/zk/",
       "dims": {
         "skill": 41.81818181818182,
-        "hard_skill": 40.90909090909091,
+        "hard_skill": 50.9375,
         "cert": 60.0,
         "education": 100.0,
         "major": 80.0,
         "city": 50.0,
         "role": 78.0,
-        "soft_skill": 50.0
+        "soft_skill": 50.0,
+        "competitiveness": 83.5
       },
       "reasons": [
         "[skill] 关键词命中2/5: python↔python, javascript↔java",
-        "[hard_skill] 硬技能命中2/5: python↔python, javascript↔java",
-        "[cert] 岗位无证书硬性要求",
-        "[education] 候选人硕士学历满足岗位最低要求",
-        "[major] 岗位接受计算机相关专业",
-        "[city] 候选人无城市偏好(中性)",
-        "[role] [role] 方向 精确子类命中:岗位「后端开发」↔ 候选人适配「后端开发」(权重0.78) — 字节实习用Flask/SQLAlchemy全栈交付配置管理平台,实现权限审批状态机与类Git版本管理;EASY_CODE用TypeScript/Node.js构建Runtime。",
-        "[soft_skill] 软技能无法从简历关键词中准确匹配"
-      ],
-      "role_gated": false,
-      "hard_skills": [
-        "Java",
-        "Python",
-        "Go",
-        "数据库",
-        "后端"
-      ],
-      "keywords": [
-        "后端",
-        "Java",
-        "Python",
-        "Go",
-        "数据库"
-      ]
-    },
-    {
-      "rank": 38,
-      "score": 61.2,
-      "recommend": "推荐",
-      "company": "DJI 大疆",
-      "position": "测试开发工程师",
-      "city": "深圳,上海,北京",
-      "job_category": "研发",
-      "education_req": "本科",
-      "deadline": null,
-      "apply_url": "careers.dji.com",
-      "dims": {
-        "skill": 51.875,
-        "hard_skill": 50.9375,
-        "cert": 60.0,
-        "education": 100.0,
-        "major": 80.0,
-        "city": 50.0,
-        "role": 46.8,
-        "soft_skill": 50.0
-      },
-      "reasons": [
-        "[skill] 关键词命中2/4: python↔python, javascript↔java",
         "[hard_skill] 硬技能命中2/4: python↔python, javascript↔java",
         "[cert] 岗位无证书硬性要求",
         "[education] 候选人硕士学历满足岗位最低要求",
         "[major] 岗位接受计算机相关专业",
         "[city] 候选人无城市偏好(中性)",
-        "[role] [role] 方向 同大类匹配:岗位「测试开发」↔ 候选人适配「后端开发」(权重0.78) — 字节实习用Flask/SQLAlchemy全栈交付配置管理平台,实现权限审批状态机与类Git版本管理;EASY_CODE用TypeScript/Node.js构建Runtime。",
-        "[soft_skill] 软技能无法从简历关键词中准确匹配"
+        "[role] [role] 方向 精确子类命中:岗位「后端开发」↔ 候选人适配「后端开发」(权重0.78) — 字节实习用Flask/SQLAlchemy全栈交付配置管理平台,实现权限审批状态机与类Git版本管理;EASY_CODE用TypeScript/Node.js构建Runtime。",
+        "[soft_skill] 软技能无法从简历关键词中准确匹配",
+        "[competitiveness] 竞争力对齐「保底」:候选人83分(学校overseas_top/硕士/实习大厂/竞赛国际级) ↔ 岗位72分(国央企/开发/门槛本科) 差值-11"
       ],
       "role_gated": false,
+      "comp_label": "保底",
+      "candidate_score": 83,
+      "company_score": 72,
       "hard_skills": [
-        "测试开发",
-        "自动化测试",
+        "Java",
         "Python",
-        "Java"
+        "SQL",
+        "软件开发"
       ],
       "keywords": [
-        "测试开发",
-        "自动化测试",
+        "软件开发",
+        "Java",
         "Python",
-        "Java"
+        "SQL",
+        "后端开发"
       ]
     },
     {
-      "rank": 39,
-      "score": 61.2,
+      "rank": 33,
+      "score": 66.5,
+      "recommend": "推荐",
+      "company": "恒玄科技",
+      "position": "软件工程师(AI)",
+      "city": "上海",
+      "job_category": "研发",
+      "education_req": "本科",
+      "deadline": null,
+      "apply_url": "https://bestechnic.zhiye.com/campus/jobs?memory={}&silence=1",
+      "dims": {
+        "skill": 51.935483870967744,
+        "hard_skill": 50.96774193548387,
+        "cert": 60.0,
+        "education": 100.0,
+        "major": 80.0,
+        "city": 50.0,
+        "role": 78.0,
+        "soft_skill": 50.0,
+        "competitiveness": 58.0
+      },
+      "reasons": [
+        "[skill] 关键词命中2/4: machine_learning↔machine_learning, python↔python",
+        "[hard_skill] 硬技能命中2/4: machine_learning↔machine_learning, python↔python",
+        "[cert] 岗位无证书硬性要求",
+        "[education] 候选人硕士学历满足岗位最低要求",
+        "[major] 岗位接受计算机/人工智能相关专业",
+        "[city] 候选人无城市偏好(中性)",
+        "[role] [role] 方向 精确子类命中:岗位「后端开发」↔ 候选人适配「后端开发」(权重0.78) — 字节实习用Flask/SQLAlchemy全栈交付配置管理平台,实现权限审批状态机与类Git版本管理;EASY_CODE用TypeScript/Node.js构建Runtime。",
+        "[soft_skill] 软技能无法从简历关键词中准确匹配",
+        "[competitiveness] 竞争力对齐「保底」:候选人83分(学校overseas_top/硕士/实习大厂/竞赛国际级) ↔ 岗位55分(民企/开发/门槛本科) 差值-28"
+      ],
+      "role_gated": false,
+      "comp_label": "保底",
+      "candidate_score": 83,
+      "company_score": 55,
+      "hard_skills": [
+        "AI",
+        "机器学习",
+        "Python",
+        "C++"
+      ],
+      "keywords": [
+        "AI",
+        "机器学习",
+        "Python",
+        "C++"
+      ]
+    },
+    {
+      "rank": 34,
+      "score": 66.4,
       "recommend": "推荐",
       "company": "兴云数科",
       "position": "AI算法工程师-大模型",
@@ -1731,7 +1667,8 @@
         "major": 80.0,
         "city": 50.0,
         "role": 85.0,
-        "soft_skill": 50.0
+        "soft_skill": 50.0,
+        "competitiveness": 91.0
       },
       "reasons": [
         "[skill] 关键词命中5/16: prompt_engineering↔prompt_engineering, rag↔rag, machine_learning↔machine_learning, python↔python, javascript↔java",
@@ -1741,9 +1678,13 @@
         "[major] 岗位接受计算机/工业工程/自动化/管理科学/应用数学/交通工程等相关专业专业",
         "[city] 候选人无城市偏好(中性)",
         "[role] [role] 方向 精确子类命中:岗位「大模型应用开发」↔ 候选人适配「大模型应用开发」(权重0.85) — 华为实习用Prompt/RAG/Structured Output做测试用例生成,字节实习做MCP Tools配置生成,均属大模型应用落地。",
-        "[soft_skill] 软技能无法从简历关键词中准确匹配"
+        "[soft_skill] 软技能无法从简历关键词中准确匹配",
+        "[competitiveness] 竞争力对齐「匹配」:候选人83分(学校overseas_top/硕士/实习大厂/竞赛国际级) ↔ 岗位89分(国央企/AI工程/门槛硕士) 差值+6"
       ],
       "role_gated": false,
+      "comp_label": "匹配",
+      "candidate_score": 83,
+      "company_score": 89,
       "hard_skills": [
         "Java",
         "C++",
@@ -1766,8 +1707,110 @@
       ]
     },
     {
-      "rank": 40,
-      "score": 61.0,
+      "rank": 35,
+      "score": 66.2,
+      "recommend": "推荐",
+      "company": "中国兵器工业集团第二〇二研究所",
+      "position": "软件开发",
+      "city": "咸阳",
+      "job_category": "研发",
+      "education_req": "硕士",
+      "deadline": null,
+      "apply_url": "https://mp.weixin.qq.com/s/FVLBuT8Egi_GTD2i5TrBNg",
+      "dims": {
+        "skill": 41.81818181818182,
+        "hard_skill": 40.90909090909091,
+        "cert": 60.0,
+        "education": 100.0,
+        "major": 100.0,
+        "city": 50.0,
+        "role": 78.0,
+        "soft_skill": 50.0,
+        "competitiveness": 70.0
+      },
+      "reasons": [
+        "[skill] 关键词命中2/5: python↔python, javascript↔java",
+        "[hard_skill] 硬技能命中2/5: python↔python, javascript↔java",
+        "[cert] 岗位无证书硬性要求",
+        "[education] 候选人硕士学历满足岗位最低要求",
+        "[major] 候选人专业与岗位直接匹配(软件工程)",
+        "[city] 候选人无城市偏好(中性)",
+        "[role] [role] 方向 精确子类命中:岗位「后端开发」↔ 候选人适配「后端开发」(权重0.78) — 字节实习用Flask/SQLAlchemy全栈交付配置管理平台,实现权限审批状态机与类Git版本管理;EASY_CODE用TypeScript/Node.js构建Runtime。",
+        "[soft_skill] 软技能无法从简历关键词中准确匹配",
+        "[competitiveness] 竞争力对齐「保底」:候选人83分(学校overseas_top/硕士/实习大厂/竞赛国际级) ↔ 岗位63分(事业单位/政府/开发/门槛硕士) 差值-20"
+      ],
+      "role_gated": false,
+      "comp_label": "保底",
+      "candidate_score": 83,
+      "company_score": 63,
+      "hard_skills": [
+        "Java",
+        "C++",
+        "Python",
+        "软件开发",
+        "数据库"
+      ],
+      "keywords": [
+        "Java",
+        "C++",
+        "Python",
+        "软件开发"
+      ]
+    },
+    {
+      "rank": 36,
+      "score": 65.7,
+      "recommend": "推荐",
+      "company": "中电锦江",
+      "position": "软件设计师",
+      "city": "成都",
+      "job_category": "研发",
+      "education_req": "硕士",
+      "deadline": null,
+      "apply_url": "https://mp.weixin.qq.com/s/Vf_rAneDi62eISDVjnijkw",
+      "dims": {
+        "skill": 26.666666666666668,
+        "hard_skill": 50.9375,
+        "cert": 60.0,
+        "education": 100.0,
+        "major": 100.0,
+        "city": 50.0,
+        "role": 78.0,
+        "soft_skill": 50.0,
+        "competitiveness": 80.5
+      },
+      "reasons": [
+        "[skill] 关键词命中2/8: python↔python, javascript↔java",
+        "[hard_skill] 硬技能命中2/4: python↔python, javascript↔java",
+        "[cert] 岗位无证书硬性要求",
+        "[education] 候选人硕士学历满足岗位最低要求",
+        "[major] 候选人专业与岗位直接匹配(软件工程)",
+        "[city] 候选人无城市偏好(中性)",
+        "[role] [role] 方向 精确子类命中:岗位「后端开发」↔ 候选人适配「后端开发」(权重0.78) — 字节实习用Flask/SQLAlchemy全栈交付配置管理平台,实现权限审批状态机与类Git版本管理;EASY_CODE用TypeScript/Node.js构建Runtime。",
+        "[soft_skill] 软技能无法从简历关键词中准确匹配",
+        "[competitiveness] 竞争力对齐「保底」:候选人83分(学校overseas_top/硕士/实习大厂/竞赛国际级) ↔ 岗位70分(国央企/开发/门槛硕士) 差值-13"
+      ],
+      "role_gated": false,
+      "comp_label": "保底",
+      "candidate_score": 83,
+      "company_score": 70,
+      "hard_skills": [
+        "C/C++",
+        "Java",
+        "Python",
+        "嵌入式软件"
+      ],
+      "keywords": [
+        "软件开发",
+        "C++",
+        "Java",
+        "嵌入式",
+        "军工"
+      ]
+    },
+    {
+      "rank": 37,
+      "score": 65.5,
       "recommend": "推荐",
       "company": "晶泰科技",
       "position": "AI Agent研发工程师",
@@ -1784,7 +1827,8 @@
         "major": 80.0,
         "city": 50.0,
         "role": 98.0,
-        "soft_skill": 50.0
+        "soft_skill": 50.0,
+        "competitiveness": 79.0
       },
       "reasons": [
         "[skill] 关键词命中1/3: python↔python",
@@ -1794,9 +1838,13 @@
         "[major] 岗位接受计算机相关专业",
         "[city] 候选人无城市偏好(中性)",
         "[role] [role] 方向 精确子类命中:岗位「AI Agent开发」↔ 候选人适配「AI Agent开发」(权重0.98) — 独立开发跨平台CLI Coding Agent(EASY_CODE),负责Agent Runtime、上下文压缩、审批Agent与评测隔离;字节MCP配置管理平台Owner,贯通API到Tool的Schema/认证映射。",
-        "[soft_skill] 软技能无法从简历关键词中准确匹配"
+        "[soft_skill] 软技能无法从简历关键词中准确匹配",
+        "[competitiveness] 竞争力对齐「保底」:候选人83分(学校overseas_top/硕士/实习大厂/竞赛国际级) ↔ 岗位69分(民企/AI工程/门槛硕士) 差值-14"
       ],
       "role_gated": false,
+      "comp_label": "保底",
+      "candidate_score": 83,
+      "company_score": 69,
       "hard_skills": [
         "AI Agent",
         "大模型",
@@ -1809,98 +1857,8 @@
       ]
     },
     {
-      "rank": 41,
-      "score": 60.5,
-      "recommend": "推荐",
-      "company": "中科光电",
-      "position": "软件开发类",
-      "city": "合肥",
-      "job_category": "研发",
-      "education_req": "硕士",
-      "deadline": null,
-      "apply_url": "https://app.mokahr.com/campus-recruitment/hdzn/151324#/jobs?page=1&anchorName=jobsList",
-      "dims": {
-        "skill": 30.285714285714285,
-        "hard_skill": 40.90909090909091,
-        "cert": 60.0,
-        "education": 100.0,
-        "major": 100.0,
-        "city": 50.0,
-        "role": 78.0,
-        "soft_skill": 50.0
-      },
-      "reasons": [
-        "[skill] 关键词命中2/7: python↔python, javascript↔java",
-        "[hard_skill] 硬技能命中2/5: python↔python, javascript↔java",
-        "[cert] 岗位无证书硬性要求",
-        "[education] 候选人硕士学历满足岗位最低要求",
-        "[major] 候选人专业与岗位直接匹配(软件工程)",
-        "[city] 候选人无城市偏好(中性)",
-        "[role] [role] 方向 精确子类命中:岗位「后端开发」↔ 候选人适配「后端开发」(权重0.78) — 字节实习用Flask/SQLAlchemy全栈交付配置管理平台,实现权限审批状态机与类Git版本管理;EASY_CODE用TypeScript/Node.js构建Runtime。",
-        "[soft_skill] 软技能无法从简历关键词中准确匹配"
-      ],
-      "role_gated": false,
-      "hard_skills": [
-        "Java",
-        "C++",
-        "Python",
-        "数据结构",
-        "数据库"
-      ],
-      "keywords": [
-        "软件开发",
-        "Java",
-        "C++",
-        "Python",
-        "校招提前批"
-      ]
-    },
-    {
-      "rank": 42,
-      "score": 60.0,
-      "recommend": "推荐",
-      "company": "恒玄科技",
-      "position": "软件工程师(应用)",
-      "city": "上海",
-      "job_category": "研发",
-      "education_req": "本科",
-      "deadline": null,
-      "apply_url": "https://bestechnic.zhiye.com/campus/jobs?memory={}&silence=1",
-      "dims": {
-        "skill": 34.27083333333333,
-        "hard_skill": 33.80208333333333,
-        "cert": 60.0,
-        "education": 100.0,
-        "major": 100.0,
-        "city": 50.0,
-        "role": 78.0,
-        "soft_skill": 50.0
-      },
-      "reasons": [
-        "[skill] 关键词命中1/3: javascript↔java",
-        "[hard_skill] 硬技能命中1/3: javascript↔java",
-        "[cert] 岗位无证书硬性要求",
-        "[education] 候选人硕士学历满足岗位最低要求",
-        "[major] 候选人专业与岗位直接匹配(软件工程)",
-        "[city] 候选人无城市偏好(中性)",
-        "[role] [role] 方向 精确子类命中:岗位「后端开发」↔ 候选人适配「后端开发」(权重0.78) — 字节实习用Flask/SQLAlchemy全栈交付配置管理平台,实现权限审批状态机与类Git版本管理;EASY_CODE用TypeScript/Node.js构建Runtime。",
-        "[soft_skill] 软技能无法从简历关键词中准确匹配"
-      ],
-      "role_gated": false,
-      "hard_skills": [
-        "应用开发",
-        "C/C++",
-        "Java"
-      ],
-      "keywords": [
-        "应用开发",
-        "C/C++",
-        "Java"
-      ]
-    },
-    {
-      "rank": 43,
-      "score": 59.8,
+      "rank": 38,
+      "score": 65.3,
       "recommend": "推荐",
       "company": "兴云数科",
       "position": "AI算法工程师-AI算法",
@@ -1917,7 +1875,8 @@
         "major": 80.0,
         "city": 50.0,
         "role": 85.0,
-        "soft_skill": 50.0
+        "soft_skill": 50.0,
+        "competitiveness": 91.0
       },
       "reasons": [
         "[skill] 关键词命中4/13: prompt_engineering↔prompt_engineering, rag↔rag, python↔python, javascript↔java",
@@ -1927,9 +1886,13 @@
         "[major] 岗位接受计算机/AI/数学/统计/电子工程等相关专业专业",
         "[city] 候选人无城市偏好(中性)",
         "[role] [role] 方向 精确子类命中:岗位「大模型应用开发」↔ 候选人适配「大模型应用开发」(权重0.85) — 华为实习用Prompt/RAG/Structured Output做测试用例生成,字节实习做MCP Tools配置生成,均属大模型应用落地。",
-        "[soft_skill] 软技能无法从简历关键词中准确匹配"
+        "[soft_skill] 软技能无法从简历关键词中准确匹配",
+        "[competitiveness] 竞争力对齐「匹配」:候选人83分(学校overseas_top/硕士/实习大厂/竞赛国际级) ↔ 岗位89分(国央企/AI工程/门槛硕士) 差值+6"
       ],
       "role_gated": false,
+      "comp_label": "匹配",
+      "candidate_score": 83,
+      "company_score": 89,
       "hard_skills": [
         "Python",
         "Java",
@@ -1952,187 +1915,110 @@
       ]
     },
     {
-      "rank": 44,
-      "score": 59.7,
+      "rank": 39,
+      "score": 64.7,
       "recommend": "推荐",
-      "company": "游族网络",
-      "position": "后端开发 AI方向",
-      "city": "上海",
+      "company": "拓竹科技",
+      "position": "生产软件开发",
+      "city": "深圳",
       "job_category": "研发",
       "education_req": "本科",
       "deadline": null,
-      "apply_url": "https://campus.yoozoo.com/jobs",
-      "dims": {
-        "skill": 35.09803921568627,
-        "hard_skill": 40.90909090909091,
-        "cert": 60.0,
-        "education": 100.0,
-        "major": 80.0,
-        "city": 50.0,
-        "role": 78.0,
-        "soft_skill": 50.0
-      },
-      "reasons": [
-        "[skill] 关键词命中2/6: python↔python, javascript↔java",
-        "[hard_skill] 硬技能命中2/5: python↔python, javascript↔java",
-        "[cert] 岗位无证书硬性要求",
-        "[education] 候选人硕士学历满足岗位最低要求",
-        "[major] 岗位接受计算机相关专业",
-        "[city] 候选人无城市偏好(中性)",
-        "[role] [role] 方向 精确子类命中:岗位「后端开发」↔ 候选人适配「后端开发」(权重0.78) — 字节实习用Flask/SQLAlchemy全栈交付配置管理平台,实现权限审批状态机与类Git版本管理;EASY_CODE用TypeScript/Node.js构建Runtime。",
-        "[soft_skill] 软技能无法从简历关键词中准确匹配"
-      ],
-      "role_gated": false,
-      "hard_skills": [
-        "Java",
-        "Python",
-        "Go",
-        "AI",
-        "分布式系统"
-      ],
-      "keywords": [
-        "后端开发",
-        "AI",
-        "Java",
-        "Python"
-      ]
-    },
-    {
-      "rank": 45,
-      "score": 59.3,
-      "recommend": "推荐",
-      "company": "科大讯飞-补录",
-      "position": "Java开发工程师",
-      "city": "合肥",
-      "job_category": "研发",
-      "education_req": "本科",
-      "deadline": null,
-      "apply_url": "iflytek.zhiye.com",
-      "dims": {
-        "skill": 25.90909090909091,
-        "hard_skill": 50.483870967741936,
-        "cert": 60.0,
-        "education": 100.0,
-        "major": 80.0,
-        "city": 50.0,
-        "role": 78.0,
-        "soft_skill": 50.0
-      },
-      "reasons": [
-        "[skill] 关键词命中1/4: javascript↔java",
-        "[hard_skill] 硬技能命中1/2: javascript↔java",
-        "[cert] 岗位无证书硬性要求",
-        "[education] 候选人硕士学历满足岗位最低要求",
-        "[major] 岗位接受计算机相关专业",
-        "[city] 候选人无城市偏好(中性)",
-        "[role] [role] 方向 精确子类命中:岗位「后端开发」↔ 候选人适配「后端开发」(权重0.78) — 字节实习用Flask/SQLAlchemy全栈交付配置管理平台,实现权限审批状态机与类Git版本管理;EASY_CODE用TypeScript/Node.js构建Runtime。",
-        "[soft_skill] 软技能无法从简历关键词中准确匹配"
-      ],
-      "role_gated": false,
-      "hard_skills": [
-        "Java",
-        "后端开发"
-      ],
-      "keywords": [
-        "Java",
-        "后端",
-        "开发",
-        "合肥"
-      ]
-    },
-    {
-      "rank": 46,
-      "score": 59.3,
-      "recommend": "推荐",
-      "company": "芯动科技",
-      "position": "AI软件栈工程师",
-      "city": "上海 北京 大连 成都 武汉 珠海 苏州 西安",
-      "job_category": "研发",
-      "education_req": "本科",
-      "deadline": null,
-      "apply_url": "https://innosilicon.zhiye.com/campus/jobs",
-      "dims": {
-        "skill": 35.15151515151515,
-        "hard_skill": 33.817204301075265,
-        "cert": 60.0,
-        "education": 100.0,
-        "major": 80.0,
-        "city": 50.0,
-        "role": 85.0,
-        "soft_skill": 50.0
-      },
-      "reasons": [
-        "[skill] 关键词命中2/6: deep_learning↔deep_learning, python↔python",
-        "[hard_skill] 硬技能命中1/3: python↔python",
-        "[cert] 岗位无证书硬性要求",
-        "[education] 候选人硕士学历满足岗位最低要求",
-        "[major] 岗位接受计算机相关专业",
-        "[city] 候选人无城市偏好(中性)",
-        "[role] [role] 方向 精确子类命中:岗位「大模型应用开发」↔ 候选人适配「大模型应用开发」(权重0.85) — 华为实习用Prompt/RAG/Structured Output做测试用例生成,字节实习做MCP Tools配置生成,均属大模型应用落地。",
-        "[soft_skill] 软技能无法从简历关键词中准确匹配"
-      ],
-      "role_gated": false,
-      "hard_skills": [
-        "Python",
-        "深度学习框架",
-        "AI编译"
-      ],
-      "keywords": [
-        "AI",
-        "软件栈",
-        "Python",
-        "深度学习"
-      ]
-    },
-    {
-      "rank": 47,
-      "score": 59.0,
-      "recommend": "推荐",
-      "company": "宇通集团",
-      "position": "IT",
-      "city": "郑州",
-      "job_category": "研发",
-      "education_req": "本科",
-      "deadline": null,
-      "apply_url": "https://join.yutong.com",
+      "apply_url": "https://bambulab.jobs.feishu.cn/campus/?keywords=&category=&location=&project=7644414177830455588&type=&job_hot_flag=&current=1&limit=10&functionCategory=&tag=",
       "dims": {
         "skill": 35.09803921568627,
         "hard_skill": 50.9375,
         "cert": 60.0,
         "education": 100.0,
-        "major": 100.0,
+        "major": 80.0,
         "city": 50.0,
-        "role": 46.8,
-        "soft_skill": 50.0
+        "role": 78.0,
+        "soft_skill": 50.0,
+        "competitiveness": 73.0
       },
       "reasons": [
         "[skill] 关键词命中2/6: python↔python, javascript↔java",
         "[hard_skill] 硬技能命中2/4: python↔python, javascript↔java",
         "[cert] 岗位无证书硬性要求",
         "[education] 候选人硕士学历满足岗位最低要求",
-        "[major] 候选人专业与岗位直接匹配(软件工程)",
+        "[major] 岗位接受计算机相关专业",
         "[city] 候选人无城市偏好(中性)",
-        "[role] [role] 方向 同大类匹配:岗位「开发」↔ 候选人适配「后端开发」(权重0.78) — 字节实习用Flask/SQLAlchemy全栈交付配置管理平台,实现权限审批状态机与类Git版本管理;EASY_CODE用TypeScript/Node.js构建Runtime。",
-        "[soft_skill] 软技能无法从简历关键词中准确匹配"
+        "[role] [role] 方向 精确子类命中:岗位「后端开发」↔ 候选人适配「后端开发」(权重0.78) — 字节实习用Flask/SQLAlchemy全栈交付配置管理平台,实现权限审批状态机与类Git版本管理;EASY_CODE用TypeScript/Node.js构建Runtime。",
+        "[soft_skill] 软技能无法从简历关键词中准确匹配",
+        "[competitiveness] 竞争力对齐「保底」:候选人83分(学校overseas_top/硕士/实习大厂/竞赛国际级) ↔ 岗位65分(民企/开发/门槛本科) 差值-18"
       ],
       "role_gated": false,
+      "comp_label": "保底",
+      "candidate_score": 83,
+      "company_score": 65,
       "hard_skills": [
-        "Java",
+        "软件开发",
         "Python",
-        "数据库",
-        "网络"
+        "Java",
+        "数据库"
       ],
       "keywords": [
-        "IT",
-        "Java",
+        "生产软件",
+        "软件开发",
         "Python",
-        "数据库",
-        "信息化"
+        "深圳"
       ]
     },
     {
-      "rank": 48,
-      "score": 58.9,
+      "rank": 40,
+      "score": 64.5,
+      "recommend": "推荐",
+      "company": "DJI 大疆",
+      "position": "后端开发工程师",
+      "city": "深圳,上海,北京",
+      "job_category": "研发",
+      "education_req": "本科",
+      "deadline": null,
+      "apply_url": "careers.dji.com",
+      "dims": {
+        "skill": 41.81818181818182,
+        "hard_skill": 40.90909090909091,
+        "cert": 60.0,
+        "education": 100.0,
+        "major": 80.0,
+        "city": 50.0,
+        "role": 78.0,
+        "soft_skill": 50.0,
+        "competitiveness": 73.0
+      },
+      "reasons": [
+        "[skill] 关键词命中2/5: python↔python, javascript↔java",
+        "[hard_skill] 硬技能命中2/5: python↔python, javascript↔java",
+        "[cert] 岗位无证书硬性要求",
+        "[education] 候选人硕士学历满足岗位最低要求",
+        "[major] 岗位接受计算机相关专业",
+        "[city] 候选人无城市偏好(中性)",
+        "[role] [role] 方向 精确子类命中:岗位「后端开发」↔ 候选人适配「后端开发」(权重0.78) — 字节实习用Flask/SQLAlchemy全栈交付配置管理平台,实现权限审批状态机与类Git版本管理;EASY_CODE用TypeScript/Node.js构建Runtime。",
+        "[soft_skill] 软技能无法从简历关键词中准确匹配",
+        "[competitiveness] 竞争力对齐「保底」:候选人83分(学校overseas_top/硕士/实习大厂/竞赛国际级) ↔ 岗位65分(民企/开发/门槛本科) 差值-18"
+      ],
+      "role_gated": false,
+      "comp_label": "保底",
+      "candidate_score": 83,
+      "company_score": 65,
+      "hard_skills": [
+        "Java",
+        "Python",
+        "Go",
+        "数据库",
+        "后端"
+      ],
+      "keywords": [
+        "后端",
+        "Java",
+        "Python",
+        "Go",
+        "数据库"
+      ]
+    },
+    {
+      "rank": 41,
+      "score": 63.9,
       "recommend": "推荐",
       "company": "晶泰科技",
       "position": "具身智能研发工程师(AI Agent)",
@@ -2149,7 +2035,8 @@
         "major": 80.0,
         "city": 50.0,
         "role": 98.0,
-        "soft_skill": 50.0
+        "soft_skill": 50.0,
+        "competitiveness": 79.0
       },
       "reasons": [
         "[skill] 关键词命中1/4: python↔python",
@@ -2159,9 +2046,13 @@
         "[major] 岗位接受计算机/机器人相关专业",
         "[city] 候选人无城市偏好(中性)",
         "[role] [role] 方向 精确子类命中:岗位「AI Agent开发」↔ 候选人适配「AI Agent开发」(权重0.98) — 独立开发跨平台CLI Coding Agent(EASY_CODE),负责Agent Runtime、上下文压缩、审批Agent与评测隔离;字节MCP配置管理平台Owner,贯通API到Tool的Schema/认证映射。",
-        "[soft_skill] 软技能无法从简历关键词中准确匹配"
+        "[soft_skill] 软技能无法从简历关键词中准确匹配",
+        "[competitiveness] 竞争力对齐「保底」:候选人83分(学校overseas_top/硕士/实习大厂/竞赛国际级) ↔ 岗位69分(民企/AI工程/门槛硕士) 差值-14"
       ],
       "role_gated": false,
+      "comp_label": "保底",
+      "candidate_score": 83,
+      "company_score": 69,
       "hard_skills": [
         "AI Agent",
         "机器人",
@@ -2174,89 +2065,451 @@
       ]
     },
     {
-      "rank": 49,
-      "score": 58.0,
+      "rank": 42,
+      "score": 63.6,
       "recommend": "推荐",
-      "company": "中国电科-网通院",
-      "position": "软件开发工程师",
-      "city": "石家庄",
+      "company": "百度",
+      "position": "智能体算法",
+      "city": "北京,上海,深圳,广州,杭州,成都,南京,苏州,郑州,大连,保定",
       "job_category": "研发",
-      "education_req": "硕士",
+      "education_req": "本科",
       "deadline": null,
-      "apply_url": "http://campus.51job.com/2026cetc54",
+      "apply_url": "https://talent.baidu.com/jobs",
       "dims": {
-        "skill": 34.27083333333333,
-        "hard_skill": 33.80208333333333,
+        "skill": 20.90909090909091,
+        "hard_skill": 33.817204301075265,
         "cert": 60.0,
         "education": 100.0,
         "major": 80.0,
         "city": 50.0,
-        "role": 78.0,
-        "soft_skill": 50.0
+        "role": 98.0,
+        "soft_skill": 50.0,
+        "competitiveness": 86.5
       },
       "reasons": [
-        "[skill] 关键词命中1/3: javascript↔java",
-        "[hard_skill] 硬技能命中1/3: javascript↔java",
+        "[skill] 关键词命中1/5: python↔python",
+        "[hard_skill] 硬技能命中1/3: python↔python",
         "[cert] 岗位无证书硬性要求",
         "[education] 候选人硕士学历满足岗位最低要求",
-        "[major] 岗位接受计算机软件类等相关专业专业",
+        "[major] 岗位接受计算机相关专业",
         "[city] 候选人无城市偏好(中性)",
-        "[role] [role] 方向 精确子类命中:岗位「后端开发」↔ 候选人适配「后端开发」(权重0.78) — 字节实习用Flask/SQLAlchemy全栈交付配置管理平台,实现权限审批状态机与类Git版本管理;EASY_CODE用TypeScript/Node.js构建Runtime。",
-        "[soft_skill] 软技能无法从简历关键词中准确匹配"
+        "[role] [role] 方向 精确子类命中:岗位「AI Agent开发」↔ 候选人适配「AI Agent开发」(权重0.98) — 独立开发跨平台CLI Coding Agent(EASY_CODE),负责Agent Runtime、上下文压缩、审批Agent与评测隔离;字节MCP配置管理平台Owner,贯通API到Tool的Schema/认证映射。",
+        "[soft_skill] 软技能无法从简历关键词中准确匹配",
+        "[competitiveness] 竞争力对齐「匹配」:候选人83分(学校overseas_top/硕士/实习大厂/竞赛国际级) ↔ 岗位74分(民企/AI工程/门槛本科) 差值-9"
       ],
       "role_gated": false,
+      "comp_label": "匹配",
+      "candidate_score": 83,
+      "company_score": 74,
+      "hard_skills": [
+        "智能体",
+        "强化学习",
+        "Python"
+      ],
+      "keywords": [
+        "智能体",
+        "算法",
+        "AI",
+        "强化学习"
+      ]
+    },
+    {
+      "rank": 43,
+      "score": 63.4,
+      "recommend": "推荐",
+      "company": "中科光电",
+      "position": "软件开发类",
+      "city": "合肥",
+      "job_category": "研发",
+      "education_req": "硕士",
+      "deadline": null,
+      "apply_url": "https://app.mokahr.com/campus-recruitment/hdzn/151324#/jobs?page=1&anchorName=jobsList",
+      "dims": {
+        "skill": 30.285714285714285,
+        "hard_skill": 40.90909090909091,
+        "cert": 60.0,
+        "education": 100.0,
+        "major": 100.0,
+        "city": 50.0,
+        "role": 78.0,
+        "soft_skill": 50.0,
+        "competitiveness": 65.5
+      },
+      "reasons": [
+        "[skill] 关键词命中2/7: python↔python, javascript↔java",
+        "[hard_skill] 硬技能命中2/5: python↔python, javascript↔java",
+        "[cert] 岗位无证书硬性要求",
+        "[education] 候选人硕士学历满足岗位最低要求",
+        "[major] 候选人专业与岗位直接匹配(软件工程)",
+        "[city] 候选人无城市偏好(中性)",
+        "[role] [role] 方向 精确子类命中:岗位「后端开发」↔ 候选人适配「后端开发」(权重0.78) — 字节实习用Flask/SQLAlchemy全栈交付配置管理平台,实现权限审批状态机与类Git版本管理;EASY_CODE用TypeScript/Node.js构建Runtime。",
+        "[soft_skill] 软技能无法从简历关键词中准确匹配",
+        "[competitiveness] 竞争力对齐「保底」:候选人83分(学校overseas_top/硕士/实习大厂/竞赛国际级) ↔ 岗位60分(民企/开发/门槛硕士) 差值-23"
+      ],
+      "role_gated": false,
+      "comp_label": "保底",
+      "candidate_score": 83,
+      "company_score": 60,
       "hard_skills": [
         "Java",
         "C++",
-        "软件开发"
+        "Python",
+        "数据结构",
+        "数据库"
       ],
       "keywords": [
         "软件开发",
         "Java",
-        "C++"
+        "C++",
+        "Python",
+        "校招提前批"
       ]
     },
     {
-      "rank": 50,
-      "score": 58.0,
+      "rank": 44,
+      "score": 63.3,
       "recommend": "推荐",
-      "company": "多益网络",
-      "position": "软件工程师",
-      "city": "广州,武汉,杭州",
+      "company": "DJI 大疆",
+      "position": "测试开发工程师",
+      "city": "深圳,上海,北京",
       "job_category": "研发",
       "education_req": "本科",
       "deadline": null,
-      "apply_url": "xz.duoyi.com",
+      "apply_url": "careers.dji.com",
       "dims": {
-        "skill": 34.27083333333333,
-        "hard_skill": 33.80208333333333,
+        "skill": 51.875,
+        "hard_skill": 50.9375,
+        "cert": 60.0,
+        "education": 100.0,
+        "major": 80.0,
+        "city": 50.0,
+        "role": 46.8,
+        "soft_skill": 50.0,
+        "competitiveness": 73.0
+      },
+      "reasons": [
+        "[skill] 关键词命中2/4: python↔python, javascript↔java",
+        "[hard_skill] 硬技能命中2/4: python↔python, javascript↔java",
+        "[cert] 岗位无证书硬性要求",
+        "[education] 候选人硕士学历满足岗位最低要求",
+        "[major] 岗位接受计算机相关专业",
+        "[city] 候选人无城市偏好(中性)",
+        "[role] [role] 方向 同大类匹配:岗位「测试开发」↔ 候选人适配「后端开发」(权重0.78) — 字节实习用Flask/SQLAlchemy全栈交付配置管理平台,实现权限审批状态机与类Git版本管理;EASY_CODE用TypeScript/Node.js构建Runtime。",
+        "[soft_skill] 软技能无法从简历关键词中准确匹配",
+        "[competitiveness] 竞争力对齐「保底」:候选人83分(学校overseas_top/硕士/实习大厂/竞赛国际级) ↔ 岗位65分(民企/开发/门槛本科) 差值-18"
+      ],
+      "role_gated": false,
+      "comp_label": "保底",
+      "candidate_score": 83,
+      "company_score": 65,
+      "hard_skills": [
+        "测试开发",
+        "自动化测试",
+        "Python",
+        "Java"
+      ],
+      "keywords": [
+        "测试开发",
+        "自动化测试",
+        "Python",
+        "Java"
+      ]
+    },
+    {
+      "rank": 45,
+      "score": 63.2,
+      "recommend": "推荐",
+      "company": "游族网络",
+      "position": "后端开发 AI方向",
+      "city": "上海",
+      "job_category": "研发",
+      "education_req": "本科",
+      "deadline": null,
+      "apply_url": "https://campus.yoozoo.com/jobs",
+      "dims": {
+        "skill": 35.09803921568627,
+        "hard_skill": 40.90909090909091,
         "cert": 60.0,
         "education": 100.0,
         "major": 80.0,
         "city": 50.0,
         "role": 78.0,
-        "soft_skill": 50.0
+        "soft_skill": 50.0,
+        "competitiveness": 73.0
       },
       "reasons": [
-        "[skill] 关键词命中1/3: javascript↔java",
-        "[hard_skill] 硬技能命中1/3: javascript↔java",
+        "[skill] 关键词命中2/6: python↔python, javascript↔java",
+        "[hard_skill] 硬技能命中2/5: python↔python, javascript↔java",
         "[cert] 岗位无证书硬性要求",
         "[education] 候选人硕士学历满足岗位最低要求",
         "[major] 岗位接受计算机相关专业",
         "[city] 候选人无城市偏好(中性)",
         "[role] [role] 方向 精确子类命中:岗位「后端开发」↔ 候选人适配「后端开发」(权重0.78) — 字节实习用Flask/SQLAlchemy全栈交付配置管理平台,实现权限审批状态机与类Git版本管理;EASY_CODE用TypeScript/Node.js构建Runtime。",
-        "[soft_skill] 软技能无法从简历关键词中准确匹配"
+        "[soft_skill] 软技能无法从简历关键词中准确匹配",
+        "[competitiveness] 竞争力对齐「保底」:候选人83分(学校overseas_top/硕士/实习大厂/竞赛国际级) ↔ 岗位65分(民企/开发/门槛本科) 差值-18"
       ],
       "role_gated": false,
+      "comp_label": "保底",
+      "candidate_score": 83,
+      "company_score": 65,
       "hard_skills": [
         "Java",
-        "C++",
+        "Python",
+        "Go",
+        "AI",
+        "分布式系统"
+      ],
+      "keywords": [
+        "后端开发",
+        "AI",
+        "Java",
+        "Python"
+      ]
+    },
+    {
+      "rank": 46,
+      "score": 63.0,
+      "recommend": "推荐",
+      "company": "芯动科技",
+      "position": "AI软件栈工程师",
+      "city": "上海 北京 大连 成都 武汉 珠海 苏州 西安",
+      "job_category": "研发",
+      "education_req": "本科",
+      "deadline": null,
+      "apply_url": "https://innosilicon.zhiye.com/campus/jobs",
+      "dims": {
+        "skill": 35.15151515151515,
+        "hard_skill": 33.817204301075265,
+        "cert": 60.0,
+        "education": 100.0,
+        "major": 80.0,
+        "city": 50.0,
+        "role": 85.0,
+        "soft_skill": 50.0,
+        "competitiveness": 71.5
+      },
+      "reasons": [
+        "[skill] 关键词命中2/6: deep_learning↔deep_learning, python↔python",
+        "[hard_skill] 硬技能命中1/3: python↔python",
+        "[cert] 岗位无证书硬性要求",
+        "[education] 候选人硕士学历满足岗位最低要求",
+        "[major] 岗位接受计算机相关专业",
+        "[city] 候选人无城市偏好(中性)",
+        "[role] [role] 方向 精确子类命中:岗位「大模型应用开发」↔ 候选人适配「大模型应用开发」(权重0.85) — 华为实习用Prompt/RAG/Structured Output做测试用例生成,字节实习做MCP Tools配置生成,均属大模型应用落地。",
+        "[soft_skill] 软技能无法从简历关键词中准确匹配",
+        "[competitiveness] 竞争力对齐「保底」:候选人83分(学校overseas_top/硕士/实习大厂/竞赛国际级) ↔ 岗位64分(民企/AI工程/门槛本科) 差值-19"
+      ],
+      "role_gated": false,
+      "comp_label": "保底",
+      "candidate_score": 83,
+      "company_score": 64,
+      "hard_skills": [
+        "Python",
+        "深度学习框架",
+        "AI编译"
+      ],
+      "keywords": [
+        "AI",
+        "软件栈",
+        "Python",
+        "深度学习"
+      ]
+    },
+    {
+      "rank": 47,
+      "score": 62.9,
+      "recommend": "推荐",
+      "company": "百度",
+      "position": "Agent Harness研发",
+      "city": "北京,上海,深圳,广州,杭州,成都,南京,苏州,郑州,大连,保定",
+      "job_category": "研发",
+      "education_req": "本科",
+      "deadline": null,
+      "apply_url": "https://talent.baidu.com/jobs",
+      "dims": {
+        "skill": 17.549019607843135,
+        "hard_skill": 33.817204301075265,
+        "cert": 60.0,
+        "education": 100.0,
+        "major": 80.0,
+        "city": 50.0,
+        "role": 98.0,
+        "soft_skill": 50.0,
+        "competitiveness": 86.5
+      },
+      "reasons": [
+        "[skill] 关键词命中1/6: python↔python",
+        "[hard_skill] 硬技能命中1/3: python↔python",
+        "[cert] 岗位无证书硬性要求",
+        "[education] 候选人硕士学历满足岗位最低要求",
+        "[major] 岗位接受计算机相关专业",
+        "[city] 候选人无城市偏好(中性)",
+        "[role] [role] 方向 精确子类命中:岗位「AI Agent开发」↔ 候选人适配「AI Agent开发」(权重0.98) — 独立开发跨平台CLI Coding Agent(EASY_CODE),负责Agent Runtime、上下文压缩、审批Agent与评测隔离;字节MCP配置管理平台Owner,贯通API到Tool的Schema/认证映射。",
+        "[soft_skill] 软技能无法从简历关键词中准确匹配",
+        "[competitiveness] 竞争力对齐「匹配」:候选人83分(学校overseas_top/硕士/实习大厂/竞赛国际级) ↔ 岗位74分(民企/AI工程/门槛本科) 差值-9"
+      ],
+      "role_gated": false,
+      "comp_label": "匹配",
+      "candidate_score": 83,
+      "company_score": 74,
+      "hard_skills": [
+        "Agent",
+        "Python",
+        "系统设计"
+      ],
+      "keywords": [
+        "Agent",
+        "研发",
+        "AI",
+        "系统"
+      ]
+    },
+    {
+      "rank": 48,
+      "score": 62.8,
+      "recommend": "推荐",
+      "company": "Unity中国",
+      "position": "软件工程实习生-AI Agent 开发",
+      "city": "上海",
+      "job_category": "研发",
+      "education_req": "本科",
+      "deadline": null,
+      "apply_url": "https://recruiting.unity.cn/982864/?sessionid=",
+      "dims": {
+        "skill": 20.90909090909091,
+        "hard_skill": 25.46875,
+        "cert": 60.0,
+        "education": 100.0,
+        "major": 80.0,
+        "city": 50.0,
+        "role": 98.0,
+        "soft_skill": 50.0,
+        "competitiveness": 91.0
+      },
+      "reasons": [
+        "[skill] 关键词命中1/5: python↔python",
+        "[hard_skill] 硬技能命中1/4: python↔python",
+        "[cert] 岗位无证书硬性要求",
+        "[education] 候选人硕士学历满足岗位最低要求",
+        "[major] 岗位接受计算机相关专业",
+        "[city] 候选人无城市偏好(中性)",
+        "[role] [role] 方向 精确子类命中:岗位「AI Agent开发」↔ 候选人适配「AI Agent开发」(权重0.98) — 独立开发跨平台CLI Coding Agent(EASY_CODE),负责Agent Runtime、上下文压缩、审批Agent与评测隔离;字节MCP配置管理平台Owner,贯通API到Tool的Schema/认证映射。",
+        "[soft_skill] 软技能无法从简历关键词中准确匹配",
+        "[competitiveness] 竞争力对齐「匹配」:候选人83分(学校overseas_top/硕士/实习大厂/竞赛国际级) ↔ 岗位89分(外企/AI工程/门槛本科) 差值+6"
+      ],
+      "role_gated": false,
+      "comp_label": "匹配",
+      "candidate_score": 83,
+      "company_score": 89.0,
+      "hard_skills": [
+        "AI",
+        "Agent",
+        "Python",
         "软件开发"
       ],
       "keywords": [
+        "AI",
+        "Agent",
+        "Python",
+        "软件开发",
+        "实习"
+      ]
+    },
+    {
+      "rank": 49,
+      "score": 62.8,
+      "recommend": "推荐",
+      "company": "科大讯飞-补录",
+      "position": "Java开发工程师",
+      "city": "合肥",
+      "job_category": "研发",
+      "education_req": "本科",
+      "deadline": null,
+      "apply_url": "iflytek.zhiye.com",
+      "dims": {
+        "skill": 25.90909090909091,
+        "hard_skill": 50.483870967741936,
+        "cert": 60.0,
+        "education": 100.0,
+        "major": 80.0,
+        "city": 50.0,
+        "role": 78.0,
+        "soft_skill": 50.0,
+        "competitiveness": 73.0
+      },
+      "reasons": [
+        "[skill] 关键词命中1/4: javascript↔java",
+        "[hard_skill] 硬技能命中1/2: javascript↔java",
+        "[cert] 岗位无证书硬性要求",
+        "[education] 候选人硕士学历满足岗位最低要求",
+        "[major] 岗位接受计算机相关专业",
+        "[city] 候选人无城市偏好(中性)",
+        "[role] [role] 方向 精确子类命中:岗位「后端开发」↔ 候选人适配「后端开发」(权重0.78) — 字节实习用Flask/SQLAlchemy全栈交付配置管理平台,实现权限审批状态机与类Git版本管理;EASY_CODE用TypeScript/Node.js构建Runtime。",
+        "[soft_skill] 软技能无法从简历关键词中准确匹配",
+        "[competitiveness] 竞争力对齐「保底」:候选人83分(学校overseas_top/硕士/实习大厂/竞赛国际级) ↔ 岗位65分(民企/开发/门槛本科) 差值-18"
+      ],
+      "role_gated": false,
+      "comp_label": "保底",
+      "candidate_score": 83,
+      "company_score": 65,
+      "hard_skills": [
         "Java",
-        "C++",
-        "软件开发"
+        "后端开发"
+      ],
+      "keywords": [
+        "Java",
+        "后端",
+        "开发",
+        "合肥"
+      ]
+    },
+    {
+      "rank": 50,
+      "score": 62.7,
+      "recommend": "推荐",
+      "company": "瑞泊",
+      "position": "AI应用/Agent开发实习生",
+      "city": "北京",
+      "job_category": "研发",
+      "education_req": "本科",
+      "deadline": null,
+      "apply_url": "hr@xraybot.com",
+      "dims": {
+        "skill": 25.9375,
+        "hard_skill": 33.817204301075265,
+        "cert": 60.0,
+        "education": 100.0,
+        "major": 80.0,
+        "city": 50.0,
+        "role": 85.0,
+        "soft_skill": 50.0,
+        "competitiveness": 86.5
+      },
+      "reasons": [
+        "[skill] 关键词命中1/4: python↔python",
+        "[hard_skill] 硬技能命中1/3: python↔python",
+        "[cert] 岗位无证书硬性要求",
+        "[education] 候选人硕士学历满足岗位最低要求",
+        "[major] 岗位接受计算机相关专业",
+        "[city] 候选人无城市偏好(中性)",
+        "[role] [role] 方向 精确子类命中:岗位「大模型应用开发」↔ 候选人适配「大模型应用开发」(权重0.85) — 华为实习用Prompt/RAG/Structured Output做测试用例生成,字节实习做MCP Tools配置生成,均属大模型应用落地。",
+        "[soft_skill] 软技能无法从简历关键词中准确匹配",
+        "[competitiveness] 竞争力对齐「匹配」:候选人83分(学校overseas_top/硕士/实习大厂/竞赛国际级) ↔ 岗位74分(民企/AI工程/门槛本科) 差值-9"
+      ],
+      "role_gated": false,
+      "comp_label": "匹配",
+      "candidate_score": 83,
+      "company_score": 74,
+      "hard_skills": [
+        "AI应用",
+        "Agent",
+        "Python"
+      ],
+      "keywords": [
+        "AI应用",
+        "Agent",
+        "开发",
+        "Python"
       ]
     }
   ]

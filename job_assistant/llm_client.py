@@ -124,17 +124,36 @@ class LLMClient:
         用于公告正文文字过短时,从图片中提取岗位信息。
         image_urls 支持:本地文件路径、http URL、base64 data URL。
         图片会自动压缩(宽≤1280px, JPEG quality=80)以控制 API 体积。
+        超过 4 张图片时分批处理,结果拼接。
         """
         if not self.api_key:
             logger.warning("DEEPSEEK_API_KEY 未配置,跳过 VL 调用")
             return None
         if not image_urls:
             return None
+
+        # 分批处理(每批最多 4 张),拼接所有批次的识别结果
+        all_texts = []
+        batch_size = 4
+        for batch_start in range(0, len(image_urls), batch_size):
+            batch = image_urls[batch_start:batch_start + batch_size]
+            batch_text = self._chat_with_image_batch(text, batch, temperature, max_tokens)
+            if batch_text:
+                all_texts.append(batch_text)
+
+        if not all_texts:
+            return None
+        # 多批次结果用换行拼接
+        return "\n".join(all_texts)
+
+    def _chat_with_image_batch(self, text: str, image_urls: List[str],
+                               temperature: float, max_tokens: int) -> Optional[str]:
+        """处理一批(最多4张)图片的VL识别。"""
         try:
             import base64
             import io
             content_parts = [{"type": "text", "text": text}]
-            for img_ref in image_urls[:4]:  # 最多 4 张
+            for img_ref in image_urls[:4]:  # 最多 4 张/批
                 raw_bytes = None
 
                 # 1. base64 data URL

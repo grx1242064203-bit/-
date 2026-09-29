@@ -200,7 +200,7 @@ DESKTOP_UA = (
     "Chrome/120.0.0.0 Safari/537.36"
 )
 
-MAX_IMAGES = 4  # 最多提取 4 张图片
+MAX_IMAGES = 15  # 最多提取 15 张图片(微信校招长图通常 10-30 张,前几张多为公司介绍)
 
 
 def _fetch_with_playwright(url: str) -> Tuple[str, List[str]]:

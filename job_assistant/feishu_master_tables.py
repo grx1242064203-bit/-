@@ -60,7 +60,8 @@ TABLE_POSITIONS = "27届校招岗位汇总"
 
 # 公司总表字段
 # 字段顺序: 公司名称 → 网申更新 → 行业 → 公司类型 → 招聘类型 → 招聘对象 →
-#           招聘地点 → 学历要求 → 截止日期 → 发布时间 → 网申链接 → 公告链接
+#           招聘地点 → 学历要求 → 截止日期 → 招聘岗位 → 网申链接 → 公告链接
+# 注: 招聘地点为多选(与源表一致), 截止日期为文本(源表含"招满即止"等非日期值)
 COMPANY_FIELDS = [
     {"name": "公司名称", "type": 1},
     {"name": "网申更新", "type": 5},
@@ -68,13 +69,29 @@ COMPANY_FIELDS = [
     {"name": "公司类型", "type": 3, "options": COMPANY_TYPE_OPTIONS},
     {"name": "招聘类型", "type": 3, "options": RECRUIT_TYPE_OPTIONS},
     {"name": "招聘对象", "type": 3},
-    {"name": "招聘地点", "type": 1},
+    {"name": "招聘地点", "type": 4},
     {"name": "学历要求", "type": 3, "options": EDUCATION_OPTIONS},
-    {"name": "截止日期", "type": 5},
-    {"name": "发布时间", "type": 5},
+    {"name": "截止日期", "type": 1},
+    {"name": "招聘岗位", "type": 1},
     {"name": "网申链接", "type": 15},
     {"name": "公告链接", "type": 15},
 ]
+
+# 公司表列宽(像素,与源表接近)
+COMPANY_COL_WIDTHS = {
+    "公司名称": 140, "网申更新": 100, "行业": 110, "公司类型": 90,
+    "招聘类型": 90, "招聘对象": 90, "招聘地点": 120, "学历要求": 80,
+    "截止日期": 90, "招聘岗位": 200, "网申链接": 120, "公告链接": 120,
+}
+
+# 岗位表列宽
+POSITION_COL_WIDTHS = {
+    "岗位标题": 200, "网申更新": 100, "公司名称": 130, "公司行业": 110,
+    "公司类型": 90, "招聘流程": 180, "岗位分类": 80, "岗位子类": 100,
+    "最低学历": 80, "专业要求": 160, "专业大类": 80, "城市": 100,
+    "硬技能": 160, "关键词": 160, "是否管培": 70, "难度": 90,
+    "JD摘要": 200, "投递链接": 120, "公告链接": 120,
+}
 
 # 岗位总表字段
 # 字段顺序: 岗位标题 → 网申更新 → 公司名称 → 公司行业 → 公司类型 → 招聘流程 →
@@ -117,10 +134,12 @@ class FeishuMasterTableService:
         # 创建公司总表
         company_table_id = self.client.create_table(app_token, TABLE_COMPANIES)
         self._create_fields(app_token, company_table_id, COMPANY_FIELDS, "公司名称")
+        self._setup_view(app_token, company_table_id, COMPANY_COL_WIDTHS, "网申更新")
 
         # 创建岗位总表
         position_table_id = self.client.create_table(app_token, TABLE_POSITIONS)
         self._create_fields(app_token, position_table_id, POSITION_FIELDS, "岗位标题")
+        self._setup_view(app_token, position_table_id, POSITION_COL_WIDTHS, "网申更新")
 
         # 设置互联网可查看
         self.client.set_public_share(app_token, doc_type="bitable")
@@ -156,6 +175,47 @@ class FeishuMasterTableService:
                 self.client.create_field(app_token, table_id, f["name"], f["type"], **kwargs)
                 time.sleep(0.3)
 
+    def _setup_view(self, app_token: str, table_id: str,
+                    col_widths: Dict[str, int], sort_field: str = "网申更新"):
+        """设置默认视图:列宽 + 按网申更新降序排序。"""
+        views = self.client.list_views(app_token, table_id)
+        if not views:
+            logger.warning(f"未找到视图,跳过视图设置: table={table_id}")
+            return
+        view_id = views[0].get("view_id", "")
+        if not view_id:
+            return
+
+        # 字段名 → field_id 映射
+        fields = self.client.list_fields(app_token, table_id)
+        name_to_id = {f["field_name"]: f["field_id"] for f in fields}
+
+        # 构建列宽配置
+        column_width = {}
+        for name, width in col_widths.items():
+            fid = name_to_id.get(name)
+            if fid:
+                column_width[fid] = width
+
+        # 构建排序配置(按网申更新降序)
+        sort_fid = name_to_id.get(sort_field)
+        sort_conf = []
+        if sort_fid:
+            sort_conf = [{"field_id": sort_fid, "desc": True}]
+
+        property_ = {}
+        if column_width:
+            property_["column_width"] = column_width
+        if sort_conf:
+            property_["sort"] = sort_conf
+
+        if property_:
+            ok = self.client.update_view(app_token, table_id, view_id, property_)
+            if ok:
+                logger.info(f"视图设置完成(列宽+排序): table={table_id}")
+            else:
+                logger.warning(f"视图设置失败: table={table_id}")
+
     @staticmethod
     def _url_field(url: str) -> Dict:
         """飞书 URL 字段需要对象格式。"""
@@ -185,6 +245,13 @@ class FeishuMasterTableService:
             return f"{min_grade}届"
         return f"{min_grade}-{max_grade}届"
 
+    @staticmethod
+    def _split_location(location: str) -> List[str]:
+        """将空格分隔的地点字符串拆为多选项数组(与源表多选格式一致)。"""
+        if not location:
+            return []
+        return [c for c in location.replace("、", " ").replace(",", " ").split() if c]
+
     def export_companies(self, app_token: str, table_id: str, limit: int = 0) -> int:
         """导出公司总表数据到飞书(含源表所有字段)。返回写入数。"""
         companies = job_db.get_all_companies()
@@ -202,10 +269,10 @@ class FeishuMasterTableService:
                 "公司类型": c.get("company_type", ""),
                 "招聘类型": latest_ann.get("recruit_type", ""),
                 "招聘对象": latest_ann.get("recruit_target", ""),
-                "招聘地点": latest_ann.get("location", ""),
+                "招聘地点": self._split_location(latest_ann.get("location", "")),
                 "学历要求": latest_ann.get("education_req", ""),
-                "截止日期": self._date_to_ts(latest_ann.get("deadline", "")),
-                "发布时间": self._date_to_ts(latest_ann.get("publish_time", "")),
+                "截止日期": latest_ann.get("deadline", ""),
+                "招聘岗位": latest_ann.get("announcement_title", ""),
             }
             apply_url = self._url_field(c.get("apply_url", ""))
             if apply_url:
@@ -228,8 +295,12 @@ class FeishuMasterTableService:
 
         records = []
         for p in positions:
+            # 岗位标题加上公司名后缀,如 "AI算法研究员/实习生-TenX AI"
+            title = p["position_title"] or "通用校招岗"
+            company = p["company_name"] or ""
+            display_title = f"{title}-{company}" if company else title
             record = {
-                "岗位标题": p["position_title"],
+                "岗位标题": display_title,
                 "网申更新": self._date_to_ts(p.get("apply_update", "")),
                 "公司名称": p["company_name"],
                 "公司行业": p.get("industry", ""),

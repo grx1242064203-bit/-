@@ -546,6 +546,30 @@ class FeishuClient:
             logger.warning(f"创建视图失败 {view_name}: {e}")
             return ""
 
+    def list_views(self, app_token: str, table_id: str) -> List[Dict]:
+        """列出数据表的所有视图。"""
+        app_token = self.resolve_app_token(app_token)
+        data = self._request(
+            "GET",
+            f"/open-apis/bitable/v1/apps/{app_token}/tables/{table_id}/views",
+        )
+        return data.get("items", [])
+
+    def update_view(self, app_token: str, table_id: str, view_id: str,
+                    property_: Dict) -> bool:
+        """更新视图属性(列宽/排序/筛选等)。成功返回 True。"""
+        app_token = self.resolve_app_token(app_token)
+        try:
+            self._request(
+                "PATCH",
+                f"/open-apis/bitable/v1/apps/{app_token}/tables/{table_id}/views/{view_id}",
+                json_body={"property": property_},
+            )
+            return True
+        except RuntimeError as e:
+            logger.warning(f"更新视图失败 {view_id}: {e}")
+            return False
+
     # ---------- 记录更新(用于投递跟踪等) ----------
     def update_record(self, app_token: str, table_id: str, record_id: str,
                       fields: Dict) -> bool:

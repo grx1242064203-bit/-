@@ -414,8 +414,8 @@ def _match_competitiveness(profile, job: Dict) -> Tuple[float, List[str], Dict]:
     reasons.append(
         f"竞争力对齐「{label}」:候选人{cand_score:.0f}分(学校{cand_det['school_tier']}/"
         f"{cand_det['degree']}/实习{cand_det['internship_level']}/竞赛{cand_det['competition_level']}) "
-        f"↔ 岗位{comp_score:.0f}分({comp_det['company_type']}/{comp_det['job_category']}/"
-        f"门槛{comp_det['min_education'] or '不限'}) 差值{diff:+.0f}"
+        f"↔ 岗位{comp_score:.0f}分(公司地位{comp_det['company_tier']}/"
+        f"{comp_det['job_category']}/门槛{comp_det['min_education']}) 差值{diff:+.0f}"
     )
     info = {
         "candidate_score": cand_score,

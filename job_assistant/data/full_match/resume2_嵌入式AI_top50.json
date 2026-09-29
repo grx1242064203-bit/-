@@ -8,7 +8,7 @@
   "top50": [
     {
       "rank": 1,
-      "score": 87.0,
+      "score": 87.7,
       "recommend": "强烈推荐",
       "company": "恒玄科技",
       "position": "算法工程师(机器学习)",
@@ -26,7 +26,7 @@
         "city": 50.0,
         "role": 78.0,
         "soft_skill": 50.0,
-        "competitiveness": 92.5
+        "competitiveness": 100.0
       },
       "reasons": [
         "[skill] 关键词命中3/3: python↔python, deep_learning↔deep_learning, machine_learning↔machine_learning",
@@ -37,12 +37,12 @@
         "[city] 候选人无城市偏好(中性)",
         "[role] [role] 方向 精确子类命中:岗位「机器学习算法」↔ 候选人适配「机器学习算法」(权重0.78) — 硕士主修模式识别与机器学习,华为实习构建STL独立森林时序异常检测模型,项目搭建ResNet-50迁移学习模型实现99.2%缺陷识别准确率,熟练使用PyTorch、TensorFlow、Scikit-learn。",
         "[soft_skill] 软技能无法从简历关键词中准确匹配",
-        "[competitiveness] 竞争力对齐「匹配」:候选人70分(学校c9/硕士/实习大厂/竞赛none) ↔ 岗位65分(民企/算法/门槛本科) 差值-5"
+        "[competitiveness] 竞争力对齐「匹配」:候选人70分(学校c9/硕士/实习大厂/竞赛none) ↔ 岗位70分(公司地位(未评级,默认中)/算法/门槛本科) 差值+0"
       ],
       "role_gated": false,
       "comp_label": "匹配",
       "candidate_score": 70,
-      "company_score": 65,
+      "company_score": 70,
       "hard_skills": [
         "机器学习",
         "深度学习",
@@ -56,7 +56,7 @@
     },
     {
       "rank": 2,
-      "score": 83.0,
+      "score": 82.3,
       "recommend": "强烈推荐",
       "company": "华芯天微",
       "position": "智能算法工程师（预研岗）",
@@ -74,7 +74,7 @@
         "city": 50.0,
         "role": 78.0,
         "soft_skill": 50.0,
-        "competitiveness": 100.0
+        "competitiveness": 92.5
       },
       "reasons": [
         "[skill] 关键词命中3/4: python↔python, deep_learning↔deep_learning, machine_learning↔machine_learning",
@@ -85,12 +85,12 @@
         "[city] 候选人无城市偏好(中性)",
         "[role] [role] 方向 精确子类命中:岗位「机器学习算法」↔ 候选人适配「机器学习算法」(权重0.78) — 硕士主修模式识别与机器学习,华为实习构建STL独立森林时序异常检测模型,项目搭建ResNet-50迁移学习模型实现99.2%缺陷识别准确率,熟练使用PyTorch、TensorFlow、Scikit-learn。",
         "[soft_skill] 软技能无法从简历关键词中准确匹配",
-        "[competitiveness] 竞争力对齐「匹配」:候选人70分(学校c9/硕士/实习大厂/竞赛none) ↔ 岗位70分(民企/算法/门槛硕士) 差值+0"
+        "[competitiveness] 竞争力对齐「匹配」:候选人70分(学校c9/硕士/实习大厂/竞赛none) ↔ 岗位75分(公司地位(未评级,默认中)/算法/门槛硕士) 差值+5"
       ],
       "role_gated": false,
       "comp_label": "匹配",
       "candidate_score": 70,
-      "company_score": 70,
+      "company_score": 75,
       "hard_skills": [
         "机器学习",
         "深度学习",
@@ -104,7 +104,7 @@
     },
     {
       "rank": 3,
-      "score": 81.5,
+      "score": 82.3,
       "recommend": "强烈推荐",
       "company": "柏楚电子",
       "position": "AI算法",
@@ -122,7 +122,7 @@
         "city": 50.0,
         "role": 78.0,
         "soft_skill": 50.0,
-        "competitiveness": 85.0
+        "competitiveness": 92.5
       },
       "reasons": [
         "[skill] 关键词命中3/4: python↔python, deep_learning↔deep_learning, machine_learning↔machine_learning",
@@ -133,12 +133,12 @@
         "[city] 候选人无城市偏好(中性)",
         "[role] [role] 方向 精确子类命中:岗位「机器学习算法」↔ 候选人适配「机器学习算法」(权重0.78) — 硕士主修模式识别与机器学习,华为实习构建STL独立森林时序异常检测模型,项目搭建ResNet-50迁移学习模型实现99.2%缺陷识别准确率,熟练使用PyTorch、TensorFlow、Scikit-learn。",
         "[soft_skill] 软技能无法从简历关键词中准确匹配",
-        "[competitiveness] 竞争力对齐「匹配」:候选人70分(学校c9/硕士/实习大厂/竞赛none) ↔ 岗位80分(民企/算法/门槛硕士) 差值+10"
+        "[competitiveness] 竞争力对齐「匹配」:候选人70分(学校c9/硕士/实习大厂/竞赛none) ↔ 岗位75分(公司地位(未评级,默认中)/算法/门槛硕士) 差值+5"
       ],
       "role_gated": false,
       "comp_label": "匹配",
       "candidate_score": 70,
-      "company_score": 80,
+      "company_score": 75,
       "hard_skills": [
         "机器学习",
         "深度学习",
@@ -152,7 +152,7 @@
     },
     {
       "rank": 4,
-      "score": 80.7,
+      "score": 81.5,
       "recommend": "强烈推荐",
       "company": "DJI 大疆",
       "position": "机器学习算法工程师",
@@ -170,7 +170,7 @@
         "city": 50.0,
         "role": 78.0,
         "soft_skill": 50.0,
-        "competitiveness": 92.5
+        "competitiveness": 100.0
       },
       "reasons": [
         "[skill] 关键词命中4/6: TensorFlow Lite Micro↔tensorflow, python↔python, deep_learning↔deep_learning, machine_learning↔machine_learning",
@@ -181,12 +181,12 @@
         "[city] 候选人无城市偏好(中性)",
         "[role] [role] 方向 精确子类命中:岗位「机器学习算法」↔ 候选人适配「机器学习算法」(权重0.78) — 硕士主修模式识别与机器学习,华为实习构建STL独立森林时序异常检测模型,项目搭建ResNet-50迁移学习模型实现99.2%缺陷识别准确率,熟练使用PyTorch、TensorFlow、Scikit-learn。",
         "[soft_skill] 软技能无法从简历关键词中准确匹配",
-        "[competitiveness] 竞争力对齐「匹配」:候选人70分(学校c9/硕士/实习大厂/竞赛none) ↔ 岗位75分(民企/算法/门槛本科) 差值+5"
+        "[competitiveness] 竞争力对齐「匹配」:候选人70分(学校c9/硕士/实习大厂/竞赛none) ↔ 岗位70分(公司地位(未评级,默认中)/算法/门槛本科) 差值+0"
       ],
       "role_gated": false,
       "comp_label": "匹配",
       "candidate_score": 70,
-      "company_score": 75,
+      "company_score": 70,
       "hard_skills": [
         "机器学习",
         "深度学习",
@@ -202,7 +202,7 @@
     },
     {
       "rank": 5,
-      "score": 80.0,
+      "score": 80.7,
       "recommend": "强烈推荐",
       "company": "同花顺",
       "position": "数据算法工程师",
@@ -220,7 +220,7 @@
         "city": 50.0,
         "role": 78.0,
         "soft_skill": 50.0,
-        "competitiveness": 85.0
+        "competitiveness": 92.5
       },
       "reasons": [
         "[skill] 关键词命中4/6: python↔python, 大数据挖掘技术↔数据挖掘, mysql↔mysql, machine_learning↔machine_learning",
@@ -231,12 +231,12 @@
         "[city] 候选人无城市偏好(中性)",
         "[role] [role] 方向 精确子类命中:岗位「机器学习算法」↔ 候选人适配「机器学习算法」(权重0.78) — 硕士主修模式识别与机器学习,华为实习构建STL独立森林时序异常检测模型,项目搭建ResNet-50迁移学习模型实现99.2%缺陷识别准确率,熟练使用PyTorch、TensorFlow、Scikit-learn。",
         "[soft_skill] 软技能无法从简历关键词中准确匹配",
-        "[competitiveness] 竞争力对齐「匹配」:候选人70分(学校c9/硕士/实习大厂/竞赛none) ↔ 岗位80分(民企/算法/门槛硕士) 差值+10"
+        "[competitiveness] 竞争力对齐「匹配」:候选人70分(学校c9/硕士/实习大厂/竞赛none) ↔ 岗位75分(公司地位(未评级,默认中)/算法/门槛硕士) 差值+5"
       ],
       "role_gated": false,
       "comp_label": "匹配",
       "candidate_score": 70,
-      "company_score": 80,
+      "company_score": 75,
       "hard_skills": [
         "数据挖掘",
         "机器学习",
@@ -252,7 +252,7 @@
     },
     {
       "rank": 6,
-      "score": 80.0,
+      "score": 80.5,
       "recommend": "强烈推荐",
       "company": "点点互动",
       "position": "AI算法工程师",
@@ -270,7 +270,7 @@
         "city": 50.0,
         "role": 49.2,
         "soft_skill": 50.0,
-        "competitiveness": 94.0
+        "competitiveness": 98.5
       },
       "reasons": [
         "[skill] 关键词命中5/6: TensorFlow Lite Micro↔tensorflow, python↔python, pytorch↔pytorch, deep_learning↔deep_learning, machine_learning↔machine_learning",
@@ -281,12 +281,12 @@
         "[city] 候选人无城市偏好(中性)",
         "[role] [role] 方向 同大类匹配:岗位「大模型应用开发」↔ 候选人适配「算法工程化」(权重0.82) — 华为实习将分类模型部署至ARM架构边缘网关并做轻量化感知训练压缩,中兴实习开发Python与Scapy自动化测试工具,具备算法落地与工程化能力。",
         "[soft_skill] 软技能无法从简历关键词中准确匹配",
-        "[competitiveness] 竞争力对齐「匹配」:候选人70分(学校c9/硕士/实习大厂/竞赛none) ↔ 岗位74分(民企/AI工程/门槛本科) 差值+4"
+        "[competitiveness] 竞争力对齐「匹配」:候选人70分(学校c9/硕士/实习大厂/竞赛none) ↔ 岗位69分(公司地位(未评级,默认中)/AI工程/门槛本科) 差值-1"
       ],
       "role_gated": false,
       "comp_label": "匹配",
       "candidate_score": 70,
-      "company_score": 74,
+      "company_score": 69,
       "hard_skills": [
         "机器学习",
         "深度学习",
@@ -304,7 +304,7 @@
     },
     {
       "rank": 7,
-      "score": 79.3,
+      "score": 80.0,
       "recommend": "强烈推荐",
       "company": "OPPO",
       "position": "AI/算法类通用校招岗",
@@ -322,7 +322,7 @@
         "city": 50.0,
         "role": 78.0,
         "soft_skill": 50.0,
-        "competitiveness": 92.5
+        "competitiveness": 100.0
       },
       "reasons": [
         "[skill] 关键词命中3/5: python↔python, deep_learning↔deep_learning, machine_learning↔machine_learning",
@@ -333,12 +333,12 @@
         "[city] 候选人无城市偏好(中性)",
         "[role] [role] 方向 精确子类命中:岗位「机器学习算法」↔ 候选人适配「机器学习算法」(权重0.78) — 硕士主修模式识别与机器学习,华为实习构建STL独立森林时序异常检测模型,项目搭建ResNet-50迁移学习模型实现99.2%缺陷识别准确率,熟练使用PyTorch、TensorFlow、Scikit-learn。",
         "[soft_skill] 软技能无法从简历关键词中准确匹配",
-        "[competitiveness] 竞争力对齐「匹配」:候选人70分(学校c9/硕士/实习大厂/竞赛none) ↔ 岗位65分(民企/算法/门槛本科) 差值-5"
+        "[competitiveness] 竞争力对齐「匹配」:候选人70分(学校c9/硕士/实习大厂/竞赛none) ↔ 岗位70分(公司地位(未评级,默认中)/算法/门槛本科) 差值+0"
       ],
       "role_gated": false,
       "comp_label": "匹配",
       "candidate_score": 70,
-      "company_score": 65,
+      "company_score": 70,
       "hard_skills": [
         "机器学习",
         "深度学习",
@@ -354,7 +354,57 @@
     },
     {
       "rank": 8,
-      "score": 79.3,
+      "score": 80.0,
+      "recommend": "强烈推荐",
+      "company": "圆通-管培生",
+      "position": "AI算法",
+      "city": "全国各地",
+      "job_category": "研发",
+      "education_req": "本科",
+      "deadline": null,
+      "apply_url": "https://mp.weixin.qq.com/s/cPg4WJidXJfaGi51lQbIqA",
+      "dims": {
+        "skill": 61.698113207547166,
+        "hard_skill": 100.0,
+        "cert": 60.0,
+        "education": 100.0,
+        "major": 80.0,
+        "city": 50.0,
+        "role": 78.0,
+        "soft_skill": 50.0,
+        "competitiveness": 100.0
+      },
+      "reasons": [
+        "[skill] 关键词命中3/5: python↔python, deep_learning↔deep_learning, machine_learning↔machine_learning",
+        "[hard_skill] 硬技能命中3/3: python↔python, deep_learning↔deep_learning, machine_learning↔machine_learning",
+        "[cert] 岗位无证书硬性要求",
+        "[education] 候选人硕士学历满足岗位最低要求",
+        "[major] 岗位接受计算机相关专业",
+        "[city] 候选人无城市偏好(中性)",
+        "[role] [role] 方向 精确子类命中:岗位「机器学习算法」↔ 候选人适配「机器学习算法」(权重0.78) — 硕士主修模式识别与机器学习,华为实习构建STL独立森林时序异常检测模型,项目搭建ResNet-50迁移学习模型实现99.2%缺陷识别准确率,熟练使用PyTorch、TensorFlow、Scikit-learn。",
+        "[soft_skill] 软技能无法从简历关键词中准确匹配",
+        "[competitiveness] 竞争力对齐「匹配」:候选人70分(学校c9/硕士/实习大厂/竞赛none) ↔ 岗位70分(公司地位(未评级,默认中)/算法/门槛本科) 差值+0"
+      ],
+      "role_gated": false,
+      "comp_label": "匹配",
+      "candidate_score": 70,
+      "company_score": 70,
+      "hard_skills": [
+        "机器学习",
+        "深度学习",
+        "Python"
+      ],
+      "keywords": [
+        "AI算法",
+        "机器学习",
+        "深度学习",
+        "Python",
+        "管培生"
+      ]
+    },
+    {
+      "rank": 9,
+      "score": 80.0,
       "recommend": "强烈推荐",
       "company": "正浩EcoFlow",
       "position": "AI 算法工程师",
@@ -372,7 +422,7 @@
         "city": 50.0,
         "role": 78.0,
         "soft_skill": 50.0,
-        "competitiveness": 92.5
+        "competitiveness": 100.0
       },
       "reasons": [
         "[skill] 关键词命中3/5: python↔python, deep_learning↔deep_learning, machine_learning↔machine_learning",
@@ -383,12 +433,12 @@
         "[city] 候选人无城市偏好(中性)",
         "[role] [role] 方向 精确子类命中:岗位「机器学习算法」↔ 候选人适配「机器学习算法」(权重0.78) — 硕士主修模式识别与机器学习,华为实习构建STL独立森林时序异常检测模型,项目搭建ResNet-50迁移学习模型实现99.2%缺陷识别准确率,熟练使用PyTorch、TensorFlow、Scikit-learn。",
         "[soft_skill] 软技能无法从简历关键词中准确匹配",
-        "[competitiveness] 竞争力对齐「匹配」:候选人70分(学校c9/硕士/实习大厂/竞赛none) ↔ 岗位65分(民企/算法/门槛本科) 差值-5"
+        "[competitiveness] 竞争力对齐「匹配」:候选人70分(学校c9/硕士/实习大厂/竞赛none) ↔ 岗位70分(公司地位(未评级,默认中)/算法/门槛本科) 差值+0"
       ],
       "role_gated": false,
       "comp_label": "匹配",
       "candidate_score": 70,
-      "company_score": 65,
+      "company_score": 70,
       "hard_skills": [
         "机器学习",
         "深度学习",
@@ -403,8 +453,8 @@
       ]
     },
     {
-      "rank": 9,
-      "score": 79.3,
+      "rank": 10,
+      "score": 80.0,
       "recommend": "强烈推荐",
       "company": "网易游戏（互娱）",
       "position": "人工智能类",
@@ -422,7 +472,7 @@
         "city": 50.0,
         "role": 78.0,
         "soft_skill": 50.0,
-        "competitiveness": 92.5
+        "competitiveness": 100.0
       },
       "reasons": [
         "[skill] 关键词命中3/5: python↔python, deep_learning↔deep_learning, machine_learning↔machine_learning",
@@ -433,12 +483,12 @@
         "[city] 候选人无城市偏好(中性)",
         "[role] [role] 方向 精确子类命中:岗位「机器学习算法」↔ 候选人适配「机器学习算法」(权重0.78) — 硕士主修模式识别与机器学习,华为实习构建STL独立森林时序异常检测模型,项目搭建ResNet-50迁移学习模型实现99.2%缺陷识别准确率,熟练使用PyTorch、TensorFlow、Scikit-learn。",
         "[soft_skill] 软技能无法从简历关键词中准确匹配",
-        "[competitiveness] 竞争力对齐「匹配」:候选人70分(学校c9/硕士/实习大厂/竞赛none) ↔ 岗位75分(民企/算法/门槛本科) 差值+5"
+        "[competitiveness] 竞争力对齐「匹配」:候选人70分(学校c9/硕士/实习大厂/竞赛none) ↔ 岗位70分(公司地位(未评级,默认中)/算法/门槛本科) 差值+0"
       ],
       "role_gated": false,
       "comp_label": "匹配",
       "candidate_score": 70,
-      "company_score": 75,
+      "company_score": 70,
       "hard_skills": [
         "机器学习",
         "深度学习",
@@ -453,8 +503,8 @@
       ]
     },
     {
-      "rank": 10,
-      "score": 79.2,
+      "rank": 11,
+      "score": 79.7,
       "recommend": "强烈推荐",
       "company": "深圳方正微电子",
       "position": "AI开发工程师",
@@ -472,7 +522,7 @@
         "city": 50.0,
         "role": 49.2,
         "soft_skill": 50.0,
-        "competitiveness": 94.0
+        "competitiveness": 98.5
       },
       "reasons": [
         "[skill] 关键词命中4/5: TensorFlow Lite Micro↔tensorflow, python↔python, deep_learning↔deep_learning, machine_learning↔machine_learning",
@@ -483,12 +533,12 @@
         "[city] 候选人无城市偏好(中性)",
         "[role] [role] 方向 同大类匹配:岗位「大模型应用开发」↔ 候选人适配「算法工程化」(权重0.82) — 华为实习将分类模型部署至ARM架构边缘网关并做轻量化感知训练压缩,中兴实习开发Python与Scapy自动化测试工具,具备算法落地与工程化能力。",
         "[soft_skill] 软技能无法从简历关键词中准确匹配",
-        "[competitiveness] 竞争力对齐「匹配」:候选人70分(学校c9/硕士/实习大厂/竞赛none) ↔ 岗位74分(国央企/AI工程/门槛本科) 差值+4"
+        "[competitiveness] 竞争力对齐「匹配」:候选人70分(学校c9/硕士/实习大厂/竞赛none) ↔ 岗位69分(公司地位(未评级,默认中)/AI工程/门槛本科) 差值-1"
       ],
       "role_gated": false,
       "comp_label": "匹配",
       "candidate_score": 70,
-      "company_score": 74,
+      "company_score": 69,
       "hard_skills": [
         "Python",
         "机器学习",
@@ -503,8 +553,8 @@
       ]
     },
     {
-      "rank": 11,
-      "score": 78.7,
+      "rank": 12,
+      "score": 79.4,
       "recommend": "强烈推荐",
       "company": "拼多多集团-PDD",
       "position": "算法工程师",
@@ -522,7 +572,7 @@
         "city": 50.0,
         "role": 78.0,
         "soft_skill": 50.0,
-        "competitiveness": 92.5
+        "competitiveness": 100.0
       },
       "reasons": [
         "[skill] 关键词命中3/4: python↔python, deep_learning↔deep_learning, machine_learning↔machine_learning",
@@ -533,12 +583,12 @@
         "[city] 候选人无城市偏好(中性)",
         "[role] [role] 方向 精确子类命中:岗位「机器学习算法」↔ 候选人适配「机器学习算法」(权重0.78) — 硕士主修模式识别与机器学习,华为实习构建STL独立森林时序异常检测模型,项目搭建ResNet-50迁移学习模型实现99.2%缺陷识别准确率,熟练使用PyTorch、TensorFlow、Scikit-learn。",
         "[soft_skill] 软技能无法从简历关键词中准确匹配",
-        "[competitiveness] 竞争力对齐「匹配」:候选人70分(学校c9/硕士/实习大厂/竞赛none) ↔ 岗位75分(民企/算法/门槛本科) 差值+5"
+        "[competitiveness] 竞争力对齐「匹配」:候选人70分(学校c9/硕士/实习大厂/竞赛none) ↔ 岗位70分(公司地位(未评级,默认中)/算法/门槛本科) 差值+0"
       ],
       "role_gated": false,
       "comp_label": "匹配",
       "candidate_score": 70,
-      "company_score": 75,
+      "company_score": 70,
       "hard_skills": [
         "机器学习",
         "深度学习",
@@ -553,7 +603,154 @@
       ]
     },
     {
-      "rank": 12,
+      "rank": 13,
+      "score": 78.6,
+      "recommend": "强烈推荐",
+      "company": "南芯科技",
+      "position": "AI应用工程师",
+      "city": "上海,成都,深圳,北京,西安,南京,珠海,杭州,苏州",
+      "job_category": "研发",
+      "education_req": "本科",
+      "deadline": null,
+      "apply_url": "hr-candidate@southchip.com",
+      "dims": {
+        "skill": 76.73076923076923,
+        "hard_skill": 100.0,
+        "cert": 60.0,
+        "education": 100.0,
+        "major": 80.0,
+        "city": 50.0,
+        "role": 49.2,
+        "soft_skill": 50.0,
+        "competitiveness": 98.5
+      },
+      "reasons": [
+        "[skill] 关键词命中3/4: python↔python, deep_learning↔deep_learning, machine_learning↔machine_learning",
+        "[hard_skill] 硬技能命中3/3: python↔python, deep_learning↔deep_learning, machine_learning↔machine_learning",
+        "[cert] 岗位无证书硬性要求",
+        "[education] 候选人硕士学历满足岗位最低要求",
+        "[major] 岗位接受计算机/人工智能相关专业",
+        "[city] 候选人无城市偏好(中性)",
+        "[role] [role] 方向 同大类匹配:岗位「大模型应用开发」↔ 候选人适配「算法工程化」(权重0.82) — 华为实习将分类模型部署至ARM架构边缘网关并做轻量化感知训练压缩,中兴实习开发Python与Scapy自动化测试工具,具备算法落地与工程化能力。",
+        "[soft_skill] 软技能无法从简历关键词中准确匹配",
+        "[competitiveness] 竞争力对齐「匹配」:候选人70分(学校c9/硕士/实习大厂/竞赛none) ↔ 岗位69分(公司地位(未评级,默认中)/AI工程/门槛本科) 差值-1"
+      ],
+      "role_gated": false,
+      "comp_label": "匹配",
+      "candidate_score": 70,
+      "company_score": 69,
+      "hard_skills": [
+        "机器学习",
+        "Python",
+        "深度学习"
+      ],
+      "keywords": [
+        "AI",
+        "机器学习",
+        "Python",
+        "深度学习"
+      ]
+    },
+    {
+      "rank": 14,
+      "score": 78.6,
+      "recommend": "强烈推荐",
+      "company": "多益网络",
+      "position": "AI应用开发工程师",
+      "city": "广州,武汉,杭州",
+      "job_category": "研发",
+      "education_req": "本科",
+      "deadline": null,
+      "apply_url": "xz.duoyi.com",
+      "dims": {
+        "skill": 76.73076923076923,
+        "hard_skill": 100.0,
+        "cert": 60.0,
+        "education": 100.0,
+        "major": 80.0,
+        "city": 50.0,
+        "role": 49.2,
+        "soft_skill": 50.0,
+        "competitiveness": 98.5
+      },
+      "reasons": [
+        "[skill] 关键词命中3/4: python↔python, deep_learning↔deep_learning, machine_learning↔machine_learning",
+        "[hard_skill] 硬技能命中3/3: python↔python, deep_learning↔deep_learning, machine_learning↔machine_learning",
+        "[cert] 岗位无证书硬性要求",
+        "[education] 候选人硕士学历满足岗位最低要求",
+        "[major] 岗位接受计算机相关专业",
+        "[city] 候选人无城市偏好(中性)",
+        "[role] [role] 方向 同大类匹配:岗位「大模型应用开发」↔ 候选人适配「算法工程化」(权重0.82) — 华为实习将分类模型部署至ARM架构边缘网关并做轻量化感知训练压缩,中兴实习开发Python与Scapy自动化测试工具,具备算法落地与工程化能力。",
+        "[soft_skill] 软技能无法从简历关键词中准确匹配",
+        "[competitiveness] 竞争力对齐「匹配」:候选人70分(学校c9/硕士/实习大厂/竞赛none) ↔ 岗位69分(公司地位(未评级,默认中)/AI工程/门槛本科) 差值-1"
+      ],
+      "role_gated": false,
+      "comp_label": "匹配",
+      "candidate_score": 70,
+      "company_score": 69,
+      "hard_skills": [
+        "Python",
+        "机器学习",
+        "深度学习"
+      ],
+      "keywords": [
+        "Python",
+        "机器学习",
+        "AI",
+        "深度学习"
+      ]
+    },
+    {
+      "rank": 15,
+      "score": 78.6,
+      "recommend": "强烈推荐",
+      "company": "峰岹科技-海外留学生招聘",
+      "position": "AI工程师",
+      "city": "深圳,上海,青岛",
+      "job_category": "研发",
+      "education_req": "本科",
+      "deadline": null,
+      "apply_url": "hr@fortiortech.com",
+      "dims": {
+        "skill": 76.73076923076923,
+        "hard_skill": 100.0,
+        "cert": 60.0,
+        "education": 100.0,
+        "major": 80.0,
+        "city": 50.0,
+        "role": 49.2,
+        "soft_skill": 50.0,
+        "competitiveness": 98.5
+      },
+      "reasons": [
+        "[skill] 关键词命中3/4: python↔python, deep_learning↔deep_learning, machine_learning↔machine_learning",
+        "[hard_skill] 硬技能命中3/3: python↔python, deep_learning↔deep_learning, machine_learning↔machine_learning",
+        "[cert] 岗位无证书硬性要求",
+        "[education] 候选人硕士学历满足岗位最低要求",
+        "[major] 岗位接受计算机、人工智能、自动化等相关专业专业",
+        "[city] 候选人无城市偏好(中性)",
+        "[role] [role] 方向 同大类匹配:岗位「大模型应用开发」↔ 候选人适配「算法工程化」(权重0.82) — 华为实习将分类模型部署至ARM架构边缘网关并做轻量化感知训练压缩,中兴实习开发Python与Scapy自动化测试工具,具备算法落地与工程化能力。",
+        "[soft_skill] 软技能无法从简历关键词中准确匹配",
+        "[competitiveness] 竞争力对齐「匹配」:候选人70分(学校c9/硕士/实习大厂/竞赛none) ↔ 岗位69分(公司地位(未评级,默认中)/AI工程/门槛本科) 差值-1"
+      ],
+      "role_gated": false,
+      "comp_label": "匹配",
+      "candidate_score": 70,
+      "company_score": 69,
+      "hard_skills": [
+        "机器学习",
+        "深度学习",
+        "Python"
+      ],
+      "keywords": [
+        "AI",
+        "机器学习",
+        "深度学习",
+        "Python"
+      ]
+    },
+    {
+      "rank": 16,
       "score": 78.6,
       "recommend": "强烈推荐",
       "company": "海尔消费金融",
@@ -583,12 +780,12 @@
         "[city] 候选人无城市偏好(中性)",
         "[role] [role] 方向 同大类匹配:岗位「大模型应用开发」↔ 候选人适配「算法工程化」(权重0.82) — 华为实习将分类模型部署至ARM架构边缘网关并做轻量化感知训练压缩,中兴实习开发Python与Scapy自动化测试工具,具备算法落地与工程化能力。",
         "[soft_skill] 软技能无法从简历关键词中准确匹配",
-        "[competitiveness] 竞争力对齐「匹配」:候选人70分(学校c9/硕士/实习大厂/竞赛none) ↔ 岗位71分(民企/AI工程/门槛本科) 差值+1"
+        "[competitiveness] 竞争力对齐「匹配」:候选人70分(学校c9/硕士/实习大厂/竞赛none) ↔ 岗位69分(公司地位(未评级,默认中)/AI工程/门槛本科) 差值-1"
       ],
       "role_gated": false,
       "comp_label": "匹配",
       "candidate_score": 70,
-      "company_score": 71,
+      "company_score": 69,
       "hard_skills": [
         "Python",
         "TensorFlow",
@@ -602,205 +799,8 @@
       ]
     },
     {
-      "rank": 13,
-      "score": 78.5,
-      "recommend": "强烈推荐",
-      "company": "圆通-管培生",
-      "position": "AI算法",
-      "city": "全国各地",
-      "job_category": "研发",
-      "education_req": "本科",
-      "deadline": null,
-      "apply_url": "https://mp.weixin.qq.com/s/cPg4WJidXJfaGi51lQbIqA",
-      "dims": {
-        "skill": 61.698113207547166,
-        "hard_skill": 100.0,
-        "cert": 60.0,
-        "education": 100.0,
-        "major": 80.0,
-        "city": 50.0,
-        "role": 78.0,
-        "soft_skill": 50.0,
-        "competitiveness": 85.0
-      },
-      "reasons": [
-        "[skill] 关键词命中3/5: python↔python, deep_learning↔deep_learning, machine_learning↔machine_learning",
-        "[hard_skill] 硬技能命中3/3: python↔python, deep_learning↔deep_learning, machine_learning↔machine_learning",
-        "[cert] 岗位无证书硬性要求",
-        "[education] 候选人硕士学历满足岗位最低要求",
-        "[major] 岗位接受计算机相关专业",
-        "[city] 候选人无城市偏好(中性)",
-        "[role] [role] 方向 精确子类命中:岗位「机器学习算法」↔ 候选人适配「机器学习算法」(权重0.78) — 硕士主修模式识别与机器学习,华为实习构建STL独立森林时序异常检测模型,项目搭建ResNet-50迁移学习模型实现99.2%缺陷识别准确率,熟练使用PyTorch、TensorFlow、Scikit-learn。",
-        "[soft_skill] 软技能无法从简历关键词中准确匹配",
-        "[competitiveness] 竞争力对齐「匹配」:候选人70分(学校c9/硕士/实习大厂/竞赛none) ↔ 岗位60分(民企/算法/门槛本科) 差值-10"
-      ],
-      "role_gated": false,
-      "comp_label": "匹配",
-      "candidate_score": 70,
-      "company_score": 60,
-      "hard_skills": [
-        "机器学习",
-        "深度学习",
-        "Python"
-      ],
-      "keywords": [
-        "AI算法",
-        "机器学习",
-        "深度学习",
-        "Python",
-        "管培生"
-      ]
-    },
-    {
-      "rank": 14,
-      "score": 78.1,
-      "recommend": "强烈推荐",
-      "company": "多益网络",
-      "position": "AI应用开发工程师",
-      "city": "广州,武汉,杭州",
-      "job_category": "研发",
-      "education_req": "本科",
-      "deadline": null,
-      "apply_url": "xz.duoyi.com",
-      "dims": {
-        "skill": 76.73076923076923,
-        "hard_skill": 100.0,
-        "cert": 60.0,
-        "education": 100.0,
-        "major": 80.0,
-        "city": 50.0,
-        "role": 49.2,
-        "soft_skill": 50.0,
-        "competitiveness": 94.0
-      },
-      "reasons": [
-        "[skill] 关键词命中3/4: python↔python, deep_learning↔deep_learning, machine_learning↔machine_learning",
-        "[hard_skill] 硬技能命中3/3: python↔python, deep_learning↔deep_learning, machine_learning↔machine_learning",
-        "[cert] 岗位无证书硬性要求",
-        "[education] 候选人硕士学历满足岗位最低要求",
-        "[major] 岗位接受计算机相关专业",
-        "[city] 候选人无城市偏好(中性)",
-        "[role] [role] 方向 同大类匹配:岗位「大模型应用开发」↔ 候选人适配「算法工程化」(权重0.82) — 华为实习将分类模型部署至ARM架构边缘网关并做轻量化感知训练压缩,中兴实习开发Python与Scapy自动化测试工具,具备算法落地与工程化能力。",
-        "[soft_skill] 软技能无法从简历关键词中准确匹配",
-        "[competitiveness] 竞争力对齐「匹配」:候选人70分(学校c9/硕士/实习大厂/竞赛none) ↔ 岗位74分(民企/AI工程/门槛本科) 差值+4"
-      ],
-      "role_gated": false,
-      "comp_label": "匹配",
-      "candidate_score": 70,
-      "company_score": 74,
-      "hard_skills": [
-        "Python",
-        "机器学习",
-        "深度学习"
-      ],
-      "keywords": [
-        "Python",
-        "机器学习",
-        "AI",
-        "深度学习"
-      ]
-    },
-    {
-      "rank": 15,
-      "score": 77.8,
-      "recommend": "强烈推荐",
-      "company": "南芯科技",
-      "position": "AI应用工程师",
-      "city": "上海,成都,深圳,北京,西安,南京,珠海,杭州,苏州",
-      "job_category": "研发",
-      "education_req": "本科",
-      "deadline": null,
-      "apply_url": "hr-candidate@southchip.com",
-      "dims": {
-        "skill": 76.73076923076923,
-        "hard_skill": 100.0,
-        "cert": 60.0,
-        "education": 100.0,
-        "major": 80.0,
-        "city": 50.0,
-        "role": 49.2,
-        "soft_skill": 50.0,
-        "competitiveness": 91.0
-      },
-      "reasons": [
-        "[skill] 关键词命中3/4: python↔python, deep_learning↔deep_learning, machine_learning↔machine_learning",
-        "[hard_skill] 硬技能命中3/3: python↔python, deep_learning↔deep_learning, machine_learning↔machine_learning",
-        "[cert] 岗位无证书硬性要求",
-        "[education] 候选人硕士学历满足岗位最低要求",
-        "[major] 岗位接受计算机/人工智能相关专业",
-        "[city] 候选人无城市偏好(中性)",
-        "[role] [role] 方向 同大类匹配:岗位「大模型应用开发」↔ 候选人适配「算法工程化」(权重0.82) — 华为实习将分类模型部署至ARM架构边缘网关并做轻量化感知训练压缩,中兴实习开发Python与Scapy自动化测试工具,具备算法落地与工程化能力。",
-        "[soft_skill] 软技能无法从简历关键词中准确匹配",
-        "[competitiveness] 竞争力对齐「匹配」:候选人70分(学校c9/硕士/实习大厂/竞赛none) ↔ 岗位64分(民企/AI工程/门槛本科) 差值-6"
-      ],
-      "role_gated": false,
-      "comp_label": "匹配",
-      "candidate_score": 70,
-      "company_score": 64,
-      "hard_skills": [
-        "机器学习",
-        "Python",
-        "深度学习"
-      ],
-      "keywords": [
-        "AI",
-        "机器学习",
-        "Python",
-        "深度学习"
-      ]
-    },
-    {
-      "rank": 16,
-      "score": 77.8,
-      "recommend": "强烈推荐",
-      "company": "峰岹科技-海外留学生招聘",
-      "position": "AI工程师",
-      "city": "深圳,上海,青岛",
-      "job_category": "研发",
-      "education_req": "本科",
-      "deadline": null,
-      "apply_url": "hr@fortiortech.com",
-      "dims": {
-        "skill": 76.73076923076923,
-        "hard_skill": 100.0,
-        "cert": 60.0,
-        "education": 100.0,
-        "major": 80.0,
-        "city": 50.0,
-        "role": 49.2,
-        "soft_skill": 50.0,
-        "competitiveness": 91.0
-      },
-      "reasons": [
-        "[skill] 关键词命中3/4: python↔python, deep_learning↔deep_learning, machine_learning↔machine_learning",
-        "[hard_skill] 硬技能命中3/3: python↔python, deep_learning↔deep_learning, machine_learning↔machine_learning",
-        "[cert] 岗位无证书硬性要求",
-        "[education] 候选人硕士学历满足岗位最低要求",
-        "[major] 岗位接受计算机、人工智能、自动化等相关专业专业",
-        "[city] 候选人无城市偏好(中性)",
-        "[role] [role] 方向 同大类匹配:岗位「大模型应用开发」↔ 候选人适配「算法工程化」(权重0.82) — 华为实习将分类模型部署至ARM架构边缘网关并做轻量化感知训练压缩,中兴实习开发Python与Scapy自动化测试工具,具备算法落地与工程化能力。",
-        "[soft_skill] 软技能无法从简历关键词中准确匹配",
-        "[competitiveness] 竞争力对齐「匹配」:候选人70分(学校c9/硕士/实习大厂/竞赛none) ↔ 岗位64分(民企/AI工程/门槛本科) 差值-6"
-      ],
-      "role_gated": false,
-      "comp_label": "匹配",
-      "candidate_score": 70,
-      "company_score": 64,
-      "hard_skills": [
-        "机器学习",
-        "深度学习",
-        "Python"
-      ],
-      "keywords": [
-        "AI",
-        "机器学习",
-        "深度学习",
-        "Python"
-      ]
-    },
-    {
       "rank": 17,
-      "score": 77.4,
+      "score": 78.1,
       "recommend": "强烈推荐",
       "company": "多益网络",
       "position": "算法工程师",
@@ -818,7 +818,7 @@
         "city": 50.0,
         "role": 78.0,
         "soft_skill": 50.0,
-        "competitiveness": 92.5
+        "competitiveness": 100.0
       },
       "reasons": [
         "[skill] 关键词命中3/4: python↔python, deep_learning↔deep_learning, machine_learning↔machine_learning",
@@ -829,12 +829,12 @@
         "[city] 候选人无城市偏好(中性)",
         "[role] [role] 方向 精确子类命中:岗位「机器学习算法」↔ 候选人适配「机器学习算法」(权重0.78) — 硕士主修模式识别与机器学习,华为实习构建STL独立森林时序异常检测模型,项目搭建ResNet-50迁移学习模型实现99.2%缺陷识别准确率,熟练使用PyTorch、TensorFlow、Scikit-learn。",
         "[soft_skill] 软技能无法从简历关键词中准确匹配",
-        "[competitiveness] 竞争力对齐「匹配」:候选人70分(学校c9/硕士/实习大厂/竞赛none) ↔ 岗位75分(民企/算法/门槛本科) 差值+5"
+        "[competitiveness] 竞争力对齐「匹配」:候选人70分(学校c9/硕士/实习大厂/竞赛none) ↔ 岗位70分(公司地位(未评级,默认中)/算法/门槛本科) 差值+0"
       ],
       "role_gated": false,
       "comp_label": "匹配",
       "candidate_score": 70,
-      "company_score": 75,
+      "company_score": 70,
       "hard_skills": [
         "Python",
         "机器学习",
@@ -849,7 +849,7 @@
     },
     {
       "rank": 18,
-      "score": 77.3,
+      "score": 78.0,
       "recommend": "强烈推荐",
       "company": "歌尔丹拿",
       "position": "AI研发实习生",
@@ -867,7 +867,7 @@
         "city": 50.0,
         "role": 78.0,
         "soft_skill": 50.0,
-        "competitiveness": 92.5
+        "competitiveness": 100.0
       },
       "reasons": [
         "[skill] 关键词命中3/6: python↔python, deep_learning↔deep_learning, machine_learning↔machine_learning",
@@ -878,12 +878,12 @@
         "[city] 候选人无城市偏好(中性)",
         "[role] [role] 方向 精确子类命中:岗位「机器学习算法」↔ 候选人适配「机器学习算法」(权重0.78) — 硕士主修模式识别与机器学习,华为实习构建STL独立森林时序异常检测模型,项目搭建ResNet-50迁移学习模型实现99.2%缺陷识别准确率,熟练使用PyTorch、TensorFlow、Scikit-learn。",
         "[soft_skill] 软技能无法从简历关键词中准确匹配",
-        "[competitiveness] 竞争力对齐「匹配」:候选人70分(学校c9/硕士/实习大厂/竞赛none) ↔ 岗位75分(外企/算法/门槛本科) 差值+5"
+        "[competitiveness] 竞争力对齐「匹配」:候选人70分(学校c9/硕士/实习大厂/竞赛none) ↔ 岗位70分(公司地位(未评级,默认中)/算法/门槛本科) 差值+0"
       ],
       "role_gated": false,
       "comp_label": "匹配",
       "candidate_score": 70,
-      "company_score": 75,
+      "company_score": 70,
       "hard_skills": [
         "Python",
         "机器学习",
@@ -899,7 +899,7 @@
     },
     {
       "rank": 19,
-      "score": 77.3,
+      "score": 78.0,
       "recommend": "强烈推荐",
       "company": "蔚来",
       "position": "算法",
@@ -917,7 +917,7 @@
         "city": 50.0,
         "role": 78.0,
         "soft_skill": 50.0,
-        "competitiveness": 92.5
+        "competitiveness": 100.0
       },
       "reasons": [
         "[skill] 关键词命中3/6: python↔python, deep_learning↔deep_learning, machine_learning↔machine_learning",
@@ -928,12 +928,12 @@
         "[city] 候选人无城市偏好(中性)",
         "[role] [role] 方向 精确子类命中:岗位「机器学习算法」↔ 候选人适配「机器学习算法」(权重0.78) — 硕士主修模式识别与机器学习,华为实习构建STL独立森林时序异常检测模型,项目搭建ResNet-50迁移学习模型实现99.2%缺陷识别准确率,熟练使用PyTorch、TensorFlow、Scikit-learn。",
         "[soft_skill] 软技能无法从简历关键词中准确匹配",
-        "[competitiveness] 竞争力对齐「匹配」:候选人70分(学校c9/硕士/实习大厂/竞赛none) ↔ 岗位65分(民企/算法/门槛本科) 差值-5"
+        "[competitiveness] 竞争力对齐「匹配」:候选人70分(学校c9/硕士/实习大厂/竞赛none) ↔ 岗位70分(公司地位(未评级,默认中)/算法/门槛本科) 差值+0"
       ],
       "role_gated": false,
       "comp_label": "匹配",
       "candidate_score": 70,
-      "company_score": 65,
+      "company_score": 70,
       "hard_skills": [
         "机器学习",
         "深度学习",
@@ -948,7 +948,7 @@
     },
     {
       "rank": 20,
-      "score": 77.2,
+      "score": 77.9,
       "recommend": "强烈推荐",
       "company": "微步在线",
       "position": "机器学习工程师",
@@ -966,7 +966,7 @@
         "city": 50.0,
         "role": 78.0,
         "soft_skill": 50.0,
-        "competitiveness": 92.5
+        "competitiveness": 100.0
       },
       "reasons": [
         "[skill] 关键词命中2/4: python↔python, machine_learning↔machine_learning",
@@ -977,12 +977,12 @@
         "[city] 候选人无城市偏好(中性)",
         "[role] [role] 方向 精确子类命中:岗位「机器学习算法」↔ 候选人适配「机器学习算法」(权重0.78) — 硕士主修模式识别与机器学习,华为实习构建STL独立森林时序异常检测模型,项目搭建ResNet-50迁移学习模型实现99.2%缺陷识别准确率,熟练使用PyTorch、TensorFlow、Scikit-learn。",
         "[soft_skill] 软技能无法从简历关键词中准确匹配",
-        "[competitiveness] 竞争力对齐「匹配」:候选人70分(学校c9/硕士/实习大厂/竞赛none) ↔ 岗位75分(民企/算法/门槛本科) 差值+5"
+        "[competitiveness] 竞争力对齐「匹配」:候选人70分(学校c9/硕士/实习大厂/竞赛none) ↔ 岗位70分(公司地位(未评级,默认中)/算法/门槛本科) 差值+0"
       ],
       "role_gated": false,
       "comp_label": "匹配",
       "candidate_score": 70,
-      "company_score": 75,
+      "company_score": 70,
       "hard_skills": [
         "机器学习",
         "Python"
@@ -996,7 +996,7 @@
     },
     {
       "rank": 21,
-      "score": 75.8,
+      "score": 77.6,
       "recommend": "强烈推荐",
       "company": "东吴证券",
       "position": "AI算法工程师",
@@ -1014,7 +1014,7 @@
         "city": 50.0,
         "role": 49.2,
         "soft_skill": 50.0,
-        "competitiveness": 76.0
+        "competitiveness": 94.0
       },
       "reasons": [
         "[skill] 关键词命中5/7: TensorFlow Lite Micro↔tensorflow, python↔python, pytorch↔pytorch, deep_learning↔deep_learning, machine_learning↔machine_learning",
@@ -1025,12 +1025,12 @@
         "[city] 候选人无城市偏好(中性)",
         "[role] [role] 方向 同大类匹配:岗位「大模型应用开发」↔ 候选人适配「算法工程化」(权重0.82) — 华为实习将分类模型部署至ARM架构边缘网关并做轻量化感知训练压缩,中兴实习开发Python与Scapy自动化测试工具,具备算法落地与工程化能力。",
         "[soft_skill] 软技能无法从简历关键词中准确匹配",
-        "[competitiveness] 竞争力对齐「匹配」:候选人70分(学校c9/硕士/实习大厂/竞赛none) ↔ 岗位86分(国央企/AI工程/门槛硕士) 差值+16"
+        "[competitiveness] 竞争力对齐「匹配」:候选人70分(学校c9/硕士/实习大厂/竞赛none) ↔ 岗位74分(公司地位(未评级,默认中)/AI工程/门槛硕士) 差值+4"
       ],
       "role_gated": false,
       "comp_label": "匹配",
       "candidate_score": 70,
-      "company_score": 86,
+      "company_score": 74,
       "hard_skills": [
         "Python",
         "机器学习",
@@ -1048,7 +1048,7 @@
     },
     {
       "rank": 22,
-      "score": 75.7,
+      "score": 76.4,
       "recommend": "强烈推荐",
       "company": "DJI 大疆",
       "position": "机器学习算法工程师（语音识别）",
@@ -1066,7 +1066,7 @@
         "city": 50.0,
         "role": 78.0,
         "soft_skill": 50.0,
-        "competitiveness": 92.5
+        "competitiveness": 100.0
       },
       "reasons": [
         "[skill] 关键词命中3/5: python↔python, deep_learning↔deep_learning, machine_learning↔machine_learning",
@@ -1077,12 +1077,12 @@
         "[city] 候选人无城市偏好(中性)",
         "[role] [role] 方向 精确子类命中:岗位「机器学习算法」↔ 候选人适配「机器学习算法」(权重0.78) — 硕士主修模式识别与机器学习,华为实习构建STL独立森林时序异常检测模型,项目搭建ResNet-50迁移学习模型实现99.2%缺陷识别准确率,熟练使用PyTorch、TensorFlow、Scikit-learn。",
         "[soft_skill] 软技能无法从简历关键词中准确匹配",
-        "[competitiveness] 竞争力对齐「匹配」:候选人70分(学校c9/硕士/实习大厂/竞赛none) ↔ 岗位75分(民企/算法/门槛本科) 差值+5"
+        "[competitiveness] 竞争力对齐「匹配」:候选人70分(学校c9/硕士/实习大厂/竞赛none) ↔ 岗位70分(公司地位(未评级,默认中)/算法/门槛本科) 差值+0"
       ],
       "role_gated": false,
       "comp_label": "匹配",
       "candidate_score": 70,
-      "company_score": 75,
+      "company_score": 70,
       "hard_skills": [
         "语音识别",
         "机器学习",
@@ -1098,7 +1098,7 @@
     },
     {
       "rank": 23,
-      "score": 75.7,
+      "score": 76.4,
       "recommend": "强烈推荐",
       "company": "拼多多集团",
       "position": "算法工程师",
@@ -1116,7 +1116,7 @@
         "city": 50.0,
         "role": 78.0,
         "soft_skill": 50.0,
-        "competitiveness": 92.5
+        "competitiveness": 100.0
       },
       "reasons": [
         "[skill] 关键词命中3/5: python↔python, deep_learning↔deep_learning, machine_learning↔machine_learning",
@@ -1127,12 +1127,12 @@
         "[city] 候选人无城市偏好(中性)",
         "[role] [role] 方向 精确子类命中:岗位「机器学习算法」↔ 候选人适配「机器学习算法」(权重0.78) — 硕士主修模式识别与机器学习,华为实习构建STL独立森林时序异常检测模型,项目搭建ResNet-50迁移学习模型实现99.2%缺陷识别准确率,熟练使用PyTorch、TensorFlow、Scikit-learn。",
         "[soft_skill] 软技能无法从简历关键词中准确匹配",
-        "[competitiveness] 竞争力对齐「匹配」:候选人70分(学校c9/硕士/实习大厂/竞赛none) ↔ 岗位75分(民企/算法/门槛本科) 差值+5"
+        "[competitiveness] 竞争力对齐「匹配」:候选人70分(学校c9/硕士/实习大厂/竞赛none) ↔ 岗位70分(公司地位(未评级,默认中)/算法/门槛本科) 差值+0"
       ],
       "role_gated": false,
       "comp_label": "匹配",
       "candidate_score": 70,
-      "company_score": 75,
+      "company_score": 70,
       "hard_skills": [
         "机器学习",
         "深度学习",
@@ -1149,8 +1149,8 @@
     },
     {
       "rank": 24,
-      "score": 74.8,
-      "recommend": "推荐",
+      "score": 75.6,
+      "recommend": "强烈推荐",
       "company": "宇树科技",
       "position": "AI算法工程师",
       "city": "杭州",
@@ -1167,7 +1167,7 @@
         "city": 50.0,
         "role": 49.2,
         "soft_skill": 50.0,
-        "competitiveness": 91.0
+        "competitiveness": 98.5
       },
       "reasons": [
         "[skill] 关键词命中3/5: python↔python, deep_learning↔deep_learning, machine_learning↔machine_learning",
@@ -1178,12 +1178,12 @@
         "[city] 候选人无城市偏好(中性)",
         "[role] [role] 方向 同大类匹配:岗位「大模型应用开发」↔ 候选人适配「算法工程化」(权重0.82) — 华为实习将分类模型部署至ARM架构边缘网关并做轻量化感知训练压缩,中兴实习开发Python与Scapy自动化测试工具,具备算法落地与工程化能力。",
         "[soft_skill] 软技能无法从简历关键词中准确匹配",
-        "[competitiveness] 竞争力对齐「匹配」:候选人70分(学校c9/硕士/实习大厂/竞赛none) ↔ 岗位64分(民企/AI工程/门槛本科) 差值-6"
+        "[competitiveness] 竞争力对齐「匹配」:候选人70分(学校c9/硕士/实习大厂/竞赛none) ↔ 岗位69分(公司地位(未评级,默认中)/AI工程/门槛本科) 差值-1"
       ],
       "role_gated": false,
       "comp_label": "匹配",
       "candidate_score": 70,
-      "company_score": 64,
+      "company_score": 69,
       "hard_skills": [
         "机器学习",
         "深度学习",
@@ -1198,15 +1198,64 @@
     },
     {
       "rank": 25,
-      "score": 74.7,
-      "recommend": "推荐",
-      "company": "晶泰科技",
-      "position": "AI模型研发工程师(大模型)",
-      "city": "深圳",
+      "score": 75.1,
+      "recommend": "强烈推荐",
+      "company": "芯动科技",
+      "position": "DSP算法及建模工程师",
+      "city": "上海 北京 大连 成都 武汉 珠海 苏州 西安",
       "job_category": "研发",
-      "education_req": "硕士",
+      "education_req": "本科",
       "deadline": null,
-      "apply_url": "https://app.mokahr.com/campus-recruitment/jingtai/2143?locale=zh-CN#/jobs/",
+      "apply_url": "https://innosilicon.zhiye.com/campus/jobs",
+      "dims": {
+        "skill": 61.63636363636363,
+        "hard_skill": 67.22222222222221,
+        "cert": 60.0,
+        "education": 100.0,
+        "major": 80.0,
+        "city": 50.0,
+        "role": 78.0,
+        "soft_skill": 50.0,
+        "competitiveness": 100.0
+      },
+      "reasons": [
+        "[skill] 关键词命中3/5: DSP加速库↔dsp, Matlab↔MATLAB, dsp↔DSP算法",
+        "[hard_skill] 硬技能命中2/3: Matlab↔MATLAB, dsp↔DSP算法",
+        "[cert] 岗位无证书硬性要求",
+        "[education] 候选人硕士学历满足岗位最低要求",
+        "[major] 岗位接受电子工程/通信/信号处理相关专业",
+        "[city] 候选人无城市偏好(中性)",
+        "[role] [role] 方向 精确子类命中:岗位「机器学习算法」↔ 候选人适配「机器学习算法」(权重0.78) — 硕士主修模式识别与机器学习,华为实习构建STL独立森林时序异常检测模型,项目搭建ResNet-50迁移学习模型实现99.2%缺陷识别准确率,熟练使用PyTorch、TensorFlow、Scikit-learn。",
+        "[soft_skill] 软技能无法从简历关键词中准确匹配",
+        "[competitiveness] 竞争力对齐「匹配」:候选人70分(学校c9/硕士/实习大厂/竞赛none) ↔ 岗位70分(公司地位(未评级,默认中)/算法/门槛本科) 差值+0"
+      ],
+      "role_gated": false,
+      "comp_label": "匹配",
+      "candidate_score": 70,
+      "company_score": 70,
+      "hard_skills": [
+        "DSP算法",
+        "MATLAB",
+        "信号处理"
+      ],
+      "keywords": [
+        "DSP",
+        "算法",
+        "MATLAB",
+        "信号处理"
+      ]
+    },
+    {
+      "rank": 26,
+      "score": 75.0,
+      "recommend": "强烈推荐",
+      "company": "四方股份",
+      "position": "AI开发工程师",
+      "city": "北京,武汉,南京,湖州,保定,深圳,西安",
+      "job_category": "研发",
+      "education_req": "本科",
+      "deadline": null,
+      "apply_url": "https://sf-auto.zhiye.com/Campus",
       "dims": {
         "skill": 76.73076923076923,
         "hard_skill": 75.86538461538461,
@@ -1214,39 +1263,90 @@
         "education": 100.0,
         "major": 80.0,
         "city": 50.0,
-        "role": 46.8,
+        "role": 49.2,
+        "soft_skill": 50.0,
+        "competitiveness": 98.5
+      },
+      "reasons": [
+        "[skill] 关键词命中3/4: python↔python, deep_learning↔deep_learning, machine_learning↔machine_learning",
+        "[hard_skill] 硬技能命中3/4: python↔python, deep_learning↔deep_learning, machine_learning↔machine_learning",
+        "[cert] 岗位无证书硬性要求",
+        "[education] 候选人硕士学历满足岗位最低要求",
+        "[major] 岗位接受计算机/人工智能相关专业",
+        "[city] 候选人无城市偏好(中性)",
+        "[role] [role] 方向 同大类匹配:岗位「大模型应用开发」↔ 候选人适配「算法工程化」(权重0.82) — 华为实习将分类模型部署至ARM架构边缘网关并做轻量化感知训练压缩,中兴实习开发Python与Scapy自动化测试工具,具备算法落地与工程化能力。",
+        "[soft_skill] 软技能无法从简历关键词中准确匹配",
+        "[competitiveness] 竞争力对齐「匹配」:候选人70分(学校c9/硕士/实习大厂/竞赛none) ↔ 岗位69分(公司地位(未评级,默认中)/AI工程/门槛本科) 差值-1"
+      ],
+      "role_gated": false,
+      "comp_label": "匹配",
+      "candidate_score": 70,
+      "company_score": 69,
+      "hard_skills": [
+        "Python",
+        "机器学习",
+        "深度学习",
+        "AI"
+      ],
+      "keywords": [
+        "AI",
+        "机器学习",
+        "深度学习",
+        "Python"
+      ]
+    },
+    {
+      "rank": 27,
+      "score": 74.4,
+      "recommend": "推荐",
+      "company": "DJI 大疆",
+      "position": "图像算法工程师",
+      "city": "深圳,上海,北京",
+      "job_category": "研发",
+      "education_req": "本科",
+      "deadline": null,
+      "apply_url": "careers.dji.com",
+      "dims": {
+        "skill": 51.666666666666664,
+        "hard_skill": 75.86538461538461,
+        "cert": 60.0,
+        "education": 100.0,
+        "major": 80.0,
+        "city": 50.0,
+        "role": 78.0,
         "soft_skill": 50.0,
         "competitiveness": 100.0
       },
       "reasons": [
-        "[skill] 关键词命中3/4: python↔python, pytorch↔pytorch, deep_learning↔deep_learning",
-        "[hard_skill] 硬技能命中3/4: python↔python, pytorch↔pytorch, deep_learning↔deep_learning",
+        "[skill] 关键词命中3/6: python↔python, opencv↔opencv, deep_learning↔deep_learning",
+        "[hard_skill] 硬技能命中3/4: python↔python, opencv↔opencv, deep_learning↔deep_learning",
         "[cert] 岗位无证书硬性要求",
         "[education] 候选人硕士学历满足岗位最低要求",
-        "[major] 岗位接受计算机相关专业",
+        "[major] 岗位接受计算机/电子工程/自动化相关专业",
         "[city] 候选人无城市偏好(中性)",
-        "[role] [role] 方向 同大类匹配:岗位「算法」↔ 候选人适配「机器学习算法」(权重0.78) — 硕士主修模式识别与机器学习,华为实习构建STL独立森林时序异常检测模型,项目搭建ResNet-50迁移学习模型实现99.2%缺陷识别准确率,熟练使用PyTorch、TensorFlow、Scikit-learn。",
+        "[role] [role] 方向 精确子类命中:岗位「机器学习算法」↔ 候选人适配「机器学习算法」(权重0.78) — 硕士主修模式识别与机器学习,华为实习构建STL独立森林时序异常检测模型,项目搭建ResNet-50迁移学习模型实现99.2%缺陷识别准确率,熟练使用PyTorch、TensorFlow、Scikit-learn。",
         "[soft_skill] 软技能无法从简历关键词中准确匹配",
-        "[competitiveness] 竞争力对齐「匹配」:候选人70分(学校c9/硕士/实习大厂/竞赛none) ↔ 岗位70分(民企/算法/门槛硕士) 差值+0"
+        "[competitiveness] 竞争力对齐「匹配」:候选人70分(学校c9/硕士/实习大厂/竞赛none) ↔ 岗位70分(公司地位(未评级,默认中)/算法/门槛本科) 差值+0"
       ],
       "role_gated": false,
       "comp_label": "匹配",
       "candidate_score": 70,
       "company_score": 70,
       "hard_skills": [
-        "大模型",
+        "图像处理",
         "深度学习",
         "Python",
-        "PyTorch"
+        "OpenCV"
       ],
       "keywords": [
-        "大模型",
-        "深度学习",
-        "PyTorch"
+        "图像算法",
+        "图像处理",
+        "算法工程师",
+        "深度学习"
       ]
     },
     {
-      "rank": 26,
+      "rank": 28,
       "score": 74.4,
       "recommend": "推荐",
       "company": "生态环境部信息中心",
@@ -1276,7 +1376,7 @@
         "[city] 候选人无城市偏好(中性)",
         "[role] [role] 方向 精确子类命中:岗位「机器学习算法」↔ 候选人适配「机器学习算法」(权重0.78) — 硕士主修模式识别与机器学习,华为实习构建STL独立森林时序异常检测模型,项目搭建ResNet-50迁移学习模型实现99.2%缺陷识别准确率,熟练使用PyTorch、TensorFlow、Scikit-learn。",
         "[soft_skill] 软技能无法从简历关键词中准确匹配",
-        "[competitiveness] 竞争力对齐「匹配」:候选人70分(学校c9/硕士/实习大厂/竞赛none) ↔ 岗位70分(事业单位/政府/算法/门槛本科) 差值+0"
+        "[competitiveness] 竞争力对齐「匹配」:候选人70分(学校c9/硕士/实习大厂/竞赛none) ↔ 岗位70分(公司地位(未评级,默认中)/算法/门槛本科) 差值+0"
       ],
       "role_gated": false,
       "comp_label": "匹配",
@@ -1297,157 +1397,8 @@
       ]
     },
     {
-      "rank": 27,
-      "score": 74.4,
-      "recommend": "推荐",
-      "company": "芯动科技",
-      "position": "DSP算法及建模工程师",
-      "city": "上海 北京 大连 成都 武汉 珠海 苏州 西安",
-      "job_category": "研发",
-      "education_req": "本科",
-      "deadline": null,
-      "apply_url": "https://innosilicon.zhiye.com/campus/jobs",
-      "dims": {
-        "skill": 61.63636363636363,
-        "hard_skill": 67.22222222222221,
-        "cert": 60.0,
-        "education": 100.0,
-        "major": 80.0,
-        "city": 50.0,
-        "role": 78.0,
-        "soft_skill": 50.0,
-        "competitiveness": 92.5
-      },
-      "reasons": [
-        "[skill] 关键词命中3/5: DSP加速库↔dsp, Matlab↔MATLAB, dsp↔DSP算法",
-        "[hard_skill] 硬技能命中2/3: Matlab↔MATLAB, dsp↔DSP算法",
-        "[cert] 岗位无证书硬性要求",
-        "[education] 候选人硕士学历满足岗位最低要求",
-        "[major] 岗位接受电子工程/通信/信号处理相关专业",
-        "[city] 候选人无城市偏好(中性)",
-        "[role] [role] 方向 精确子类命中:岗位「机器学习算法」↔ 候选人适配「机器学习算法」(权重0.78) — 硕士主修模式识别与机器学习,华为实习构建STL独立森林时序异常检测模型,项目搭建ResNet-50迁移学习模型实现99.2%缺陷识别准确率,熟练使用PyTorch、TensorFlow、Scikit-learn。",
-        "[soft_skill] 软技能无法从简历关键词中准确匹配",
-        "[competitiveness] 竞争力对齐「匹配」:候选人70分(学校c9/硕士/实习大厂/竞赛none) ↔ 岗位65分(民企/算法/门槛本科) 差值-5"
-      ],
-      "role_gated": false,
-      "comp_label": "匹配",
-      "candidate_score": 70,
-      "company_score": 65,
-      "hard_skills": [
-        "DSP算法",
-        "MATLAB",
-        "信号处理"
-      ],
-      "keywords": [
-        "DSP",
-        "算法",
-        "MATLAB",
-        "信号处理"
-      ]
-    },
-    {
-      "rank": 28,
-      "score": 74.2,
-      "recommend": "推荐",
-      "company": "四方股份",
-      "position": "AI开发工程师",
-      "city": "北京,武汉,南京,湖州,保定,深圳,西安",
-      "job_category": "研发",
-      "education_req": "本科",
-      "deadline": null,
-      "apply_url": "https://sf-auto.zhiye.com/Campus",
-      "dims": {
-        "skill": 76.73076923076923,
-        "hard_skill": 75.86538461538461,
-        "cert": 60.0,
-        "education": 100.0,
-        "major": 80.0,
-        "city": 50.0,
-        "role": 49.2,
-        "soft_skill": 50.0,
-        "competitiveness": 91.0
-      },
-      "reasons": [
-        "[skill] 关键词命中3/4: python↔python, deep_learning↔deep_learning, machine_learning↔machine_learning",
-        "[hard_skill] 硬技能命中3/4: python↔python, deep_learning↔deep_learning, machine_learning↔machine_learning",
-        "[cert] 岗位无证书硬性要求",
-        "[education] 候选人硕士学历满足岗位最低要求",
-        "[major] 岗位接受计算机/人工智能相关专业",
-        "[city] 候选人无城市偏好(中性)",
-        "[role] [role] 方向 同大类匹配:岗位「大模型应用开发」↔ 候选人适配「算法工程化」(权重0.82) — 华为实习将分类模型部署至ARM架构边缘网关并做轻量化感知训练压缩,中兴实习开发Python与Scapy自动化测试工具,具备算法落地与工程化能力。",
-        "[soft_skill] 软技能无法从简历关键词中准确匹配",
-        "[competitiveness] 竞争力对齐「匹配」:候选人70分(学校c9/硕士/实习大厂/竞赛none) ↔ 岗位64分(民企/AI工程/门槛本科) 差值-6"
-      ],
-      "role_gated": false,
-      "comp_label": "匹配",
-      "candidate_score": 70,
-      "company_score": 64,
-      "hard_skills": [
-        "Python",
-        "机器学习",
-        "深度学习",
-        "AI"
-      ],
-      "keywords": [
-        "AI",
-        "机器学习",
-        "深度学习",
-        "Python"
-      ]
-    },
-    {
       "rank": 29,
-      "score": 73.7,
-      "recommend": "推荐",
-      "company": "DJI 大疆",
-      "position": "图像算法工程师",
-      "city": "深圳,上海,北京",
-      "job_category": "研发",
-      "education_req": "本科",
-      "deadline": null,
-      "apply_url": "careers.dji.com",
-      "dims": {
-        "skill": 51.666666666666664,
-        "hard_skill": 75.86538461538461,
-        "cert": 60.0,
-        "education": 100.0,
-        "major": 80.0,
-        "city": 50.0,
-        "role": 78.0,
-        "soft_skill": 50.0,
-        "competitiveness": 92.5
-      },
-      "reasons": [
-        "[skill] 关键词命中3/6: python↔python, opencv↔opencv, deep_learning↔deep_learning",
-        "[hard_skill] 硬技能命中3/4: python↔python, opencv↔opencv, deep_learning↔deep_learning",
-        "[cert] 岗位无证书硬性要求",
-        "[education] 候选人硕士学历满足岗位最低要求",
-        "[major] 岗位接受计算机/电子工程/自动化相关专业",
-        "[city] 候选人无城市偏好(中性)",
-        "[role] [role] 方向 精确子类命中:岗位「机器学习算法」↔ 候选人适配「机器学习算法」(权重0.78) — 硕士主修模式识别与机器学习,华为实习构建STL独立森林时序异常检测模型,项目搭建ResNet-50迁移学习模型实现99.2%缺陷识别准确率,熟练使用PyTorch、TensorFlow、Scikit-learn。",
-        "[soft_skill] 软技能无法从简历关键词中准确匹配",
-        "[competitiveness] 竞争力对齐「匹配」:候选人70分(学校c9/硕士/实习大厂/竞赛none) ↔ 岗位75分(民企/算法/门槛本科) 差值+5"
-      ],
-      "role_gated": false,
-      "comp_label": "匹配",
-      "candidate_score": 70,
-      "company_score": 75,
-      "hard_skills": [
-        "图像处理",
-        "深度学习",
-        "Python",
-        "OpenCV"
-      ],
-      "keywords": [
-        "图像算法",
-        "图像处理",
-        "算法工程师",
-        "深度学习"
-      ]
-    },
-    {
-      "rank": 30,
-      "score": 73.7,
+      "score": 74.4,
       "recommend": "推荐",
       "company": "莉莉丝游戏",
       "position": "算法工程师",
@@ -1465,7 +1416,7 @@
         "city": 50.0,
         "role": 78.0,
         "soft_skill": 50.0,
-        "competitiveness": 92.5
+        "competitiveness": 100.0
       },
       "reasons": [
         "[skill] 关键词命中3/6: python↔python, deep_learning↔deep_learning, machine_learning↔machine_learning",
@@ -1476,12 +1427,12 @@
         "[city] 候选人无城市偏好(中性)",
         "[role] [role] 方向 精确子类命中:岗位「机器学习算法」↔ 候选人适配「机器学习算法」(权重0.78) — 硕士主修模式识别与机器学习,华为实习构建STL独立森林时序异常检测模型,项目搭建ResNet-50迁移学习模型实现99.2%缺陷识别准确率,熟练使用PyTorch、TensorFlow、Scikit-learn。",
         "[soft_skill] 软技能无法从简历关键词中准确匹配",
-        "[competitiveness] 竞争力对齐「匹配」:候选人70分(学校c9/硕士/实习大厂/竞赛none) ↔ 岗位75分(民企/算法/门槛本科) 差值+5"
+        "[competitiveness] 竞争力对齐「匹配」:候选人70分(学校c9/硕士/实习大厂/竞赛none) ↔ 岗位70分(公司地位(未评级,默认中)/算法/门槛本科) 差值+0"
       ],
       "role_gated": false,
       "comp_label": "匹配",
       "candidate_score": 70,
-      "company_score": 75,
+      "company_score": 70,
       "hard_skills": [
         "机器学习",
         "深度学习",
@@ -1497,8 +1448,57 @@
       ]
     },
     {
+      "rank": 30,
+      "score": 74.0,
+      "recommend": "推荐",
+      "company": "晶泰科技",
+      "position": "AI模型研发工程师(大模型)",
+      "city": "深圳",
+      "job_category": "研发",
+      "education_req": "硕士",
+      "deadline": null,
+      "apply_url": "https://app.mokahr.com/campus-recruitment/jingtai/2143?locale=zh-CN#/jobs/",
+      "dims": {
+        "skill": 76.73076923076923,
+        "hard_skill": 75.86538461538461,
+        "cert": 60.0,
+        "education": 100.0,
+        "major": 80.0,
+        "city": 50.0,
+        "role": 46.8,
+        "soft_skill": 50.0,
+        "competitiveness": 92.5
+      },
+      "reasons": [
+        "[skill] 关键词命中3/4: python↔python, pytorch↔pytorch, deep_learning↔deep_learning",
+        "[hard_skill] 硬技能命中3/4: python↔python, pytorch↔pytorch, deep_learning↔deep_learning",
+        "[cert] 岗位无证书硬性要求",
+        "[education] 候选人硕士学历满足岗位最低要求",
+        "[major] 岗位接受计算机相关专业",
+        "[city] 候选人无城市偏好(中性)",
+        "[role] [role] 方向 同大类匹配:岗位「算法」↔ 候选人适配「机器学习算法」(权重0.78) — 硕士主修模式识别与机器学习,华为实习构建STL独立森林时序异常检测模型,项目搭建ResNet-50迁移学习模型实现99.2%缺陷识别准确率,熟练使用PyTorch、TensorFlow、Scikit-learn。",
+        "[soft_skill] 软技能无法从简历关键词中准确匹配",
+        "[competitiveness] 竞争力对齐「匹配」:候选人70分(学校c9/硕士/实习大厂/竞赛none) ↔ 岗位75分(公司地位(未评级,默认中)/算法/门槛硕士) 差值+5"
+      ],
+      "role_gated": false,
+      "comp_label": "匹配",
+      "candidate_score": 70,
+      "company_score": 75,
+      "hard_skills": [
+        "大模型",
+        "深度学习",
+        "Python",
+        "PyTorch"
+      ],
+      "keywords": [
+        "大模型",
+        "深度学习",
+        "PyTorch"
+      ]
+    },
+    {
       "rank": 31,
-      "score": 72.3,
+      "score": 73.0,
       "recommend": "推荐",
       "company": "南芯科技",
       "position": "硬件算法工程师",
@@ -1516,7 +1516,7 @@
         "city": 50.0,
         "role": 78.0,
         "soft_skill": 50.0,
-        "competitiveness": 92.5
+        "competitiveness": 100.0
       },
       "reasons": [
         "[skill] 关键词命中2/4: fpga↔fpga, DSP加速库↔dsp",
@@ -1527,12 +1527,12 @@
         "[city] 候选人无城市偏好(中性)",
         "[role] [role] 方向 精确子类命中:岗位「机器学习算法」↔ 候选人适配「机器学习算法」(权重0.78) — 硕士主修模式识别与机器学习,华为实习构建STL独立森林时序异常检测模型,项目搭建ResNet-50迁移学习模型实现99.2%缺陷识别准确率,熟练使用PyTorch、TensorFlow、Scikit-learn。",
         "[soft_skill] 软技能无法从简历关键词中准确匹配",
-        "[competitiveness] 竞争力对齐「匹配」:候选人70分(学校c9/硕士/实习大厂/竞赛none) ↔ 岗位65分(民企/算法/门槛本科) 差值-5"
+        "[competitiveness] 竞争力对齐「匹配」:候选人70分(学校c9/硕士/实习大厂/竞赛none) ↔ 岗位70分(公司地位(未评级,默认中)/算法/门槛本科) 差值+0"
       ],
       "role_gated": false,
       "comp_label": "匹配",
       "candidate_score": 70,
-      "company_score": 65,
+      "company_score": 70,
       "hard_skills": [
         "硬件算法",
         "FPGA",
@@ -1547,7 +1547,7 @@
     },
     {
       "rank": 32,
-      "score": 72.3,
+      "score": 73.0,
       "recommend": "推荐",
       "company": "禾迈股份",
       "position": "AI工程师",
@@ -1565,7 +1565,7 @@
         "city": 50.0,
         "role": 49.2,
         "soft_skill": 50.0,
-        "competitiveness": 91.0
+        "competitiveness": 98.5
       },
       "reasons": [
         "[skill] 关键词命中4/6: python↔python, tensorflow↔TensorFlow/PyTorch, deep_learning↔deep_learning, machine_learning↔machine_learning",
@@ -1576,12 +1576,12 @@
         "[city] 候选人无城市偏好(中性)",
         "[role] [role] 方向 同大类匹配:岗位「大模型应用开发」↔ 候选人适配「算法工程化」(权重0.82) — 华为实习将分类模型部署至ARM架构边缘网关并做轻量化感知训练压缩,中兴实习开发Python与Scapy自动化测试工具,具备算法落地与工程化能力。",
         "[soft_skill] 软技能无法从简历关键词中准确匹配",
-        "[competitiveness] 竞争力对齐「匹配」:候选人70分(学校c9/硕士/实习大厂/竞赛none) ↔ 岗位64分(民企/AI工程/门槛本科) 差值-6"
+        "[competitiveness] 竞争力对齐「匹配」:候选人70分(学校c9/硕士/实习大厂/竞赛none) ↔ 岗位69分(公司地位(未评级,默认中)/AI工程/门槛本科) 差值-1"
       ],
       "role_gated": false,
       "comp_label": "匹配",
       "candidate_score": 70,
-      "company_score": 64,
+      "company_score": 69,
       "hard_skills": [
         "Python",
         "深度学习",
@@ -1598,7 +1598,7 @@
     },
     {
       "rank": 33,
-      "score": 71.8,
+      "score": 72.3,
       "recommend": "推荐",
       "company": "中国电科-网通院",
       "position": "大数据与人工智能工程师",
@@ -1616,7 +1616,7 @@
         "city": 50.0,
         "role": 78.0,
         "soft_skill": 50.0,
-        "competitiveness": 88.0
+        "competitiveness": 92.5
       },
       "reasons": [
         "[skill] 关键词命中2/4: python↔python, machine_learning↔machine_learning",
@@ -1627,12 +1627,12 @@
         "[city] 候选人无城市偏好(中性)",
         "[role] [role] 方向 精确子类命中:岗位「机器学习算法」↔ 候选人适配「机器学习算法」(权重0.78) — 硕士主修模式识别与机器学习,华为实习构建STL独立森林时序异常检测模型,项目搭建ResNet-50迁移学习模型实现99.2%缺陷识别准确率,熟练使用PyTorch、TensorFlow、Scikit-learn。",
         "[soft_skill] 软技能无法从简历关键词中准确匹配",
-        "[competitiveness] 竞争力对齐「匹配」:候选人70分(学校c9/硕士/实习大厂/竞赛none) ↔ 岗位78分(国央企/算法/门槛硕士) 差值+8"
+        "[competitiveness] 竞争力对齐「匹配」:候选人70分(学校c9/硕士/实习大厂/竞赛none) ↔ 岗位75分(公司地位(未评级,默认中)/算法/门槛硕士) 差值+5"
       ],
       "role_gated": false,
       "comp_label": "匹配",
       "candidate_score": 70,
-      "company_score": 78,
+      "company_score": 75,
       "hard_skills": [
         "机器学习",
         "大数据",
@@ -1646,6 +1646,158 @@
     },
     {
       "rank": 34,
+      "score": 72.2,
+      "recommend": "推荐",
+      "company": "芯原股份",
+      "position": "算法工程师",
+      "city": "上海 南京 广州 成都 海口",
+      "job_category": "研发",
+      "education_req": "本科",
+      "deadline": null,
+      "apply_url": "https://campus.51job.com/VeriSilicon2027/post.html",
+      "dims": {
+        "skill": 51.666666666666664,
+        "hard_skill": 60.84905660377358,
+        "cert": 60.0,
+        "education": 100.0,
+        "major": 80.0,
+        "city": 50.0,
+        "role": 78.0,
+        "soft_skill": 50.0,
+        "competitiveness": 100.0
+      },
+      "reasons": [
+        "[skill] 关键词命中3/6: python↔python, deep_learning↔deep_learning, machine_learning↔machine_learning",
+        "[hard_skill] 硬技能命中3/5: python↔python, deep_learning↔deep_learning, machine_learning↔machine_learning",
+        "[cert] 岗位无证书硬性要求",
+        "[education] 候选人硕士学历满足岗位最低要求",
+        "[major] 岗位接受计算机科学与技术/数学/电子工程相关专业",
+        "[city] 候选人无城市偏好(中性)",
+        "[role] [role] 方向 精确子类命中:岗位「机器学习算法」↔ 候选人适配「机器学习算法」(权重0.78) — 硕士主修模式识别与机器学习,华为实习构建STL独立森林时序异常检测模型,项目搭建ResNet-50迁移学习模型实现99.2%缺陷识别准确率,熟练使用PyTorch、TensorFlow、Scikit-learn。",
+        "[soft_skill] 软技能无法从简历关键词中准确匹配",
+        "[competitiveness] 竞争力对齐「匹配」:候选人70分(学校c9/硕士/实习大厂/竞赛none) ↔ 岗位70分(公司地位(未评级,默认中)/算法/门槛本科) 差值+0"
+      ],
+      "role_gated": false,
+      "comp_label": "匹配",
+      "candidate_score": 70,
+      "company_score": 70,
+      "hard_skills": [
+        "算法设计",
+        "机器学习",
+        "深度学习",
+        "Python",
+        "C++"
+      ],
+      "keywords": [
+        "算法",
+        "机器学习",
+        "深度学习",
+        "Python",
+        "C++"
+      ]
+    },
+    {
+      "rank": 35,
+      "score": 71.7,
+      "recommend": "推荐",
+      "company": "四方股份",
+      "position": "多模态算法开发工程师",
+      "city": "北京,武汉,南京,湖州,保定,深圳,西安",
+      "job_category": "研发",
+      "education_req": "本科",
+      "deadline": null,
+      "apply_url": "https://sf-auto.zhiye.com/Campus",
+      "dims": {
+        "skill": 61.698113207547166,
+        "hard_skill": 75.86538461538461,
+        "cert": 60.0,
+        "education": 100.0,
+        "major": 80.0,
+        "city": 50.0,
+        "role": 46.8,
+        "soft_skill": 50.0,
+        "competitiveness": 100.0
+      },
+      "reasons": [
+        "[skill] 关键词命中3/5: python↔python, deep_learning↔deep_learning, machine_learning↔machine_learning",
+        "[hard_skill] 硬技能命中3/4: python↔python, deep_learning↔deep_learning, machine_learning↔machine_learning",
+        "[cert] 岗位无证书硬性要求",
+        "[education] 候选人硕士学历满足岗位最低要求",
+        "[major] 岗位接受计算机/人工智能相关专业",
+        "[city] 候选人无城市偏好(中性)",
+        "[role] [role] 方向 同大类匹配:岗位「多模态算法」↔ 候选人适配「机器学习算法」(权重0.78) — 硕士主修模式识别与机器学习,华为实习构建STL独立森林时序异常检测模型,项目搭建ResNet-50迁移学习模型实现99.2%缺陷识别准确率,熟练使用PyTorch、TensorFlow、Scikit-learn。",
+        "[soft_skill] 软技能无法从简历关键词中准确匹配",
+        "[competitiveness] 竞争力对齐「匹配」:候选人70分(学校c9/硕士/实习大厂/竞赛none) ↔ 岗位70分(公司地位(未评级,默认中)/算法/门槛本科) 差值+0"
+      ],
+      "role_gated": false,
+      "comp_label": "匹配",
+      "candidate_score": 70,
+      "company_score": 70,
+      "hard_skills": [
+        "多模态",
+        "深度学习",
+        "Python",
+        "机器学习"
+      ],
+      "keywords": [
+        "多模态",
+        "深度学习",
+        "Python",
+        "算法"
+      ]
+    },
+    {
+      "rank": 36,
+      "score": 71.7,
+      "recommend": "推荐",
+      "company": "瑞泊",
+      "position": "大模型算法实习生",
+      "city": "北京",
+      "job_category": "研发",
+      "education_req": "本科",
+      "deadline": null,
+      "apply_url": "hr@xraybot.com",
+      "dims": {
+        "skill": 61.698113207547166,
+        "hard_skill": 75.86538461538461,
+        "cert": 60.0,
+        "education": 100.0,
+        "major": 80.0,
+        "city": 50.0,
+        "role": 46.8,
+        "soft_skill": 50.0,
+        "competitiveness": 100.0
+      },
+      "reasons": [
+        "[skill] 关键词命中3/5: python↔python, deep_learning↔deep_learning, machine_learning↔machine_learning",
+        "[hard_skill] 硬技能命中3/4: python↔python, deep_learning↔deep_learning, machine_learning↔machine_learning",
+        "[cert] 岗位无证书硬性要求",
+        "[education] 候选人硕士学历满足岗位最低要求",
+        "[major] 岗位接受计算机相关专业",
+        "[city] 候选人无城市偏好(中性)",
+        "[role] [role] 方向 同大类匹配:岗位「大模型算法」↔ 候选人适配「机器学习算法」(权重0.78) — 硕士主修模式识别与机器学习,华为实习构建STL独立森林时序异常检测模型,项目搭建ResNet-50迁移学习模型实现99.2%缺陷识别准确率,熟练使用PyTorch、TensorFlow、Scikit-learn。",
+        "[soft_skill] 软技能无法从简历关键词中准确匹配",
+        "[competitiveness] 竞争力对齐「匹配」:候选人70分(学校c9/硕士/实习大厂/竞赛none) ↔ 岗位70分(公司地位(未评级,默认中)/算法/门槛本科) 差值+0"
+      ],
+      "role_gated": false,
+      "comp_label": "匹配",
+      "candidate_score": 70,
+      "company_score": 70,
+      "hard_skills": [
+        "大模型",
+        "机器学习",
+        "深度学习",
+        "Python"
+      ],
+      "keywords": [
+        "大模型",
+        "算法",
+        "机器学习",
+        "Python"
+      ]
+    },
+    {
+      "rank": 37,
       "score": 71.7,
       "recommend": "推荐",
       "company": "谱星航天",
@@ -1675,12 +1827,12 @@
         "[city] 候选人无城市偏好(中性)",
         "[role] [role] 方向 精确子类命中:岗位「机器学习算法」↔ 候选人适配「机器学习算法」(权重0.78) — 硕士主修模式识别与机器学习,华为实习构建STL独立森林时序异常检测模型,项目搭建ResNet-50迁移学习模型实现99.2%缺陷识别准确率,熟练使用PyTorch、TensorFlow、Scikit-learn。",
         "[soft_skill] 软技能无法从简历关键词中准确匹配",
-        "[competitiveness] 竞争力对齐「匹配」:候选人70分(学校c9/硕士/实习大厂/竞赛none) ↔ 岗位65分(民企/算法/门槛硕士) 差值-5"
+        "[competitiveness] 竞争力对齐「匹配」:候选人70分(学校c9/硕士/实习大厂/竞赛none) ↔ 岗位75分(公司地位(未评级,默认中)/算法/门槛硕士) 差值+5"
       ],
       "role_gated": false,
       "comp_label": "匹配",
       "candidate_score": 70,
-      "company_score": 65,
+      "company_score": 75,
       "hard_skills": [
         "深度学习",
         "遥感影像",
@@ -1696,8 +1848,8 @@
       ]
     },
     {
-      "rank": 35,
-      "score": 71.5,
+      "rank": 38,
+      "score": 71.6,
       "recommend": "推荐",
       "company": "华芯天微",
       "position": "FPGA工程师",
@@ -1715,10 +1867,10 @@
         "city": 50.0,
         "role": 65.0,
         "soft_skill": 50.0,
-        "competitiveness": 95.5
+        "competitiveness": 97.0
       },
       "reasons": [
-        "[skill] 关键词命中2/3: fpga↔FPGA开发, FPGA开发↔fpga",
+        "[skill] 关键词命中2/3: fpga↔fpga, FPGA开发↔FPGA开发",
         "[hard_skill] 硬技能命中2/4: fpga↔fpga, FPGA开发↔fpga",
         "[cert] 岗位无证书硬性要求",
         "[education] 候选人硕士学历满足岗位最低要求",
@@ -1726,12 +1878,12 @@
         "[city] 候选人无城市偏好(中性)",
         "[role] [role] 方向 精确子类命中:岗位「FPGA开发」↔ 候选人适配「FPGA开发」(权重0.65) — 硕士主修FPGA设计课程,熟悉Verilog HDL与Quartus Prime工具,具备数字电路与硬件描述语言基础。",
         "[soft_skill] 软技能无法从简历关键词中准确匹配",
-        "[competitiveness] 竞争力对齐「匹配」:候选人70分(学校c9/硕士/实习大厂/竞赛none) ↔ 岗位67分(民企/芯片半导体/门槛硕士) 差值-3"
+        "[competitiveness] 竞争力对齐「匹配」:候选人70分(学校c9/硕士/实习大厂/竞赛none) ↔ 岗位72分(公司地位(未评级,默认中)/芯片半导体/门槛硕士) 差值+2"
       ],
       "role_gated": false,
       "comp_label": "匹配",
       "candidate_score": 70,
-      "company_score": 67,
+      "company_score": 72,
       "hard_skills": [
         "Verilog",
         "VHDL",
@@ -1745,313 +1897,8 @@
       ]
     },
     {
-      "rank": 36,
-      "score": 71.4,
-      "recommend": "推荐",
-      "company": "芯原股份",
-      "position": "算法工程师",
-      "city": "上海 南京 广州 成都 海口",
-      "job_category": "研发",
-      "education_req": "本科",
-      "deadline": null,
-      "apply_url": "https://campus.51job.com/VeriSilicon2027/post.html",
-      "dims": {
-        "skill": 51.666666666666664,
-        "hard_skill": 60.84905660377358,
-        "cert": 60.0,
-        "education": 100.0,
-        "major": 80.0,
-        "city": 50.0,
-        "role": 78.0,
-        "soft_skill": 50.0,
-        "competitiveness": 92.5
-      },
-      "reasons": [
-        "[skill] 关键词命中3/6: python↔python, deep_learning↔deep_learning, machine_learning↔machine_learning",
-        "[hard_skill] 硬技能命中3/5: python↔python, deep_learning↔deep_learning, machine_learning↔machine_learning",
-        "[cert] 岗位无证书硬性要求",
-        "[education] 候选人硕士学历满足岗位最低要求",
-        "[major] 岗位接受计算机科学与技术/数学/电子工程相关专业",
-        "[city] 候选人无城市偏好(中性)",
-        "[role] [role] 方向 精确子类命中:岗位「机器学习算法」↔ 候选人适配「机器学习算法」(权重0.78) — 硕士主修模式识别与机器学习,华为实习构建STL独立森林时序异常检测模型,项目搭建ResNet-50迁移学习模型实现99.2%缺陷识别准确率,熟练使用PyTorch、TensorFlow、Scikit-learn。",
-        "[soft_skill] 软技能无法从简历关键词中准确匹配",
-        "[competitiveness] 竞争力对齐「匹配」:候选人70分(学校c9/硕士/实习大厂/竞赛none) ↔ 岗位65分(民企/算法/门槛本科) 差值-5"
-      ],
-      "role_gated": false,
-      "comp_label": "匹配",
-      "candidate_score": 70,
-      "company_score": 65,
-      "hard_skills": [
-        "算法设计",
-        "机器学习",
-        "深度学习",
-        "Python",
-        "C++"
-      ],
-      "keywords": [
-        "算法",
-        "机器学习",
-        "深度学习",
-        "Python",
-        "C++"
-      ]
-    },
-    {
-      "rank": 37,
-      "score": 71.0,
-      "recommend": "推荐",
-      "company": "四方股份",
-      "position": "多模态算法开发工程师",
-      "city": "北京,武汉,南京,湖州,保定,深圳,西安",
-      "job_category": "研发",
-      "education_req": "本科",
-      "deadline": null,
-      "apply_url": "https://sf-auto.zhiye.com/Campus",
-      "dims": {
-        "skill": 61.698113207547166,
-        "hard_skill": 75.86538461538461,
-        "cert": 60.0,
-        "education": 100.0,
-        "major": 80.0,
-        "city": 50.0,
-        "role": 46.8,
-        "soft_skill": 50.0,
-        "competitiveness": 92.5
-      },
-      "reasons": [
-        "[skill] 关键词命中3/5: python↔python, deep_learning↔deep_learning, machine_learning↔machine_learning",
-        "[hard_skill] 硬技能命中3/4: python↔python, deep_learning↔deep_learning, machine_learning↔machine_learning",
-        "[cert] 岗位无证书硬性要求",
-        "[education] 候选人硕士学历满足岗位最低要求",
-        "[major] 岗位接受计算机/人工智能相关专业",
-        "[city] 候选人无城市偏好(中性)",
-        "[role] [role] 方向 同大类匹配:岗位「多模态算法」↔ 候选人适配「机器学习算法」(权重0.78) — 硕士主修模式识别与机器学习,华为实习构建STL独立森林时序异常检测模型,项目搭建ResNet-50迁移学习模型实现99.2%缺陷识别准确率,熟练使用PyTorch、TensorFlow、Scikit-learn。",
-        "[soft_skill] 软技能无法从简历关键词中准确匹配",
-        "[competitiveness] 竞争力对齐「匹配」:候选人70分(学校c9/硕士/实习大厂/竞赛none) ↔ 岗位65分(民企/算法/门槛本科) 差值-5"
-      ],
-      "role_gated": false,
-      "comp_label": "匹配",
-      "candidate_score": 70,
-      "company_score": 65,
-      "hard_skills": [
-        "多模态",
-        "深度学习",
-        "Python",
-        "机器学习"
-      ],
-      "keywords": [
-        "多模态",
-        "深度学习",
-        "Python",
-        "算法"
-      ]
-    },
-    {
-      "rank": 38,
-      "score": 71.0,
-      "recommend": "推荐",
-      "company": "瑞泊",
-      "position": "大模型算法实习生",
-      "city": "北京",
-      "job_category": "研发",
-      "education_req": "本科",
-      "deadline": null,
-      "apply_url": "hr@xraybot.com",
-      "dims": {
-        "skill": 61.698113207547166,
-        "hard_skill": 75.86538461538461,
-        "cert": 60.0,
-        "education": 100.0,
-        "major": 80.0,
-        "city": 50.0,
-        "role": 46.8,
-        "soft_skill": 50.0,
-        "competitiveness": 92.5
-      },
-      "reasons": [
-        "[skill] 关键词命中3/5: python↔python, deep_learning↔deep_learning, machine_learning↔machine_learning",
-        "[hard_skill] 硬技能命中3/4: python↔python, deep_learning↔deep_learning, machine_learning↔machine_learning",
-        "[cert] 岗位无证书硬性要求",
-        "[education] 候选人硕士学历满足岗位最低要求",
-        "[major] 岗位接受计算机相关专业",
-        "[city] 候选人无城市偏好(中性)",
-        "[role] [role] 方向 同大类匹配:岗位「大模型算法」↔ 候选人适配「机器学习算法」(权重0.78) — 硕士主修模式识别与机器学习,华为实习构建STL独立森林时序异常检测模型,项目搭建ResNet-50迁移学习模型实现99.2%缺陷识别准确率,熟练使用PyTorch、TensorFlow、Scikit-learn。",
-        "[soft_skill] 软技能无法从简历关键词中准确匹配",
-        "[competitiveness] 竞争力对齐「匹配」:候选人70分(学校c9/硕士/实习大厂/竞赛none) ↔ 岗位75分(民企/算法/门槛本科) 差值+5"
-      ],
-      "role_gated": false,
-      "comp_label": "匹配",
-      "candidate_score": 70,
-      "company_score": 75,
-      "hard_skills": [
-        "大模型",
-        "机器学习",
-        "深度学习",
-        "Python"
-      ],
-      "keywords": [
-        "大模型",
-        "算法",
-        "机器学习",
-        "Python"
-      ]
-    },
-    {
       "rank": 39,
-      "score": 70.7,
-      "recommend": "推荐",
-      "company": "中科光电",
-      "position": "算法类",
-      "city": "合肥",
-      "job_category": "研发",
-      "education_req": "硕士",
-      "deadline": null,
-      "apply_url": "https://app.mokahr.com/campus-recruitment/hdzn/151324#/jobs?page=1&anchorName=jobsList",
-      "dims": {
-        "skill": 44.49350649350649,
-        "hard_skill": 60.84905660377358,
-        "cert": 60.0,
-        "education": 100.0,
-        "major": 80.0,
-        "city": 50.0,
-        "role": 78.0,
-        "soft_skill": 50.0,
-        "competitiveness": 100.0
-      },
-      "reasons": [
-        "[skill] 关键词命中3/7: python↔python, deep_learning↔deep_learning, machine_learning↔machine_learning",
-        "[hard_skill] 硬技能命中3/5: python↔python, deep_learning↔deep_learning, machine_learning↔machine_learning",
-        "[cert] 岗位无证书硬性要求",
-        "[education] 候选人硕士学历满足岗位最低要求",
-        "[major] 岗位接受计算机科学、人工智能、模式识别等相关专业专业",
-        "[city] 候选人无城市偏好(中性)",
-        "[role] [role] 方向 精确子类命中:岗位「机器学习算法」↔ 候选人适配「机器学习算法」(权重0.78) — 硕士主修模式识别与机器学习,华为实习构建STL独立森林时序异常检测模型,项目搭建ResNet-50迁移学习模型实现99.2%缺陷识别准确率,熟练使用PyTorch、TensorFlow、Scikit-learn。",
-        "[soft_skill] 软技能无法从简历关键词中准确匹配",
-        "[competitiveness] 竞争力对齐「匹配」:候选人70分(学校c9/硕士/实习大厂/竞赛none) ↔ 岗位70分(民企/算法/门槛硕士) 差值+0"
-      ],
-      "role_gated": false,
-      "comp_label": "匹配",
-      "candidate_score": 70,
-      "company_score": 70,
-      "hard_skills": [
-        "机器学习",
-        "深度学习",
-        "Python",
-        "C++",
-        "图像处理"
-      ],
-      "keywords": [
-        "算法",
-        "机器学习",
-        "深度学习",
-        "图像处理",
-        "校招提前批"
-      ]
-    },
-    {
-      "rank": 40,
-      "score": 70.5,
-      "recommend": "推荐",
-      "company": "天锐星通",
-      "position": "AI agent工程师",
-      "city": "成都",
-      "job_category": "研发",
-      "education_req": "硕士",
-      "deadline": null,
-      "apply_url": "https://t-ray.zhiye.com/campus/jobs",
-      "dims": {
-        "skill": 51.132075471698116,
-        "hard_skill": 50.56603773584906,
-        "cert": 60.0,
-        "education": 100.0,
-        "major": 80.0,
-        "city": 50.0,
-        "role": 78.0,
-        "soft_skill": 50.0,
-        "competitiveness": 100.0
-      },
-      "reasons": [
-        "[skill] 关键词命中2/4: python↔python, machine_learning↔machine_learning",
-        "[hard_skill] 硬技能命中2/4: python↔python, machine_learning↔machine_learning",
-        "[cert] 岗位无证书硬性要求",
-        "[education] 候选人硕士学历满足岗位最低要求",
-        "[major] 岗位接受计算机/人工智能相关专业",
-        "[city] 候选人无城市偏好(中性)",
-        "[role] [role] 方向 精确子类命中:岗位「机器学习算法」↔ 候选人适配「机器学习算法」(权重0.78) — 硕士主修模式识别与机器学习,华为实习构建STL独立森林时序异常检测模型,项目搭建ResNet-50迁移学习模型实现99.2%缺陷识别准确率,熟练使用PyTorch、TensorFlow、Scikit-learn。",
-        "[soft_skill] 软技能无法从简历关键词中准确匹配",
-        "[competitiveness] 竞争力对齐「匹配」:候选人70分(学校c9/硕士/实习大厂/竞赛none) ↔ 岗位70分(民企/算法/门槛硕士) 差值+0"
-      ],
-      "role_gated": false,
-      "comp_label": "匹配",
-      "candidate_score": 70,
-      "company_score": 70,
-      "hard_skills": [
-        "AI",
-        "机器学习",
-        "Python",
-        "Agent"
-      ],
-      "keywords": [
-        "AI",
-        "Agent",
-        "机器学习",
-        "Python"
-      ]
-    },
-    {
-      "rank": 41,
-      "score": 70.4,
-      "recommend": "推荐",
-      "company": "中电锦江",
-      "position": "信号处理设计师",
-      "city": "成都",
-      "job_category": "研发",
-      "education_req": "硕士",
-      "deadline": null,
-      "apply_url": "https://mp.weixin.qq.com/s/Vf_rAneDi62eISDVjnijkw",
-      "dims": {
-        "skill": 51.63636363636363,
-        "hard_skill": 75.84905660377359,
-        "cert": 60.0,
-        "education": 100.0,
-        "major": 80.0,
-        "city": 50.0,
-        "role": 51.0,
-        "soft_skill": 50.0,
-        "competitiveness": 100.0
-      },
-      "reasons": [
-        "[skill] 关键词命中3/6: fpga↔fpga, DSP加速库↔dsp, Matlab↔MATLAB",
-        "[hard_skill] 硬技能命中3/4: fpga↔fpga, DSP加速库↔dsp, Matlab↔MATLAB",
-        "[cert] 岗位无证书硬性要求",
-        "[education] 候选人硕士学历满足岗位最低要求",
-        "[major] 岗位接受电子信息、信息与通信工程、仪器科学与技术等相关专业专业",
-        "[city] 候选人无城市偏好(中性)",
-        "[role] [role] 方向 同大类匹配:岗位「开发」↔ 候选人适配「嵌入式软件」(权重0.85) — 硕士主修嵌入式系统开发,项目基于TI IWR6843开发板编写C语言信号处理链,熟悉C/C++、Keil MDK,持有软考中级(嵌入式系统设计师)证书。",
-        "[soft_skill] 软技能无法从简历关键词中准确匹配",
-        "[competitiveness] 竞争力对齐「匹配」:候选人70分(学校c9/硕士/实习大厂/竞赛none) ↔ 岗位70分(国央企/开发/门槛硕士) 差值+0"
-      ],
-      "role_gated": false,
-      "comp_label": "匹配",
-      "candidate_score": 70,
-      "company_score": 70,
-      "hard_skills": [
-        "信号处理",
-        "FPGA",
-        "DSP",
-        "MATLAB"
-      ],
-      "keywords": [
-        "信号处理",
-        "雷达",
-        "FPGA",
-        "DSP",
-        "军工"
-      ]
-    },
-    {
-      "rank": 42,
-      "score": 70.3,
+      "score": 71.0,
       "recommend": "推荐",
       "company": "阳光电源",
       "position": "算法模型",
@@ -2069,7 +1916,7 @@
         "city": 50.0,
         "role": 78.0,
         "soft_skill": 50.0,
-        "competitiveness": 92.5
+        "competitiveness": 100.0
       },
       "reasons": [
         "[skill] 关键词命中2/5: python↔python, machine_learning↔machine_learning",
@@ -2080,12 +1927,12 @@
         "[city] 候选人无城市偏好(中性)",
         "[role] [role] 方向 精确子类命中:岗位「机器学习算法」↔ 候选人适配「机器学习算法」(权重0.78) — 硕士主修模式识别与机器学习,华为实习构建STL独立森林时序异常检测模型,项目搭建ResNet-50迁移学习模型实现99.2%缺陷识别准确率,熟练使用PyTorch、TensorFlow、Scikit-learn。",
         "[soft_skill] 软技能无法从简历关键词中准确匹配",
-        "[competitiveness] 竞争力对齐「匹配」:候选人70分(学校c9/硕士/实习大厂/竞赛none) ↔ 岗位65分(民企/算法/门槛本科) 差值-5"
+        "[competitiveness] 竞争力对齐「匹配」:候选人70分(学校c9/硕士/实习大厂/竞赛none) ↔ 岗位70分(公司地位(未评级,默认中)/算法/门槛本科) 差值+0"
       ],
       "role_gated": false,
       "comp_label": "匹配",
       "candidate_score": 70,
-      "company_score": 65,
+      "company_score": 70,
       "hard_skills": [
         "算法",
         "机器学习",
@@ -2099,59 +1946,8 @@
       ]
     },
     {
-      "rank": 43,
-      "score": 69.9,
-      "recommend": "推荐",
-      "company": "杰华特",
-      "position": "AI工程师",
-      "city": "上海 南京 厦门 成都 杭州 深圳 珠海 西安",
-      "job_category": "研发",
-      "education_req": "硕士",
-      "deadline": null,
-      "apply_url": "https://joulwatt.zhiye.com/campus/jobs",
-      "dims": {
-        "skill": 51.666666666666664,
-        "hard_skill": 75.86538461538461,
-        "cert": 60.0,
-        "education": 100.0,
-        "major": 80.0,
-        "city": 50.0,
-        "role": 49.2,
-        "soft_skill": 50.0,
-        "competitiveness": 98.5
-      },
-      "reasons": [
-        "[skill] 关键词命中3/6: python↔python, deep_learning↔deep_learning, machine_learning↔machine_learning",
-        "[hard_skill] 硬技能命中3/4: python↔python, deep_learning↔deep_learning, machine_learning↔machine_learning",
-        "[cert] 岗位无证书硬性要求",
-        "[education] 候选人硕士学历满足岗位最低要求",
-        "[major] 岗位接受计算机科学（人工智能、机器学习）/微电子学与固体电子学/集成电路工程/电子科学与技术等相关专业专业",
-        "[city] 候选人无城市偏好(中性)",
-        "[role] [role] 方向 同大类匹配:岗位「大模型应用开发」↔ 候选人适配「算法工程化」(权重0.82) — 华为实习将分类模型部署至ARM架构边缘网关并做轻量化感知训练压缩,中兴实习开发Python与Scapy自动化测试工具,具备算法落地与工程化能力。",
-        "[soft_skill] 软技能无法从简历关键词中准确匹配",
-        "[competitiveness] 竞争力对齐「匹配」:候选人70分(学校c9/硕士/实习大厂/竞赛none) ↔ 岗位69分(民企/AI工程/门槛硕士) 差值-1"
-      ],
-      "role_gated": false,
-      "comp_label": "匹配",
-      "candidate_score": 70,
-      "company_score": 69,
-      "hard_skills": [
-        "人工智能",
-        "机器学习",
-        "深度学习",
-        "Python"
-      ],
-      "keywords": [
-        "AI",
-        "机器学习",
-        "深度学习",
-        "Python",
-        "算法"
-      ]
-    },
-    {
-      "rank": 44,
-      "score": 69.8,
+      "rank": 40,
+      "score": 70.5,
       "recommend": "推荐",
       "company": "四方股份",
       "position": "FPGA研发工程师",
@@ -2169,7 +1965,7 @@
         "city": 50.0,
         "role": 65.0,
         "soft_skill": 50.0,
-        "competitiveness": 88.0
+        "competitiveness": 95.5
       },
       "reasons": [
         "[skill] 关键词命中1/2: fpga↔fpga",
@@ -2180,12 +1976,12 @@
         "[city] 候选人无城市偏好(中性)",
         "[role] [role] 方向 精确子类命中:岗位「FPGA开发」↔ 候选人适配「FPGA开发」(权重0.65) — 硕士主修FPGA设计课程,熟悉Verilog HDL与Quartus Prime工具,具备数字电路与硬件描述语言基础。",
         "[soft_skill] 软技能无法从简历关键词中准确匹配",
-        "[competitiveness] 竞争力对齐「匹配」:候选人70分(学校c9/硕士/实习大厂/竞赛none) ↔ 岗位62分(民企/芯片半导体/门槛本科) 差值-8"
+        "[competitiveness] 竞争力对齐「匹配」:候选人70分(学校c9/硕士/实习大厂/竞赛none) ↔ 岗位67分(公司地位(未评级,默认中)/芯片半导体/门槛本科) 差值-3"
       ],
       "role_gated": false,
       "comp_label": "匹配",
       "candidate_score": 70,
-      "company_score": 62,
+      "company_score": 67,
       "hard_skills": [
         "FPGA",
         "Verilog",
@@ -2198,204 +1994,8 @@
       ]
     },
     {
-      "rank": 45,
-      "score": 69.7,
-      "recommend": "推荐",
-      "company": "微步在线",
-      "position": "Python工程师",
-      "city": "北京,上海,苏州,杭州,深圳,广州,成都,昆明,济南,香港",
-      "job_category": "研发",
-      "education_req": "本科",
-      "deadline": null,
-      "apply_url": "https://app.mokahr.com/campus-recruitment/threatbook/39679?locale=zh-CN#/jobs?commitment0=&page=1&anchorName=jobsList",
-      "dims": {
-        "skill": 33.899371069182386,
-        "hard_skill": 100.0,
-        "cert": 60.0,
-        "education": 100.0,
-        "major": 80.0,
-        "city": 50.0,
-        "role": 51.0,
-        "soft_skill": 50.0,
-        "competitiveness": 92.5
-      },
-      "reasons": [
-        "[skill] 关键词命中1/3: python↔python",
-        "[hard_skill] 硬技能命中1/1: python↔python",
-        "[cert] 岗位无证书硬性要求",
-        "[education] 候选人硕士学历满足岗位最低要求",
-        "[major] 岗位接受计算机相关专业",
-        "[city] 候选人无城市偏好(中性)",
-        "[role] [role] 方向 同大类匹配:岗位「后端开发」↔ 候选人适配「嵌入式软件」(权重0.85) — 硕士主修嵌入式系统开发,项目基于TI IWR6843开发板编写C语言信号处理链,熟悉C/C++、Keil MDK,持有软考中级(嵌入式系统设计师)证书。",
-        "[soft_skill] 软技能无法从简历关键词中准确匹配",
-        "[competitiveness] 竞争力对齐「匹配」:候选人70分(学校c9/硕士/实习大厂/竞赛none) ↔ 岗位65分(民企/开发/门槛本科) 差值-5"
-      ],
-      "role_gated": false,
-      "comp_label": "匹配",
-      "candidate_score": 70,
-      "company_score": 65,
-      "hard_skills": [
-        "Python"
-      ],
-      "keywords": [
-        "Python",
-        "后端开发",
-        "研发"
-      ]
-    },
-    {
-      "rank": 46,
-      "score": 69.0,
-      "recommend": "推荐",
-      "company": "DJI 大疆",
-      "position": "计算机视觉算法工程师",
-      "city": "深圳,上海,北京",
-      "job_category": "研发",
-      "education_req": "本科",
-      "deadline": null,
-      "apply_url": "careers.dji.com",
-      "dims": {
-        "skill": 51.666666666666664,
-        "hard_skill": 75.86538461538461,
-        "cert": 60.0,
-        "education": 100.0,
-        "major": 80.0,
-        "city": 50.0,
-        "role": 46.8,
-        "soft_skill": 50.0,
-        "competitiveness": 92.5
-      },
-      "reasons": [
-        "[skill] 关键词命中3/6: python↔python, opencv↔opencv, deep_learning↔deep_learning",
-        "[hard_skill] 硬技能命中3/4: python↔python, opencv↔opencv, deep_learning↔deep_learning",
-        "[cert] 岗位无证书硬性要求",
-        "[education] 候选人硕士学历满足岗位最低要求",
-        "[major] 岗位接受计算机/电子工程/自动化相关专业",
-        "[city] 候选人无城市偏好(中性)",
-        "[role] [role] 方向 同大类匹配:岗位「CV算法」↔ 候选人适配「机器学习算法」(权重0.78) — 硕士主修模式识别与机器学习,华为实习构建STL独立森林时序异常检测模型,项目搭建ResNet-50迁移学习模型实现99.2%缺陷识别准确率,熟练使用PyTorch、TensorFlow、Scikit-learn。",
-        "[soft_skill] 软技能无法从简历关键词中准确匹配",
-        "[competitiveness] 竞争力对齐「匹配」:候选人70分(学校c9/硕士/实习大厂/竞赛none) ↔ 岗位75分(民企/算法/门槛本科) 差值+5"
-      ],
-      "role_gated": false,
-      "comp_label": "匹配",
-      "candidate_score": 70,
-      "company_score": 75,
-      "hard_skills": [
-        "计算机视觉",
-        "深度学习",
-        "Python",
-        "OpenCV"
-      ],
-      "keywords": [
-        "计算机视觉",
-        "深度学习",
-        "算法工程师",
-        "图像处理"
-      ]
-    },
-    {
-      "rank": 47,
-      "score": 68.9,
-      "recommend": "推荐",
-      "company": "南芯科技",
-      "position": "算法工程师",
-      "city": "上海,成都,深圳,北京,西安,南京,珠海,杭州,苏州",
-      "job_category": "研发",
-      "education_req": "本科",
-      "deadline": null,
-      "apply_url": "hr-candidate@southchip.com",
-      "dims": {
-        "skill": 34.4047619047619,
-        "hard_skill": 67.23270440251571,
-        "cert": 60.0,
-        "education": 100.0,
-        "major": 80.0,
-        "city": 50.0,
-        "role": 78.0,
-        "soft_skill": 50.0,
-        "competitiveness": 92.5
-      },
-      "reasons": [
-        "[skill] 关键词命中2/6: c_language↔c_language, Matlab↔MATLAB",
-        "[hard_skill] 硬技能命中2/3: c_language↔c_language, Matlab↔MATLAB",
-        "[cert] 岗位无证书硬性要求",
-        "[education] 候选人硕士学历满足岗位最低要求",
-        "[major] 岗位接受计算机/数学/电子工程相关专业",
-        "[city] 候选人无城市偏好(中性)",
-        "[role] [role] 方向 精确子类命中:岗位「机器学习算法」↔ 候选人适配「机器学习算法」(权重0.78) — 硕士主修模式识别与机器学习,华为实习构建STL独立森林时序异常检测模型,项目搭建ResNet-50迁移学习模型实现99.2%缺陷识别准确率,熟练使用PyTorch、TensorFlow、Scikit-learn。",
-        "[soft_skill] 软技能无法从简历关键词中准确匹配",
-        "[competitiveness] 竞争力对齐「匹配」:候选人70分(学校c9/硕士/实习大厂/竞赛none) ↔ 岗位65分(民企/算法/门槛本科) 差值-5"
-      ],
-      "role_gated": false,
-      "comp_label": "匹配",
-      "candidate_score": 70,
-      "company_score": 65,
-      "hard_skills": [
-        "算法设计",
-        "C/C++",
-        "MATLAB"
-      ],
-      "keywords": [
-        "算法",
-        "C++",
-        "MATLAB",
-        "优化"
-      ]
-    },
-    {
-      "rank": 48,
-      "score": 68.7,
-      "recommend": "推荐",
-      "company": "星尘智能",
-      "position": "大模型算法工程师（后训练）",
-      "city": "深圳",
-      "job_category": "研发",
-      "education_req": "本科",
-      "deadline": null,
-      "apply_url": "https://app.mokahr.com/campus-recruitment/astribot/144862?locale=zh-CN&sessionid=#/jobs",
-      "dims": {
-        "skill": 61.698113207547166,
-        "hard_skill": 60.84905660377358,
-        "cert": 60.0,
-        "education": 100.0,
-        "major": 80.0,
-        "city": 50.0,
-        "role": 46.8,
-        "soft_skill": 50.0,
-        "competitiveness": 92.5
-      },
-      "reasons": [
-        "[skill] 关键词命中3/5: python↔python, pytorch↔pytorch, deep_learning↔deep_learning",
-        "[hard_skill] 硬技能命中3/5: python↔python, pytorch↔pytorch, deep_learning↔deep_learning",
-        "[cert] 岗位无证书硬性要求",
-        "[education] 候选人硕士学历满足岗位最低要求",
-        "[major] 岗位接受计算机相关专业",
-        "[city] 候选人无城市偏好(中性)",
-        "[role] [role] 方向 同大类匹配:岗位「大模型算法」↔ 候选人适配「机器学习算法」(权重0.78) — 硕士主修模式识别与机器学习,华为实习构建STL独立森林时序异常检测模型,项目搭建ResNet-50迁移学习模型实现99.2%缺陷识别准确率,熟练使用PyTorch、TensorFlow、Scikit-learn。",
-        "[soft_skill] 软技能无法从简历关键词中准确匹配",
-        "[competitiveness] 竞争力对齐「匹配」:候选人70分(学校c9/硕士/实习大厂/竞赛none) ↔ 岗位75分(民企/算法/门槛本科) 差值+5"
-      ],
-      "role_gated": false,
-      "comp_label": "匹配",
-      "candidate_score": 70,
-      "company_score": 75,
-      "hard_skills": [
-        "大模型",
-        "后训练",
-        "深度学习",
-        "Python",
-        "PyTorch"
-      ],
-      "keywords": [
-        "大模型",
-        "后训练",
-        "深度学习",
-        "PyTorch"
-      ]
-    },
-    {
-      "rank": 49,
-      "score": 68.6,
+      "rank": 41,
+      "score": 70.4,
       "recommend": "推荐",
       "company": "东吴证券",
       "position": "AI开发工程师",
@@ -2413,7 +2013,7 @@
         "city": 50.0,
         "role": 49.2,
         "soft_skill": 50.0,
-        "competitiveness": 76.0
+        "competitiveness": 94.0
       },
       "reasons": [
         "[skill] 关键词命中4/8: TensorFlow Lite Micro↔tensorflow, python↔python, deep_learning↔deep_learning, machine_learning↔machine_learning",
@@ -2424,12 +2024,12 @@
         "[city] 候选人无城市偏好(中性)",
         "[role] [role] 方向 同大类匹配:岗位「大模型应用开发」↔ 候选人适配「算法工程化」(权重0.82) — 华为实习将分类模型部署至ARM架构边缘网关并做轻量化感知训练压缩,中兴实习开发Python与Scapy自动化测试工具,具备算法落地与工程化能力。",
         "[soft_skill] 软技能无法从简历关键词中准确匹配",
-        "[competitiveness] 竞争力对齐「匹配」:候选人70分(学校c9/硕士/实习大厂/竞赛none) ↔ 岗位86分(国央企/AI工程/门槛硕士) 差值+16"
+        "[competitiveness] 竞争力对齐「匹配」:候选人70分(学校c9/硕士/实习大厂/竞赛none) ↔ 岗位74分(公司地位(未评级,默认中)/AI工程/门槛硕士) 差值+4"
       ],
       "role_gated": false,
       "comp_label": "匹配",
       "candidate_score": 70,
-      "company_score": 86,
+      "company_score": 74,
       "hard_skills": [
         "Python",
         "Java",
@@ -2446,8 +2046,362 @@
       ]
     },
     {
-      "rank": 50,
-      "score": 68.3,
+      "rank": 42,
+      "score": 70.0,
+      "recommend": "推荐",
+      "company": "中科光电",
+      "position": "算法类",
+      "city": "合肥",
+      "job_category": "研发",
+      "education_req": "硕士",
+      "deadline": null,
+      "apply_url": "https://app.mokahr.com/campus-recruitment/hdzn/151324#/jobs?page=1&anchorName=jobsList",
+      "dims": {
+        "skill": 44.49350649350649,
+        "hard_skill": 60.84905660377358,
+        "cert": 60.0,
+        "education": 100.0,
+        "major": 80.0,
+        "city": 50.0,
+        "role": 78.0,
+        "soft_skill": 50.0,
+        "competitiveness": 92.5
+      },
+      "reasons": [
+        "[skill] 关键词命中3/7: python↔python, deep_learning↔deep_learning, machine_learning↔machine_learning",
+        "[hard_skill] 硬技能命中3/5: python↔python, deep_learning↔deep_learning, machine_learning↔machine_learning",
+        "[cert] 岗位无证书硬性要求",
+        "[education] 候选人硕士学历满足岗位最低要求",
+        "[major] 岗位接受计算机科学、人工智能、模式识别等相关专业专业",
+        "[city] 候选人无城市偏好(中性)",
+        "[role] [role] 方向 精确子类命中:岗位「机器学习算法」↔ 候选人适配「机器学习算法」(权重0.78) — 硕士主修模式识别与机器学习,华为实习构建STL独立森林时序异常检测模型,项目搭建ResNet-50迁移学习模型实现99.2%缺陷识别准确率,熟练使用PyTorch、TensorFlow、Scikit-learn。",
+        "[soft_skill] 软技能无法从简历关键词中准确匹配",
+        "[competitiveness] 竞争力对齐「匹配」:候选人70分(学校c9/硕士/实习大厂/竞赛none) ↔ 岗位75分(公司地位(未评级,默认中)/算法/门槛硕士) 差值+5"
+      ],
+      "role_gated": false,
+      "comp_label": "匹配",
+      "candidate_score": 70,
+      "company_score": 75,
+      "hard_skills": [
+        "机器学习",
+        "深度学习",
+        "Python",
+        "C++",
+        "图像处理"
+      ],
+      "keywords": [
+        "算法",
+        "机器学习",
+        "深度学习",
+        "图像处理",
+        "校招提前批"
+      ]
+    },
+    {
+      "rank": 43,
+      "score": 69.8,
+      "recommend": "推荐",
+      "company": "天锐星通",
+      "position": "AI agent工程师",
+      "city": "成都",
+      "job_category": "研发",
+      "education_req": "硕士",
+      "deadline": null,
+      "apply_url": "https://t-ray.zhiye.com/campus/jobs",
+      "dims": {
+        "skill": 51.132075471698116,
+        "hard_skill": 50.56603773584906,
+        "cert": 60.0,
+        "education": 100.0,
+        "major": 80.0,
+        "city": 50.0,
+        "role": 78.0,
+        "soft_skill": 50.0,
+        "competitiveness": 92.5
+      },
+      "reasons": [
+        "[skill] 关键词命中2/4: python↔python, machine_learning↔machine_learning",
+        "[hard_skill] 硬技能命中2/4: python↔python, machine_learning↔machine_learning",
+        "[cert] 岗位无证书硬性要求",
+        "[education] 候选人硕士学历满足岗位最低要求",
+        "[major] 岗位接受计算机/人工智能相关专业",
+        "[city] 候选人无城市偏好(中性)",
+        "[role] [role] 方向 精确子类命中:岗位「机器学习算法」↔ 候选人适配「机器学习算法」(权重0.78) — 硕士主修模式识别与机器学习,华为实习构建STL独立森林时序异常检测模型,项目搭建ResNet-50迁移学习模型实现99.2%缺陷识别准确率,熟练使用PyTorch、TensorFlow、Scikit-learn。",
+        "[soft_skill] 软技能无法从简历关键词中准确匹配",
+        "[competitiveness] 竞争力对齐「匹配」:候选人70分(学校c9/硕士/实习大厂/竞赛none) ↔ 岗位75分(公司地位(未评级,默认中)/算法/门槛硕士) 差值+5"
+      ],
+      "role_gated": false,
+      "comp_label": "匹配",
+      "candidate_score": 70,
+      "company_score": 75,
+      "hard_skills": [
+        "AI",
+        "机器学习",
+        "Python",
+        "Agent"
+      ],
+      "keywords": [
+        "AI",
+        "Agent",
+        "机器学习",
+        "Python"
+      ]
+    },
+    {
+      "rank": 44,
+      "score": 69.7,
+      "recommend": "推荐",
+      "company": "DJI 大疆",
+      "position": "计算机视觉算法工程师",
+      "city": "深圳,上海,北京",
+      "job_category": "研发",
+      "education_req": "本科",
+      "deadline": null,
+      "apply_url": "careers.dji.com",
+      "dims": {
+        "skill": 51.666666666666664,
+        "hard_skill": 75.86538461538461,
+        "cert": 60.0,
+        "education": 100.0,
+        "major": 80.0,
+        "city": 50.0,
+        "role": 46.8,
+        "soft_skill": 50.0,
+        "competitiveness": 100.0
+      },
+      "reasons": [
+        "[skill] 关键词命中3/6: python↔python, opencv↔opencv, deep_learning↔deep_learning",
+        "[hard_skill] 硬技能命中3/4: python↔python, opencv↔opencv, deep_learning↔deep_learning",
+        "[cert] 岗位无证书硬性要求",
+        "[education] 候选人硕士学历满足岗位最低要求",
+        "[major] 岗位接受计算机/电子工程/自动化相关专业",
+        "[city] 候选人无城市偏好(中性)",
+        "[role] [role] 方向 同大类匹配:岗位「CV算法」↔ 候选人适配「机器学习算法」(权重0.78) — 硕士主修模式识别与机器学习,华为实习构建STL独立森林时序异常检测模型,项目搭建ResNet-50迁移学习模型实现99.2%缺陷识别准确率,熟练使用PyTorch、TensorFlow、Scikit-learn。",
+        "[soft_skill] 软技能无法从简历关键词中准确匹配",
+        "[competitiveness] 竞争力对齐「匹配」:候选人70分(学校c9/硕士/实习大厂/竞赛none) ↔ 岗位70分(公司地位(未评级,默认中)/算法/门槛本科) 差值+0"
+      ],
+      "role_gated": false,
+      "comp_label": "匹配",
+      "candidate_score": 70,
+      "company_score": 70,
+      "hard_skills": [
+        "计算机视觉",
+        "深度学习",
+        "Python",
+        "OpenCV"
+      ],
+      "keywords": [
+        "计算机视觉",
+        "深度学习",
+        "算法工程师",
+        "图像处理"
+      ]
+    },
+    {
+      "rank": 45,
+      "score": 69.7,
+      "recommend": "推荐",
+      "company": "南芯科技",
+      "position": "算法工程师",
+      "city": "上海,成都,深圳,北京,西安,南京,珠海,杭州,苏州",
+      "job_category": "研发",
+      "education_req": "本科",
+      "deadline": null,
+      "apply_url": "hr-candidate@southchip.com",
+      "dims": {
+        "skill": 34.4047619047619,
+        "hard_skill": 67.23270440251571,
+        "cert": 60.0,
+        "education": 100.0,
+        "major": 80.0,
+        "city": 50.0,
+        "role": 78.0,
+        "soft_skill": 50.0,
+        "competitiveness": 100.0
+      },
+      "reasons": [
+        "[skill] 关键词命中2/6: c_language↔c_language, Matlab↔MATLAB",
+        "[hard_skill] 硬技能命中2/3: c_language↔c_language, Matlab↔MATLAB",
+        "[cert] 岗位无证书硬性要求",
+        "[education] 候选人硕士学历满足岗位最低要求",
+        "[major] 岗位接受计算机/数学/电子工程相关专业",
+        "[city] 候选人无城市偏好(中性)",
+        "[role] [role] 方向 精确子类命中:岗位「机器学习算法」↔ 候选人适配「机器学习算法」(权重0.78) — 硕士主修模式识别与机器学习,华为实习构建STL独立森林时序异常检测模型,项目搭建ResNet-50迁移学习模型实现99.2%缺陷识别准确率,熟练使用PyTorch、TensorFlow、Scikit-learn。",
+        "[soft_skill] 软技能无法从简历关键词中准确匹配",
+        "[competitiveness] 竞争力对齐「匹配」:候选人70分(学校c9/硕士/实习大厂/竞赛none) ↔ 岗位70分(公司地位(未评级,默认中)/算法/门槛本科) 差值+0"
+      ],
+      "role_gated": false,
+      "comp_label": "匹配",
+      "candidate_score": 70,
+      "company_score": 70,
+      "hard_skills": [
+        "算法设计",
+        "C/C++",
+        "MATLAB"
+      ],
+      "keywords": [
+        "算法",
+        "C++",
+        "MATLAB",
+        "优化"
+      ]
+    },
+    {
+      "rank": 46,
+      "score": 69.6,
+      "recommend": "推荐",
+      "company": "中电锦江",
+      "position": "信号处理设计师",
+      "city": "成都",
+      "job_category": "研发",
+      "education_req": "硕士",
+      "deadline": null,
+      "apply_url": "https://mp.weixin.qq.com/s/Vf_rAneDi62eISDVjnijkw",
+      "dims": {
+        "skill": 51.63636363636363,
+        "hard_skill": 75.84905660377359,
+        "cert": 60.0,
+        "education": 100.0,
+        "major": 80.0,
+        "city": 50.0,
+        "role": 51.0,
+        "soft_skill": 50.0,
+        "competitiveness": 92.5
+      },
+      "reasons": [
+        "[skill] 关键词命中3/6: fpga↔fpga, DSP加速库↔dsp, Matlab↔MATLAB",
+        "[hard_skill] 硬技能命中3/4: fpga↔fpga, DSP加速库↔dsp, Matlab↔MATLAB",
+        "[cert] 岗位无证书硬性要求",
+        "[education] 候选人硕士学历满足岗位最低要求",
+        "[major] 岗位接受电子信息、信息与通信工程、仪器科学与技术等相关专业专业",
+        "[city] 候选人无城市偏好(中性)",
+        "[role] [role] 方向 同大类匹配:岗位「开发」↔ 候选人适配「嵌入式软件」(权重0.85) — 硕士主修嵌入式系统开发,项目基于TI IWR6843开发板编写C语言信号处理链,熟悉C/C++、Keil MDK,持有软考中级(嵌入式系统设计师)证书。",
+        "[soft_skill] 软技能无法从简历关键词中准确匹配",
+        "[competitiveness] 竞争力对齐「匹配」:候选人70分(学校c9/硕士/实习大厂/竞赛none) ↔ 岗位65分(公司地位(未评级,默认中)/开发/门槛硕士) 差值-5"
+      ],
+      "role_gated": false,
+      "comp_label": "匹配",
+      "candidate_score": 70,
+      "company_score": 65,
+      "hard_skills": [
+        "信号处理",
+        "FPGA",
+        "DSP",
+        "MATLAB"
+      ],
+      "keywords": [
+        "信号处理",
+        "雷达",
+        "FPGA",
+        "DSP",
+        "军工"
+      ]
+    },
+    {
+      "rank": 47,
+      "score": 69.5,
+      "recommend": "推荐",
+      "company": "星尘智能",
+      "position": "大模型算法工程师（后训练）",
+      "city": "深圳",
+      "job_category": "研发",
+      "education_req": "本科",
+      "deadline": null,
+      "apply_url": "https://app.mokahr.com/campus-recruitment/astribot/144862?locale=zh-CN&sessionid=#/jobs",
+      "dims": {
+        "skill": 61.698113207547166,
+        "hard_skill": 60.84905660377358,
+        "cert": 60.0,
+        "education": 100.0,
+        "major": 80.0,
+        "city": 50.0,
+        "role": 46.8,
+        "soft_skill": 50.0,
+        "competitiveness": 100.0
+      },
+      "reasons": [
+        "[skill] 关键词命中3/5: python↔python, pytorch↔pytorch, deep_learning↔deep_learning",
+        "[hard_skill] 硬技能命中3/5: python↔python, pytorch↔pytorch, deep_learning↔deep_learning",
+        "[cert] 岗位无证书硬性要求",
+        "[education] 候选人硕士学历满足岗位最低要求",
+        "[major] 岗位接受计算机相关专业",
+        "[city] 候选人无城市偏好(中性)",
+        "[role] [role] 方向 同大类匹配:岗位「大模型算法」↔ 候选人适配「机器学习算法」(权重0.78) — 硕士主修模式识别与机器学习,华为实习构建STL独立森林时序异常检测模型,项目搭建ResNet-50迁移学习模型实现99.2%缺陷识别准确率,熟练使用PyTorch、TensorFlow、Scikit-learn。",
+        "[soft_skill] 软技能无法从简历关键词中准确匹配",
+        "[competitiveness] 竞争力对齐「匹配」:候选人70分(学校c9/硕士/实习大厂/竞赛none) ↔ 岗位70分(公司地位(未评级,默认中)/算法/门槛本科) 差值+0"
+      ],
+      "role_gated": false,
+      "comp_label": "匹配",
+      "candidate_score": 70,
+      "company_score": 70,
+      "hard_skills": [
+        "大模型",
+        "后训练",
+        "深度学习",
+        "Python",
+        "PyTorch"
+      ],
+      "keywords": [
+        "大模型",
+        "后训练",
+        "深度学习",
+        "PyTorch"
+      ]
+    },
+    {
+      "rank": 48,
+      "score": 69.5,
+      "recommend": "推荐",
+      "company": "杰华特",
+      "position": "AI工程师",
+      "city": "上海 南京 厦门 成都 杭州 深圳 珠海 西安",
+      "job_category": "研发",
+      "education_req": "硕士",
+      "deadline": null,
+      "apply_url": "https://joulwatt.zhiye.com/campus/jobs",
+      "dims": {
+        "skill": 51.666666666666664,
+        "hard_skill": 75.86538461538461,
+        "cert": 60.0,
+        "education": 100.0,
+        "major": 80.0,
+        "city": 50.0,
+        "role": 49.2,
+        "soft_skill": 50.0,
+        "competitiveness": 94.0
+      },
+      "reasons": [
+        "[skill] 关键词命中3/6: python↔python, deep_learning↔deep_learning, machine_learning↔machine_learning",
+        "[hard_skill] 硬技能命中3/4: python↔python, deep_learning↔deep_learning, machine_learning↔machine_learning",
+        "[cert] 岗位无证书硬性要求",
+        "[education] 候选人硕士学历满足岗位最低要求",
+        "[major] 岗位接受计算机科学（人工智能、机器学习）/微电子学与固体电子学/集成电路工程/电子科学与技术等相关专业专业",
+        "[city] 候选人无城市偏好(中性)",
+        "[role] [role] 方向 同大类匹配:岗位「大模型应用开发」↔ 候选人适配「算法工程化」(权重0.82) — 华为实习将分类模型部署至ARM架构边缘网关并做轻量化感知训练压缩,中兴实习开发Python与Scapy自动化测试工具,具备算法落地与工程化能力。",
+        "[soft_skill] 软技能无法从简历关键词中准确匹配",
+        "[competitiveness] 竞争力对齐「匹配」:候选人70分(学校c9/硕士/实习大厂/竞赛none) ↔ 岗位74分(公司地位(未评级,默认中)/AI工程/门槛硕士) 差值+4"
+      ],
+      "role_gated": false,
+      "comp_label": "匹配",
+      "candidate_score": 70,
+      "company_score": 74,
+      "hard_skills": [
+        "人工智能",
+        "机器学习",
+        "深度学习",
+        "Python"
+      ],
+      "keywords": [
+        "AI",
+        "机器学习",
+        "深度学习",
+        "Python",
+        "算法"
+      ]
+    },
+    {
+      "rank": 49,
+      "score": 69.0,
       "recommend": "推荐",
       "company": "中兴通讯",
       "position": "AI算法工程师",
@@ -2465,7 +2419,7 @@
         "city": 50.0,
         "role": 49.2,
         "soft_skill": 60.0,
-        "competitiveness": 91.0
+        "competitiveness": 98.5
       },
       "reasons": [
         "[skill] 关键词命中2/4: deep_learning↔deep_learning, machine_learning↔machine_learning",
@@ -2476,12 +2430,12 @@
         "[city] 候选人无城市偏好(中性)",
         "[role] [role] 方向 同大类匹配:岗位「大模型应用开发」↔ 候选人适配「算法工程化」(权重0.82) — 华为实习将分类模型部署至ARM架构边缘网关并做轻量化感知训练压缩,中兴实习开发Python与Scapy自动化测试工具,具备算法落地与工程化能力。",
         "[soft_skill] 岗位无明确软技能要求",
-        "[competitiveness] 竞争力对齐「匹配」:候选人70分(学校c9/硕士/实习大厂/竞赛none) ↔ 岗位64分(民企/AI工程/门槛本科) 差值-6"
+        "[competitiveness] 竞争力对齐「匹配」:候选人70分(学校c9/硕士/实习大厂/竞赛none) ↔ 岗位69分(公司地位(未评级,默认中)/AI工程/门槛本科) 差值-1"
       ],
       "role_gated": false,
       "comp_label": "匹配",
       "candidate_score": 70,
-      "company_score": 64,
+      "company_score": 69,
       "hard_skills": [
         "AI算法",
         "机器学习",
@@ -2492,6 +2446,56 @@
         "机器学习",
         "深度学习",
         "研发"
+      ]
+    },
+    {
+      "rank": 50,
+      "score": 69.0,
+      "recommend": "推荐",
+      "company": "同花顺",
+      "position": "多模态算法工程师",
+      "city": "杭州",
+      "job_category": "研发",
+      "education_req": "硕士",
+      "deadline": null,
+      "apply_url": "http://campus.10jqka.com.cn/mobile/job/list",
+      "dims": {
+        "skill": 51.666666666666664,
+        "hard_skill": 75.86538461538461,
+        "cert": 60.0,
+        "education": 100.0,
+        "major": 80.0,
+        "city": 50.0,
+        "role": 46.8,
+        "soft_skill": 50.0,
+        "competitiveness": 92.5
+      },
+      "reasons": [
+        "[skill] 关键词命中3/6: python↔python, pytorch↔pytorch, deep_learning↔deep_learning",
+        "[hard_skill] 硬技能命中3/4: python↔python, pytorch↔pytorch, deep_learning↔deep_learning",
+        "[cert] 岗位无证书硬性要求",
+        "[education] 候选人硕士学历满足岗位最低要求",
+        "[major] 岗位接受计算机相关专业",
+        "[city] 候选人无城市偏好(中性)",
+        "[role] [role] 方向 同大类匹配:岗位「多模态算法」↔ 候选人适配「机器学习算法」(权重0.78) — 硕士主修模式识别与机器学习,华为实习构建STL独立森林时序异常检测模型,项目搭建ResNet-50迁移学习模型实现99.2%缺陷识别准确率,熟练使用PyTorch、TensorFlow、Scikit-learn。",
+        "[soft_skill] 软技能无法从简历关键词中准确匹配",
+        "[competitiveness] 竞争力对齐「匹配」:候选人70分(学校c9/硕士/实习大厂/竞赛none) ↔ 岗位75分(公司地位(未评级,默认中)/算法/门槛硕士) 差值+5"
+      ],
+      "role_gated": false,
+      "comp_label": "匹配",
+      "candidate_score": 70,
+      "company_score": 75,
+      "hard_skills": [
+        "多模态",
+        "深度学习",
+        "Python",
+        "PyTorch"
+      ],
+      "keywords": [
+        "多模态",
+        "算法",
+        "AI",
+        "深度学习"
       ]
     }
   ]

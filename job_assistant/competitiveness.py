@@ -252,27 +252,16 @@ def candidate_competitiveness(profile) -> Tuple[float, Dict[str, float], Dict]:
 # ============================================================
 # 企业/岗位竞争力
 # ============================================================
-# 公司类型 + 行业 → 公司tier分(0-60)
-COMPANY_TIER_BY_TYPE = {
-    "外企": 45,
-    "国央企": 40,
-    "民企": 30,
-    "事业单位/政府": 35,
-    "其他": 25,
+# 公司地位分(0-60):由 enricher 阶段 LLM 分析公司行业地位后输出 company_tier 字段(顶/中/保底)。
+# 不用公司性质(外企/国营/民营)推断 — 同性质内公司地位差异巨大(字节 vs 小厂都是民企),
+# 必须靠 LLM 对真实行业地位做判断。无 company_tier 时此项为 0,不参与对齐。
+COMPANY_TIER_SCORE = {
+    "顶": 60,
+    "中": 40,
+    "保底": 25,
 }
 
-# 行业加成(头部行业 +15)
-INDUSTRY_BONUS = {
-    "互联网/科技": 15,
-    "金融": 12,
-    "制造/工业": 5,
-    "医疗/医药/健康": 5,
-    "教育/培训": 3,
-    "传媒/文娱/游戏": 5,
-    "咨询/专业服务": 8,
-}
-
-# 岗位热度分(0-25)
+# 岗位热度分(0-25):岗位方向本身的竞争激烈程度(岗位属性,与公司性质无关)
 JOB_HEAT_BY_CATEGORY = {
     "算法": 25,
     "AI工程": 24,
@@ -297,18 +286,21 @@ EDUCATION_BARRIER_SCORE = {"博士": 15, "硕士": 10, "本科": 5, "大专": 2,
 def company_competitiveness(job: Dict) -> Tuple[float, Dict[str, float], Dict]:
     """计算企业/岗位竞争力得分(0-100)。
 
-    基于 company_type + industry + job_category + min_education 规则粗分。
-    LLM 精修(tier 顶/中/保底)留后续迭代。
+    组成:
+    1. 公司地位分(0-60):读 job['company_tier'](LLM 输出,顶/中/保底),无则 0
+    2. 岗位热度分(0-25):岗位方向的竞争激烈程度
+    3. 学历门槛分(0-15):岗位要求的学历
+
+    不使用 company_type(外企/国营/民营) — 同性质公司地位差异巨大,
+    必须靠 LLM 判断真实行业地位。
     """
-    # 1. 公司tier
-    company_type = (job.get("company_type") or "").strip()
-    base = COMPANY_TIER_BY_TYPE.get(company_type, 25)
-    industry = (job.get("industry") or "").strip()
-    bonus = INDUSTRY_BONUS.get(industry, 0)
-    company_tier_score = min(60.0, base + bonus)
+    # 1. 公司地位(LLM 输出顶/中/保底;未评级时默认"中"作为中性基线,后续 LLM 覆盖)
+    company_tier = (job.get("company_tier") or "").strip()
+    if not company_tier:
+        company_tier = "中"
+    company_pos_score = COMPANY_TIER_SCORE.get(company_tier, COMPANY_TIER_SCORE["中"])
 
     # 2. 岗位热度
-    # 优先用 job_subcategory 解析大类,否则用 job_category
     import job_tree
     entry = job_tree.resolve_job(job)
     cat_name = entry.get("category_name") if entry else (job.get("job_category") or "")
@@ -318,19 +310,18 @@ def company_competitiveness(job: Dict) -> Tuple[float, Dict[str, float], Dict]:
     min_edu = (job.get("min_education") or "").strip()
     edu_barrier = EDUCATION_BARRIER_SCORE.get(min_edu, 0)
 
-    total = company_tier_score + heat_score + edu_barrier
+    total = company_pos_score + heat_score + edu_barrier
     total = max(0.0, min(100.0, total))
 
     breakdown = {
-        "company_tier": round(company_tier_score, 1),
+        "company_position": round(company_pos_score, 1),
         "job_heat": heat_score,
         "education_barrier": edu_barrier,
     }
     detail = {
-        "company_type": company_type,
-        "industry": industry,
+        "company_tier": company_tier if job.get("company_tier") else "(未评级,默认中)",
         "job_category": cat_name,
-        "min_education": min_edu,
+        "min_education": min_edu or "不限",
     }
     return round(total, 1), breakdown, detail
 

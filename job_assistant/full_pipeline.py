@@ -22,6 +22,7 @@ logger = logging.getLogger(__name__)
 
 BATCH_SIZE = 100
 CRAWL_WORKERS = 5  # 多线程抓取提速,Tikhub 可承受
+FEISHU_SYNC_INTERVAL = 5  # 每 5 轮同步一次飞书(避免 API 限流)
 
 
 def run_once(batch: int = BATCH_SIZE) -> dict:
@@ -101,6 +102,8 @@ def main():
     logger.info("全量数据处理管线启动")
     logger.info("=" * 60)
 
+    from git_persist import git_commit_and_push
+
     round_no = 0
     while has_pending():
         round_no += 1
@@ -109,8 +112,29 @@ def main():
         run_once(BATCH_SIZE)
         elapsed = time.time() - t0
         logger.info(f"--- 第 {round_no} 轮完成,耗时 {elapsed:.0f}s ---")
+
+        # 防护1: 每轮自动 git commit + push(数据持久化)
+        try:
+            git_commit_and_push(message=f"auto: round {round_no} snapshot")
+        except Exception as e:
+            logger.warning(f"[git] 自动持久化失败: {e}")
+
+        # 防护2: 每 N 轮同步到飞书(异地备份)
+        if round_no % FEISHU_SYNC_INTERVAL == 0:
+            try:
+                from sync_to_feishu import sync_all
+                sync_all()
+            except Exception as e:
+                logger.warning(f"[飞书同步] 失败: {e}")
+
         # 短暂休息,避免 API 限流
         time.sleep(2)
+
+    # 最终持久化
+    try:
+        git_commit_and_push(message="auto: final snapshot")
+    except Exception as e:
+        logger.warning(f"[git] 最终持久化失败: {e}")
 
     logger.info("=" * 60)
     logger.info("全量处理完成!无待处理公告。")

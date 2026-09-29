@@ -20,12 +20,12 @@ logger = logging.getLogger(__name__)
 
 # 权重重新分配(第一性原理:方向对齐 > 技能命中 > 竞争力对齐 > 硬门槛)
 # - role 0.15:求职方向核心偏好
-# - skill 0.20 / hard_skill 0.15:真实技能命中(让出部分给 competitiveness)
-# - competitiveness 0.10:候选人档位 vs 岗位档位对齐(冲刺/匹配/保底),中等偏上
+# - skill 0.15 / hard_skill 0.15:真实技能命中
+# - competitiveness 0.15:候选人档位 vs 岗位档位对齐(冲刺/匹配/保底),中等偏上
 # - education 0.15 / major 0.10:硬门槛
 # - cert 0.05 / city 0.05 / soft_skill 0.05:辅助
 DIMENSION_WEIGHTS = {
-    "skill": 0.20,
+    "skill": 0.15,
     "hard_skill": 0.15,
     "cert": 0.05,
     "education": 0.15,
@@ -33,7 +33,7 @@ DIMENSION_WEIGHTS = {
     "city": 0.05,
     "role": 0.15,
     "soft_skill": 0.05,
-    "competitiveness": 0.10,
+    "competitiveness": 0.15,
 }
 
 # 方向硬门槛:role 维度 < ROLE_GATE_THRESHOLD 时,总分上限 = ROLE_GATE_CAP

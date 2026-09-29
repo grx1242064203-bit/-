@@ -333,18 +333,21 @@ def alignment(candidate_score: float, company_score: float) -> Tuple[str, float]
     """候选人分 vs 企业分 → (标签, 对齐分0-100)。
 
     diff = company_score - candidate_score
-    - diff > 25: 冲刺(企业明显高于候选人,有挑战)
-    - 0 <= diff <= 25: 匹配(档位接近)
-    - diff < 0: 保底(候选人高于企业,overqualified)
-    对齐分:|diff|越小越高,满分100
+    - diff > 60: 严重错配(企业远高于候选人,完全够不着)
+    - 25 < diff <= 60: 冲刺(企业高于候选人,有挑战但够得着)
+    - -10 <= diff <= 25: 匹配(档位接近,最优投递)
+    - diff < -10: 保底(候选人高于企业,overqualified)
+
+    对齐分:匹配=100(满分)、冲刺=85(高,有上升空间)、保底=60(可投但非最优)、
+    严重错配=30(不建议)。让匹配/冲刺自然排到前面。
     """
     diff = company_score - candidate_score
-    alignment_score = max(0.0, 100.0 - abs(diff) * 1.5)
 
-    if diff > 25:
-        label = "冲刺"
+    if diff > 60:
+        return "严重错配", 30.0
+    elif diff > 25:
+        return "冲刺", 85.0
     elif diff < -10:
-        label = "保底"
+        return "保底", 60.0
     else:
-        label = "匹配"
-    return label, round(alignment_score, 1)
+        return "匹配", 100.0

@@ -6,6 +6,7 @@
 """
 import json
 import os
+import re
 import sys
 import time
 from typing import Dict, List
@@ -23,6 +24,37 @@ RESUMES = [
 
 OUT_DIR = os.path.join(settings.DATA_DIR, "full_match")
 os.makedirs(OUT_DIR, exist_ok=True)
+
+# 常见城市关键词(用于从简历文本兜底抽取 target_cities)
+_CITY_PATTERNS = [
+    "北京", "上海", "深圳", "广州", "杭州", "南京", "成都", "武汉",
+    "西安", "苏州", "天津", "重庆", "青岛", "长沙", "厦门", "无锡",
+    "东莞", "珠海", "大连", "济南", "合肥", "福州", "昆山",
+]
+
+
+def _clean_major(major: str) -> str:
+    """清洗专业字段:去掉混入的学位词(学士/硕士/博士)和英文杂项。"""
+    if not major:
+        return ""
+    m = major.strip()
+    # 去掉学位后缀
+    for suffix in ("学士", "硕士", "博士", "大专", "本科"):
+        m = m.replace(suffix, "")
+    return m.strip()
+
+
+def _extract_cities_from_text(text: str) -> List[str]:
+    """从简历文本兜底抽取城市(实习地/学校地),供 city 维度参考。
+
+    注意:这只能作为弱信号,因为学校城市 ≠ 目标工作城市。
+    仅在 LLM 没抽出 city 关键词时兜底,且只取高频出现的。
+    """
+    found = []
+    for city in _CITY_PATTERNS:
+        if city in text:
+            found.append(city)
+    return found
 
 
 def build_profile(name: str, resume_text: str) -> UserProfile:
@@ -47,8 +79,9 @@ def build_profile(name: str, resume_text: str) -> UserProfile:
                     break
         if cat == "education" and not p.major and std and not any(
             lv in std for lv in ("博士", "硕士", "本科", "大专", "大学", "学院")
-        ):
-            p.major = std
+        ) and not std.isascii():
+            # 跳过纯英文(如 LLM 把"电子信息"翻成"electronics"),留给兜底正则抽中文
+            p.major = _clean_major(std)
         if cat == "city" and std not in p.target_cities:
             p.target_cities.append(std)
 
@@ -58,6 +91,19 @@ def build_profile(name: str, resume_text: str) -> UserProfile:
             p.degree = "硕士"
         elif "本科" in resume_text:
             p.degree = "本科"
+
+    # 兜底:从简历文本抽取专业(简历1=软件工程,简历2=电子信息/统计学)
+    if not p.major:
+        m = re.search(r"(软件工程|电子信息|计算机|统计学|电气工程|通信工程|自动化|数学)", resume_text)
+        if m:
+            p.major = m.group(1)
+
+    # 兜底:LLM 没抽出 city 时,从文本抽(弱信号,不强制)
+    # 注意:简历里的城市多为学校/实习地,不等于目标工作城市,
+    # 所以这里不主动填充 target_cities,保持"无城市偏好=中性"的语义。
+    # (如需启用,取消下面注释;但 city 维度已改为中性50分,空偏好更合理)
+    # if not p.target_cities:
+    #     p.target_cities = _extract_cities_from_text(resume_text)[:2]
 
     print(f"[{name}] degree={p.degree!r} major={p.major!r} cities={p.target_cities}", flush=True)
     return p
@@ -103,6 +149,7 @@ def dump_result(name: str, profile: UserProfile, scored: List[Dict]):
             "apply_url": s.get("apply_url") or s.get("announcement_url"),
             "dims": s.get("维度分", {}),
             "reasons": s.get("匹配理由", []),
+            "role_gated": s.get("方向门槛触发", False),
             "hard_skills": s.get("hard_skills", [])[:8],
             "keywords": s.get("keywords", [])[:8],
         })
@@ -128,17 +175,33 @@ def dump_result(name: str, profile: UserProfile, scored: List[Dict]):
     for k, v in DIMENSION_WEIGHTS.items():
         lines.append(f"- {k}: {v}")
     lines.append("\n## Top 50 推荐\n")
-    lines.append("| # | 分数 | 推荐度 | 公司 | 岗位 | 城市 | 方向 | 学历 | skill | hard | role | city | edu |")
-    lines.append("|---|------|--------|------|------|------|------|------|-------|------|------|------|-----|")
+    lines.append("| # | 分数 | 推荐度 | 门槛 | 公司 | 岗位 | 城市 | 方向 | 学历 | skill | hard | role | city | edu |")
+    lines.append("|---|------|--------|------|------|------|------|------|------|-------|------|------|------|-----|")
     for s in slim:
         d = s["dims"]
+        gate = "⚠️方向" if s.get("role_gated") else ""
         lines.append(
-            f"| {s['rank']} | {s['score']:.1f} | {s['recommend']} | {s['company']} | "
+            f"| {s['rank']} | {s['score']:.1f} | {s['recommend']} | {gate} | {s['company']} | "
             f"{s['position']} | {s['city'] or '-'} | {s['job_category'] or '-'} | "
             f"{s['education_req'] or '-'} | "
             f"{d.get('skill',0):.0f} | {d.get('hard_skill',0):.0f} | "
             f"{d.get('role',0):.0f} | {d.get('city',0):.0f} | {d.get('education',0):.0f} |"
         )
+
+    # 全量分数分布(对抗性审查用)
+    all_scores = [round(s.get("相关性评分", 0), 1) for s in scored]
+    all_scores.sort(reverse=True)
+    n = len(all_scores)
+    if n:
+        lines.append("\n## 全量分数分布(对抗性审查)\n")
+        lines.append(f"- 总岗位数: {n}")
+        lines.append(f"- 最高分: {all_scores[0]:.1f}  最低分: {all_scores[-1]:.1f}")
+        lines.append(f"- Top10: {all_scores[9]:.1f}  Top50: {all_scores[49] if n>49 else all_scores[-1]:.1f}  Top100: {all_scores[99] if n>99 else all_scores[-1]:.1f}")
+        from collections import Counter
+        rec_dist = Counter(s.get("综合推荐度", "") for s in scored)
+        lines.append(f"- 推荐度分布: {dict(rec_dist)}")
+        gated_cnt = sum(1 for s in scored if s.get("方向门槛触发"))
+        lines.append(f"- 方向门槛触发: {gated_cnt} / {n} ({gated_cnt*100//max(n,1)}%)")
 
     lines.append("\n## Top 10 维度拆解(详细匹配理由)\n")
     for s in slim[:10]:

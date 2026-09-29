@@ -87,9 +87,10 @@ def match_score(a: str, b: str) -> float:
     计算两个关键词的匹配分。
 
     0.0  = 完全不匹配
-    1.0  = 命中同一个 canonical form (同义词/别名)
-    0.8  = 互为包含 (Redis ==> RedisCluster)
-    0.5  = 共享词根 (Python vs PyTorch 共享 "Py")
+    1.0  = 命中同一个 canonical form (同义词/别名) 或完全相等
+    0.8  = 互为包含 (Redis ==> RedisCluster),但要求较短串长度>=3且长度比>=0.4,
+           避免单字符/极短串子串假命中(如 "M" in "mcp"、"证" in "验证")
+    0.5  = 共享词根 (Python vs PyTorch 共享 "Py"),同样要求 token 长度>=3
     """
     if not a or not b:
         return 0.0
@@ -103,13 +104,21 @@ def match_score(a: str, b: str) -> float:
     if a_l == b_l:
         return 1.0
 
-    if a_l in b_l or b_l in a_l:
-        return 0.8
+    # 子串包含:收紧条件,杜绝单字符/极短串假命中
+    # 较短串长度必须 >= 3(排除 "M"/"证"/"S" 这类)
+    # 且较短/较长长度比 >= 0.4(排除 "Py" in "Python" 这种过宽匹配,但保留 "python" in "python3")
+    shorter = min(len(a_l), len(b_l))
+    longer = max(len(a_l), len(b_l))
+    if shorter >= 3 and longer > 0 and shorter / longer >= 0.4:
+        if a_l in b_l or b_l in a_l:
+            return 0.8
 
     a_tokens = set(a_l.replace("-", " ").replace("_", " ").split())
     b_tokens = set(b_l.replace("-", " ").replace("_", " ").split())
     common = a_tokens & b_tokens
-    if common and len(common) / max(len(a_tokens), len(b_tokens)) >= 0.5:
+    # 共享 token 也要求长度 >= 3,避免单字 token 假命中
+    common_valid = [t for t in common if len(t) >= 3]
+    if common_valid and len(common_valid) / max(len(a_tokens), len(b_tokens)) >= 0.5:
         return 0.5
 
     return 0.0

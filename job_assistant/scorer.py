@@ -8,23 +8,62 @@
 - role 维度用 standard form 匹配中文原始词,永远 30 分
 - 所有维度统一对岗位侧关键词做 normalize,避免 standard vs raw 不匹配
 """
+import json
 import logging
-from typing import Dict, List, Tuple, Optional
+from typing import Dict, List, Tuple, Optional, Any
 
 from keyword_normalizer import keyword_set_overlap, normalize as _norm
 
 logger = logging.getLogger(__name__)
 
+# 权重重新分配(第一性原理:方向对齐 > 真实技能命中 > 硬门槛 > 其他)
+# - role 0.05→0.15:求职方向是用户最核心偏好,必须显著影响排序
+# - cert 0.10→0.05:多数岗位无证书要求,降权避免空岗位被过度奖励/惩罚
+# - city 0.10→0.05:多数用户无明确城市偏好,降权
+# - major 0.05→0.10:专业匹配是硬门槛之一,提权
+# - skill 0.30→0.25:为 role 让出权重,仍是最大单项
 DIMENSION_WEIGHTS = {
-    "skill": 0.30,
+    "skill": 0.25,
     "hard_skill": 0.20,
-    "cert": 0.10,
+    "cert": 0.05,
     "education": 0.15,
-    "major": 0.05,
-    "city": 0.10,
-    "role": 0.05,
+    "major": 0.10,
+    "city": 0.05,
+    "role": 0.15,
     "soft_skill": 0.05,
 }
+
+# 方向硬门槛:role 维度 < ROLE_GATE_THRESHOLD 时,总分上限 = ROLE_GATE_CAP
+# 解决"方向错配但靠技能假命中/泛技能刷分"挤进 Top 的问题
+ROLE_GATE_THRESHOLD = 40.0
+ROLE_GATE_CAP = 45.0
+
+
+def _parse_list_field(v: Any) -> List[str]:
+    """统一反序列化岗位侧 JSON 字符串字段。
+
+    job_db 返回的 keywords/hard_skills/certifications 等字段是 JSON 字符串
+    (如 '["Python","Java"]'),scorer 必须先反序列化为 list 才能遍历,
+    否则会逐字符拆分('['、'"'、'P'...)导致 match_score 子串假命中。
+    """
+    if v is None:
+        return []
+    if isinstance(v, list):
+        return [str(x).strip() for x in v if str(x).strip()]
+    if isinstance(v, str):
+        s = v.strip()
+        if not s:
+            return []
+        # 尝试 JSON 反序列化
+        try:
+            obj = json.loads(s)
+            if isinstance(obj, list):
+                return [str(x).strip() for x in obj if str(x).strip()]
+        except json.JSONDecodeError:
+            pass
+        # 兜底:逗号分隔(非 JSON 格式的边缘情况)
+        return [x.strip() for x in s.split(",") if x.strip()]
+    return []
 
 EDUCATION_LEVELS = {"大专": 1, "本科": 2, "硕士": 3, "博士": 4}
 
@@ -41,12 +80,17 @@ def _norm_list(kws: List[str]) -> List[str]:
 
 
 def _extract_job_keywords(job: Dict) -> Dict[str, List[str]]:
+    """提取岗位侧关键词,统一用 _parse_list_field 反序列化 JSON 字符串字段。
+
+    P0 修复:job_db 返回的 keywords/hard_skills 等是 JSON 字符串,
+    必须先 json.loads 成 list 再 normalize,否则逐字符遍历导致子串假命中。
+    """
     return {
-        "keywords": _norm_list(job.get("keywords", []) or []),
-        "hard_skills": _norm_list(job.get("hard_skills", []) or []),
-        "soft_skills": _norm_list(job.get("soft_skills", []) or []),
-        "certifications": _norm_list(job.get("certifications", []) or []),
-        "languages": _norm_list(job.get("languages", []) or []),
+        "keywords": _norm_list(_parse_list_field(job.get("keywords"))),
+        "hard_skills": _norm_list(_parse_list_field(job.get("hard_skills"))),
+        "soft_skills": _norm_list(_parse_list_field(job.get("soft_skills"))),
+        "certifications": _norm_list(_parse_list_field(job.get("certifications"))),
+        "languages": _norm_list(_parse_list_field(job.get("languages"))),
         "job_category": _norm_list([job.get("job_category", "")] if job.get("job_category") else []),
         "job_subcategory": _norm_list([job.get("job_subcategory", "")] if job.get("job_subcategory") else []),
         "position_title_norm": _norm_list([job.get("position_title", "")] if job.get("position_title") else []),
@@ -159,13 +203,14 @@ def _match_education(profile, job: Dict) -> Tuple[float, List[str]]:
 
 
 def _match_city(profile, job: Dict) -> Tuple[float, List[str]]:
+    """城市匹配:无偏好时给中性分 50(而非 100),避免该维度对所有岗位无区分度。"""
     reasons: List[str] = []
     target = [c.lower() for c in (profile.target_cities or []) if c]
     job_city = (job.get("city", "") or job.get("location", "")).lower()
 
     if not target:
-        reasons.append("候选人无城市偏好(不限)")
-        return 100.0, reasons
+        reasons.append("候选人无城市偏好(中性)")
+        return 50.0, reasons
 
     if not job_city:
         reasons.append("岗位地点未明确")
@@ -200,7 +245,7 @@ def _match_cert(profile, job: Dict, u: Dict) -> Tuple[float, List[str]]:
         reasons.append(f"候选人持有部分岗位证书({len(hits)}/{len(job_certs)})")
         return 60.0, reasons
 
-    reasons.append(f"岗位要求证书 {', '.join(job.get('certifications', []))} 候选人均未持有")
+    reasons.append(f"岗位要求证书 {', '.join(job_certs)} 候选人均未持有")
     return 0.0, reasons
 
 
@@ -283,7 +328,7 @@ def _match_hard_skill(job: Dict, u: Dict) -> Tuple[float, List[str]]:
         reasons.append(f"硬技能命中{len(hits)}/{len(job_hard)}: {', '.join(hit_kws)}")
     else:
         reasons.append(
-            f"岗位要求硬技能 {', '.join(job.get('hard_skills', [])[:5])} 候选人均未命中"
+            f"岗位要求硬技能 {', '.join(job_hard[:5])} 候选人均未命中"
         )
 
     return score, reasons
@@ -308,9 +353,15 @@ def _match_soft_skill(job: Dict, u: Dict) -> Tuple[float, List[str]]:
 
 
 def _match_skill(job: Dict, u: Dict) -> Tuple[float, List[str]]:
-    """综合技能:岗位 keywords + hard_skills 的并集与用户 skill_all 做 Jaccard overlap。
+    """综合技能:岗位 keywords + hard_skills 的并集与用户 skill_all 做覆盖度匹配。
 
-    空岗位关键词直接给 0 分(而非默认 60),避免降级岗位靠无技能要求混上排行榜。
+    第一性原理:skill 维度应衡量"岗位要求的技能,候选人覆盖了多少"。
+    用 coverage(命中数/岗位技能数) 为主,Jaccard 为辅(防止乱命中刷分)。
+    旧版用 jaccard×200 会导致用户关键词多时 Jaccard 被严重稀释
+    (39 个用户词 vs 3 个岗位词,命中 1 个 → jaccard=1/41 → 仅 4.8 分),
+    使真实命中岗位的 skill 维度反常低分,拖垮整体分。
+
+    空岗位关键词直接给 0 分,避免降级岗位靠无技能要求混上排行榜。
     """
     jk = _extract_job_keywords(job)
     job_all = list(set(jk["keywords"] + jk["hard_skills"]))
@@ -322,14 +373,16 @@ def _match_skill(job: Dict, u: Dict) -> Tuple[float, List[str]]:
     user_all = u.get("skill_all") or []
     _, jaccard, hits = keyword_set_overlap(user_all, job_all)
 
-    score = min(100.0, jaccard * 200.0)
+    coverage = len(hits) / len(job_all) if job_all else 0
+    # coverage 为主(岗位技能覆盖率),jaccard 为辅(奖励高重合度)
+    score = min(100.0, coverage * 100.0 + jaccard * 30.0)
 
     if hits:
         hit_kws = [f"{uk}↔{jk2}" for uk, jk2 in hits[:6]]
         reasons.append(f"关键词命中{len(hits)}/{len(job_all)}: {', '.join(hit_kws)}")
     else:
         reasons.append(
-            f"岗位关键词 {', '.join(job.get('keywords', [])[:5])} 与候选人无交集"
+            f"岗位关键词 {', '.join(job_all[:5])} 与候选人无交集"
         )
 
     return score, reasons
@@ -359,7 +412,24 @@ def score_job(job: Dict, profile, llm_client=None) -> Dict:
         for dim, weight in DIMENSION_WEIGHTS.items()
     )
 
-    score = round(max(0.0, min(100.0, total)), 1)
+    score = max(0.0, min(100.0, total))
+
+    # 方向硬门槛:role 维度 < ROLE_GATE_THRESHOLD 表示方向明显错配,
+    # 无论技能分多高,总分上限 = ROLE_GATE_CAP(压到"不建议"档)。
+    # 第一性原理:求职方向是用户最核心偏好,方向不对的岗位对用户无价值,
+    # 不应靠泛技能/字符级假命中挤进 Top 排行。
+    role_score = dim_scores.get("role", 0.0)
+    role_gated = False
+    if role_score < ROLE_GATE_THRESHOLD:
+        if score > ROLE_GATE_CAP:
+            score = ROLE_GATE_CAP
+        role_gated = True
+        all_reasons.append(
+            f"[role] 方向硬门槛触发:role维度{role_score:.0f}<{ROLE_GATE_THRESHOLD:.0f},"
+            f"总分上限{ROLE_GATE_CAP:.0f}"
+        )
+
+    score = round(score, 1)
 
     hard_gate = dim_scores.get("education", 100.0) > 0
 
@@ -378,4 +448,5 @@ def score_job(job: Dict, profile, llm_client=None) -> Dict:
         "维度分": dim_scores,
         "匹配理由": all_reasons[:20],
         "硬门槛通过": hard_gate,
+        "方向门槛触发": role_gated,
     }

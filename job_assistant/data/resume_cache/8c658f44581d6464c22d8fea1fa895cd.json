@@ -1,0 +1,354 @@
+[
+  {
+    "kw": "AI Agent",
+    "standard": "agent",
+    "category": "role",
+    "weight": 5.0,
+    "resume_section": "summary",
+    "source": "resume_llm"
+  },
+  {
+    "kw": "AI Infra",
+    "standard": "ai_engineer",
+    "category": "role",
+    "weight": 5.0,
+    "resume_section": "summary",
+    "source": "resume_llm"
+  },
+  {
+    "kw": "后端开发",
+    "standard": "backend_development",
+    "category": "role",
+    "weight": 4.5,
+    "resume_section": "summary",
+    "source": "resume_llm"
+  },
+  {
+    "kw": "MCP",
+    "standard": "mcp",
+    "category": "hard_skill",
+    "weight": 4.5,
+    "resume_section": "experience",
+    "source": "resume_llm"
+  },
+  {
+    "kw": "EASY CODE",
+    "standard": "EASY CODE",
+    "category": "project",
+    "weight": 4.5,
+    "resume_section": "project",
+    "source": "resume_llm"
+  },
+  {
+    "kw": "软件工程硕士",
+    "standard": "软件工程硕士",
+    "category": "education",
+    "weight": 4.0,
+    "resume_section": "education",
+    "source": "resume_llm"
+  },
+  {
+    "kw": "杜克大学",
+    "standard": "杜克大学",
+    "category": "education",
+    "weight": 4.0,
+    "resume_section": "education",
+    "source": "resume_llm"
+  },
+  {
+    "kw": "东南大学",
+    "standard": "东南大学",
+    "category": "education",
+    "weight": 4.0,
+    "resume_section": "education",
+    "source": "resume_llm"
+  },
+  {
+    "kw": "RAG",
+    "standard": "rag",
+    "category": "hard_skill",
+    "weight": 4.0,
+    "resume_section": "experience",
+    "source": "resume_llm"
+  },
+  {
+    "kw": "TypeScript",
+    "standard": "typescript",
+    "category": "hard_skill",
+    "weight": 4.0,
+    "resume_section": "project",
+    "source": "resume_llm"
+  },
+  {
+    "kw": "Node.js",
+    "standard": "nodejs",
+    "category": "hard_skill",
+    "weight": 4.0,
+    "resume_section": "project",
+    "source": "resume_llm"
+  },
+  {
+    "kw": "Codeforces Rating 2200",
+    "standard": "Codeforces Rating 2200",
+    "category": "cert",
+    "weight": 4.0,
+    "resume_section": "skill",
+    "source": "resume_llm"
+  },
+  {
+    "kw": "ICPC西安站银牌",
+    "standard": "ICPC西安站银牌",
+    "category": "cert",
+    "weight": 4.0,
+    "resume_section": "skill",
+    "source": "resume_llm"
+  },
+  {
+    "kw": "MCP配置治理",
+    "standard": "MCP配置治理",
+    "category": "skill",
+    "weight": 4.0,
+    "resume_section": "skill",
+    "source": "resume_llm"
+  },
+  {
+    "kw": "Context Engineering",
+    "standard": "Context Engineering",
+    "category": "skill",
+    "weight": 4.0,
+    "resume_section": "skill",
+    "source": "resume_llm"
+  },
+  {
+    "kw": "MCP配置管理平台",
+    "standard": "MCP配置管理平台",
+    "category": "project",
+    "weight": 4.0,
+    "resume_section": "experience",
+    "source": "resume_llm"
+  },
+  {
+    "kw": "AI测试用例生成",
+    "standard": "AI测试用例生成",
+    "category": "project",
+    "weight": 4.0,
+    "resume_section": "experience",
+    "source": "resume_llm"
+  },
+  {
+    "kw": "软件工程学士",
+    "standard": "软件工程学士",
+    "category": "education",
+    "weight": 3.5,
+    "resume_section": "education",
+    "source": "resume_llm"
+  },
+  {
+    "kw": "React 17",
+    "standard": "React 17",
+    "category": "framework",
+    "weight": 3.5,
+    "resume_section": "experience",
+    "source": "resume_llm"
+  },
+  {
+    "kw": "Flask",
+    "standard": "flask",
+    "category": "framework",
+    "weight": 3.5,
+    "resume_section": "experience",
+    "source": "resume_llm"
+  },
+  {
+    "kw": "Schema",
+    "standard": "database_design",
+    "category": "hard_skill",
+    "weight": 3.5,
+    "resume_section": "experience",
+    "source": "resume_llm"
+  },
+  {
+    "kw": "Vue 3",
+    "standard": "Vue 3",
+    "category": "framework",
+    "weight": 3.5,
+    "resume_section": "experience",
+    "source": "resume_llm"
+  },
+  {
+    "kw": "Prompt",
+    "standard": "prompt_engineering",
+    "category": "hard_skill",
+    "weight": 3.5,
+    "resume_section": "experience",
+    "source": "resume_llm"
+  },
+  {
+    "kw": "Semantic Compaction",
+    "standard": "Semantic Compaction",
+    "category": "hard_skill",
+    "weight": 3.5,
+    "resume_section": "project",
+    "source": "resume_llm"
+  },
+  {
+    "kw": "Docker",
+    "standard": "docker",
+    "category": "tool",
+    "weight": 3.5,
+    "resume_section": "project",
+    "source": "resume_llm"
+  },
+  {
+    "kw": "江苏省赛金牌",
+    "standard": "江苏省赛金牌",
+    "category": "cert",
+    "weight": 3.5,
+    "resume_section": "skill",
+    "source": "resume_llm"
+  },
+  {
+    "kw": "成本控制",
+    "standard": "成本控制",
+    "category": "skill",
+    "weight": 3.5,
+    "resume_section": "skill",
+    "source": "resume_llm"
+  },
+  {
+    "kw": "长程任务恢复",
+    "standard": "长程任务恢复",
+    "category": "skill",
+    "weight": 3.5,
+    "resume_section": "skill",
+    "source": "resume_llm"
+  },
+  {
+    "kw": "证据驱动验证",
+    "standard": "证据驱动验证",
+    "category": "skill",
+    "weight": 3.5,
+    "resume_section": "skill",
+    "source": "resume_llm"
+  },
+  {
+    "kw": "Recoil",
+    "standard": "Recoil",
+    "category": "framework",
+    "weight": 3.0,
+    "resume_section": "experience",
+    "source": "resume_llm"
+  },
+  {
+    "kw": "SQLAlchemy",
+    "standard": "SQLAlchemy",
+    "category": "framework",
+    "weight": 3.0,
+    "resume_section": "experience",
+    "source": "resume_llm"
+  },
+  {
+    "kw": "Three-way Diff",
+    "standard": "Three-way Diff",
+    "category": "hard_skill",
+    "weight": 3.0,
+    "resume_section": "experience",
+    "source": "resume_llm"
+  },
+  {
+    "kw": "Element Plus",
+    "standard": "Element Plus",
+    "category": "framework",
+    "weight": 3.0,
+    "resume_section": "experience",
+    "source": "resume_llm"
+  },
+  {
+    "kw": "Structured Output",
+    "standard": "Structured Output",
+    "category": "hard_skill",
+    "weight": 3.0,
+    "resume_section": "experience",
+    "source": "resume_llm"
+  },
+  {
+    "kw": "Keyword Extraction",
+    "standard": "Keyword Extraction",
+    "category": "hard_skill",
+    "weight": 3.0,
+    "resume_section": "experience",
+    "source": "resume_llm"
+  },
+  {
+    "kw": "Journal",
+    "standard": "Journal",
+    "category": "hard_skill",
+    "weight": 3.0,
+    "resume_section": "project",
+    "source": "resume_llm"
+  },
+  {
+    "kw": "TaskBudget",
+    "standard": "TaskBudget",
+    "category": "hard_skill",
+    "weight": 3.0,
+    "resume_section": "project",
+    "source": "resume_llm"
+  },
+  {
+    "kw": "Approval Agent",
+    "standard": "Approval Agent",
+    "category": "hard_skill",
+    "weight": 3.0,
+    "resume_section": "project",
+    "source": "resume_llm"
+  },
+  {
+    "kw": "字节跳动",
+    "standard": "字节跳动",
+    "category": "other",
+    "weight": 3.0,
+    "resume_section": "experience",
+    "source": "resume_llm"
+  },
+  {
+    "kw": "华为技术有限公司",
+    "standard": "华为技术有限公司",
+    "category": "other",
+    "weight": 3.0,
+    "resume_section": "experience",
+    "source": "resume_llm"
+  },
+  {
+    "kw": "SWE实习",
+    "standard": "SWE实习",
+    "category": "role",
+    "weight": 3.0,
+    "resume_section": "experience",
+    "source": "resume_llm"
+  },
+  {
+    "kw": "TikTok",
+    "standard": "TikTok",
+    "category": "other",
+    "weight": 2.5,
+    "resume_section": "experience",
+    "source": "resume_llm"
+  },
+  {
+    "kw": "广告平台与接口团队",
+    "standard": "广告平台与接口团队",
+    "category": "other",
+    "weight": 2.5,
+    "resume_section": "experience",
+    "source": "resume_llm"
+  },
+  {
+    "kw": "无线产品线",
+    "standard": "无线产品线",
+    "category": "other",
+    "weight": 2.5,
+    "resume_section": "experience",
+    "source": "resume_llm"
+  }
+]

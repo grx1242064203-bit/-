@@ -1,28 +1,17 @@
 
 """
-岗位匹配评分器 — 分层加权 + 同义词归一化 + 匹配理由可解释。
+岗位匹配评分器 v2 — 分层加权 + 同义词归一化 + 匹配理由可解释。
 
-重写背景:
-原 scorer.py 使用硬编码 7 维度 + 纯字面字符串包含匹配,存在:
-- 无同义词归一化(简历写"分布式缓存",岗位写"Redis" → 漏匹配)
-- 无结构化关键词区分(硬技能/软技能/证书混在一起)
-- 无权重差异化(Python 对后端岗 vs 数据岗同等对待)
-- 无可解释输出(用户不知道为什么匹配/不匹配)
-
-新引擎:
-- 8 维度分层加权(skill/hard_skill/cert/education/major/city/role/soft_skill)
-- 同义词归一化 + Jaccard overlap 匹配
-- 结构化关键词支持(优先使用 UserProfile.structured_keywords,
-  无则降级使用 core_skills + direction_keywords)
-- 每个维度输出 match_reasons 列表
-
-向后兼容:函数签名 score_job(job, profile, llm_client) 保持不变,
-UserMatcher._score_and_rank() 中的调用代码无需修改。
+修复 v1 bug:
+- hard_skill bucket 只收 category=hard_skill,遗漏 tool/framework/skill
+- skill_all 被 education/city/cert 污染,Jaccard 分母膨胀
+- role 维度用 standard form 匹配中文原始词,永远 30 分
+- 所有维度统一对岗位侧关键词做 normalize,避免 standard vs raw 不匹配
 """
 import logging
 from typing import Dict, List, Tuple, Optional
 
-from keyword_normalizer import keyword_set_overlap, normalize
+from keyword_normalizer import keyword_set_overlap, normalize as _norm
 
 logger = logging.getLogger(__name__)
 
@@ -39,52 +28,101 @@ DIMENSION_WEIGHTS = {
 
 EDUCATION_LEVELS = {"大专": 1, "本科": 2, "硕士": 3, "博士": 4}
 
+_SKILL_CATEGORIES = {"hard_skill", "skill", "tool", "framework"}
+
+
+def _norm_list(kws: List[str]) -> List[str]:
+    """批量归一化关键词,未命中词典的保留原始值。"""
+    out = []
+    for k in kws or []:
+        std, hit = _norm(k)
+        out.append(std)
+    return out
+
 
 def _extract_job_keywords(job: Dict) -> Dict[str, List[str]]:
-    """从岗位 dict 中按类别提取关键词集合"""
     return {
-        "keywords": job.get("keywords", []) or [],
-        "hard_skills": job.get("hard_skills", []) or [],
-        "soft_skills": job.get("soft_skills", []) or [],
-        "certifications": job.get("certifications", []) or [],
-        "languages": job.get("languages", []) or [],
+        "keywords": _norm_list(job.get("keywords", []) or []),
+        "hard_skills": _norm_list(job.get("hard_skills", []) or []),
+        "soft_skills": _norm_list(job.get("soft_skills", []) or []),
+        "certifications": _norm_list(job.get("certifications", []) or []),
+        "languages": _norm_list(job.get("languages", []) or []),
+        "job_category": _norm_list([job.get("job_category", "")] if job.get("job_category") else []),
+        "job_subcategory": _norm_list([job.get("job_subcategory", "")] if job.get("job_subcategory") else []),
+        "position_title_norm": _norm_list([job.get("position_title", "")] if job.get("position_title") else []),
     }
 
 
 def _extract_user_keywords(profile) -> Dict[str, List[str]]:
     """
-    从 UserProfile 中按类别提取用户关键词集合。
-    优先使用 structured_keywords(新版),降级使用 core_skills + direction_keywords(旧版)。
+    从 UserProfile 提取结构化关键词,优先 structured_keywords,降级 core_skills。
+
+    BUCKET 设计关键约束:
+    - hard_skill 包含所有技能/工具/框架/领域类 category(LLM 解析可能标成不同类别)
+    - soft_skill 只收 category=soft_skill
+    - cert/education/city/role 各归其位
+    - skill_all 只含技能类,排除 education/city/cert/role 等非技能词
     """
     if getattr(profile, "structured_keywords", None):
-        result: Dict[str, List[str]] = {
-            "hard_skill": [], "soft_skill": [], "tool": [], "framework": [],
-            "domain": [], "cert": [], "education": [], "city": [], "role": [],
-            "project": [], "other": [], "skill_all": [],
-        }
-        for tag in profile.structured_keywords:
-            kw = tag.get("standard") or tag.get("kw", "")
-            category = tag.get("category", "other")
-            if not kw:
-                continue
-            bucket = result.setdefault(category, [])
-            bucket.append(kw)
-            result["skill_all"].append(kw)
-        return result
+        hard_skill: List[str] = []
+        soft_skill: List[str] = []
+        cert: List[str] = []
+        education: List[str] = []
+        city: List[str] = []
+        role: List[str] = []
+        skill_all: List[str] = []
+        domain: List[str] = []
 
-    old_kws = {
-        "hard_skill": list(profile.core_skills or []),
-        "skill_all": list(profile.core_skills or []),
-        "role": [],
-        "domain": [],
-        "city": list(profile.target_cities or []),
-        "cert": list(profile.target_certificates or []),
-    }
+        seen = set()
+        for tag in profile.structured_keywords:
+            kw = (tag.get("standard") or tag.get("kw") or "").strip()
+            category = tag.get("category", "other")
+            if not kw or kw in seen:
+                continue
+            seen.add(kw)
+
+            if category in _SKILL_CATEGORIES:
+                hard_skill.append(kw)
+                skill_all.append(kw)
+            elif category == "domain":
+                domain.append(kw)
+            elif category == "soft_skill":
+                soft_skill.append(kw)
+            elif category == "cert":
+                cert.append(kw)
+            elif category == "education":
+                education.append(kw)
+            elif category == "city":
+                city.append(kw)
+            elif category == "role":
+                role.append(kw)
+
+        return {
+            "hard_skill": hard_skill, "soft_skill": soft_skill,
+            "cert": cert, "education": education, "city": city,
+            "role": role, "skill_all": skill_all, "domain": domain,
+        }
+
+    old_hard = list(profile.core_skills or [])
+    old_roles: List[str] = []
+    old_certs = list(profile.target_certificates or [])
+    old_cities = list(profile.target_cities or [])
     for role, kws in (profile.direction_keywords or {}).items():
-        if role in ("role", "domain", "skill"):
-            old_kws[role].extend(kws)
-            old_kws["skill_all"].extend(kws)
-    return old_kws
+        if role in ("role",):
+            old_roles.extend(kws)
+        if role in ("skill", "domain"):
+            old_hard.extend(kws)
+
+    return {
+        "hard_skill": _norm_list(old_hard),
+        "soft_skill": [],
+        "cert": _norm_list(old_certs),
+        "education": [],
+        "city": _norm_list(old_cities),
+        "role": _norm_list(old_roles),
+        "skill_all": _norm_list(old_hard),
+        "domain": [],
+    }
 
 
 def _education_level(edu: str) -> int:
@@ -97,7 +135,6 @@ def _education_level(edu: str) -> int:
 
 
 def _match_education(profile, job: Dict) -> Tuple[float, List[str]]:
-    """学历维度:候选人学历 >= 岗位最低学历 → 100,不达标 → 0,信息缺失 → 60"""
     reasons: List[str] = []
     user_edu = _education_level(profile.degree or "")
     job_min = _education_level(job.get("min_education", "") or job.get("education_req", ""))
@@ -115,7 +152,9 @@ def _match_education(profile, job: Dict) -> Tuple[float, List[str]]:
         reasons.append(f"候选人{label}学历满足岗位最低要求")
         return 100.0, reasons
 
-    reasons.append(f"候选人学历可能低于岗位要求(最低要求{list(EDUCATION_LEVELS.keys())[job_min - 1]})")
+    reasons.append(
+        f"候选人学历低于岗位要求(最低要求{list(EDUCATION_LEVELS.keys())[job_min - 1]})"
+    )
     return 0.0, reasons
 
 
@@ -143,29 +182,25 @@ def _match_city(profile, job: Dict) -> Tuple[float, List[str]]:
 
 def _match_cert(profile, job: Dict, u: Dict) -> Tuple[float, List[str]]:
     reasons: List[str] = []
-    job_certs = job.get("certifications", []) or []
-    job_certs_lower = [c.lower() for c in job_certs]
+    jk = _extract_job_keywords(job)
+    job_certs = jk["certifications"]
 
     if not job_certs:
         reasons.append("岗位无证书硬性要求")
         return 60.0, reasons
 
-    user_certs = [c.lower() for c in (u.get("cert") or [])]
-    hit = 0
-    for jc in job_certs_lower:
-        for uc in user_certs:
-            if jc in uc or uc in jc:
-                hit += 1
-                break
+    user_certs = u.get("cert") or []
+    _, _, hits = keyword_set_overlap(user_certs, job_certs)
 
-    if hit >= len(job_certs):
-        reasons.append(f"候选人持有岗位要求的全部证书: {', '.join(job_certs)}")
+    if len(hits) >= len(job_certs):
+        hit_names = [f"{uk}↔{jk2}" for uk, jk2 in hits]
+        reasons.append(f"候选人持有岗位要求的全部证书: {', '.join(hit_names)}")
         return 100.0, reasons
-    if hit > 0:
-        reasons.append(f"候选人持有部分岗位要求的证书({hit}/{len(job_certs)})")
+    if hits:
+        reasons.append(f"候选人持有部分岗位证书({len(hits)}/{len(job_certs)})")
         return 60.0, reasons
 
-    reasons.append(f"岗位要求证书但候选人未持有: {', '.join(job_certs)}")
+    reasons.append(f"岗位要求证书 {', '.join(job.get('certifications', []))} 候选人均未持有")
     return 0.0, reasons
 
 
@@ -186,8 +221,11 @@ def _match_major(profile, job: Dict, u: Dict) -> Tuple[float, List[str]]:
         reasons.append(f"候选人专业属于{job_major_cat}大类")
         return 100.0, reasons
 
-    if job_major and user_major and (job_major.lower() in user_major.lower() or user_major.lower() in job_major.lower()):
-        reasons.append(f"候选人专业与岗位专业要求直接匹配({user_major})")
+    if job_major and user_major and (
+        job_major.lower() in user_major.lower()
+        or user_major.lower() in job_major.lower()
+    ):
+        reasons.append(f"候选人专业与岗位直接匹配({user_major})")
         return 100.0, reasons
 
     if "不限" in (job_major or "") or "相关" in (job_major or ""):
@@ -199,63 +237,62 @@ def _match_major(profile, job: Dict, u: Dict) -> Tuple[float, List[str]]:
 
 
 def _match_role(profile, job: Dict, u: Dict) -> Tuple[float, List[str]]:
+    """角色匹配:两边都 normalize 后用 keyword_set_overlap,解决 standard vs raw 不匹配问题。"""
     reasons: List[str] = []
-    job_title = (job.get("position_title") or "").lower()
-    job_cat = (job.get("job_category") or "").lower()
-    job_subcat = (job.get("job_subcategory") or "").lower()
+    jk = _extract_job_keywords(job)
+    job_roles = list(set(
+        jk["job_category"] + jk["job_subcategory"] + jk["position_title_norm"]
+    ))
 
-    user_roles = [r.lower() for r in (u.get("role") or [])]
+    user_roles = u.get("role") or []
     if not user_roles:
         reasons.append("候选人未明确目标岗位方向")
         return 60.0, reasons
 
-    job_roles_set = set(filter(None, [job_title, job_cat, job_subcat]))
-    for ur in user_roles:
-        for jr in job_roles_set:
-            if ur and ur in jr or (jr and jr in ur):
-                reasons.append(f"岗位方向{job_cat or job_subcat}与候选人目标{ur}匹配")
-                return 100.0, reasons
+    _, _, hits = keyword_set_overlap(user_roles, job_roles)
 
-    all_job_text = f"{job_title} {job_cat} {job_subcat}"
-    _, _, hits = keyword_set_overlap(user_roles, [all_job_text])
+    if len(hits) >= 2 or (hits and jk["job_category"] and _norm(job.get("job_category", ""))[0] in user_roles):
+        hit_names = [f"{uk}↔{jk2}" for uk, jk2 in hits]
+        reasons.append(f"岗位方向与候选人目标强匹配: {', '.join(hit_names)}")
+        return 100.0, reasons
     if hits:
-        reasons.append(f"岗位方向与候选人目标有交集")
+        hit_names = [f"{uk}↔{jk2}" for uk, jk2 in hits[:2]]
+        reasons.append(f"岗位方向与候选人目标有交集: {', '.join(hit_names)}")
         return 80.0, reasons
 
-    reasons.append(f"岗位方向{job_cat or job_title[:20]}与候选人目标方向不同")
+    reasons.append(f"岗位方向与候选人目标方向差异较大")
     return 30.0, reasons
 
 
 def _match_hard_skill(job: Dict, u: Dict) -> Tuple[float, List[str]]:
-    """硬技能维度:岗位 hard_skills 的覆盖率"""
+    jk = _extract_job_keywords(job)
+    job_hard = jk["hard_skills"]
     reasons: List[str] = []
-    job_hard = job.get("hard_skills", []) or []
 
     if not job_hard:
-        reasons.append("岗位无明确硬技能要求")
-        return 60.0, reasons
+        return 0.0, ["岗位无明确硬技能要求(拆岗质量不足)"]
 
     user_hard = u.get("hard_skill") or []
     _, jaccard, hits = keyword_set_overlap(user_hard, job_hard)
 
-    if len(job_hard) == 0:
-        return 60.0, reasons
-
-    coverage = len(hits) / len(job_hard)
-    score = min(100.0, coverage * 100.0 + jaccard * 20.0)
+    coverage = len(hits) / len(job_hard) if job_hard else 0
+    score = min(100.0, coverage * 100.0 + jaccard * 15.0)
 
     if hits:
-        hit_kws = [f"{uk}↔{jk}" for uk, jk in hits[:5]]
+        hit_kws = [f"{uk}↔{jk2}" for uk, jk2 in hits[:5]]
         reasons.append(f"硬技能命中{len(hits)}/{len(job_hard)}: {', '.join(hit_kws)}")
     else:
-        reasons.append(f"岗位要求硬技能 {', '.join(job_hard[:5])} 候选人均未命中")
+        reasons.append(
+            f"岗位要求硬技能 {', '.join(job.get('hard_skills', [])[:5])} 候选人均未命中"
+        )
 
     return score, reasons
 
 
 def _match_soft_skill(job: Dict, u: Dict) -> Tuple[float, List[str]]:
+    jk = _extract_job_keywords(job)
+    job_soft = jk["soft_skills"]
     reasons: List[str] = []
-    job_soft = job.get("soft_skills", []) or []
 
     if not job_soft:
         return 60.0, ["岗位无明确软技能要求"]
@@ -271,48 +308,34 @@ def _match_soft_skill(job: Dict, u: Dict) -> Tuple[float, List[str]]:
 
 
 def _match_skill(job: Dict, u: Dict) -> Tuple[float, List[str]]:
-    """综合技能维度:岗位 keywords + hard_skills 与用户全部关键词的 Jaccard overlap"""
+    """综合技能:岗位 keywords + hard_skills 的并集与用户 skill_all 做 Jaccard overlap。
+
+    空岗位关键词直接给 0 分(而非默认 60),避免降级岗位靠无技能要求混上排行榜。
+    """
+    jk = _extract_job_keywords(job)
+    job_all = list(set(jk["keywords"] + jk["hard_skills"]))
     reasons: List[str] = []
-    job_all = list(set(
-        (job.get("keywords", []) or []) +
-        (job.get("hard_skills", []) or [])
-    ))
 
     if not job_all:
-        return 60.0, ["岗位无可用关键词(拆岗质量不足)"]
+        return 0.0, ["岗位无可用关键词(拆岗质量不足)"]
 
-    user_all = u.get("skill_all") or u.get("hard_skill") or []
+    user_all = u.get("skill_all") or []
     _, jaccard, hits = keyword_set_overlap(user_all, job_all)
 
     score = min(100.0, jaccard * 200.0)
 
     if hits:
-        hit_kws = [f"{uk}↔{jk}" for uk, jk in hits[:6]]
+        hit_kws = [f"{uk}↔{jk2}" for uk, jk2 in hits[:6]]
         reasons.append(f"关键词命中{len(hits)}/{len(job_all)}: {', '.join(hit_kws)}")
     else:
-        reasons.append(f"岗位关键词 {', '.join(job_all[:5])} 与候选人无交集")
+        reasons.append(
+            f"岗位关键词 {', '.join(job.get('keywords', [])[:5])} 与候选人无交集"
+        )
 
     return score, reasons
 
 
 def score_job(job: Dict, profile, llm_client=None) -> Dict:
-    """
-    为单个岗位打分。
-
-    Args:
-        job: 岗位 dict,字段与 llm_enricher.py 输出格式对齐
-        profile: UserProfile dataclass 实例
-        llm_client: 保留签名兼容性,新版评分器不使用 LLM
-
-    Returns:
-        {
-            "相关性评分": float 0-100,
-            "综合推荐度": "强烈推荐/推荐/可申请/不建议",
-            "维度分": {dim: float},
-            "匹配理由": List[str],
-            "硬门槛通过": bool,
-        }
-    """
     u = _extract_user_keywords(profile)
 
     dim_scores: Dict[str, float] = {}

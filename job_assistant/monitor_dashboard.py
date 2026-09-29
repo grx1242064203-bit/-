@@ -66,6 +66,14 @@ footer { margin-top: 30px; color: #475569; font-size: 12px; }
   <div class="card orange"><div class="label">VL pending</div><div class="value">{{ data.vl_pending }}</div></div>
 </div>
 
+<h2>公司地位评级 <span style="font-size:14px;color:#94a3b8">{{ data.tier_pct }}%</span></h2>
+<div class="cards">
+  <div class="card green"><div class="label">已评级</div><div class="value">{{ data.tier_rated }}/{{ data.tier_total }}</div></div>
+  <div class="card red"><div class="label">顶 tier</div><div class="value">{{ data.tier_top }}</div></div>
+  <div class="card blue"><div class="label">中 tier</div><div class="value">{{ data.tier_mid }}</div></div>
+  <div class="card orange"><div class="label">保底 tier</div><div class="value">{{ data.tier_low }}</div></div>
+</div>
+
 <h2>最新已完成公告 (最近 15 条)</h2>
 <table>
 <tr><th>ID</th><th>公司</th><th>标题</th><th>状态</th><th>岗位数</th><th>更新时间</th></tr>
@@ -120,6 +128,14 @@ def get_stats():
     d["vl_failed"] = conn.execute("SELECT COUNT(*) FROM announcements WHERE vl_status='failed'").fetchone()[0]
     d["vl_not_needed"] = conn.execute("SELECT COUNT(*) FROM announcements WHERE vl_status='not_needed'").fetchone()[0]
     d["vl_pending"] = conn.execute("SELECT COUNT(*) FROM announcements WHERE vl_status='pending'").fetchone()[0]
+
+    # 公司评级进度
+    d["tier_total"] = conn.execute("SELECT COUNT(DISTINCT company_id) FROM positions").fetchone()[0]
+    d["tier_rated"] = conn.execute("SELECT COUNT(DISTINCT company_id) FROM positions WHERE company_tier != ''").fetchone()[0]
+    d["tier_top"] = conn.execute("SELECT COUNT(DISTINCT company_id) FROM positions WHERE company_tier='顶'").fetchone()[0]
+    d["tier_mid"] = conn.execute("SELECT COUNT(DISTINCT company_id) FROM positions WHERE company_tier='中'").fetchone()[0]
+    d["tier_low"] = conn.execute("SELECT COUNT(DISTINCT company_id) FROM positions WHERE company_tier='保底'").fetchone()[0]
+    d["tier_pct"] = round(d["tier_rated"] * 100 / max(d["tier_total"], 1))
     
     d["recent"] = conn.execute("""
         SELECT id, company_name, announcement_title, llm_status, positions_count, llm_time

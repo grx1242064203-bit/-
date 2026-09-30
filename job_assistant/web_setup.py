@@ -24,7 +24,7 @@ import logging
 import time
 from typing import Optional
 
-from flask import Flask, request, jsonify, render_template_string, send_from_directory
+from flask import Flask, request, jsonify, render_template_string, send_from_directory, redirect, url_for
 
 from config import settings
 from models import User, UserProfile, UserStore
@@ -706,6 +706,12 @@ if (oid) document.getElementById('order_id').value = oid;
 </body>
 </html>
 """
+
+
+@app.route("/")
+def index():
+    """根路径重定向到配置页。"""
+    return redirect(url_for("setup_page"))
 
 
 @app.route("/setup")

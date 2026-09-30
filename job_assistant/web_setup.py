@@ -142,6 +142,33 @@ SETUP_PAGE_HTML = """
           cursor: pointer; user-select: none; }
   .chip.active { background: #3370ff; color: #fff; border-color: #3370ff; }
   .loading { text-align: center; padding: 20px; color: #888; }
+  /* 简历分析卡片 */
+  .analysis-block { background: #fafbfc; border: 1px solid #e8eaf0; border-radius: 10px;
+                   padding: 14px 16px; margin-bottom: 12px; }
+  .analysis-label { font-size: 12px; color: #888; margin-bottom: 6px; font-weight: 600;
+                    text-transform: uppercase; letter-spacing: 0.5px; }
+  .analysis-row { display: flex; flex-wrap: wrap; gap: 8px; align-items: center; }
+  .skill-tag { display: inline-block; padding: 4px 10px; background: #eef2ff; color: #3370ff;
+               border-radius: 12px; font-size: 13px; }
+  .skill-tag.edit { cursor: pointer; }
+  .skill-tag .rm { margin-left: 4px; color: #aaa; cursor: pointer; }
+  .add-input { width: 120px; padding: 4px 8px; font-size: 13px; border: 1px solid #ddd;
+               border-radius: 12px; }
+  .add-btn { padding: 4px 10px; font-size: 12px; background: #3370ff; color: #fff;
+             border: none; border-radius: 12px; cursor: pointer; }
+  .highlight-item { font-size: 13px; color: #444; padding: 3px 0; padding-left: 16px;
+                    position: relative; }
+  .highlight-item::before { content: "▸"; position: absolute; left: 0; color: #3370ff; }
+  .eta-bar { background: #fff8e1; border: 1px solid #ffe082; border-radius: 8px;
+             padding: 10px 14px; font-size: 13px; color: #6d4c00; margin: 12px 0; }
+  .spinner { display: inline-block; width: 14px; height: 14px; border: 2px solid #fff;
+             border-top-color: transparent; border-radius: 50%; animation: spin 0.8s linear infinite;
+             vertical-align: middle; margin-right: 6px; }
+  @keyframes spin { to { transform: rotate(360deg); } }
+  .field-row { display: flex; gap: 10px; margin-bottom: 12px; }
+  .field-row > div { flex: 1; }
+  .field-row label { margin-bottom: 4px; }
+  .field-row input { margin-bottom: 0; }
 </style>
 </head>
 <body>
@@ -172,38 +199,82 @@ SETUP_PAGE_HTML = """
     <div id="resume-msg"></div>
   </div>
 
-  <!-- Step 3: 确认配置 -->
+  <!-- Step 3: 简历分析 + 确认配置 -->
   <div id="step-profile" class="card hidden">
-    <div class="section-title">第三步:确认求职配置</div>
-    <label>学校</label>
-    <input id="school">
-    <label>学历</label>
-    <select id="degree">
-      <option value="">请选择</option>
-      <option value="大专">大专</option>
-      <option value="本科">本科</option>
-      <option value="硕士">硕士</option>
-      <option value="博士">博士</option>
-    </select>
-    <label>专业</label>
-    <input id="major">
-    <label>毕业年份</label>
-    <select id="graduation_year">
-      <option value="">请选择</option>
-      <option value="2025">2025届</option>
-      <option value="2026">2026届</option>
-      <option value="2027">2027届</option>
-      <option value="2028">2028届</option>
-    </select>
-    <label>目标城市(逗号分隔,留空=不限)</label>
-    <input id="target_cities" placeholder="如:北京,上海,深圳">
-    <label>目标行业</label>
-    <div class="multi-select" id="industry_tags"></div>
-    <label>偏好公司类型</label>
-    <div class="multi-select" id="company_type_tags"></div>
-    <label>目标岗位方向(逗号分隔)</label>
-    <input id="directions" placeholder="如:产品经理,运营,数据分析">
-    <button class="btn" onclick="confirmSetup()">生成我的岗位库</button>
+    <div class="section-title">第三步:AI 简历画像分析</div>
+    <p style="font-size:13px;color:#888;margin-bottom:14px">AI 已解析你的简历,下方为多维度分析结果。你可以点击修改任何内容,确认后生成专属岗位库。</p>
+
+    <div class="analysis-block">
+      <div class="analysis-label">📋 基本信息</div>
+      <div class="field-row">
+        <div><label>学校</label><input id="school"></div>
+        <div><label>学历</label>
+          <select id="degree">
+            <option value="">请选择</option>
+            <option value="本科">本科</option>
+            <option value="硕士">硕士</option>
+            <option value="博士">博士</option>
+            <option value="大专">大专</option>
+          </select>
+        </div>
+      </div>
+      <div class="field-row">
+        <div><label>专业</label><input id="major"></div>
+        <div><label>毕业年份</label>
+          <select id="graduation_year">
+            <option value="">请选择</option>
+            <option value="2025">2025届</option>
+            <option value="2026">2026届</option>
+            <option value="2027">2027届</option>
+            <option value="2028">2028届</option>
+          </select>
+        </div>
+      </div>
+    </div>
+
+    <div class="analysis-block">
+      <div class="analysis-label">💡 简历亮点</div>
+      <div id="highlights_list"></div>
+    </div>
+
+    <div class="analysis-block">
+      <div class="analysis-label">🛠 核心技能 <span style="font-weight:normal;color:#aaa;font-size:11px">(点击 × 删除,输入后回车添加)</span></div>
+      <div class="analysis-row" id="skills_tags"></div>
+      <div style="margin-top:6px">
+        <input class="add-input" id="skill_input" placeholder="添加技能" onkeydown="if(event.key==='Enter')addSkill()">
+        <button class="add-btn" onclick="addSkill()">添加</button>
+      </div>
+    </div>
+
+    <div class="analysis-block">
+      <div class="analysis-label">🎯 目标岗位方向 <span style="font-weight:normal;color:#aaa;font-size:11px">(点击 × 删除,输入后回车添加)</span></div>
+      <div class="analysis-row" id="directions_tags"></div>
+      <div style="margin-top:6px">
+        <input class="add-input" id="direction_input" placeholder="添加方向" onkeydown="if(event.key==='Enter')addDirection()">
+        <button class="add-btn" onclick="addDirection()">添加</button>
+      </div>
+    </div>
+
+    <div class="analysis-block">
+      <div class="analysis-label">🏙 目标城市</div>
+      <div class="analysis-row" id="cities_tags"></div>
+      <div style="margin-top:6px">
+        <input class="add-input" id="city_input" placeholder="添加城市" onkeydown="if(event.key==='Enter')addCity()">
+        <button class="add-btn" onclick="addCity()">添加</button>
+      </div>
+    </div>
+
+    <div class="analysis-block">
+      <div class="analysis-label">🏭 目标行业</div>
+      <div class="multi-select" id="industry_tags"></div>
+    </div>
+
+    <div class="analysis-block">
+      <div class="analysis-label">🏢 偏好公司类型</div>
+      <div class="multi-select" id="company_type_tags"></div>
+    </div>
+
+    <button class="btn" id="confirm_btn" onclick="confirmSetup()">生成我的岗位库</button>
     <div id="confirm-msg"></div>
   </div>
 
@@ -244,6 +315,9 @@ function verifyOrder() {
   });
 }
 
+// 数据存储
+let profileData = { skills: [], directions: [], cities: [], highlights: [] };
+
 function parseResume() {
   const text = document.getElementById('resume_text').value;
   const files = document.getElementById('resume_file').files;
@@ -260,8 +334,15 @@ function parseResume() {
         document.getElementById('degree').value = p.degree || '';
         document.getElementById('major').value = p.major || '';
         document.getElementById('graduation_year').value = p.graduation_year || '';
-        document.getElementById('target_cities').value = (p.target_cities || []).join(',');
-        document.getElementById('directions').value = Object.keys(p.direction_keywords || {}).join(',');
+        // 填充可编辑数据
+        profileData.skills = (p.core_skills || []).slice();
+        profileData.directions = Object.keys(p.direction_keywords || {});
+        profileData.cities = (p.target_cities || []).slice();
+        profileData.highlights = (p.highlights || []).slice();
+        renderSkillTags();
+        renderDirectionTags();
+        renderCityTags();
+        renderHighlights();
         renderTags('industry_tags', INDUSTRIES, p.target_industries || []);
         renderTags('company_type_tags', COMPANY_TYPES, p.preferred_company_types || []);
         document.getElementById('step-resume').classList.add('hidden');
@@ -273,6 +354,52 @@ function parseResume() {
         document.getElementById('step-profile').classList.remove('hidden');
       }
     });
+}
+
+// === 可编辑标签渲染 ===
+function renderSkillTags() {
+  const c = document.getElementById('skills_tags');
+  c.innerHTML = profileData.skills.map((s,i) =>
+    '<span class="skill-tag">' + s + '<span class="rm" onclick="removeSkill('+i+')">×</span></span>'
+  ).join('');
+}
+function removeSkill(i) { profileData.skills.splice(i,1); renderSkillTags(); }
+function addSkill() {
+  const v = document.getElementById('skill_input').value.trim();
+  if (v && !profileData.skills.includes(v)) { profileData.skills.push(v); renderSkillTags(); }
+  document.getElementById('skill_input').value = '';
+}
+
+function renderDirectionTags() {
+  const c = document.getElementById('directions_tags');
+  c.innerHTML = profileData.directions.map((d,i) =>
+    '<span class="skill-tag">' + d + '<span class="rm" onclick="removeDirection('+i+')">×</span></span>'
+  ).join('');
+}
+function removeDirection(i) { profileData.directions.splice(i,1); renderDirectionTags(); }
+function addDirection() {
+  const v = document.getElementById('direction_input').value.trim();
+  if (v && !profileData.directions.includes(v)) { profileData.directions.push(v); renderDirectionTags(); }
+  document.getElementById('direction_input').value = '';
+}
+
+function renderCityTags() {
+  const c = document.getElementById('cities_tags');
+  c.innerHTML = profileData.cities.map((ct,i) =>
+    '<span class="skill-tag">' + ct + '<span class="rm" onclick="removeCity('+i+')">×</span></span>'
+  ).join('');
+}
+function removeCity(i) { profileData.cities.splice(i,1); renderCityTags(); }
+function addCity() {
+  const v = document.getElementById('city_input').value.trim();
+  if (v && !profileData.cities.includes(v)) { profileData.cities.push(v); renderCityTags(); }
+  document.getElementById('city_input').value = '';
+}
+
+function renderHighlights() {
+  const c = document.getElementById('highlights_list');
+  if (!profileData.highlights.length) { c.innerHTML = '<div style="font-size:13px;color:#aaa">暂无亮点</div>'; return; }
+  c.innerHTML = profileData.highlights.map(h => '<div class="highlight-item">' + h + '</div>').join('');
 }
 
 function renderTags(containerId, options, selected) {
@@ -293,23 +420,27 @@ function getSelectedTags(containerId) {
 }
 
 function confirmSetup() {
+  const btn = document.getElementById('confirm_btn');
+  if (btn.disabled) return;
+  btn.disabled = true;
+  btn.innerHTML = '<span class="spinner"></span>正在创建岗位库(约1-2分钟)...';
   const industries = getSelectedTags('industry_tags');
   const companyTypes = getSelectedTags('company_type_tags');
-  const directions = document.getElementById('directions').value.split(',').map(s=>s.trim()).filter(Boolean);
   const dirKw = {};
-  directions.forEach(d => { if (d) dirKw[d] = [d]; });
+  profileData.directions.forEach(d => { if (d) dirKw[d] = [d]; });
   const profile = {
     role: 'campus',
     school: document.getElementById('school').value,
     degree: document.getElementById('degree').value,
     major: document.getElementById('major').value,
     graduation_year: document.getElementById('graduation_year').value,
-    target_cities: document.getElementById('target_cities').value.split(',').map(s=>s.trim()).filter(Boolean),
+    target_cities: profileData.cities,
     target_industries: industries,
     preferred_company_types: companyTypes,
     direction_keywords: dirKw,
+    core_skills: profileData.skills,
   };
-  showMsg('confirm-msg', '⏳ 正在创建你的岗位库...', '');
+  showMsg('confirm-msg', '', '');
   fetch('/api/confirm-setup', {
     method: 'POST',
     headers: {'Content-Type': 'application/json'},
@@ -328,7 +459,13 @@ function confirmSetup() {
       ).join('');
     } else {
       showMsg('confirm-msg', data.msg || '创建失败,请重试', 'error');
+      btn.disabled = false;
+      btn.innerHTML = '生成我的岗位库';
     }
+  }).catch(() => {
+    showMsg('confirm-msg', '网络异常,请重试', 'error');
+    btn.disabled = false;
+    btn.innerHTML = '生成我的岗位库';
   });
 }
 

@@ -103,6 +103,13 @@ def _extract_job_keywords(job: Dict) -> Dict[str, List[str]]:
     }
 
 
+def _tag_get(tag, key, default=""):
+    """兼容 KeywordTag(属性访问)和 dict(键访问)两种结构化关键词类型。"""
+    if isinstance(tag, dict):
+        return tag.get(key, default)
+    return getattr(tag, key, default)
+
+
 def _extract_user_keywords(profile) -> Dict[str, List[str]]:
     """
     从 UserProfile 提取结构化关键词,优先 structured_keywords,降级 core_skills。
@@ -125,8 +132,8 @@ def _extract_user_keywords(profile) -> Dict[str, List[str]]:
 
         seen = set()
         for tag in profile.structured_keywords:
-            kw = (tag.get("standard") or tag.get("kw") or "").strip()
-            category = tag.get("category", "other")
+            kw = (_tag_get(tag, "standard") or _tag_get(tag, "kw") or "").strip()
+            category = _tag_get(tag, "category", "other")
             if not kw or kw in seen:
                 continue
             seen.add(kw)

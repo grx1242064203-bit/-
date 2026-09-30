@@ -157,6 +157,11 @@ SETUP_PAGE_HTML = """
                border-radius: 12px; }
   .add-btn { padding: 4px 10px; font-size: 12px; background: #3370ff; color: #fff;
              border: none; border-radius: 12px; cursor: pointer; }
+  .profile-textarea { width: 100%; box-sizing: border-box; padding: 10px 12px;
+                      font-size: 14px; line-height: 1.6; border: 1px solid #ddd;
+                      border-radius: 10px; resize: vertical; font-family: inherit;
+                      background: #fafafa; }
+  .profile-textarea:focus { outline: none; border-color: #3370ff; background: #fff; }
   .highlight-item { font-size: 13px; color: #444; padding: 3px 0; padding-left: 16px;
                     position: relative; }
   .highlight-item::before { content: "▸"; position: absolute; left: 0; color: #3370ff; }
@@ -231,6 +236,11 @@ SETUP_PAGE_HTML = """
           </select>
         </div>
       </div>
+    </div>
+
+    <div class="analysis-block">
+      <div class="analysis-label">📝 简历分析摘要 <span style="font-weight:normal;color:#aaa;font-size:11px">(可直接修改,AI 将基于此理解你的背景)</span></div>
+      <textarea id="profile_summary" class="profile-textarea" rows="5" placeholder="AI 解析的简历摘要将显示在这里,你可以修改..."></textarea>
     </div>
 
     <div class="analysis-block">
@@ -369,6 +379,7 @@ function parseResume() {
         profileData.highlights = (p.highlights || []).slice();
         profileData.resume_text = p.resume_text || text || '';
         profileData.summary = p.summary || '';
+        document.getElementById('profile_summary').value = profileData.summary;
         profileData.structured_keywords = p.structured_keywords || [];
         profileData.fit_directions = p.fit_directions || [];
         renderSkillTags();
@@ -452,6 +463,8 @@ function supplementProfile() {
   btn.disabled = true;
   btn.innerHTML = '<span class="spinner"></span>AI 正在分析(约10-20秒)...';
 
+  // 用用户编辑后的摘要作为 AI 理解背景的上下文
+  const editedSummary = document.getElementById('profile_summary').value || profileData.summary;
   const userEdited = {
     directions: profileData.directions,
     fit_directions: profileData.fit_directions,
@@ -461,12 +474,11 @@ function supplementProfile() {
   fetch('/api/supplement-profile', {
     method: 'POST',
     headers: {'Content-Type': 'application/json'},
-    body: JSON.stringify({profile: userEdited, resume_text: profileData.resume_text})
+    body: JSON.stringify({profile: userEdited, resume_text: editedSummary})
   }).then(r => r.json()).then(data => {
     if (data.fit_directions) {
       profileData.fit_directions = data.fit_directions;
       profileData.structured_keywords = data.structured_keywords;
-      // 同步方向标签
       profileData.directions = data.fit_directions.map(d => d.direction).filter(Boolean);
       renderDirectionTags();
 
@@ -504,11 +516,16 @@ function supplementProfile() {
       renderSkillTags();
 
       showMsg('confirm-msg', '✅ AI 补充完成,你可以继续修改,满意后点击「生成我的岗位库」', 'success');
+      // 补充成功后按钮保持禁用(一轮流程只补充一次)
+      btn.disabled = true;
+      btn.innerHTML = '✅ 已完成 AI 补充';
+      btn.style.opacity = '0.6';
+      btn.style.cursor = 'not-allowed';
     } else {
       showMsg('confirm-msg', data.error || 'AI 补充失败', 'error');
+      btn.disabled = false;
+      btn.innerHTML = '✨ AI 补充分析(扩展方向+技能)';
     }
-    btn.disabled = false;
-    btn.innerHTML = '✨ AI 补充分析(扩展方向+技能)';
   }).catch(() => {
     showMsg('confirm-msg', '网络异常,请重试', 'error');
     btn.disabled = false;
@@ -562,7 +579,7 @@ function confirmSetup() {
     core_skills: profileData.skills,
     // 简历解析留档数据(用户最终确认版)
     resume_text: profileData.resume_text,
-    summary: profileData.summary,
+    summary: document.getElementById('profile_summary').value || profileData.summary,
     highlights: profileData.highlights,
     structured_keywords: profileData.structured_keywords,
     fit_directions: profileData.fit_directions,

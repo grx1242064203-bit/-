@@ -190,16 +190,24 @@ def _normalize_keywords(raw_tags: List[Dict]) -> List[Dict]:
     return sorted(dedupe_map.values(), key=lambda x: -x["weight"])
 
 
-def _validate_fit_directions(raw_dirs: List[Dict]) -> List[Dict]:
-    """校验 fit_directions 的 direction 必须是树中子类名;非法的丢弃并记日志。"""
+def _validate_fit_directions(raw_dirs: List[Dict], allow_category: bool = False) -> List[Dict]:
+    """校验 fit_directions 的 direction 必须是树中子类名(或大类名,allow_category=True 时)。
+
+    非法的丢弃并记日志。
+    - 子类命中: cat_key + sub_key 都有
+    - 大类命中: 只有 cat_key,sub_key=None(同大类匹配系数 0.6)
+    """
     valid = []
     for d in raw_dirs:
         direction = (d.get("direction") or "").strip()
         if not direction:
             continue
-        entry = job_tree.resolve(direction)
-        if entry is None or entry.get("type") != "subcategory":
-            logger.warning(f"fit_directions 非法 direction 丢弃: {direction!r} (非树中子类)")
+        entry = job_tree.resolve(direction, allow_category=allow_category)
+        if entry is None:
+            logger.warning(f"fit_directions 非法 direction 丢弃: {direction!r} (不在树中)")
+            continue
+        if entry.get("type") not in ("subcategory", "category"):
+            logger.warning(f"fit_directions 非法 type 丢弃: {direction!r}")
             continue
         try:
             weight = float(d.get("weight") or 0.0)
@@ -208,14 +216,15 @@ def _validate_fit_directions(raw_dirs: List[Dict]) -> List[Dict]:
         weight = max(0.0, min(1.0, weight))
         if weight < 0.3:
             continue
-        valid.append({
-            "direction": entry["sub_name"],  # 标准化为树中的子类名
+        item = {
+            "direction": entry.get("sub_name") or entry.get("category_name") or direction,
             "cat_key": entry["cat_key"],
-            "sub_key": entry["sub_key"],
-            "category_name": entry["category_name"],
+            "sub_key": entry.get("sub_key"),  # 大类时为 None
+            "category_name": entry.get("category_name", ""),
             "weight": round(weight, 2),
             "evidence": (d.get("evidence") or "").strip()[:200],
-        })
+        }
+        valid.append(item)
     # 按权重降序,最多保留 8 个
     valid.sort(key=lambda x: -x["weight"])
     return valid[:8]
@@ -305,3 +314,113 @@ def apply_keywords_to_profile(profile, result: Dict):
     profile.core_skills = list(dict.fromkeys(core))
     profile.direction_keywords = {k: list(dict.fromkeys(v)) for k, v in direction.items()}
     return profile
+
+
+def supplement_profile(user_edited: Dict, resume_text: str = "",
+                       llm_client=None) -> Dict:
+    """第二轮:根据用户编辑后的方向词,扩展 fit_directions + 硬技能。
+
+    流程:
+    1. 从 user_edited 提取用户编辑后的方向名列表(directions)和已有 fit_directions
+    2. 找出用户新增的方向(不在已有 fit_directions 的 direction 中)
+    3. 调用 LLM expand_directions 扩展这些方向 → fit_directions + hard_skills
+    4. 校验方向合法性(允许大类),合并去重
+    5. 把新硬技能并入 structured_keywords(去重,标记 source=ai_supplemented)
+
+    Args:
+        user_edited: 用户编辑后的画像 dict,含 directions(List[str])、
+                     fit_directions(List[Dict])、structured_keywords(List[Dict])
+        resume_text: 原始简历文本
+        llm_client: LLMClient 实例
+
+    Returns:
+        {"fit_directions": [...], "structured_keywords": [...],
+         "new_directions": [...], "new_skills": [...]}
+    """
+    directions = user_edited.get("directions") or []
+    existing_dirs = user_edited.get("fit_directions") or []
+    existing_keywords = user_edited.get("structured_keywords") or []
+
+    # 已有方向名集合
+    existing_names = set()
+    for d in existing_dirs:
+        if isinstance(d, dict):
+            existing_names.add((d.get("direction") or "").strip())
+
+    # 用户新增的方向词(在 directions 列表里但不在已有 fit_directions 中)
+    user_added = [d.strip() for d in directions
+                  if d and d.strip() and d.strip() not in existing_names]
+
+    if not user_added:
+        # 没有新增方向,直接返回原数据
+        return {
+            "fit_directions": existing_dirs,
+            "structured_keywords": existing_keywords,
+            "new_directions": [],
+            "new_skills": [],
+        }
+
+    from llm_client import LLMClient
+    client = llm_client or LLMClient()
+
+    result = client.expand_directions(
+        user_directions=user_added,
+        resume_text=resume_text,
+        existing_directions=list(existing_names),
+    )
+
+    # 校验新方向(允许大类)
+    new_dirs = _validate_fit_directions(result.get("fit_directions", []),
+                                        allow_category=True)
+
+    # 合并 fit_directions:已有 + 新增(按 direction 去重,保留权重大的)
+    merged_dirs = {d["direction"]: d for d in existing_dirs if isinstance(d, dict)}
+    for nd in new_dirs:
+        name = nd["direction"]
+        if name in merged_dirs:
+            if nd["weight"] > merged_dirs[name]["weight"]:
+                merged_dirs[name] = nd
+        else:
+            merged_dirs[name] = nd
+    final_dirs = sorted(merged_dirs.values(), key=lambda x: -x["weight"])
+
+    # 合并 hard_skills 到 structured_keywords
+    existing_kw_set = set()
+    for k in existing_keywords:
+        if isinstance(k, dict):
+            existing_kw_set.add((k.get("standard") or k.get("kw", "")).lower())
+
+    new_skills = []
+    for s in result.get("hard_skills", []):
+        kw = (s.get("kw") or "").strip()
+        if not kw:
+            continue
+        std, hit = keyword_normalizer_normalize(kw)
+        canonical = std if hit else kw.lower()
+        if canonical in existing_kw_set:
+            continue
+        existing_kw_set.add(canonical)
+        tag = {
+            "kw": kw,
+            "standard": std if hit else kw,
+            "category": "hard_skill",
+            "weight": round(float(s.get("weight") or 2.5), 2),
+            "resume_section": "other",
+            "source": "ai_supplemented",
+        }
+        new_skills.append(tag)
+
+    final_keywords = list(existing_keywords) + new_skills
+
+    return {
+        "fit_directions": final_dirs,
+        "structured_keywords": final_keywords,
+        "new_directions": new_dirs,
+        "new_skills": new_skills,
+    }
+
+
+def keyword_normalizer_normalize(kw: str):
+    """封装 keyword_normalizer.normalize,避免顶层循环 import。"""
+    from keyword_normalizer import normalize
+    return normalize(kw)

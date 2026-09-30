@@ -31,6 +31,7 @@ from models import User, UserProfile, UserStore
 from llm_client import LLMClient
 from feishu_table_service import FeishuTableService
 import normalizer
+import resume_parser
 
 logger = logging.getLogger(__name__)
 
@@ -247,11 +248,20 @@ SETUP_PAGE_HTML = """
     </div>
 
     <div class="analysis-block">
-      <div class="analysis-label">🎯 目标岗位方向 <span style="font-weight:normal;color:#aaa;font-size:11px">(点击 × 删除,输入后回车添加)</span></div>
+      <div class="analysis-label">🎯 目标岗位方向 <span style="font-weight:normal;color:#aaa;font-size:11px">(点击 × 删除,输入后回车添加。可添加简历中没有但想投的方向)</span></div>
       <div class="analysis-row" id="directions_tags"></div>
       <div style="margin-top:6px">
-        <input class="add-input" id="direction_input" placeholder="添加方向" onkeydown="if(event.key==='Enter')addDirection()">
+        <input class="add-input" id="direction_input" placeholder="添加方向,如 AI开发/Infra" onkeydown="if(event.key==='Enter')addDirection()">
         <button class="add-btn" onclick="addDirection()">添加</button>
+      </div>
+    </div>
+
+    <div class="analysis-block">
+      <div class="analysis-label">🏢 目标公司 <span style="font-weight:normal;color:#aaa;font-size:11px">(可选,填写后优先推荐同行业/同类型公司)</span></div>
+      <div class="analysis-row" id="companies_tags"></div>
+      <div style="margin-top:6px">
+        <input class="add-input" id="company_input" placeholder="添加公司,如 腾讯/字节" onkeydown="if(event.key==='Enter')addCompany()">
+        <button class="add-btn" onclick="addCompany()">添加</button>
       </div>
     </div>
 
@@ -274,6 +284,15 @@ SETUP_PAGE_HTML = """
       <div class="multi-select" id="company_type_tags"></div>
     </div>
 
+    <!-- AI 补充分析结果展示 -->
+    <div id="supplement_result" class="analysis-block hidden" style="border-color:#3370ff;background:#f0f7ff">
+      <div class="analysis-label" style="color:#3370ff">✨ AI 补充分析结果</div>
+      <div id="supplement_dirs" style="margin-bottom:8px"></div>
+      <div id="supplement_skills"></div>
+      <p style="font-size:12px;color:#888;margin-top:8px">以上为 AI 根据你新增的方向补充的内容,可在下方技能区查看和修改。</p>
+    </div>
+
+    <button class="btn" id="supplement_btn" onclick="supplementProfile()" style="background:#6c5ce7;margin-bottom:10px">✨ AI 补充分析(扩展方向+技能)</button>
     <button class="btn" id="confirm_btn" onclick="confirmSetup()">生成我的岗位库</button>
     <div id="confirm-msg"></div>
   </div>
@@ -317,7 +336,7 @@ function verifyOrder() {
 
 // 数据存储
 let profileData = {
-  skills: [], directions: [], cities: [], highlights: [],
+  skills: [], directions: [], cities: [], companies: [], highlights: [],
   resume_text: '', summary: '', structured_keywords: [], fit_directions: [],
 };
 
@@ -339,8 +358,14 @@ function parseResume() {
         document.getElementById('graduation_year').value = p.graduation_year || '';
         // 填充可编辑数据 + 简历解析留档数据
         profileData.skills = (p.core_skills || []).slice();
-        profileData.directions = Object.keys(p.direction_keywords || {});
+        // 方向优先用 fit_directions(结构化校验过的),降级用 direction_keywords
+        if (p.fit_directions && p.fit_directions.length) {
+          profileData.directions = p.fit_directions.map(d => d.direction).filter(Boolean);
+        } else {
+          profileData.directions = Object.keys(p.direction_keywords || {});
+        }
         profileData.cities = (p.target_cities || []).slice();
+        profileData.companies = (p.target_companies || []).slice();
         profileData.highlights = (p.highlights || []).slice();
         profileData.resume_text = p.resume_text || text || '';
         profileData.summary = p.summary || '';
@@ -349,6 +374,7 @@ function parseResume() {
         renderSkillTags();
         renderDirectionTags();
         renderCityTags();
+        renderCompanyTags();
         renderHighlights();
         renderTags('industry_tags', INDUSTRIES, p.target_industries || []);
         renderTags('company_type_tags', COMPANY_TYPES, p.preferred_company_types || []);
@@ -403,6 +429,93 @@ function addCity() {
   document.getElementById('city_input').value = '';
 }
 
+function renderCompanyTags() {
+  const c = document.getElementById('companies_tags');
+  c.innerHTML = profileData.companies.map((ct,i) =>
+    '<span class="skill-tag">' + ct + '<span class="rm" onclick="removeCompany('+i+')">×</span></span>'
+  ).join('');
+}
+function removeCompany(i) { profileData.companies.splice(i,1); renderCompanyTags(); }
+function addCompany() {
+  const v = document.getElementById('company_input').value.trim();
+  if (v && !profileData.companies.includes(v)) { profileData.companies.push(v); renderCompanyTags(); }
+  document.getElementById('company_input').value = '';
+}
+
+// === AI 补充分析(第二轮) ===
+function supplementProfile() {
+  if (!profileData.directions.length) {
+    alert('请先添加至少一个目标方向');
+    return;
+  }
+  const btn = document.getElementById('supplement_btn');
+  btn.disabled = true;
+  btn.innerHTML = '<span class="spinner"></span>AI 正在分析(约10-20秒)...';
+
+  const userEdited = {
+    directions: profileData.directions,
+    fit_directions: profileData.fit_directions,
+    structured_keywords: profileData.structured_keywords,
+  };
+
+  fetch('/api/supplement-profile', {
+    method: 'POST',
+    headers: {'Content-Type': 'application/json'},
+    body: JSON.stringify({profile: userEdited, resume_text: profileData.resume_text})
+  }).then(r => r.json()).then(data => {
+    if (data.fit_directions) {
+      profileData.fit_directions = data.fit_directions;
+      profileData.structured_keywords = data.structured_keywords;
+      // 同步方向标签
+      profileData.directions = data.fit_directions.map(d => d.direction).filter(Boolean);
+      renderDirectionTags();
+
+      // 展示 AI 补充的新方向和新技能
+      const newDirs = data.new_directions || [];
+      const newSkills = data.new_skills || [];
+      let dirsHtml = '<div style="font-size:13px;color:#3370ff;margin-bottom:4px">📌 新增/扩展方向:</div>';
+      if (newDirs.length) {
+        dirsHtml += newDirs.map(d =>
+          '<span class="skill-tag" style="background:#e8e4ff">' + d.direction +
+          ' <span style="color:#888;font-size:11px">(' + (d.weight||0).toFixed(1) + ')</span></span>'
+        ).join(' ');
+      } else {
+        dirsHtml += '<span style="color:#888;font-size:12px">无新增方向</span>';
+      }
+      document.getElementById('supplement_dirs').innerHTML = dirsHtml;
+
+      let skillsHtml = '<div style="font-size:13px;color:#3370ff;margin-bottom:4px">🛠 补充技能:</div>';
+      if (newSkills.length) {
+        skillsHtml += newSkills.map(s =>
+          '<span class="skill-tag" style="background:#e8e4ff">' + s.kw + '</span>'
+        ).join(' ');
+      } else {
+        skillsHtml += '<span style="color:#888;font-size:12px">无新增技能</span>';
+      }
+      document.getElementById('supplement_skills').innerHTML = skillsHtml;
+      document.getElementById('supplement_result').classList.remove('hidden');
+
+      // 同步技能到可编辑区(把补充的硬技能加入 skills 列表)
+      newSkills.forEach(s => {
+        if (s.kw && !profileData.skills.includes(s.kw)) {
+          profileData.skills.push(s.kw);
+        }
+      });
+      renderSkillTags();
+
+      showMsg('confirm-msg', '✅ AI 补充完成,你可以继续修改,满意后点击「生成我的岗位库」', 'success');
+    } else {
+      showMsg('confirm-msg', data.error || 'AI 补充失败', 'error');
+    }
+    btn.disabled = false;
+    btn.innerHTML = '✨ AI 补充分析(扩展方向+技能)';
+  }).catch(() => {
+    showMsg('confirm-msg', '网络异常,请重试', 'error');
+    btn.disabled = false;
+    btn.innerHTML = '✨ AI 补充分析(扩展方向+技能)';
+  });
+}
+
 function renderHighlights() {
   const c = document.getElementById('highlights_list');
   if (!profileData.highlights.length) { c.innerHTML = '<div style="font-size:13px;color:#aaa">暂无亮点</div>'; return; }
@@ -442,11 +555,12 @@ function confirmSetup() {
     major: document.getElementById('major').value,
     graduation_year: document.getElementById('graduation_year').value,
     target_cities: profileData.cities,
+    target_companies: profileData.companies,
     target_industries: industries,
     preferred_company_types: companyTypes,
     direction_keywords: dirKw,
     core_skills: profileData.skills,
-    // 简历解析留档数据
+    // 简历解析留档数据(用户最终确认版)
     resume_text: profileData.resume_text,
     summary: profileData.summary,
     highlights: profileData.highlights,
@@ -582,12 +696,47 @@ def api_parse_resume():
 
     try:
         profile = llm_client.parse_resume(resume_text)
+        # 第一轮:生成结构化关键词 + 适配方向(供匹配引擎使用)
+        parse_result = resume_parser.parse_resume_text(resume_text, llm_client=llm_client)
+        profile["structured_keywords"] = parse_result.get("keywords", [])
+        profile["fit_directions"] = parse_result.get("fit_directions", [])
         # 带回原始简历文本(含 OCR 结果),供 confirm-setup 留档
         profile["resume_text"] = resume_text
         return jsonify({"profile": profile})
     except Exception as e:
         logger.error(f"简历解析失败: {e}")
         return jsonify({"error": "简历解析失败,请稍后重试"}), 500
+
+
+@app.route("/api/supplement-profile", methods=["POST"])
+def api_supplement_profile():
+    """第二轮:用户编辑后,AI 补充分析(扩展用户新增方向 + 补充硬技能)。
+
+    输入:用户编辑后的画像(directions/fit_directions/structured_keywords) + resume_text
+    输出:补充后的 fit_directions + structured_keywords
+    """
+    data = request.get_json() or {}
+    user_edited = data.get("profile", {}) or {}
+    resume_text = data.get("resume_text", "")
+
+    if not user_edited.get("directions"):
+        return jsonify({"error": "请先添加目标方向"}), 400
+
+    try:
+        result = resume_parser.supplement_profile(
+            user_edited=user_edited,
+            resume_text=resume_text,
+            llm_client=llm_client,
+        )
+        return jsonify({
+            "fit_directions": result["fit_directions"],
+            "structured_keywords": result["structured_keywords"],
+            "new_directions": result["new_directions"],
+            "new_skills": result["new_skills"],
+        })
+    except Exception as e:
+        logger.error(f"画像补充失败: {e}")
+        return jsonify({"error": "AI 补充失败,请稍后重试"}), 500
 
 
 @app.route("/api/confirm-setup", methods=["POST"])

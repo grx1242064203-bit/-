@@ -550,6 +550,105 @@ class LLMClient:
                     f"directions={len(direction_keywords)}个")
         return profile
 
+    def expand_directions(self, user_directions: List[str],
+                          resume_text: str = "",
+                          existing_directions: List[str] = None) -> Dict[str, Any]:
+        """第二轮:把用户新增的方向词扩展成结构化 fit_directions + 硬技能。
+
+        用户在第一轮解析后,可能手动添加了想投的方向(如"AI开发""Infra"),
+        这些词可能很简单或不在岗位树中。本方法用 LLM:
+        1. 把方向词映射到岗位树子类(精确)或大类(歧义且简历无法消歧时)
+        2. 补充该方向典型需要的硬技能
+
+        Args:
+            user_directions: 用户新增的方向词列表
+            resume_text: 原始简历文本(用于判断用户是否有相关基础)
+            existing_directions: 已有方向名(避免重复输出)
+
+        Returns:
+            {"fit_directions": [...], "hard_skills": [{"kw","weight"}]}
+        """
+        if not user_directions:
+            return {"fit_directions": [], "hard_skills": []}
+
+        import job_tree
+        tree_block = job_tree.prompt_block()
+        existing = existing_directions or []
+
+        dirs_text = "、".join(user_directions)
+        existing_text = "、".join(existing) if existing else "(无)"
+
+        prompt = f"""你是校招岗位匹配专家。用户在简历解析后,手动添加了以下想投的岗位方向:
+【{dirs_text}】
+
+请基于简历内容,把这些方向词映射到下方岗位类型树的子类,并补充该方向典型需要的硬技能。
+
+简历内容:
+\"\"\"{resume_text[:6000]}\"\"\"
+
+已有方向(不要重复输出):{existing_text}
+
+岗位类型树(大类: 子类列表):
+{tree_block}
+
+输出严格 JSON(不要输出 JSON 以外的文字):
+{{
+  "fit_directions": [
+    {{
+      "direction": "从树中子类名选(如"大模型应用开发""后端开发")。若该词非常歧义且简历无法消歧,用大类名(如"AI工程""开发")",
+      "weight": 0.4 到 0.8 之间(用户新增方向默认中等权重 0.5-0.6),
+      "evidence": "一句话说明依据(简历有无相关基础/用户明确想投)"
+    }}
+  ],
+  "hard_skills": [
+    {{"kw": "该方向典型需要的硬技能名", "weight": 2.0 到 4.0}}
+  ]
+}}
+
+规则:
+- direction 必须是树中存在的子类名或大类名,不允许自造词
+- 每个用户方向词至少输出 1 个 fit_direction
+- 歧义词(如"Infra""后端")若简历无法定位具体子类,用大类名
+- hard_skills 只输出该方向通用需要的技能,不要输出简历里已有的(已有技能在第一轮已提取)
+- weight 用户新增方向默认 0.5-0.6,若简历有强相关基础可给到 0.7
+"""
+        try:
+            content = self._chat([{"role": "user", "content": prompt}],
+                                 temperature=0.2, max_tokens=4000)
+            parsed = self._extract_json(content) if content else None
+            if not parsed:
+                logger.warning(f"方向扩展 LLM 返回空: {content[:200] if content else ''}")
+                return {"fit_directions": [], "hard_skills": []}
+
+            fit_dirs = []
+            for item in parsed.get("fit_directions", []):
+                if isinstance(item, dict):
+                    direction = str(item.get("direction", "")).strip()
+                    if direction:
+                        fit_dirs.append({
+                            "direction": direction,
+                            "weight": float(item.get("weight") or 0.5),
+                            "evidence": str(item.get("evidence", "")).strip()[:200],
+                        })
+
+            hard_skills = []
+            for item in parsed.get("hard_skills", []):
+                if isinstance(item, dict):
+                    kw = str(item.get("kw", "")).strip()
+                    if kw:
+                        hard_skills.append({
+                            "kw": kw,
+                            "weight": float(item.get("weight") or 2.5),
+                        })
+
+            logger.info(f"方向扩展完成: {len(user_directions)}个方向词 → "
+                        f"{len(fit_dirs)}个fit_direction, {len(hard_skills)}个硬技能")
+            return {"fit_directions": fit_dirs, "hard_skills": hard_skills}
+
+        except Exception as e:
+            logger.error(f"方向扩展失败: {e}")
+            return {"fit_directions": [], "hard_skills": []}
+
     @staticmethod
     def _empty_profile() -> Dict[str, Any]:
         """返回空画像结构(LLM 失败时的降级值)"""

@@ -9,7 +9,7 @@ import time
 import requests
 
 BASE = "http://localhost:5000"
-ORDER_ID = "test_e2e_001"
+ORDER_ID = "test_e2e_003"
 
 # 一份示例简历(计算机硕士,目标 AI/后端)
 RESUME_TEXT = """
@@ -112,9 +112,11 @@ def test_supplement_profile(profile):
     # 模拟用户编辑:新增方向、技能、目标公司
     edited = dict(profile)
     edited["directions"] = ["AI算法", "后端开发"]
-    edited["skills"] = ["Python", "PyTorch", "Go", "MySQL", "Redis", "机器学习"]
-    edited["companies"] = ["字节跳动", "腾讯", "阿里巴巴"]
-    edited["cities"] = ["北京", "上海", "杭州"]
+    edited["core_skills"] = ["Python", "PyTorch", "Go", "MySQL", "Redis", "机器学习", "深度学习"]
+    edited["target_companies"] = ["字节跳动", "腾讯", "阿里巴巴"]
+    edited["target_cities"] = ["北京", "上海", "杭州"]
+    edited["target_industries"] = ["互联网", "人工智能"]
+    edited["preferred_company_types"] = ["民企"]
     edited["summary"] = profile.get("summary", "") + " 热爱技术,追求极致。"
 
     payload = {"profile": edited, "resume_text": RESUME_TEXT}
@@ -146,9 +148,11 @@ def test_confirm_setup(profile, supplement_result):
     # 合并解析 + 补充结果
     final = dict(profile)
     final["directions"] = ["AI算法", "后端开发"]
-    final["skills"] = ["Python", "PyTorch", "Go", "MySQL", "Redis", "机器学习"]
-    final["companies"] = ["字节跳动", "腾讯", "阿里巴巴"]
-    final["cities"] = ["北京", "上海", "杭州"]
+    final["core_skills"] = ["Python", "PyTorch", "Go", "MySQL", "Redis", "机器学习", "深度学习"]
+    final["target_companies"] = ["字节跳动", "腾讯", "阿里巴巴"]
+    final["target_cities"] = ["北京", "上海", "杭州"]
+    final["target_industries"] = ["互联网", "人工智能"]
+    final["preferred_company_types"] = ["民企"]
     final["fit_directions"] = supplement_result.get("fit_directions", [])
     final["structured_keywords"] = supplement_result.get("structured_keywords", [])
 

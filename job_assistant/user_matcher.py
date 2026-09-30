@@ -39,6 +39,14 @@ def _date_to_ms(date_str: Optional[str]) -> Optional[int]:
         return None
 
 
+def _url_field(url: str) -> Optional[Dict]:
+    """飞书 URL 字段(type=15)需要对象格式 {"link": url, "text": 显示文本}。
+    空值返回 None(不写入该字段)。"""
+    if not url:
+        return None
+    return {"link": str(url), "text": str(url)[:50]}
+
+
 def to_feishu_job_record(pos: Dict, score_result: Dict) -> Dict:
     """将 DB 岗位 dict + scorer 评分结果映射为飞书 JOB_FIELDS 中文 schema 的记录。
 
@@ -92,7 +100,7 @@ def to_feishu_job_record(pos: Dict, score_result: Dict) -> Dict:
         "地点": location,
         "学历要求": education,
         "JD摘要": (pos.get("jd_summary", "") or "")[:500],
-        "JD链接": apply_url,
+        "JD链接": _url_field(apply_url),
         "岗位类别": pos.get("job_category", "") or "",
         "相关性评分": score_result.get("相关性评分", 0),
         "综合推荐度": recommend,

@@ -635,12 +635,15 @@ def get_active_positions(user_grade: int = 0,
         """
         params: List = []
         if user_grade:
-            sql += " AND a.min_grade <= ? AND a.max_grade >= ?"
+            # min_grade/max_grade 为 NULL 时视为"不限届数",不排除该岗位
+            sql += " AND (a.min_grade IS NULL OR a.min_grade <= ?)"
+            sql += " AND (a.max_grade IS NULL OR a.max_grade >= ?)"
             params.extend([user_grade, user_grade])
         if industries:
-            placeholders = ",".join("?" * len(industries))
-            sql += f" AND c.industry IN ({placeholders})"
-            params.extend(industries)
+            # 行业用 LIKE 模糊匹配(DB 存 "互联网/科技",用户选 "互联网")
+            conds = " OR ".join(["c.industry LIKE ?"] * len(industries))
+            sql += f" AND ({conds})"
+            params.extend([f"%{ind}%" for ind in industries])
         if company_types:
             placeholders = ",".join("?" * len(company_types))
             sql += f" AND c.company_type IN ({placeholders})"

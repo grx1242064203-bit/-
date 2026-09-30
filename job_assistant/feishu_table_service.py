@@ -312,12 +312,16 @@ class FeishuTableService:
         service = FeishuMasterTableService(client=self.client)
         result = {"companies": 0, "positions": 0}
         try:
+            # 公司总表:先清空再全量写入(避免重复追加)
+            if company_table_id:
+                self.client.clear_table_records(app_token, company_table_id)
             result["companies"] = service.export_companies(
                 app_token, company_table_id
             )
         except Exception as e:
             logger.error(f"同步用户公司总表失败: {e}")
         try:
+            # 岗位总表:export_positions 内部按专业大类拆表+清表+写入
             result["positions"] = service.export_positions(
                 app_token, position_table_id
             )

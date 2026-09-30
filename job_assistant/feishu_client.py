@@ -182,6 +182,31 @@ class FeishuClient:
         )
         return data.get("items", [])
 
+    def get_table_by_name(self, app_token: str, name: str) -> Optional[str]:
+        """按表名查找 table_id,不存在返回 None。"""
+        for t in self.list_tables(app_token):
+            if t.get("name") == name:
+                return t.get("table_id")
+        return None
+
+    def get_or_create_table(self, app_token: str, name: str,
+                            fields: List[Dict] = None,
+                            primary_field: str = None) -> str:
+        """获取或创建数据表,返回 table_id。
+
+        无论表是否已存在,都会补齐缺失的字段(已存在的字段跳过),
+        确保字段定义与 fields 参数一致,避免旧表缺字段导致写入失败。
+        """
+        table_id = self.get_table_by_name(app_token, name)
+        if not table_id:
+            table_id = self.create_table(app_token, name)
+        # 补齐字段(已存在的字段会被跳过)
+        if fields and primary_field:
+            from feishu_master_tables import FeishuMasterTableService
+            FeishuMasterTableService(client=self)._create_fields(
+                app_token, table_id, fields, primary_field)
+        return table_id
+
     def list_fields(self, app_token: str, table_id: str) -> List[Dict]:
         """列出数据表的所有字段,用于查找主字段(primary field)"""
         app_token = self.resolve_app_token(app_token)
@@ -311,7 +336,7 @@ class FeishuClient:
         all_records = []
         page_token = None
         while True:
-            params = {"page_size": 200, "filter": filter_expr}
+            params = {"page_size": 500, "filter": filter_expr}
             if page_token:
                 params["page_token"] = page_token
             if fields:
@@ -353,11 +378,23 @@ class FeishuClient:
             time.sleep(0.3)
         return deleted
 
-    def clear_table_records(self, app_token: str, table_id: str) -> int:
-        """清空表中所有记录,返回删除数。"""
-        records = self.search_records(app_token, table_id, "")
-        record_ids = [r.get("record_id", "") for r in records if r.get("record_id")]
-        return self.batch_delete_records(app_token, table_id, record_ids)
+    def clear_table_records(self, app_token: str, table_id: str, max_rounds: int = 50) -> int:
+        """清空表中所有记录,返回删除数。
+
+        飞书分页 API 对单次 listing 有上限,单次 search_records 可能无法
+        取回全部记录(尤其 5 万+ 大表),导致清不干净→后续追加超限。
+        因此循环「查一批删一批」直到表为空或达到 max_rounds。
+        """
+        deleted = 0
+        for _ in range(max_rounds):
+            records = self.search_records(app_token, table_id, "")
+            if not records:
+                break
+            record_ids = [r.get("record_id", "") for r in records if r.get("record_id")]
+            if not record_ids:
+                break
+            deleted += self.batch_delete_records(app_token, table_id, record_ids)
+        return deleted
 
     def get_record(self, app_token: str, table_id: str, record_id: str) -> Dict:
         """获取单条记录完整字段(用于归档前拉取完整数据)"""

@@ -640,10 +640,10 @@ def get_active_positions(user_grade: int = 0,
             sql += " AND (a.max_grade IS NULL OR a.max_grade >= ?)"
             params.extend([user_grade, user_grade])
         if industries:
-            # 行业用 LIKE 模糊匹配(DB 存 "互联网/科技",用户选 "互联网")
-            conds = " OR ".join(["c.industry LIKE ?"] * len(industries))
-            sql += f" AND ({conds})"
-            params.extend([f"%{ind}%" for ind in industries])
+            # 行业精确匹配(用户选择的行业已归一化为 mappings.json 标准分类名,与 DB companies.industry 一致)
+            placeholders = ",".join("?" * len(industries))
+            sql += f" AND c.industry IN ({placeholders})"
+            params.extend(industries)
         if company_types:
             placeholders = ",".join("?" * len(company_types))
             sql += f" AND c.company_type IN ({placeholders})"

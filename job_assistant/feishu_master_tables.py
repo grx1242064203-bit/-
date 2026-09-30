@@ -45,7 +45,7 @@ JOB_CATEGORY_OPTIONS = [
 # 专业大类选项
 MAJOR_CATEGORY_OPTIONS = [
     {"name": "工科"}, {"name": "理科"}, {"name": "文科"}, {"name": "商科"},
-    {"name": "医科"}, {"name": "艺术"}, {"name": "不限"}, {"name": "其他"},
+    {"name": "医科"}, {"name": "农学"}, {"name": "艺术"}, {"name": "不限"}, {"name": "其他"},
 ]
 # 难度选项
 DIFFICULTY_OPTIONS = [
@@ -325,62 +325,92 @@ class FeishuMasterTableService:
         logger.info(f"公司总表写入 {len(ids)}/{len(records)} 条")
         return len(ids)
 
-    def export_positions(self, app_token: str, table_id: str, limit: int = 0) -> int:
-        """导出岗位总表数据到飞书。返回写入数。
+    def export_positions(self, app_token: str, table_id: str = "", limit: int = 0) -> int:
+        """导出岗位总表数据到飞书(按专业大类拆分为多个子表)。返回写入总数。
 
-        注意:飞书 API 的 PATCH view 不支持设置 sort/column_width,
-        因此通过写入前排序保证默认展示顺序为「网申更新降序」。
+        拆分原因:单表 3.5 万+ 岗位接近飞书 5 万条上限,且清表时分页 API
+        无法一次取回全部记录,导致清不干净→追加超限。
+        按「专业大类」拆分后,每类最多 ~2.2 万条(工科),远低于上限。
+
+        表名规则:「岗位-{专业大类}」,如 岗位-工科 / 岗位-商科 / 岗位-其他。
+        table_id 参数保留兼容旧调用,实际不再使用(按名称动态建表)。
         """
         positions = job_db.get_all_positions_for_export()
         if limit:
             positions = positions[:limit]
-
-        records = []
-        for p in positions:
-            # 岗位标题加上公司名后缀,如 "AI算法研究员/实习生-TenX AI"
-            title = p["position_title"] or "通用校招岗"
-            company = p["company_name"] or ""
-            display_title = f"{title}-{company}" if company else title
-            apply_update = p.get("apply_update", "")
-            record = {
-                "岗位标题": display_title,
-                "网申更新": self._date_to_ts(apply_update),
-                "公司名称": p["company_name"],
-                "公司行业": p.get("industry", ""),
-                "公司类型": p.get("company_type", ""),
-                "招聘流程": p.get("recruitment_process", ""),
-                "岗位分类": p.get("job_category", ""),
-                "岗位子类": p.get("job_subcategory", ""),
-                "最低学历": p.get("min_education", "") or p.get("education_req", ""),
-                "专业要求": p.get("major_required", "") or p.get("major_req", ""),
-                "专业大类": p.get("major_category", ""),
-                "城市": p.get("city", "") or p.get("location", ""),
-                "硬技能": p.get("hard_skills", ""),
-                "关键词": p.get("keywords", ""),
-                "是否管培": "是" if p.get("is_management_trainee") else "否",
-                "难度": p.get("difficulty", ""),
-                "JD摘要": p.get("jd_summary", ""),
-                "_sort_key": apply_update or "",  # 临时排序键
-            }
-            url = self._url_field(p.get("apply_url", "") or p.get("source_url", ""))
-            if url:
-                record["投递链接"] = url
-            ann_url = self._url_field(p.get("announcement_url", ""))
-            if ann_url:
-                record["公告链接"] = ann_url
-            records.append(record)
-
-        # 按网申更新降序排序(最新在前),空值排最后
-        records.sort(key=lambda r: r.get("_sort_key", "") or "", reverse=True)
-        # 移除临时排序键
-        for r in records:
-            r.pop("_sort_key", None)
-
-        if not records:
+        if not positions:
             return 0
-        ids = self.client.batch_create_records(app_token, table_id, records)
-        logger.info(f"岗位总表写入 {len(ids)}/{len(records)} 条")
-        return len(ids)
+
+        # 按专业大类分组(空值归入「其他」)
+        groups: Dict[str, list] = {}
+        for p in positions:
+            cat = (p.get("major_category") or "").strip() or "其他"
+            groups.setdefault(cat, []).append(p)
+
+        total_written = 0
+        for cat, cat_positions in groups.items():
+            table_name = f"岗位-{cat}"
+            # 动态获取或创建该大类的子表
+            cat_table_id = self.client.get_or_create_table(
+                app_token, table_name, POSITION_FIELDS, "岗位标题")
+            if not cat_table_id:
+                logger.warning(f"无法获取/创建表 {table_name},跳过")
+                continue
+
+            # 清空旧数据(循环清表,避免分页上限导致清不干净)
+            try:
+                self.client.clear_table_records(app_token, cat_table_id)
+            except Exception as e:
+                logger.warning(f"清空表 {table_name} 失败: {e}")
+
+            # 构建记录
+            records = []
+            for p in cat_positions:
+                title = p["position_title"] or "通用校招岗"
+                company = p["company_name"] or ""
+                display_title = f"{title}-{company}" if company else title
+                apply_update = p.get("apply_update", "")
+                record = {
+                    "岗位标题": display_title,
+                    "网申更新": self._date_to_ts(apply_update),
+                    "公司名称": p["company_name"],
+                    "公司行业": p.get("industry", ""),
+                    "公司类型": p.get("company_type", ""),
+                    "招聘流程": p.get("recruitment_process", ""),
+                    "岗位分类": p.get("job_category", ""),
+                    "岗位子类": p.get("job_subcategory", ""),
+                    "最低学历": p.get("min_education", "") or p.get("education_req", ""),
+                    "专业要求": p.get("major_required", "") or p.get("major_req", ""),
+                    "专业大类": cat,
+                    "城市": p.get("city", "") or p.get("location", ""),
+                    "硬技能": p.get("hard_skills", ""),
+                    "关键词": p.get("keywords", ""),
+                    "是否管培": "是" if p.get("is_management_trainee") else "否",
+                    "难度": p.get("difficulty", ""),
+                    "JD摘要": p.get("jd_summary", ""),
+                    "_sort_key": apply_update or "",
+                }
+                url = self._url_field(p.get("apply_url", "") or p.get("source_url", ""))
+                if url:
+                    record["投递链接"] = url
+                ann_url = self._url_field(p.get("announcement_url", ""))
+                if ann_url:
+                    record["公告链接"] = ann_url
+                records.append(record)
+
+            # 按网申更新降序排序
+            records.sort(key=lambda r: r.get("_sort_key", "") or "", reverse=True)
+            for r in records:
+                r.pop("_sort_key", None)
+
+            if not records:
+                continue
+            ids = self.client.batch_create_records(app_token, cat_table_id, records)
+            logger.info(f"[{table_name}] 写入 {len(ids)}/{len(records)} 条")
+            total_written += len(ids)
+
+        logger.info(f"岗位总表拆分导出完成: {len(groups)} 个大类,共 {total_written} 条")
+        return total_written
 
     def export_vl_failures(self, app_token: str, table_id: str) -> int:
         """导出 VL 识别失败的公告到飞书记录表。返回写入数。
@@ -483,10 +513,10 @@ def sync_to_existing_master_table() -> Dict:
         except Exception as e:
             logger.error(f"同步公司总表失败: {e}")
 
-    # 2. 同步岗位总表
+    # 2. 同步岗位总表(按专业大类拆分为多个子表,export_positions 内部建表+清表+写入)
+    #    position_table_id 仅用于判断是否开启岗位同步,实际表按名称动态创建
     if position_table_id:
         try:
-            service.client.clear_table_records(app_token, position_table_id)
             result["positions"] = service.export_positions(app_token, position_table_id)
         except Exception as e:
             logger.error(f"同步岗位总表失败: {e}")

@@ -63,8 +63,8 @@ RESUME_PARSE_PROMPT = """你是一位有 10 年经验的资深 HR 专家,擅长�
      - 相关技能/工具词(如 "资产配置"、"量化")
    这些关键词将直接用于搜索引擎抓取岗位,必须精准、专业、覆盖全面。
 10. target_cities: 目标城市列表(从简历期望地点推断,不确定则为空数组)。
-11. target_industries: 目标行业列表(从经历推断,如 ["互联网","金融"])。
-12. preferred_company_types: 偏好的公司类型(从简历背景和目标推断,可选值:["国央企","民企","外企"],可多选)。如金融背景且求稳可推荐"国央企",技术背景可推荐"民企"。
+11. target_industries: 目标行业列表(从经历推断,必须从以下标准分类中选择,可多选):["互联网/科技","金融","咨询/专业服务","消费/零售/快消","制造/工业","房地产/建筑","医疗/医药/健康","教育/培训","传媒/文娱/游戏","交通/物流","能源/公用事业","政府/事业单位"]。不确定则为空数组。
+12. preferred_company_types: 偏好的公司类型(从简历背景和目标推断,必须从以下选择:["国央企","民企","外企","事业单位/政府","其他"],可多选)。如金融背景且求稳可推荐"国央企",技术背景可推荐"民企"。
 13. preferred_difficulties: 偏好的申请难度(根据学校层次和经历推荐,可选值:["最激烈","较为激烈","中等难度","较低难度"],可多选)。顶尖院校+强实习推荐"最激烈"+"较为激烈"。
 14. certificates: 已获证书列表(如 CFA/CPA/法考/PMP/四六级等)。
 15. current_role: 当前身份("学生"/"在职"/"待业")。
@@ -503,9 +503,15 @@ class LLMClient:
         # 列表字段
         profile["core_skills"] = self._to_list(parsed.get("core_skills"))
         profile["target_cities"] = self._to_list(parsed.get("target_cities"))
-        profile["target_industries"] = self._to_list(parsed.get("target_industries"))
+        # 行业/公司类型归一化到 mappings.json 定义的标准分类名(与 DB companies 表一致)
+        import normalizer as _norm
+        profile["target_industries"] = [
+            _norm.normalize_industry(x) for x in self._to_list(parsed.get("target_industries"))
+        ]
         profile["target_certificates"] = self._to_list(parsed.get("certificates"))
-        profile["preferred_company_types"] = self._to_list(parsed.get("preferred_company_types"))
+        profile["preferred_company_types"] = [
+            _norm.normalize_company_type(x) for x in self._to_list(parsed.get("preferred_company_types"))
+        ]
         profile["preferred_difficulties"] = self._to_list(parsed.get("preferred_difficulties"))
 
         # 亮点(用于丰富画像展示)

@@ -847,6 +847,18 @@ def api_confirm_setup():
     user.profile = UserProfile(**filtered)
     user.profile.role = "campus"  # 强制校招
 
+    # 归一化目标行业/公司类型到 mappings.json 标准分类名
+    # (兜底:前端选项已来自标准分类,但防止测试/旧数据传入非标准值导致 DB 匹配失败)
+    import normalizer as _norm
+    if user.profile.target_industries:
+        user.profile.target_industries = [
+            _norm.normalize_industry(x) for x in user.profile.target_industries
+        ]
+    if user.profile.preferred_company_types:
+        user.profile.preferred_company_types = [
+            _norm.normalize_company_type(x) for x in user.profile.preferred_company_types
+        ]
+
     # 归一化 structured_keywords:前端可能传 dict 列表,需转 KeywordTag
     sk = filtered.get("structured_keywords") or []
     if sk and isinstance(sk[0], dict):

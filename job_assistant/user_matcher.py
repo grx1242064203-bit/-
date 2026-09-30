@@ -124,7 +124,7 @@ class UserMatcher:
         logger.info(f"每公司限{max_per_company}: {len(jobs)} → {len(result)} 条")
         return result
 
-    def match(self, max_per_company: int = 5, min_score: int = 30) -> List[Dict]:
+    def match(self, max_per_company: int = 5, min_score: int = 55) -> List[Dict]:
         """
         执行完整匹配流程(校招专属)。
 

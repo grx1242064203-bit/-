@@ -209,11 +209,11 @@ SETUP_PAGE_HTML = """
   <!-- Step 4: 完成 -->
   <div id="step-done" class="card hidden">
     <div class="section-title">🎉 配置完成!</div>
-    <p>你的专属校招岗位库已创建,点击下方链接即可查看(无需登录):</p>
+    <p>你的专属校招岗位库已创建,以下三张表每天自动更新(无需登录):</p>
     <div class="link-box" id="table_link"></div>
     <p style="font-size:13px;color:#888;margin-top:12px">
-      每天早上 9 点,系统会自动把与你匹配的新岗位写入这张表格。<br>
-      建议收藏该链接,每天打开查看最新岗位。
+      每天早上 9 点,系统会自动把与你匹配的新岗位写入「我的匹配岗位」表。<br>
+      建议收藏该页面链接,每天打开查看最新岗位。
     </p>
   </div>
 </div>
@@ -317,8 +317,14 @@ function confirmSetup() {
     if (data.share_url) {
       document.getElementById('step-profile').classList.add('hidden');
       document.getElementById('step-done').classList.remove('hidden');
-      document.getElementById('table_link').innerHTML =
-        '<a href="' + data.share_url + '" target="_blank">' + data.share_url + '</a>';
+      const links = [
+        {label: '📋 我的匹配岗位', url: data.user_table_url || data.share_url},
+        {label: '🏢 秋招公司总表', url: data.company_table_url},
+        {label: '💼 校招岗位总表', url: data.position_table_url},
+      ];
+      document.getElementById('table_link').innerHTML = links.map(l =>
+        '<div style="margin:8px 0"><a href="' + l.url + '" target="_blank" style="font-size:15px">' + l.label + '</a></div>'
+      ).join('');
     } else {
       showMsg('confirm-msg', data.msg || '创建失败,请重试', 'error');
     }
@@ -438,7 +444,18 @@ def api_confirm_setup():
     user_store.upsert(user)
     logger.info(f"用户配置完成: {user_id} -> {table_result['share_url']}")
 
-    return jsonify({"share_url": table_result["share_url"]})
+    # 7. 返回三张表链接(用户匹配表 + 公司总表 + 岗位总表)
+    from config import settings
+    master_base = settings.MASTER_APP_TOKEN
+    company_table_url = f"https://www.feishu.cn/base/{master_base}?table={settings.MASTER_COMPANY_TABLE_ID}"
+    position_table_url = f"https://www.feishu.cn/base/{master_base}?table={settings.MASTER_POSITION_TABLE_ID}"
+
+    return jsonify({
+        "share_url": table_result["share_url"],
+        "user_table_url": table_result["share_url"],
+        "company_table_url": company_table_url,
+        "position_table_url": position_table_url,
+    })
 
 
 @app.route("/health")

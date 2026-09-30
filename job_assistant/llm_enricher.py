@@ -17,7 +17,7 @@ import json
 import logging
 import os
 import time
-from typing import Dict, List, Optional
+from typing import Dict, List, Optional, Tuple
 
 from config import settings
 from llm_client import LLMClient

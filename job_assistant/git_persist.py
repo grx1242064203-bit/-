@@ -63,9 +63,24 @@ def git_commit_and_push(message: str = None) -> bool:
             return False
         logger.info(f"[git] commit 成功: {message}")
 
-        # 4. push
+        # 4. push (仅当配置了 remote 时)
         r = subprocess.run(
-            ["git", "push", "origin", "main"],
+            ["git", "remote"],
+            cwd=REPO_DIR, capture_output=True, text=True, timeout=10,
+        )
+        if not r.stdout.strip():
+            logger.info("[git] 无 remote,跳过 push(本地 commit 已完成)")
+            return True
+
+        # 检测当前分支名(兼容 master/main)
+        r = subprocess.run(
+            ["git", "rev-parse", "--abbrev-ref", "HEAD"],
+            cwd=REPO_DIR, capture_output=True, text=True, timeout=10,
+        )
+        branch = r.stdout.strip() or "main"
+
+        r = subprocess.run(
+            ["git", "push", "origin", branch],
             cwd=REPO_DIR, capture_output=True, text=True, timeout=120,
         )
         if r.returncode != 0:

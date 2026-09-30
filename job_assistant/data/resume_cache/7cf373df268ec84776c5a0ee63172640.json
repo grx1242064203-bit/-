@@ -1,0 +1,526 @@
+{
+  "keywords": [
+    {
+      "kw": "嵌入式 AI 开发",
+      "standard": "嵌入式 AI 开发",
+      "category": "role",
+      "weight": 5.0,
+      "resume_section": "summary",
+      "source": "resume_llm"
+    },
+    {
+      "kw": "西安交通大学",
+      "standard": "西安交通大学",
+      "category": "education",
+      "weight": 4.5,
+      "resume_section": "education",
+      "source": "resume_llm"
+    },
+    {
+      "kw": "电子信息",
+      "standard": "electronics",
+      "category": "education",
+      "weight": 4.5,
+      "resume_section": "education",
+      "source": "resume_llm"
+    },
+    {
+      "kw": "硕士",
+      "standard": "硕士",
+      "category": "education",
+      "weight": 4.5,
+      "resume_section": "education",
+      "source": "resume_llm"
+    },
+    {
+      "kw": "嵌入式系统开发",
+      "standard": "嵌入式系统开发",
+      "category": "hard_skill",
+      "weight": 4.5,
+      "resume_section": "education",
+      "source": "resume_llm"
+    },
+    {
+      "kw": "TensorFlow Lite Micro",
+      "standard": "TensorFlow Lite Micro",
+      "category": "framework",
+      "weight": 4.5,
+      "resume_section": "experience",
+      "source": "resume_llm"
+    },
+    {
+      "kw": "Python",
+      "standard": "python",
+      "category": "hard_skill",
+      "weight": 4.5,
+      "resume_section": "skill",
+      "source": "resume_llm"
+    },
+    {
+      "kw": "南开大学",
+      "standard": "南开大学",
+      "category": "education",
+      "weight": 4.0,
+      "resume_section": "education",
+      "source": "resume_llm"
+    },
+    {
+      "kw": "统计学",
+      "standard": "statistics",
+      "category": "education",
+      "weight": 4.0,
+      "resume_section": "education",
+      "source": "resume_llm"
+    },
+    {
+      "kw": "数字信号处理（DSP）",
+      "standard": "数字信号处理（DSP）",
+      "category": "hard_skill",
+      "weight": 4.0,
+      "resume_section": "education",
+      "source": "resume_llm"
+    },
+    {
+      "kw": "模式识别与机器学习",
+      "standard": "模式识别与机器学习",
+      "category": "hard_skill",
+      "weight": 4.0,
+      "resume_section": "education",
+      "source": "resume_llm"
+    },
+    {
+      "kw": "FPGA 设计",
+      "standard": "fpga",
+      "category": "hard_skill",
+      "weight": 4.0,
+      "resume_section": "education",
+      "source": "resume_llm"
+    },
+    {
+      "kw": "华为技术有限公司",
+      "standard": "华为技术有限公司",
+      "category": "domain",
+      "weight": 4.0,
+      "resume_section": "experience",
+      "source": "resume_llm"
+    },
+    {
+      "kw": "时序异常检测",
+      "standard": "时序异常检测",
+      "category": "hard_skill",
+      "weight": 4.0,
+      "resume_section": "experience",
+      "source": "resume_llm"
+    },
+    {
+      "kw": "ARM 架构边缘网关",
+      "standard": "ARM 架构边缘网关",
+      "category": "hard_skill",
+      "weight": 4.0,
+      "resume_section": "experience",
+      "source": "resume_llm"
+    },
+    {
+      "kw": "量化感知训练",
+      "standard": "量化感知训练",
+      "category": "hard_skill",
+      "weight": 4.0,
+      "resume_section": "experience",
+      "source": "resume_llm"
+    },
+    {
+      "kw": "信道估计算法",
+      "standard": "信道估计算法",
+      "category": "hard_skill",
+      "weight": 4.0,
+      "resume_section": "experience",
+      "source": "resume_llm"
+    },
+    {
+      "kw": "5G毫米波",
+      "standard": "5G毫米波",
+      "category": "domain",
+      "weight": 4.0,
+      "resume_section": "experience",
+      "source": "resume_llm"
+    },
+    {
+      "kw": "毫米波雷达",
+      "standard": "毫米波雷达",
+      "category": "hard_skill",
+      "weight": 4.0,
+      "resume_section": "project",
+      "source": "resume_llm"
+    },
+    {
+      "kw": "C语言",
+      "standard": "c_language",
+      "category": "hard_skill",
+      "weight": 4.0,
+      "resume_section": "project",
+      "source": "resume_llm"
+    },
+    {
+      "kw": "PyTorch",
+      "standard": "pytorch",
+      "category": "framework",
+      "weight": 4.0,
+      "resume_section": "skill",
+      "source": "resume_llm"
+    },
+    {
+      "kw": "TensorFlow",
+      "standard": "tensorflow",
+      "category": "framework",
+      "weight": 4.0,
+      "resume_section": "skill",
+      "source": "resume_llm"
+    },
+    {
+      "kw": "传感器数据融合",
+      "standard": "传感器数据融合",
+      "category": "hard_skill",
+      "weight": 3.5,
+      "resume_section": "education",
+      "source": "resume_llm"
+    },
+    {
+      "kw": "孤立森林",
+      "standard": "孤立森林",
+      "category": "hard_skill",
+      "weight": 3.5,
+      "resume_section": "experience",
+      "source": "resume_llm"
+    },
+    {
+      "kw": "树莓派",
+      "standard": "树莓派",
+      "category": "hard_skill",
+      "weight": 3.5,
+      "resume_section": "experience",
+      "source": "resume_llm"
+    },
+    {
+      "kw": "中兴通讯",
+      "standard": "中兴通讯",
+      "category": "domain",
+      "weight": 3.5,
+      "resume_section": "experience",
+      "source": "resume_llm"
+    },
+    {
+      "kw": "CSI反馈深度学习模型",
+      "standard": "CSI反馈深度学习模型",
+      "category": "hard_skill",
+      "weight": 3.5,
+      "resume_section": "experience",
+      "source": "resume_llm"
+    },
+    {
+      "kw": "Python自动化测试框架",
+      "standard": "Python自动化测试框架",
+      "category": "hard_skill",
+      "weight": 3.5,
+      "resume_section": "experience",
+      "source": "resume_llm"
+    },
+    {
+      "kw": "卡尔曼滤波",
+      "standard": "kalman_filter",
+      "category": "hard_skill",
+      "weight": 3.5,
+      "resume_section": "project",
+      "source": "resume_llm"
+    },
+    {
+      "kw": "TI IWR6843",
+      "standard": "TI IWR6843",
+      "category": "hard_skill",
+      "weight": 3.5,
+      "resume_section": "project",
+      "source": "resume_llm"
+    },
+    {
+      "kw": "DSP加速库",
+      "standard": "DSP加速库",
+      "category": "hard_skill",
+      "weight": 3.5,
+      "resume_section": "project",
+      "source": "resume_llm"
+    },
+    {
+      "kw": "ResNet-50",
+      "standard": "resnet",
+      "category": "hard_skill",
+      "weight": 3.5,
+      "resume_section": "project",
+      "source": "resume_llm"
+    },
+    {
+      "kw": "OpenCV",
+      "standard": "opencv",
+      "category": "framework",
+      "weight": 3.5,
+      "resume_section": "project",
+      "source": "resume_llm"
+    },
+    {
+      "kw": "Verilog HDL",
+      "standard": "Verilog HDL",
+      "category": "hard_skill",
+      "weight": 3.5,
+      "resume_section": "skill",
+      "source": "resume_llm"
+    },
+    {
+      "kw": "Scikit-learn",
+      "standard": "scikit_learn",
+      "category": "framework",
+      "weight": 3.5,
+      "resume_section": "skill",
+      "source": "resume_llm"
+    },
+    {
+      "kw": "软考中级（嵌入式系统设计师）",
+      "standard": "软考中级（嵌入式系统设计师）",
+      "category": "cert",
+      "weight": 3.5,
+      "resume_section": "skill",
+      "source": "resume_llm"
+    },
+    {
+      "kw": "深度学习",
+      "standard": "deep_learning",
+      "category": "hard_skill",
+      "weight": 3.5,
+      "resume_section": "skill",
+      "source": "resume_llm"
+    },
+    {
+      "kw": "边缘AI",
+      "standard": "edge_ai",
+      "category": "hard_skill",
+      "weight": 3.5,
+      "resume_section": "experience",
+      "source": "resume_llm"
+    },
+    {
+      "kw": "STL",
+      "standard": "STL",
+      "category": "hard_skill",
+      "weight": 3.0,
+      "resume_section": "experience",
+      "source": "resume_llm"
+    },
+    {
+      "kw": "Flask",
+      "standard": "flask",
+      "category": "framework",
+      "weight": 3.0,
+      "resume_section": "experience",
+      "source": "resume_llm"
+    },
+    {
+      "kw": "VMD",
+      "standard": "VMD",
+      "category": "hard_skill",
+      "weight": 3.0,
+      "resume_section": "project",
+      "source": "resume_llm"
+    },
+    {
+      "kw": "FFT",
+      "standard": "dsp",
+      "category": "hard_skill",
+      "weight": 3.0,
+      "resume_section": "project",
+      "source": "resume_llm"
+    },
+    {
+      "kw": "PCA降维",
+      "standard": "PCA降维",
+      "category": "hard_skill",
+      "weight": 3.0,
+      "resume_section": "project",
+      "source": "resume_llm"
+    },
+    {
+      "kw": "R",
+      "standard": "R",
+      "category": "hard_skill",
+      "weight": 3.0,
+      "resume_section": "skill",
+      "source": "resume_llm"
+    },
+    {
+      "kw": "Matlab",
+      "standard": "Matlab",
+      "category": "hard_skill",
+      "weight": 3.0,
+      "resume_section": "skill",
+      "source": "resume_llm"
+    },
+    {
+      "kw": "SQL",
+      "standard": "mysql",
+      "category": "hard_skill",
+      "weight": 3.0,
+      "resume_section": "skill",
+      "source": "resume_llm"
+    },
+    {
+      "kw": "Spark",
+      "standard": "spark",
+      "category": "framework",
+      "weight": 3.0,
+      "resume_section": "skill",
+      "source": "resume_llm"
+    },
+    {
+      "kw": "Quartus Prime",
+      "standard": "Quartus Prime",
+      "category": "tool",
+      "weight": 3.0,
+      "resume_section": "skill",
+      "source": "resume_llm"
+    },
+    {
+      "kw": "Keil MDK",
+      "standard": "Keil MDK",
+      "category": "tool",
+      "weight": 3.0,
+      "resume_section": "skill",
+      "source": "resume_llm"
+    },
+    {
+      "kw": "CET-6:628/710",
+      "standard": "CET-6:628/710",
+      "category": "cert",
+      "weight": 3.0,
+      "resume_section": "skill",
+      "source": "resume_llm"
+    },
+    {
+      "kw": "托福108",
+      "standard": "托福108",
+      "category": "cert",
+      "weight": 3.0,
+      "resume_section": "skill",
+      "source": "resume_llm"
+    },
+    {
+      "kw": "模型压缩",
+      "standard": "模型压缩",
+      "category": "hard_skill",
+      "weight": 3.0,
+      "resume_section": "experience",
+      "source": "resume_llm"
+    },
+    {
+      "kw": "FPGA开发",
+      "standard": "FPGA开发",
+      "category": "hard_skill",
+      "weight": 3.0,
+      "resume_section": "education",
+      "source": "resume_llm"
+    },
+    {
+      "kw": "机器学习",
+      "standard": "machine_learning",
+      "category": "hard_skill",
+      "weight": 3.0,
+      "resume_section": "education",
+      "source": "resume_llm"
+    },
+    {
+      "kw": "ECharts",
+      "standard": "ECharts",
+      "category": "tool",
+      "weight": 2.5,
+      "resume_section": "experience",
+      "source": "resume_llm"
+    },
+    {
+      "kw": "ADB",
+      "standard": "ADB",
+      "category": "tool",
+      "weight": 2.5,
+      "resume_section": "experience",
+      "source": "resume_llm"
+    },
+    {
+      "kw": "Scapy",
+      "standard": "Scapy",
+      "category": "tool",
+      "weight": 2.5,
+      "resume_section": "experience",
+      "source": "resume_llm"
+    },
+    {
+      "kw": "SAS Base认证",
+      "standard": "SAS Base认证",
+      "category": "cert",
+      "weight": 2.5,
+      "resume_section": "skill",
+      "source": "resume_llm"
+    },
+    {
+      "kw": "全国计算机四级（网络工程师）",
+      "standard": "全国计算机四级（网络工程师）",
+      "category": "cert",
+      "weight": 2.5,
+      "resume_section": "skill",
+      "source": "resume_llm"
+    }
+  ],
+  "fit_directions": [
+    {
+      "direction": "边缘AI/嵌入式AI",
+      "cat_key": "robotics",
+      "sub_key": "edge_ai",
+      "category_name": "机器人与智能体",
+      "weight": 0.95,
+      "evidence": "求职意向为嵌入式AI开发，华为实习用TFLite Micro将模型部署至ARM边缘网关，项目基于TI IWR6843开发板编写C语言信号处理链，软考嵌入式系统设计师证书。"
+    },
+    {
+      "direction": "嵌入式软件",
+      "cat_key": "development",
+      "sub_key": "embedded_sw",
+      "category_name": "开发",
+      "weight": 0.85,
+      "evidence": "主修嵌入式系统开发，项目中使用C语言与DSP加速库优化FFT，熟悉Keil MDK，具备ARM架构边缘端部署经验。"
+    },
+    {
+      "direction": "机器学习算法",
+      "cat_key": "algorithm",
+      "sub_key": "ml",
+      "category_name": "算法",
+      "weight": 0.8,
+      "evidence": "硕士主修模式识别与机器学习，华为实习构建时序异常检测模型，项目搭建ResNet-50迁移学习模型，熟练使用PyTorch/TensorFlow/Scikit-learn。"
+    },
+    {
+      "direction": "通信算法",
+      "cat_key": "algorithm",
+      "sub_key": "communication",
+      "category_name": "算法",
+      "weight": 0.75,
+      "evidence": "中兴通讯无线研究院实习，针对5G毫米波高铁场景仿真对比LS、MMSE及DFT插值算法，构建CSI反馈深度学习模型。"
+    },
+    {
+      "direction": "FPGA开发",
+      "cat_key": "semiconductor",
+      "sub_key": "fpga",
+      "category_name": "芯片半导体",
+      "weight": 0.6,
+      "evidence": "主修FPGA设计课程，技能列表包含Verilog HDL与Quartus Prime，但无直接FPGA项目经验。"
+    },
+    {
+      "direction": "AI数据工程",
+      "cat_key": "ai_engineering",
+      "sub_key": "ai_data",
+      "category_name": "AI工程",
+      "weight": 0.55,
+      "evidence": "具备Python/SQL/Spark技能，实习中开发自动化测试框架与可视化看板，项目涉及数据采集与质量控制，但非核心数据工程岗。"
+    }
+  ]
+}

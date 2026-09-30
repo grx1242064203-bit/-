@@ -68,8 +68,8 @@ RESUME_PARSE_PROMPT = """你是一位有 10 年经验的资深 HR 专家,擅长�
 13. preferred_difficulties: 偏好的申请难度(根据学校层次和经历推荐,可选值:["最激烈","较为激烈","中等难度","较低难度"],可多选)。顶尖院校+强实习推荐"最激烈"+"较为激烈"。
 14. certificates: 已获证书列表(如 CFA/CPA/法考/PMP/四六级等)。
 15. current_role: 当前身份("学生"/"在职"/"待业")。
-16. summary: 候选人一句话画像(学校+学历+核心亮点,不超过 50 字)。
-17. highlights: 简历亮点列表(3-5 条,每条不超过 30 字,如 "某券商行研实习经历"、"CFA二级通过")。
+16. summary: 候选人专业画像(100-150字),需包含:学校学历层次、核心技术栈/能力、相关实习或项目亮点、目标岗位方向。用专业但平实的语言,不要套话。
+17. highlights: 简历亮点列表(3-5 条,每条不超过 30 字,突出硬核成果,如 "某券商行研实习,覆盖3个行业"、"CFA二级通过"、"GitHub 开源项目 500+ star")。
 
 注意:
 - 缺失的信息填""(字符串)或 [](数组),不要编造
@@ -647,6 +647,110 @@ class LLMClient:
 
         except Exception as e:
             logger.error(f"方向扩展失败: {e}")
+            return {"fit_directions": [], "hard_skills": []}
+
+    def supplement_from_edits(self, user_edited: Dict,
+                              resume_text: str = "") -> Dict[str, Any]:
+        """第二轮补充:基于用户编辑后的完整画像(方向/技能/公司/城市)做 AI 分析。
+
+        与 expand_directions 不同,本方法不要求用户必须新增方向。
+        只要用户编辑了任意字段(技能/公司/城市/方向),就基于完整画像返回:
+        - 新增/扩展的适配方向
+        - 基于目标公司和方向补充的硬技能
+
+        Args:
+            user_edited: 用户编辑后的画像,含 directions/skills/companies/cities/
+                         target_industries/preferred_company_types/fit_directions
+            resume_text: 简历文本(用于判断用户基础)
+
+        Returns:
+            {"fit_directions": [...], "hard_skills": [{"kw","weight"}]}
+        """
+        directions = user_edited.get("directions") or []
+        if not directions:
+            return {"fit_directions": [], "hard_skills": []}
+
+        import job_tree
+        tree_block = job_tree.prompt_block()
+
+        skills = user_edited.get("skills") or []
+        companies = user_edited.get("companies") or []
+        cities = user_edited.get("cities") or []
+        industries = user_edited.get("target_industries") or []
+        existing_dirs = [d.get("direction", "") for d in (user_edited.get("fit_directions") or [])
+                         if isinstance(d, dict)]
+
+        prompt = f"""你是校招岗位匹配专家。用户在简历解析后,调整了求职配置。请基于以下完整画像,做补充分析:
+
+【用户目标方向】{', '.join(directions)}
+【用户核心技能】{', '.join(skills) if skills else '(未填写)'}
+【目标公司】{', '.join(companies) if companies else '(未填写)'}
+【目标城市】{', '.join(cities) if cities else '(未填写)'}
+【目标行业】{', '.join(industries) if industries else '(未填写)'}
+
+简历内容:
+\"\"\"{resume_text[:6000]}\"\"\"
+
+已有方向(不要重复输出):{', '.join(existing_dirs) if existing_dirs else '(无)'}
+
+岗位类型树(大类: 子类列表):
+{tree_block}
+
+请输出严格 JSON(不要输出 JSON 以外的文字):
+{{
+  "fit_directions": [
+    {{
+      "direction": "从树中子类名选(如"AI Agent开发""后端开发")。若歧义且简历无法消歧,用大类名",
+      "weight": 0.4 到 0.9,
+      "evidence": "一句话说明依据(简历基础/目标公司/用户明确意向)"
+    }}
+  ],
+  "hard_skills": [
+    {{"kw": "该方向/目标公司典型需要的硬技能", "weight": 2.0 到 4.0}}
+  ]
+}}
+
+规则:
+- direction 必须是树中存在的子类名或大类名,不允许自造词
+- 只输出新增方向(不在"已有方向"列表中的),已有方向不要重复
+- hard_skills 输出该方向/目标公司典型需要但用户技能列表中没有的技能
+- 若用户填了目标公司,优先考虑这些公司常见岗位需要的技能
+- 若没有新增方向也没有补充技能,返回空数组
+"""
+        try:
+            content = self._chat([{"role": "user", "content": prompt}],
+                                 temperature=0.2, max_tokens=4000)
+            parsed = self._extract_json(content) if content else None
+            if not parsed:
+                logger.warning(f"补充分析 LLM 返回空: {content[:200] if content else ''}")
+                return {"fit_directions": [], "hard_skills": []}
+
+            fit_dirs = []
+            for item in parsed.get("fit_directions", []):
+                if isinstance(item, dict):
+                    direction = str(item.get("direction", "")).strip()
+                    if direction:
+                        fit_dirs.append({
+                            "direction": direction,
+                            "weight": float(item.get("weight") or 0.5),
+                            "evidence": str(item.get("evidence", "")).strip()[:200],
+                        })
+
+            hard_skills = []
+            for item in parsed.get("hard_skills", []):
+                if isinstance(item, dict):
+                    kw = str(item.get("kw", "")).strip()
+                    if kw:
+                        hard_skills.append({
+                            "kw": kw,
+                            "weight": float(item.get("weight") or 2.5),
+                        })
+
+            logger.info(f"补充分析完成: {len(fit_dirs)}个方向, {len(hard_skills)}个技能")
+            return {"fit_directions": fit_dirs, "hard_skills": hard_skills}
+
+        except Exception as e:
+            logger.error(f"补充分析失败: {e}")
             return {"fit_directions": [], "hard_skills": []}
 
     @staticmethod

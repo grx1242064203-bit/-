@@ -240,12 +240,17 @@ SETUP_PAGE_HTML = """
 
     <div class="analysis-block">
       <div class="analysis-label">📝 简历分析摘要 <span style="font-weight:normal;color:#aaa;font-size:11px">(可直接修改,AI 将基于此理解你的背景)</span></div>
-      <textarea id="profile_summary" class="profile-textarea" rows="5" placeholder="AI 解析的简历摘要将显示在这里,你可以修改..."></textarea>
+      <textarea id="profile_summary" class="profile-textarea" rows="5" placeholder="AI 解析的简历摘要将显示在这里,你可以修改..." oninput="markEdited()"></textarea>
     </div>
 
     <div class="analysis-block">
       <div class="analysis-label">💡 简历亮点</div>
       <div id="highlights_list"></div>
+    </div>
+
+    <div class="analysis-block">
+      <div class="analysis-label">🎯 AI 方向匹配分析 <span style="font-weight:normal;color:#aaa;font-size:11px">(AI 根据简历推断的适配方向及依据,可在下方增删调整)</span></div>
+      <div id="fit_directions_list"></div>
     </div>
 
     <div class="analysis-block">
@@ -310,10 +315,10 @@ SETUP_PAGE_HTML = """
   <!-- Step 4: 完成 -->
   <div id="step-done" class="card hidden">
     <div class="section-title">🎉 配置完成!</div>
-    <p>你的专属校招岗位库已创建,以下三张表每天自动更新(无需登录):</p>
+    <p>你的专属校招岗位库已创建(一个链接,内含多个页签:匹配岗位/已关闭/管培/简历/公司总表/岗位总表),每天自动更新(无需登录):</p>
     <div class="link-box" id="table_link"></div>
     <p style="font-size:13px;color:#888;margin-top:12px">
-      每天早上 9 点,系统会自动把与你匹配的新岗位写入「我的匹配岗位」表。<br>
+      每天早上 9 点,系统会自动把与你匹配的新岗位写入「我的匹配岗位」页签。<br>
       建议收藏该页面链接,每天打开查看最新岗位。
     </p>
   </div>
@@ -351,9 +356,13 @@ let profileData = {
 };
 
 function parseResume() {
+  const btn = document.querySelector('#step-resume .btn');
   const text = document.getElementById('resume_text').value;
   const files = document.getElementById('resume_file').files;
   if (!text && (!files || files.length === 0)) { showMsg('resume-msg', '请粘贴简历文本或上传简历文件', 'error'); return; }
+  // 点击后立即灰掉,防止重复提交
+  btn.disabled = true;
+  btn.innerHTML = '<span class="spinner"></span>AI 正在解析简历(约10-30秒)...';
   showMsg('resume-msg', '⏳ AI 正在解析简历(图片需OCR,约10-30秒)...', '');
   const fd = new FormData();
   fd.append('resume_text', text);
@@ -387,6 +396,7 @@ function parseResume() {
         renderCityTags();
         renderCompanyTags();
         renderHighlights();
+        renderFitDirections();
         renderTags('industry_tags', INDUSTRIES, p.target_industries || []);
         renderTags('company_type_tags', COMPANY_TYPES, p.preferred_company_types || []);
         document.getElementById('step-resume').classList.add('hidden');
@@ -397,20 +407,46 @@ function parseResume() {
         document.getElementById('step-resume').classList.add('hidden');
         document.getElementById('step-profile').classList.remove('hidden');
       }
+    }).catch(() => {
+      showMsg('resume-msg', '网络异常,简历解析失败', 'error');
+      // 失败:2 分钟后可重试,期间显示倒计时
+      let remain = 120;
+      btn.innerHTML = '⏳ 解析失败, ' + remain + 's 后可重试';
+      const timer = setInterval(() => {
+        remain--;
+        if (remain <= 0) {
+          clearInterval(timer);
+          btn.disabled = false;
+          btn.innerHTML = 'AI 解析简历';
+        } else {
+          btn.innerHTML = '⏳ 解析失败, ' + remain + 's 后可重试';
+        }
+      }, 1000);
     });
 }
 
 // === 可编辑标签渲染 ===
+// 用户编辑标记:当用户增删技能/方向/公司/城市/摘要时,重新启用 AI 补充按钮
+function markEdited() {
+  const btn = document.getElementById('supplement_btn');
+  if (btn.disabled) {
+    btn.disabled = false;
+    btn.innerHTML = '✨ AI 补充分析(根据你的修改重新分析)';
+    btn.style.opacity = '1';
+    btn.style.cursor = 'pointer';
+  }
+}
+
 function renderSkillTags() {
   const c = document.getElementById('skills_tags');
   c.innerHTML = profileData.skills.map((s,i) =>
     '<span class="skill-tag">' + s + '<span class="rm" onclick="removeSkill('+i+')">×</span></span>'
   ).join('');
 }
-function removeSkill(i) { profileData.skills.splice(i,1); renderSkillTags(); }
+function removeSkill(i) { profileData.skills.splice(i,1); renderSkillTags(); markEdited(); }
 function addSkill() {
   const v = document.getElementById('skill_input').value.trim();
-  if (v && !profileData.skills.includes(v)) { profileData.skills.push(v); renderSkillTags(); }
+  if (v && !profileData.skills.includes(v)) { profileData.skills.push(v); renderSkillTags(); markEdited(); }
   document.getElementById('skill_input').value = '';
 }
 
@@ -420,10 +456,10 @@ function renderDirectionTags() {
     '<span class="skill-tag">' + d + '<span class="rm" onclick="removeDirection('+i+')">×</span></span>'
   ).join('');
 }
-function removeDirection(i) { profileData.directions.splice(i,1); renderDirectionTags(); }
+function removeDirection(i) { profileData.directions.splice(i,1); renderDirectionTags(); markEdited(); }
 function addDirection() {
   const v = document.getElementById('direction_input').value.trim();
-  if (v && !profileData.directions.includes(v)) { profileData.directions.push(v); renderDirectionTags(); }
+  if (v && !profileData.directions.includes(v)) { profileData.directions.push(v); renderDirectionTags(); markEdited(); }
   document.getElementById('direction_input').value = '';
 }
 
@@ -433,10 +469,10 @@ function renderCityTags() {
     '<span class="skill-tag">' + ct + '<span class="rm" onclick="removeCity('+i+')">×</span></span>'
   ).join('');
 }
-function removeCity(i) { profileData.cities.splice(i,1); renderCityTags(); }
+function removeCity(i) { profileData.cities.splice(i,1); renderCityTags(); markEdited(); }
 function addCity() {
   const v = document.getElementById('city_input').value.trim();
-  if (v && !profileData.cities.includes(v)) { profileData.cities.push(v); renderCityTags(); }
+  if (v && !profileData.cities.includes(v)) { profileData.cities.push(v); renderCityTags(); markEdited(); }
   document.getElementById('city_input').value = '';
 }
 
@@ -446,10 +482,10 @@ function renderCompanyTags() {
     '<span class="skill-tag">' + ct + '<span class="rm" onclick="removeCompany('+i+')">×</span></span>'
   ).join('');
 }
-function removeCompany(i) { profileData.companies.splice(i,1); renderCompanyTags(); }
+function removeCompany(i) { profileData.companies.splice(i,1); renderCompanyTags(); markEdited(); }
 function addCompany() {
   const v = document.getElementById('company_input').value.trim();
-  if (v && !profileData.companies.includes(v)) { profileData.companies.push(v); renderCompanyTags(); }
+  if (v && !profileData.companies.includes(v)) { profileData.companies.push(v); renderCompanyTags(); markEdited(); }
   document.getElementById('company_input').value = '';
 }
 
@@ -465,10 +501,18 @@ function supplementProfile() {
 
   // 用用户编辑后的摘要作为 AI 理解背景的上下文
   const editedSummary = document.getElementById('profile_summary').value || profileData.summary;
+  // 收集用户所有编辑(方向/技能/公司/城市),让 AI 基于完整修改做补充分析
+  const industries = getSelectedTags('industry_tags');
+  const companyTypes = getSelectedTags('company_type_tags');
   const userEdited = {
     directions: profileData.directions,
     fit_directions: profileData.fit_directions,
     structured_keywords: profileData.structured_keywords,
+    skills: profileData.skills,
+    companies: profileData.companies,
+    cities: profileData.cities,
+    target_industries: industries,
+    preferred_company_types: companyTypes,
   };
 
   fetch('/api/supplement-profile', {
@@ -481,6 +525,7 @@ function supplementProfile() {
       profileData.structured_keywords = data.structured_keywords;
       profileData.directions = data.fit_directions.map(d => d.direction).filter(Boolean);
       renderDirectionTags();
+      renderFitDirections();
 
       // 展示 AI 补充的新方向和新技能
       const newDirs = data.new_directions || [];
@@ -492,7 +537,7 @@ function supplementProfile() {
           ' <span style="color:#888;font-size:11px">(' + (d.weight||0).toFixed(1) + ')</span></span>'
         ).join(' ');
       } else {
-        dirsHtml += '<span style="color:#888;font-size:12px">无新增方向</span>';
+        dirsHtml += '<span style="color:#888;font-size:12px">方向已覆盖,无新增</span>';
       }
       document.getElementById('supplement_dirs').innerHTML = dirsHtml;
 
@@ -502,7 +547,7 @@ function supplementProfile() {
           '<span class="skill-tag" style="background:#e8e4ff">' + s.kw + '</span>'
         ).join(' ');
       } else {
-        skillsHtml += '<span style="color:#888;font-size:12px">无新增技能</span>';
+        skillsHtml += '<span style="color:#888;font-size:12px">技能已覆盖,无新增</span>';
       }
       document.getElementById('supplement_skills').innerHTML = skillsHtml;
       document.getElementById('supplement_result').classList.remove('hidden');
@@ -516,15 +561,15 @@ function supplementProfile() {
       renderSkillTags();
 
       showMsg('confirm-msg', '✅ AI 补充完成,你可以继续修改,满意后点击「生成我的岗位库」', 'success');
-      // 补充成功后按钮保持禁用(一轮流程只补充一次)
+      // 补充成功后按钮保持禁用(一轮流程只补充一次),但用户再次编辑时会自动重新启用
       btn.disabled = true;
-      btn.innerHTML = '✅ 已完成 AI 补充';
+      btn.innerHTML = '✅ 已完成 AI 补充(修改内容后可再次分析)';
       btn.style.opacity = '0.6';
       btn.style.cursor = 'not-allowed';
     } else {
       showMsg('confirm-msg', data.error || 'AI 补充失败', 'error');
       btn.disabled = false;
-      btn.innerHTML = '✨ AI 补充分析(扩展方向+技能)';
+      btn.innerHTML = '✨ AI 补充分析(根据你的修改重新分析)';
     }
   }).catch(() => {
     showMsg('confirm-msg', '网络异常,请重试', 'error');
@@ -539,6 +584,30 @@ function renderHighlights() {
   c.innerHTML = profileData.highlights.map(h => '<div class="highlight-item">' + h + '</div>').join('');
 }
 
+function renderFitDirections() {
+  const c = document.getElementById('fit_directions_list');
+  const dirs = profileData.fit_directions || [];
+  if (!dirs.length) {
+    c.innerHTML = '<div style="font-size:13px;color:#aaa">暂无方向分析,请在下方添加目标方向</div>';
+    return;
+  }
+  c.innerHTML = dirs.map(d => {
+    const w = (d.weight || 0).toFixed(1);
+    const pct = Math.round((d.weight || 0) * 100);
+    const evidence = (d.evidence || '').replace(/"/g, '&quot;');
+    return '<div style="margin-bottom:10px;padding:10px;background:#f8f9ff;border-radius:8px">' +
+      '<div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:4px">' +
+      '<span style="font-size:14px;font-weight:600;color:#3370ff">' + (d.direction || '') + '</span>' +
+      '<span style="font-size:12px;color:#888">适配度 ' + pct + '%</span>' +
+      '</div>' +
+      '<div style="height:4px;background:#e8eaf0;border-radius:2px;overflow:hidden;margin-bottom:4px">' +
+      '<div style="height:100%;width:' + pct + '%;background:#3370ff;border-radius:2px"></div>' +
+      '</div>' +
+      '<div style="font-size:12px;color:#666">' + (evidence || 'AI 推断,建议确认') + '</div>' +
+      '</div>';
+  }).join('');
+}
+
 function renderTags(containerId, options, selected) {
   const c = document.getElementById(containerId);
   c.innerHTML = '';
@@ -546,7 +615,7 @@ function renderTags(containerId, options, selected) {
     const chip = document.createElement('div');
     chip.className = 'chip' + (selected.includes(opt) ? ' active' : '');
     chip.textContent = opt;
-    chip.onclick = () => chip.classList.toggle('active');
+    chip.onclick = () => { chip.classList.toggle('active'); markEdited(); };
     c.appendChild(chip);
   });
 }
@@ -593,25 +662,13 @@ function confirmSetup() {
     if (data.share_url) {
       document.getElementById('step-profile').classList.add('hidden');
       document.getElementById('step-done').classList.remove('hidden');
-      const links = [
-        {label: '📋 我的匹配岗位', url: data.user_table_url || data.share_url},
-      ];
-      if (data.resume_table_url) {
-        links.push({label: '📄 简历解析数据(' + (data.resume_version || 'v1') + ')', url: data.resume_table_url});
-      }
-      if (data.company_table_url) {
-        links.push({label: '🏢 秋招公司总表', url: data.company_table_url});
-      }
-      if (data.position_table_url) {
-        links.push({label: '💼 校招岗位总表', url: data.position_table_url});
-      }
-      let html = links.map(l =>
-        '<div style="margin:8px 0"><a href="' + l.url + '" target="_blank" style="font-size:15px">' + l.label + '</a></div>'
-      ).join('');
+      // 所有表在同一个多维表格(base)内,只需一个链接,用户在飞书内切换页签
+      let html = '<div style="margin:8px 0"><a href="' + data.share_url + '" target="_blank" style="font-size:16px;font-weight:600">📋 打开我的校招岗位库(点击进入)</a></div>';
+      html += '<div style="font-size:12px;color:#888;margin-top:6px">内含页签:我的匹配岗位 | 已关闭岗位 | 管培项目 | 简历解析数据 | 秋招公司总表 | 校招岗位总表</div>';
       if (data.master_warning) {
         html += '<div style="margin-top:12px;padding:10px;background:#fff7e6;border:1px solid #ffd591;border-radius:6px;color:#ad6800;font-size:13px">⚠️ ' + data.master_warning + '</div>';
       }
-      html += '<div style="margin-top:12px;font-size:13px;color:#888">岗位匹配正在后台进行,通常 1-3 分钟后可在「我的匹配岗位」表中查看结果。</div>';
+      html += '<div style="margin-top:12px;font-size:13px;color:#888">岗位匹配正在后台进行,通常 1-3 分钟后可在「我的匹配岗位」页签中查看结果。</div>';
       document.getElementById('table_link').innerHTML = html;
     } else {
       showMsg('confirm-msg', data.msg || '创建失败,请重试', 'error');

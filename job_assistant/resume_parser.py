@@ -318,18 +318,19 @@ def apply_keywords_to_profile(profile, result: Dict):
 
 def supplement_profile(user_edited: Dict, resume_text: str = "",
                        llm_client=None) -> Dict:
-    """第二轮:根据用户编辑后的方向词,扩展 fit_directions + 硬技能。
+    """第二轮:根据用户编辑后的完整画像,AI 补充分析方向 + 硬技能。
 
     流程:
-    1. 从 user_edited 提取用户编辑后的方向名列表(directions)和已有 fit_directions
-    2. 找出用户新增的方向(不在已有 fit_directions 的 direction 中)
-    3. 调用 LLM expand_directions 扩展这些方向 → fit_directions + hard_skills
-    4. 校验方向合法性(允许大类),合并去重
-    5. 把新硬技能并入 structured_keywords(去重,标记 source=ai_supplemented)
+    1. 从 user_edited 提取用户编辑后的完整画像(方向/技能/公司/城市/行业)
+    2. 只要用户有方向,就调用 LLM supplement_from_edits 做补充分析
+       (不要求必须有新增方向,编辑技能/公司/城市也会触发补充技能推荐)
+    3. 校验方向合法性(允许大类),合并去重
+    4. 把新硬技能并入 structured_keywords(去重,标记 source=ai_supplemented)
 
     Args:
         user_edited: 用户编辑后的画像 dict,含 directions(List[str])、
-                     fit_directions(List[Dict])、structured_keywords(List[Dict])
+                     fit_directions(List[Dict])、structured_keywords(List[Dict])、
+                     skills(List[str])、companies(List[str])、cities(List[str])
         resume_text: 原始简历文本
         llm_client: LLMClient 实例
 
@@ -341,18 +342,8 @@ def supplement_profile(user_edited: Dict, resume_text: str = "",
     existing_dirs = user_edited.get("fit_directions") or []
     existing_keywords = user_edited.get("structured_keywords") or []
 
-    # 已有方向名集合
-    existing_names = set()
-    for d in existing_dirs:
-        if isinstance(d, dict):
-            existing_names.add((d.get("direction") or "").strip())
-
-    # 用户新增的方向词(在 directions 列表里但不在已有 fit_directions 中)
-    user_added = [d.strip() for d in directions
-                  if d and d.strip() and d.strip() not in existing_names]
-
-    if not user_added:
-        # 没有新增方向,直接返回原数据
+    # 没有方向则无法补充
+    if not directions:
         return {
             "fit_directions": existing_dirs,
             "structured_keywords": existing_keywords,
@@ -363,10 +354,10 @@ def supplement_profile(user_edited: Dict, resume_text: str = "",
     from llm_client import LLMClient
     client = llm_client or LLMClient()
 
-    result = client.expand_directions(
-        user_directions=user_added,
+    # 基于用户完整编辑后的画像做补充分析(方向/技能/公司/城市都会被考虑)
+    result = client.supplement_from_edits(
+        user_edited=user_edited,
         resume_text=resume_text,
-        existing_directions=list(existing_names),
     )
 
     # 校验新方向(允许大类)

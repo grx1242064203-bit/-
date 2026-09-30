@@ -816,6 +816,8 @@ def api_confirm_setup():
             user.feishu_closed_table_id = table_result["closed_table_id"]
             user.feishu_mt_table_id = table_result["mt_table_id"]
             user.feishu_resume_table_id = table_result["resume_table_id"]
+            user.feishu_company_table_id = table_result["company_table_id"]
+            user.feishu_position_table_id = table_result["position_table_id"]
             share_url = table_result["share_url"]
         except Exception as e:
             logger.error(f"飞书表格创建失败: {e}")
@@ -839,16 +841,33 @@ def api_confirm_setup():
         f"{user_id} -> {share_url}"
     )
 
-    # 7. 后台触发即时匹配(用户立即可见数据,不等次日 cron)
+    # 7. 后台触发即时匹配 + 总表数据同步(用户立即可见数据,不等次日 cron)
     try:
         from daily_runner import DailyRunner
         runner = DailyRunner(user)
         import threading
-        t = threading.Thread(target=runner.run, daemon=True)
+
+        def _bg_work():
+            # 先同步公司/岗位总库到用户表格(单链接多页签)
+            try:
+                table_service.sync_master_tables_to_user(
+                    user.feishu_base_token,
+                    user.feishu_company_table_id,
+                    user.feishu_position_table_id,
+                )
+            except Exception as e:
+                logger.warning(f"用户总表同步失败(将由次日 cron 补跑): {e}")
+            # 再跑岗位匹配
+            try:
+                runner.run()
+            except Exception as e:
+                logger.warning(f"即时匹配触发失败(将由次日 cron 补跑): {e}")
+
+        t = threading.Thread(target=_bg_work, daemon=True)
         t.start()
-        logger.info(f"已触发即时匹配: {user_id}")
+        logger.info(f"已触发即时匹配 + 总表同步: {user_id}")
     except Exception as e:
-        logger.warning(f"即时匹配触发失败(将由次日 cron 补跑): {e}")
+        logger.warning(f"后台任务触发失败(将由次日 cron 补跑): {e}")
 
     # 8. 返回链接(用户表 + 简历表 + 公司总表 + 岗位总表)
     from config import settings

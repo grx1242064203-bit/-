@@ -18,6 +18,7 @@ from typing import Dict, Optional
 
 from feishu_client import FeishuClient
 from schema import JOB_FIELDS, CLOSED_JOB_FIELDS, MT_TABLE_FIELDS, RESUME_FIELDS
+from feishu_master_tables import COMPANY_FIELDS, POSITION_FIELDS
 
 logger = logging.getLogger(__name__)
 
@@ -26,11 +27,15 @@ TABLE_NAME_JOBS = "岗位数据库"
 TABLE_NAME_CLOSED = "已关闭岗位"
 TABLE_NAME_MT = "管培项目"
 TABLE_NAME_RESUME = "简历解析数据"
+TABLE_NAME_COMPANIES = "秋招公司总表"
+TABLE_NAME_POSITIONS = "校招岗位总表"
 
 # 主字段名(建表后第一个字段自动成为主字段,需重命名)
 PRIMARY_FIELD_JOB = "岗位标题"
 PRIMARY_FIELD_MT = "项目名称"
 PRIMARY_FIELD_RESUME = "简历版本"
+PRIMARY_FIELD_COMPANY = "公司名称"
+PRIMARY_FIELD_POSITION = "岗位标题"
 
 
 class FeishuTableService:
@@ -84,13 +89,15 @@ class FeishuTableService:
     def create_user_bitable(self, order_id: str,
                             user_display_name: str = "校招用户") -> Dict:
         """
-        为用户创建专属多维表格,含 4 张表 + 全部字段 + 互联网分享。
+        为用户创建专属多维表格,含 6 张表 + 全部字段 + 互联网分享。
 
-        表格命名以订单 ID 为主标识(用户要求),学校名作为辅助展示。
+        表格命名以订单 ID 为唯一标识(用户要求:不加学校名)。
+        6 张表:岗位数据库 / 已关闭岗位 / 管培项目 / 简历解析数据 /
+                秋招公司总表 / 校招岗位总表(后两张为总库数据,单链接多页签)。
 
         Args:
             order_id: 订单号(表格主标识,如 "123456")
-            user_display_name: 辅助展示名(如学校名 "北京大学")
+            user_display_name: 辅助展示名(保留参数但不用于命名)
 
         Returns:
             {
@@ -99,25 +106,29 @@ class FeishuTableService:
                 "closed_table_id": "xxx",
                 "mt_table_id": "xxx",
                 "resume_table_id": "xxx",
+                "company_table_id": "xxx",
+                "position_table_id": "xxx",
                 "share_url": "https://www.feishu.cn/base/xxx"
             }
         """
-        # 以订单 ID 命名多维表格
-        display = f"{user_display_name}·" if user_display_name else ""
-        bitable_name = f"校招岗位库·{display}订单{order_id}"
+        # 以订单 ID 命名多维表格(不加学校名,避免隐私 + 用户要求)
+        bitable_name = f"校招岗位库·订单{order_id}"
 
         # 1. 创建多维表格
         app_token = self.client.create_bitable(bitable_name)
         logger.info(f"创建多维表格: {bitable_name} -> {app_token}")
 
-        # 2. 创建 4 张数据表
+        # 2. 创建 6 张数据表
         jobs_table_id = self.client.create_table(app_token, TABLE_NAME_JOBS)
         closed_table_id = self.client.create_table(app_token, TABLE_NAME_CLOSED)
         mt_table_id = self.client.create_table(app_token, TABLE_NAME_MT)
         resume_table_id = self.client.create_table(app_token, TABLE_NAME_RESUME)
+        company_table_id = self.client.create_table(app_token, TABLE_NAME_COMPANIES)
+        position_table_id = self.client.create_table(app_token, TABLE_NAME_POSITIONS)
         logger.info(
-            f"创建 4 张表: jobs={jobs_table_id} closed={closed_table_id} "
-            f"mt={mt_table_id} resume={resume_table_id}"
+            f"创建 6 张表: jobs={jobs_table_id} closed={closed_table_id} "
+            f"mt={mt_table_id} resume={resume_table_id} "
+            f"company={company_table_id} position={position_table_id}"
         )
 
         # 3. 创建字段(耗时,但必须在返回前完成,否则写入会失败)
@@ -125,6 +136,8 @@ class FeishuTableService:
         self._create_table_fields(app_token, closed_table_id, CLOSED_JOB_FIELDS, PRIMARY_FIELD_JOB)
         self._create_table_fields(app_token, mt_table_id, MT_TABLE_FIELDS, PRIMARY_FIELD_MT)
         self._create_table_fields(app_token, resume_table_id, RESUME_FIELDS, PRIMARY_FIELD_RESUME)
+        self._create_table_fields(app_token, company_table_id, COMPANY_FIELDS, PRIMARY_FIELD_COMPANY)
+        self._create_table_fields(app_token, position_table_id, POSITION_FIELDS, PRIMARY_FIELD_POSITION)
 
         # 4. 设置互联网链接可查看(关键!用户无需登录飞书)
         self.client.set_public_share(app_token, doc_type="bitable")
@@ -138,6 +151,8 @@ class FeishuTableService:
             "closed_table_id": closed_table_id,
             "mt_table_id": mt_table_id,
             "resume_table_id": resume_table_id,
+            "company_table_id": company_table_id,
+            "position_table_id": position_table_id,
             "share_url": share_url,
         }
         logger.info(f"用户表格创建完成: {share_url}")
@@ -282,3 +297,34 @@ class FeishuTableService:
             self.client.delete_record(app_token, jobs_table_id, record_id)
         except Exception as e:
             logger.warning(f"归档岗位失败 {record_id}: {e}")
+
+    def sync_master_tables_to_user(self, app_token: str,
+                                   company_table_id: str,
+                                   position_table_id: str) -> Dict:
+        """把本地 DB 的公司/岗位总库数据同步到用户专属表格的总表页签。
+
+        复用 FeishuMasterTableService 的导出逻辑,保证字段与总表一致。
+        用于让用户在一个链接内即可查看全部公司/岗位总库(多页签)。
+
+        Returns: {"companies": N, "positions": M}
+        """
+        from feishu_master_tables import FeishuMasterTableService
+        service = FeishuMasterTableService(client=self.client)
+        result = {"companies": 0, "positions": 0}
+        try:
+            result["companies"] = service.export_companies(
+                app_token, company_table_id
+            )
+        except Exception as e:
+            logger.error(f"同步用户公司总表失败: {e}")
+        try:
+            result["positions"] = service.export_positions(
+                app_token, position_table_id
+            )
+        except Exception as e:
+            logger.error(f"同步用户岗位总表失败: {e}")
+        logger.info(
+            f"用户总表同步完成: 公司 {result['companies']} 条, "
+            f"岗位 {result['positions']} 条"
+        )
+        return result

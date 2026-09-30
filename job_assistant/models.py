@@ -77,6 +77,8 @@ class User:
     feishu_closed_table_id: str = "" # 已关闭岗位表ID
     feishu_mt_table_id: str = ""     # 管培生项目表ID(校招用户专项)
     feishu_resume_table_id: str = "" # 简历解析数据表ID(用户画像快照)
+    feishu_company_table_id: str = "" # 秋招公司总表ID(用户base内总库页签)
+    feishu_position_table_id: str = "" # 校招岗位总表ID(用户base内总库页签)
     # 微信推送(可选,辅助提醒)
     wxpusher_uid: str = ""
     # 邮箱(可选,用于岗位更新提醒)

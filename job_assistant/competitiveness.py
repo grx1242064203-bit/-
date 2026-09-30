@@ -17,6 +17,18 @@ from typing import Dict, List, Tuple, Optional
 
 logger = logging.getLogger(__name__)
 
+
+def _tag_get(tag, key, default=""):
+    """兼容 KeywordTag(属性访问)和 dict(键访问)两种结构化关键词类型。
+
+    structured_keywords 在内存中是 KeywordTag 对象(无 .get 方法),
+    从 JSON 反序列化后是 dict。统一用此函数取值,避免 AttributeError。
+    """
+    if isinstance(tag, dict):
+        return tag.get(key, default)
+    return getattr(tag, key, default)
+
+
 # ============================================================
 # 学校 tier 表
 # ============================================================
@@ -154,7 +166,7 @@ def _school_tier(school: str) -> str:
 def _detect_big_internship(keywords: List[Dict]) -> bool:
     """从关键词中检测是否有大厂实习。"""
     for tag in keywords:
-        std = (tag.get("standard") or tag.get("kw") or "")
+        std = (_tag_get(tag, "standard") or _tag_get(tag, "kw") or "")
         for kw in BIG_COMPANY_KEYWORDS:
             if kw in std:
                 return True
@@ -163,7 +175,7 @@ def _detect_big_internship(keywords: List[Dict]) -> bool:
 
 def _detect_competition(keywords: List[Dict]) -> str:
     """检测竞赛级别: 国际级/国家级/省级/无。"""
-    text = " ".join((t.get("standard") or t.get("kw") or "") for t in keywords)
+    text = " ".join((_tag_get(t, "standard") or _tag_get(t, "kw") or "") for t in keywords)
     for level, kws in COMPETITION_KEYWORDS.items():
         for kw in kws:
             if kw in text:
@@ -173,7 +185,7 @@ def _detect_competition(keywords: List[Dict]) -> str:
 
 def _detect_paper(keywords: List[Dict]) -> str:
     """检测论文级别: top_conf/sci/无。"""
-    text = " ".join((t.get("standard") or t.get("kw") or "") for t in keywords)
+    text = " ".join((_tag_get(t, "standard") or _tag_get(t, "kw") or "") for t in keywords)
     for level, kws in PAPER_KEYWORDS.items():
         for kw in kws:
             if kw in text:
@@ -189,9 +201,9 @@ def candidate_competitiveness(profile) -> Tuple[float, Dict[str, float], Dict]:
     """
     keywords = getattr(profile, "structured_keywords", []) or []
     degree = getattr(profile, "degree", "") or ""
-    schools = [t.get("standard") or t.get("kw", "") for t in keywords
-               if t.get("category") == "education"
-               and not any(lv in (t.get("standard") or "") for lv in ("学士", "硕士", "博士", "大专", "本科"))]
+    schools = [_tag_get(t, "standard") or _tag_get(t, "kw", "") for t in keywords
+               if _tag_get(t, "category") == "education"
+               and not any(lv in (_tag_get(t, "standard") or "") for lv in ("学士", "硕士", "博士", "大专", "本科"))]
 
     # 1. 学校(取最高 tier)
     best_tier = "unknown"
@@ -210,8 +222,8 @@ def candidate_competitiveness(profile) -> Tuple[float, Dict[str, float], Dict]:
 
     # 3. 实习(大厂 +20, 有实习+8, 无+0)
     has_internship = any(
-        t.get("resume_section") in ("experience", "project")
-        and t.get("category") in ("hard_skill", "tool", "framework", "skill", "domain")
+        _tag_get(t, "resume_section") in ("experience", "project")
+        and _tag_get(t, "category") in ("hard_skill", "tool", "framework", "skill", "domain")
         for t in keywords
     )
     if _detect_big_internship(keywords):

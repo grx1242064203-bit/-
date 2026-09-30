@@ -177,6 +177,7 @@ class UserMatcher:
             apply_url = pos.get("apply_url", "") or pos.get("ann_apply_url", "")
             job_for_score = {
                 "title": pos.get("position_title", ""),
+                "position_title": pos.get("position_title", ""),
                 "company": pos.get("company_name", ""),
                 "company_name": pos.get("company_name", ""),
                 "company_tier": pos.get("company_tier", ""),
@@ -187,9 +188,22 @@ class UserMatcher:
                 "difficulty": pos.get("difficulty", ""),
                 "department": pos.get("department", ""),
                 "location": pos.get("location", ""),
+                "city": pos.get("city", "") or pos.get("location", ""),
                 "salary": "",
                 "jd_url": apply_url,
                 "posted": pos.get("publish_time", ""),
+                # 评分引擎依赖的岗位侧关键词与分类字段(必须透传,否则 skill/role 维度为 0)
+                "keywords": pos.get("keywords", ""),
+                "hard_skills": pos.get("hard_skills", ""),
+                "soft_skills": pos.get("soft_skills", ""),
+                "certifications": pos.get("certifications", ""),
+                "languages": pos.get("languages", ""),
+                "job_category": pos.get("job_category", ""),
+                "job_subcategory": pos.get("job_subcategory", ""),
+                "major_category": pos.get("major_category", ""),
+                "major_required": pos.get("major_required", ""),
+                "min_education": pos.get("min_education", "") or pos.get("education_req", ""),
+                "education_req": pos.get("education_req", ""),
             }
             try:
                 result = score_job(job_for_score, self.profile, llm_client=self.llm)

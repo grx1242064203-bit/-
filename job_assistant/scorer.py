@@ -10,7 +10,7 @@
 """
 import json
 import logging
-from typing import Dict, List, Tuple, Optional, Any
+from typing import Dict, List, Tuple, Optional, Any, Set
 
 from keyword_normalizer import keyword_set_overlap, normalize as _norm
 import job_tree
@@ -18,14 +18,16 @@ from competitiveness import candidate_competitiveness, company_competitiveness, 
 
 logger = logging.getLogger(__name__)
 
-# 权重重新分配(第一性原理:方向对齐 > 技能命中 > 竞争力对齐 > 硬门槛)
+# 权重重新分配(第一性原理:方向对齐 > 技能命中 > 竞争力对齐 > 公司意向 > 硬门槛)
 # - role 0.15:求职方向核心偏好
-# - skill 0.15 / hard_skill 0.15:真实技能命中
-# - competitiveness 0.15:候选人档位 vs 岗位档位对齐(冲刺/匹配/保底),中等偏上
+# - hard_skill 0.15:真实硬技能命中
+# - skill 0.10:综合技能覆盖
 # - education 0.15 / major 0.10:硬门槛
+# - competitiveness 0.10:候选人档位 vs 岗位档位对齐
+# - company_preference 0.10:用户目标公司及同行业/同类型/同地位公司优先
 # - cert 0.05 / city 0.05 / soft_skill 0.05:辅助
 DIMENSION_WEIGHTS = {
-    "skill": 0.15,
+    "skill": 0.10,
     "hard_skill": 0.15,
     "cert": 0.05,
     "education": 0.15,
@@ -33,7 +35,8 @@ DIMENSION_WEIGHTS = {
     "city": 0.05,
     "role": 0.15,
     "soft_skill": 0.05,
-    "competitiveness": 0.15,
+    "competitiveness": 0.10,
+    "company_preference": 0.10,
 }
 
 # 方向硬门槛:role 维度 < ROLE_GATE_THRESHOLD 时,总分上限 = ROLE_GATE_CAP
@@ -427,6 +430,122 @@ def _match_competitiveness(profile, job: Dict) -> Tuple[float, List[str], Dict]:
     return align_score, reasons, info
 
 
+def _resolve_target_company_features(target_companies: List[str]) -> Tuple[Set[str], Set[Tuple[str, str, str]]]:
+    """把用户目标公司名解析成 (公司名集合, (行业,类型,地位)特征集合)。
+
+    公司名做子串模糊匹配(用户写"腾讯",库中"腾讯科技(深圳)有限公司"可命中)。
+    行业/类型来自 companies 表,地位(company_tier)取该公司在招岗位中最常见的 tier。
+    查不到的公司只保留名字,用于直接命中判断。
+    """
+    import job_db
+    names: Set[str] = set()
+    features: Set[Tuple[str, str, str]] = set()
+
+    all_companies = job_db.get_all_companies() if hasattr(job_db, "get_all_companies") else []
+    name_row_map = {}
+    for c in all_companies:
+        cname = (c.get("name") or "").strip()
+        if cname:
+            name_row_map[cname] = c
+
+    for raw in target_companies:
+        name = (raw or "").strip()
+        if not name:
+            continue
+        names.add(name)
+        # 精确匹配优先,否则子串模糊
+        comp = name_row_map.get(name)
+        if comp is None:
+            for cname, c in name_row_map.items():
+                if name in cname or cname in name:
+                    comp = c
+                    break
+        if comp is None:
+            continue
+        industry = (comp.get("industry") or "").strip()
+        ctype = (comp.get("company_type") or "").strip()
+        # company_tier 在 positions 表,取该公司最常见 tier
+        tier = ""
+        try:
+            conn = job_db._get_conn()
+            row = conn.execute(
+                "SELECT company_tier, COUNT(*) as cnt FROM positions "
+                "WHERE company_id = ? AND company_tier IS NOT NULL AND company_tier != '' "
+                "GROUP BY company_tier ORDER BY cnt DESC LIMIT 1",
+                (comp.get("id"),),
+            ).fetchone()
+            conn.close()
+            if row:
+                tier = (row[0] or "").strip()
+        except Exception:
+            pass
+        if industry or ctype or tier:
+            features.add((industry, ctype, tier))
+
+    return names, features
+
+
+def _match_company_preference(profile, job: Dict) -> Tuple[float, List[str]]:
+    """公司意向优先:用户写了目标公司,则同行业/同类型/同地位的公司加分。
+
+    评分规则:
+      - 直接命中目标公司 → 100
+      - 同行业 + 同类型 + 同地位 → 80
+      - 同行业 + 同类型 → 60
+      - 同行业 → 40
+      - 同类型 → 20
+      - 都不沾 → 0
+    用户未填目标公司时返回 50(中性,不影响排序)。
+    解析结果缓存到 profile,避免每个岗位都查库。
+    """
+    reasons: List[str] = []
+    target_companies = getattr(profile, "target_companies", []) or []
+    if not target_companies:
+        return 50.0, []
+
+    cache = getattr(profile, "_company_pref_cache", None)
+    if cache is None:
+        cache = _resolve_target_company_features(target_companies)
+        try:
+            setattr(profile, "_company_pref_cache", cache)
+        except Exception:
+            pass
+
+    target_names, target_features = cache
+    job_company = (job.get("company") or job.get("company_name") or "").strip()
+    job_industry = (job.get("industry") or "").strip()
+    job_type = (job.get("company_type") or "").strip()
+    job_tier = (job.get("company_tier") or "").strip()
+
+    if job_company:
+        for tn in target_names:
+            if job_company == tn or tn in job_company or job_company in tn:
+                reasons.append(f"公司意向:「{job_company}」命中用户目标公司")
+                return 100.0, reasons
+
+    best = 0.0
+    best_desc = ""
+    for t_industry, t_type, t_tier in target_features:
+        score = 0.0
+        parts = []
+        if job_industry and t_industry and job_industry == t_industry:
+            score += 40
+            parts.append(f"同行业({t_industry})")
+        if job_type and t_type and job_type == t_type:
+            score += 20
+            parts.append(f"同类型({t_type})")
+        if job_tier and t_tier and job_tier == t_tier:
+            score += 20
+            parts.append(f"同地位({t_tier})")
+        if score > best:
+            best = score
+            best_desc = "、".join(parts)
+
+    if best > 0:
+        reasons.append(f"公司意向:与目标公司{best_desc} → {best:.0f}分")
+    return best, reasons
+
+
 def _match_skill(job: Dict, u: Dict) -> Tuple[float, List[str]]:
     """综合技能:岗位 keywords + hard_skills 的并集与用户 skill_all 做覆盖度匹配。
 
@@ -480,6 +599,7 @@ def score_job(job: Dict, profile, llm_client=None) -> Dict:
         ("role", _match_role(profile, job, u)),
         ("soft_skill", _match_soft_skill(job, u)),
         ("competitiveness", _match_competitiveness(profile, job)),
+        ("company_preference", _match_company_preference(profile, job)),
     ]:
         # competitiveness 返回 (score, reasons, info),其余返回 (score, reasons)
         if dim_name == "competitiveness":

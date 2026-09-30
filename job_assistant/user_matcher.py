@@ -178,6 +178,8 @@ class UserMatcher:
             job_for_score = {
                 "title": pos.get("position_title", ""),
                 "company": pos.get("company_name", ""),
+                "company_name": pos.get("company_name", ""),
+                "company_tier": pos.get("company_tier", ""),
                 "jd_text": pos.get("jd_summary", ""),
                 "jd_summary": pos.get("jd_summary", ""),
                 "industry": pos.get("industry", ""),

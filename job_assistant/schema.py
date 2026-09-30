@@ -68,3 +68,22 @@ MT_TABLE_FIELDS: List[Dict[str, Any]] = [
     {"name": "来源", "type": 1},
     {"name": "抓取日期", "type": 5, "style": {"date_formatter": "yyyy-MM-dd"}},
 ]
+
+# 简历解析数据表(用户画像快照,每次解析生成一条记录)
+RESUME_FIELDS: List[Dict[str, Any]] = [
+    {"name": "简历版本", "type": 1},          # 主字段:如 v1 / v2
+    {"name": "解析时间", "type": 5, "style": {"date_formatter": "yyyy-MM-dd HH:mm"}},
+    {"name": "学校", "type": 1},
+    {"name": "学历", "type": 1},
+    {"name": "专业", "type": 1},
+    {"name": "毕业年份", "type": 1},
+    {"name": "一句话画像", "type": 1},        # summary
+    {"name": "核心亮点", "type": 1},          # highlights(多行文本)
+    {"name": "结构化关键词", "type": 1},      # structured_keywords(JSON 字符串)
+    {"name": "适配方向", "type": 1},          # fit_directions(逗号分隔)
+    {"name": "目标城市", "type": 1},
+    {"name": "目标行业", "type": 1},
+    {"name": "方向关键词", "type": 1},
+    {"name": "核心技能", "type": 1},
+    {"name": "原始简历", "type": 1},          # resume_text(前 2000 字)
+]

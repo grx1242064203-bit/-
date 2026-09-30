@@ -76,6 +76,7 @@ class User:
     feishu_table_id: str = ""        # 岗位表ID
     feishu_closed_table_id: str = "" # 已关闭岗位表ID
     feishu_mt_table_id: str = ""     # 管培生项目表ID(校招用户专项)
+    feishu_resume_table_id: str = "" # 简历解析数据表ID(用户画像快照)
     # 微信推送(可选,辅助提醒)
     wxpusher_uid: str = ""
     # 邮箱(可选,用于岗位更新提醒)
@@ -87,6 +88,7 @@ class User:
     expire_date: str = ""            # YYYY-MM-DD
     created_at: float = field(default_factory=time.time)
     last_run_at: float = 0.0
+    resume_parse_count: int = 0      # 简历解析次数(用于版本号 v1/v2...)
 
 
 class UserStore:

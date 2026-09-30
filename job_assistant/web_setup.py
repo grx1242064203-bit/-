@@ -316,7 +316,10 @@ function verifyOrder() {
 }
 
 // 数据存储
-let profileData = { skills: [], directions: [], cities: [], highlights: [] };
+let profileData = {
+  skills: [], directions: [], cities: [], highlights: [],
+  resume_text: '', summary: '', structured_keywords: [], fit_directions: [],
+};
 
 function parseResume() {
   const text = document.getElementById('resume_text').value;
@@ -334,11 +337,15 @@ function parseResume() {
         document.getElementById('degree').value = p.degree || '';
         document.getElementById('major').value = p.major || '';
         document.getElementById('graduation_year').value = p.graduation_year || '';
-        // 填充可编辑数据
+        // 填充可编辑数据 + 简历解析留档数据
         profileData.skills = (p.core_skills || []).slice();
         profileData.directions = Object.keys(p.direction_keywords || {});
         profileData.cities = (p.target_cities || []).slice();
         profileData.highlights = (p.highlights || []).slice();
+        profileData.resume_text = p.resume_text || text || '';
+        profileData.summary = p.summary || '';
+        profileData.structured_keywords = p.structured_keywords || [];
+        profileData.fit_directions = p.fit_directions || [];
         renderSkillTags();
         renderDirectionTags();
         renderCityTags();
@@ -439,6 +446,12 @@ function confirmSetup() {
     preferred_company_types: companyTypes,
     direction_keywords: dirKw,
     core_skills: profileData.skills,
+    // 简历解析留档数据
+    resume_text: profileData.resume_text,
+    summary: profileData.summary,
+    highlights: profileData.highlights,
+    structured_keywords: profileData.structured_keywords,
+    fit_directions: profileData.fit_directions,
   };
   showMsg('confirm-msg', '', '');
   fetch('/api/confirm-setup', {
@@ -451,12 +464,24 @@ function confirmSetup() {
       document.getElementById('step-done').classList.remove('hidden');
       const links = [
         {label: '📋 我的匹配岗位', url: data.user_table_url || data.share_url},
-        {label: '🏢 秋招公司总表', url: data.company_table_url},
-        {label: '💼 校招岗位总表', url: data.position_table_url},
       ];
-      document.getElementById('table_link').innerHTML = links.map(l =>
+      if (data.resume_table_url) {
+        links.push({label: '📄 简历解析数据(' + (data.resume_version || 'v1') + ')', url: data.resume_table_url});
+      }
+      if (data.company_table_url) {
+        links.push({label: '🏢 秋招公司总表', url: data.company_table_url});
+      }
+      if (data.position_table_url) {
+        links.push({label: '💼 校招岗位总表', url: data.position_table_url});
+      }
+      let html = links.map(l =>
         '<div style="margin:8px 0"><a href="' + l.url + '" target="_blank" style="font-size:15px">' + l.label + '</a></div>'
       ).join('');
+      if (data.master_warning) {
+        html += '<div style="margin-top:12px;padding:10px;background:#fff7e6;border:1px solid #ffd591;border-radius:6px;color:#ad6800;font-size:13px">⚠️ ' + data.master_warning + '</div>';
+      }
+      html += '<div style="margin-top:12px;font-size:13px;color:#888">岗位匹配正在后台进行,通常 1-3 分钟后可在「我的匹配岗位」表中查看结果。</div>';
+      document.getElementById('table_link').innerHTML = html;
     } else {
       showMsg('confirm-msg', data.msg || '创建失败,请重试', 'error');
       btn.disabled = false;
@@ -557,6 +582,8 @@ def api_parse_resume():
 
     try:
         profile = llm_client.parse_resume(resume_text)
+        # 带回原始简历文本(含 OCR 结果),供 confirm-setup 留档
+        profile["resume_text"] = resume_text
         return jsonify({"profile": profile})
     except Exception as e:
         logger.error(f"简历解析失败: {e}")
@@ -565,7 +592,12 @@ def api_parse_resume():
 
 @app.route("/api/confirm-setup", methods=["POST"])
 def api_confirm_setup():
-    """确认配置 → 创建用户 + 飞书表格 → 返回链接。"""
+    """确认配置 → 创建/更新用户 + 飞书表格 → 写入简历快照 → 返回链接。
+
+    支持同一订单多次解析:
+    - 首次确认:创建用户 + 多维表格 + 写简历快照 v1 + 触发即时匹配
+    - 再次确认:复用已有表格,更新画像,写简历快照 v{n+1},触发重新匹配
+    """
     data = request.get_json() or {}
     order_id = data.get("order_id", "").strip()
     profile_data = data.get("profile", {})
@@ -575,57 +607,120 @@ def api_confirm_setup():
     if not order_info:
         return jsonify({"error": "订单号无效"}), 400
 
-    # 2. 检查是否已创建(防重复)
-    existing = user_store.get_by_order_id(order_id)
-    if existing and existing.feishu_base_token:
-        share_url = table_service.client.get_share_url(existing.feishu_base_token)
-        return jsonify({"share_url": share_url, "msg": "你已创建过岗位库"})
-
-    # 3. 创建用户
+    # 2. 查找/创建用户
     user_id = f"xhs_{order_id}"
     user = user_store.get(user_id)
-    if not user:
-        # 计算过期日期
+    is_new_user = user is None
+    if is_new_user:
         plan = order_info.get("plan", "autumn")
         expire_days = order_info.get("expire_days", 90)
         expire_ts = time.time() + expire_days * 86400
         expire_date = time.strftime("%Y-%m-%d", time.localtime(expire_ts))
         user = User(id=user_id, order_id=order_id, plan=plan, expire_date=expire_date)
 
-    # 4. 设置画像
-    user.profile = UserProfile(**{k: v for k, v in profile_data.items()
-                                  if k in UserProfile.__dataclass_fields__})
+    # 3. 设置画像(含简历解析数据:resume_text/summary/highlights/structured_keywords/fit_directions)
+    filtered = {k: v for k, v in profile_data.items()
+                if k in UserProfile.__dataclass_fields__}
+    user.profile = UserProfile(**filtered)
     user.profile.role = "campus"  # 强制校招
 
-    # 5. 创建专属飞书表格
-    try:
-        table_result = table_service.create_user_bitable(
-            user_display_name=profile_data.get("school", "校招用户")
+    # 归一化 structured_keywords:前端可能传 dict 列表,需转 KeywordTag
+    sk = filtered.get("structured_keywords") or []
+    if sk and isinstance(sk[0], dict):
+        from models import KeywordTag
+        user.profile.structured_keywords = [
+            KeywordTag(
+                kw=d.get("kw", ""),
+                standard=d.get("standard", d.get("kw", "")),
+                category=d.get("category", "other"),
+                weight=d.get("weight", 1.0),
+            ) for d in sk
+        ]
+
+    # 4. 创建或复用飞书表格
+    if is_new_user or not user.feishu_base_token:
+        # 新建多维表格(以订单 ID 命名)
+        try:
+            table_result = table_service.create_user_bitable(
+                order_id=order_id,
+                user_display_name=profile_data.get("school", "校招用户"),
+            )
+            user.feishu_base_token = table_result["app_token"]
+            user.feishu_table_id = table_result["jobs_table_id"]
+            user.feishu_closed_table_id = table_result["closed_table_id"]
+            user.feishu_mt_table_id = table_result["mt_table_id"]
+            user.feishu_resume_table_id = table_result["resume_table_id"]
+            share_url = table_result["share_url"]
+        except Exception as e:
+            logger.error(f"飞书表格创建失败: {e}")
+            return jsonify({"error": "岗位库创建失败,请稍后重试"}), 500
+    else:
+        # 复用已有表格(避免孤儿表)
+        share_url = table_service.client.get_share_url(user.feishu_base_token)
+
+    # 5. 简历版本号 +1,写入简历解析数据快照
+    user.resume_parse_count += 1
+    if user.feishu_resume_table_id:
+        table_service.write_resume_snapshot(
+            user.feishu_base_token, user.feishu_resume_table_id,
+            user.profile, version=user.resume_parse_count,
         )
-        user.feishu_base_token = table_result["app_token"]
-        user.feishu_table_id = table_result["jobs_table_id"]
-        user.feishu_closed_table_id = table_result["closed_table_id"]
-        user.feishu_mt_table_id = table_result["mt_table_id"]
-    except Exception as e:
-        logger.error(f"飞书表格创建失败: {e}")
-        return jsonify({"error": "岗位库创建失败,请稍后重试"}), 500
 
     # 6. 保存用户
     user_store.upsert(user)
-    logger.info(f"用户配置完成: {user_id} -> {table_result['share_url']}")
+    logger.info(
+        f"用户配置完成(新用户={is_new_user}, 简历版本=v{user.resume_parse_count}): "
+        f"{user_id} -> {share_url}"
+    )
 
-    # 7. 返回三张表链接(用户匹配表 + 公司总表 + 岗位总表)
+    # 7. 后台触发即时匹配(用户立即可见数据,不等次日 cron)
+    try:
+        from daily_runner import DailyRunner
+        runner = DailyRunner(user)
+        import threading
+        t = threading.Thread(target=runner.run, daemon=True)
+        t.start()
+        logger.info(f"已触发即时匹配: {user_id}")
+    except Exception as e:
+        logger.warning(f"即时匹配触发失败(将由次日 cron 补跑): {e}")
+
+    # 8. 返回链接(用户表 + 简历表 + 公司总表 + 岗位总表)
     from config import settings
     master_base = settings.MASTER_APP_TOKEN
-    company_table_url = f"https://www.feishu.cn/base/{master_base}?table={settings.MASTER_COMPANY_TABLE_ID}"
-    position_table_url = f"https://www.feishu.cn/base/{master_base}?table={settings.MASTER_POSITION_TABLE_ID}"
+    master_verified = table_service.verify_master_tables(
+        master_base,
+        settings.MASTER_COMPANY_TABLE_ID,
+        settings.MASTER_POSITION_TABLE_ID,
+    )
+    company_table_url = (
+        f"https://www.feishu.cn/base/{master_base}?table={master_verified['company_table_id']}"
+        if master_verified["company_table_id"] else ""
+    )
+    position_table_url = (
+        f"https://www.feishu.cn/base/{master_base}?table={master_verified['position_table_id']}"
+        if master_verified["position_table_id"] else ""
+    )
+    resume_table_url = (
+        f"https://www.feishu.cn/base/{user.feishu_base_token}?table={user.feishu_resume_table_id}"
+        if user.feishu_resume_table_id else ""
+    )
 
-    return jsonify({
-        "share_url": table_result["share_url"],
-        "user_table_url": table_result["share_url"],
+    resp = {
+        "share_url": share_url,
+        "user_table_url": share_url,
+        "resume_table_url": resume_table_url,
         "company_table_url": company_table_url,
         "position_table_url": position_table_url,
-    })
+        "is_new_user": is_new_user,
+        "resume_version": f"v{user.resume_parse_count}",
+    }
+    if not master_verified["ok"]:
+        logger.warning(
+            f"总表校验失败: company={master_verified['company_table_id']!r}, "
+            f"position={master_verified['position_table_id']!r} (配置 ID 可能已过期)"
+        )
+        resp["master_warning"] = "公司/岗位总表暂不可用,请联系管理员"
+    return jsonify(resp)
 
 
 @app.route("/health")

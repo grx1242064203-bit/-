@@ -439,7 +439,7 @@ class LLMClient:
                     "Content-Type": "application/json",
                 },
                 json={
-                    "model": self.model,
+                    "model": DEEPSEEK_VL_MODEL,
                     "messages": [
                         {
                             "role": "user",

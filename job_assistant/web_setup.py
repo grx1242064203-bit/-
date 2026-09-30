@@ -163,10 +163,11 @@ SETUP_PAGE_HTML = """
   <!-- Step 2: 简历上传 -->
   <div id="step-resume" class="card hidden">
     <div class="section-title">第二步:上传简历</div>
-    <label>粘贴简历文本(推荐)</label>
+    <label>粘贴简历文本</label>
     <textarea id="resume_text" placeholder="粘贴你的简历文本,AI 将自动解析你的学校、专业、技能等信息"></textarea>
-    <label>或上传简历文件(.txt / .pdf / .docx)</label>
-    <input type="file" id="resume_file" accept=".txt,.pdf,.docx">
+    <label>或上传简历文件(支持图片/.txt/.pdf/.docx,可多选)</label>
+    <input type="file" id="resume_file" accept=".txt,.pdf,.docx,.png,.jpg,.jpeg,.webp,.bmp" multiple>
+    <div id="file-list" style="font-size:12px;color:#888;margin-top:4px"></div>
     <button class="btn" onclick="parseResume()" style="margin-top:12px">AI 解析简历</button>
     <div id="resume-msg"></div>
   </div>
@@ -245,12 +246,12 @@ function verifyOrder() {
 
 function parseResume() {
   const text = document.getElementById('resume_text').value;
-  const file = document.getElementById('resume_file').files[0];
-  if (!text && !file) { showMsg('resume-msg', '请粘贴简历文本或上传简历文件', 'error'); return; }
-  showMsg('resume-msg', '⏳ AI 正在解析简历...', '');
+  const files = document.getElementById('resume_file').files;
+  if (!text && (!files || files.length === 0)) { showMsg('resume-msg', '请粘贴简历文本或上传简历文件', 'error'); return; }
+  showMsg('resume-msg', '⏳ AI 正在解析简历(图片需OCR,约10-30秒)...', '');
   const fd = new FormData();
   fd.append('resume_text', text);
-  if (file) fd.append('resume_file', file);
+  for (let i = 0; i < files.length; i++) fd.append('resume_files', files[i]);
   fetch('/api/parse-resume', {method: 'POST', body: fd})
     .then(r => r.json()).then(data => {
       if (data.profile) {
@@ -341,6 +342,12 @@ function showMsg(id, text, type) {
 renderTags('industry_tags', INDUSTRIES, []);
 renderTags('company_type_tags', COMPANY_TYPES, []);
 
+// 文件选择预览
+document.getElementById('resume_file').addEventListener('change', function() {
+  const names = Array.from(this.files).map(f => f.name);
+  document.getElementById('file-list').textContent = names.length ? '已选: ' + names.join(', ') : '';
+});
+
 // URL 带 order_id 时自动填充
 const urlParams = new URLSearchParams(window.location.search);
 const oid = urlParams.get('order_id');
@@ -376,14 +383,40 @@ def api_verify_order():
 
 @app.route("/api/parse-resume", methods=["POST"])
 def api_parse_resume():
-    """上传简历 → AI 解析画像。"""
+    """上传简历 → AI 解析画像。支持文本、txt/pdf/docx、图片(OCR)。"""
     resume_text = request.form.get("resume_text", "")
-    if not resume_text:
-        file = request.files.get("resume_file")
-        if file:
-            resume_text = _parse_resume_text(file)
+
+    # 处理上传的文件(支持多文件)
+    files = request.files.getlist("resume_files")
+    image_exts = {".png", ".jpg", ".jpeg", ".webp", ".bmp", ".gif"}
+    doc_exts = {".txt", ".pdf", ".docx"}
+    ocr_texts = []
+
+    for f in files:
+        if not f or not f.filename:
+            continue
+        ext = "." + f.filename.lower().rsplit(".", 1)[-1] if "." in f.filename else ""
+        if ext in image_exts:
+            # 图片:用 DeepSeek VL OCR 提取文字
+            img_bytes = f.read()
+            logger.info(f"图片简历 OCR: {f.filename} ({len(img_bytes)} bytes)")
+            ocr_text = llm_client.ocr_image(img_bytes, ext.lstrip("."))
+            if ocr_text:
+                ocr_texts.append(ocr_text)
+            else:
+                logger.warning(f"图片 OCR 失败: {f.filename}")
+        elif ext in doc_exts:
+            text = _parse_resume_text(f)
+            if text:
+                resume_text = (resume_text + "\n" + text).strip() if resume_text else text
+
+    # 合并 OCR 文本
+    if ocr_texts:
+        ocr_combined = "\n\n".join(ocr_texts)
+        resume_text = (resume_text + "\n\n" + ocr_combined).strip() if resume_text else ocr_combined
+
     if not resume_text or len(resume_text.strip()) < 20:
-        return jsonify({"error": "简历内容过短,请提供完整简历"}), 400
+        return jsonify({"error": "简历内容过短或图片识别失败,请提供完整简历"}), 400
 
     try:
         profile = llm_client.parse_resume(resume_text)

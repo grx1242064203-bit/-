@@ -105,14 +105,14 @@ COMPANY_COL_WIDTHS = {
 # 岗位表列宽(偏窄,与源表一致)
 POSITION_COL_WIDTHS = {
     "岗位标题": 160, "网申更新": 90, "公司名称": 110, "公司行业": 100,
-    "公司类型": 80, "招聘流程": 140, "岗位分类": 70, "岗位子类": 90,
+    "公司类型": 80, "岗位分类": 70, "岗位子类": 90,
     "最低学历": 70, "专业要求": 120, "专业大类": 70, "城市": 90,
     "硬技能": 120, "关键词": 120, "是否管培": 60, "难度": 80,
     "JD摘要": 150, "投递链接": 100, "公告链接": 100,
 }
 
 # 岗位总表字段
-# 字段顺序: 岗位标题 → 网申更新 → 公司名称 → 公司行业 → 公司类型 → 招聘流程 →
+# 字段顺序: 岗位标题 → 网申更新 → 公司名称 → 公司行业 → 公司类型 →
 #           岗位分类 → 岗位子类 → 最低学历 → 专业要求 → 专业大类 → 城市 →
 #           硬技能 → 关键词 → 是否管培 → 难度 → JD摘要 → 投递链接 → 公告链接
 POSITION_FIELDS = [
@@ -121,7 +121,6 @@ POSITION_FIELDS = [
     {"name": "公司名称", "type": 1},
     {"name": "公司行业", "type": 3, "options": INDUSTRY_OPTIONS},
     {"name": "公司类型", "type": 3, "options": COMPANY_TYPE_OPTIONS},
-    {"name": "招聘流程", "type": 1},
     {"name": "岗位分类", "type": 3, "options": JOB_CATEGORY_OPTIONS},
     {"name": "岗位子类", "type": 1},
     {"name": "最低学历", "type": 3, "options": EDUCATION_OPTIONS},
@@ -376,7 +375,6 @@ class FeishuMasterTableService:
                     "公司名称": p["company_name"],
                     "公司行业": p.get("industry", ""),
                     "公司类型": p.get("company_type", ""),
-                    "招聘流程": p.get("recruitment_process", ""),
                     "岗位分类": p.get("job_category", ""),
                     "岗位子类": p.get("job_subcategory", ""),
                     "最低学历": p.get("min_education", "") or p.get("education_req", ""),

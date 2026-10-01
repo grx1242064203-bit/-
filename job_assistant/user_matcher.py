@@ -96,7 +96,6 @@ def to_feishu_job_record(pos: Dict, score_result: Dict) -> Dict:
         "行业": pos.get("industry", "") or "",
         "公司类型": pos.get("company_type", "") or "",
         "难度": pos.get("difficulty", "") or "",
-        "部门": pos.get("department", "") or "",
         "地点": location,
         "学历要求": education,
         "JD摘要": (pos.get("jd_summary", "") or "")[:500],
@@ -111,6 +110,11 @@ def to_feishu_job_record(pos: Dict, score_result: Dict) -> Dict:
         "是否在招": "是",
         "管培项目": mt_name,
     }
+
+    # 部门字段可选:仅当岗位有部门信息时才写入(避免大量空字段)
+    department = pos.get("department", "") or ""
+    if department:
+        record["部门"] = department
 
     # 日期字段:有值才写入(飞书日期字段不接受 None/空)
     if deadline_ms:

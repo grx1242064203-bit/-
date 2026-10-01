@@ -36,6 +36,15 @@ POSITION_EXTRACT_PROMPT = """你是校招信息解析专家。请从以下招聘
 公司: {company}
 公告标题: {title}
 
+【源表元数据 — 仅供参考,若与公告正文冲突以正文为准】
+招聘类型: {recruit_type}
+招聘对象: {recruit_target}
+届数范围: {grade_range}
+行业: {industry}
+公司类型: {company_type}
+招聘地点: {location}
+学历要求: {education_req}
+
 公告内容:
 \"\"\"{content}\"\"\"
 
@@ -43,7 +52,6 @@ POSITION_EXTRACT_PROMPT = """你是校招信息解析专家。请从以下招聘
 [
   {{
     "position_title": "岗位名称(具体岗位名,如:Java开发工程师/产品经理/管培生,不要用公告标题)",
-    "department": "部门或条线(如:技术中台/零售金融,无法确定填空字符串)",
     "job_category": "岗位大类(从下方岗位类型树的大类名选1个最贴切的)",
     "job_subcategory": "岗位子类(从下方岗位类型树的子类名选1个最贴切的;若岗位描述不具体无法确定子类,填所属大类名;实在无法判断填空字符串)",
     "hard_skills": ["硬技能列表,如:Python/Java/SQL/机器学习,无则空数组"],
@@ -55,7 +63,6 @@ POSITION_EXTRACT_PROMPT = """你是校招信息解析专家。请从以下招聘
     "min_education": "最低学历(大专/本科/硕士/博士/不限)",
     "city": "工作城市(如:北京/上海/深圳,多个用逗号分隔,无则空字符串)",
     "province": "工作省份(如:广东/浙江,无则空字符串)",
-    "recruitment_process": "招聘流程简述(如:网申→笔试→面试→offer,无则空字符串)",
     "has_written_test": false,
     "responsibilities": "岗位职责(100字内,无则空字符串)",
     "requirements": "任职要求(100字内,无则空字符串)",
@@ -165,7 +172,7 @@ class PositionEnricher:
         self.llm = llm_client or LLMClient()
 
     def extract_positions(self, content: str, company: str = "",
-                          title: str = "") -> List[Dict]:
+                          title: str = "", meta: Optional[Dict] = None) -> List[Dict]:
         """
         从公告正文用 LLM 提取岗位列表。
         带缓存:相同 (company+title+content) hash 不重复调用。
@@ -174,10 +181,16 @@ class PositionEnricher:
         关键防幻觉设计:
         1. 缓存键包含 company+title+content,防止不同公司共用垃圾内容的缓存
         2. 提取后校验岗位名是否出现在源文本中,过滤纯幻觉岗位
+
+        Args:
+            meta: 源表元数据 dict,可选字段: recruit_type, recruit_target,
+                  min_grade, max_grade, industry_raw, company_type_raw,
+                  location, education_req
         """
         if not content or len(content.strip()) < 30:
             return []
 
+        meta = meta or {}
         # 源文本(用于岗位名回查校验,防止 LLM 编造不存在的岗位)
         source_text = f"{title}\n{content}"
 
@@ -189,10 +202,29 @@ class PositionEnricher:
             logger.debug(f"LLM 缓存命中: {company} ({len(cached)} 岗位)")
             return self._validate_positions(cached, source_text)
 
-        # 2. 调用 LLM(带重试)
+        # 2. 构建源表元数据字符串(注入 prompt,辅助 LLM 理解公告上下文)
+        min_g = meta.get("min_grade")
+        max_g = meta.get("max_grade")
+        if min_g and max_g:
+            grade_range = f"{min_g}-{max_g}届" if min_g != max_g else f"{min_g}届"
+        elif min_g:
+            grade_range = f"{min_g}届起"
+        elif max_g:
+            grade_range = f"{max_g}届止"
+        else:
+            grade_range = "不限"
+
+        # 3. 调用 LLM(带重试)
         prompt = POSITION_EXTRACT_PROMPT.format(
             company=company or "未知",
             title=title or "",
+            recruit_type=meta.get("recruit_type", "") or "—",
+            recruit_target=meta.get("recruit_target", "") or "—",
+            grade_range=grade_range,
+            industry=meta.get("industry_raw", "") or meta.get("industry", "") or "—",
+            company_type=meta.get("company_type_raw", "") or meta.get("company_type", "") or "—",
+            location=meta.get("location", "") or "—",
+            education_req=meta.get("education_req", "") or "—",
             content=content[:8000],  # 截断控制成本(校招公告通常 2000-6000 字)
             job_tree_block=job_tree.prompt_block(),
         )
@@ -385,7 +417,6 @@ class PositionEnricher:
         title = announcement.get("announcement_title", "") or "通用校招岗"
         return [{
             "position_title": title.strip()[:100] or "通用校招岗",
-            "department": "",
             "location": announcement.get("location", ""),
             "education_req": announcement.get("education_req", ""),
             "major_req": "",
@@ -500,7 +531,9 @@ class PositionEnricher:
             content = ann_title or ""  # 用标题作为拆岗输入
 
         # 2. LLM 拆岗
-        positions = self.extract_positions(content, company=company_name, title=ann_title)
+        positions = self.extract_positions(
+            content, company=company_name, title=ann_title, meta=announcement
+        )
         c_hash = _content_hash(content, company=company_name, title=ann_title)
 
         if not positions:
@@ -545,6 +578,7 @@ class PositionEnricher:
         - city 空 → 公告级 location
         - min_education 空 → 公告级 education_req
         - major_required 空 → "无明确专业要求"
+        - requirements 空 → "详见招聘公告"(避免空字段影响匹配与展示)
         """
         ann_location = announcement.get("location", "") or ""
         ann_education = announcement.get("education_req", "") or ""
@@ -555,6 +589,8 @@ class PositionEnricher:
                 pos["min_education"] = ann_education
             if not pos.get("major_required"):
                 pos["major_required"] = "无明确专业要求"
+            if not pos.get("requirements"):
+                pos["requirements"] = "详见招聘公告"
 
     def run(self, limit: int = 100, max_workers: int = 5) -> Dict:
         """

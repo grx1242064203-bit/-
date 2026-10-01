@@ -333,9 +333,12 @@ def get_announcements_for_crawl(limit: int = 100) -> List[Dict]:
         conn.close()
 
 
-def get_announcements_for_llm(limit: int = 100) -> List[Dict]:
-    """获取待 LLM 拆岗的公告(llm_status=pending)。
+def get_announcements_for_llm(limit: int = 100, status: str = "pending") -> List[Dict]:
+    """获取待 LLM 拆岗的公告。
 
+    Args:
+        status: llm_status 过滤值,默认 'pending'。
+                重处理 skipped 公告时传 'skipped'。
     不再限制 crawl_status:微信公众号反爬导致正文常抓不到,
     但公告标题本身已含岗位列表,可用标题做 LLM 拆岗。
     """
@@ -343,11 +346,25 @@ def get_announcements_for_llm(limit: int = 100) -> List[Dict]:
     try:
         rows = conn.execute(
             """SELECT * FROM announcements
-               WHERE llm_status = 'pending'
+               WHERE llm_status = ?
                ORDER BY id LIMIT ?""",
-            (limit,),
+            (status, limit),
         ).fetchall()
         return [dict(r) for r in rows]
+    finally:
+        conn.close()
+
+
+def delete_positions_by_announcement(announcement_id: int) -> int:
+    """删除某公告下的所有岗位(重处理前清理旧的降级岗位)。返回删除行数。"""
+    conn = _get_conn()
+    try:
+        cur = conn.execute(
+            "DELETE FROM positions WHERE announcement_id = ?",
+            (announcement_id,),
+        )
+        conn.commit()
+        return cur.rowcount
     finally:
         conn.close()
 

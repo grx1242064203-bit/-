@@ -128,6 +128,30 @@ _GARBAGE_CONTENT_MARKERS = [
     "点击公众号下方菜单栏", "轻点两下取消赞", "轻点两下取消在看",
 ]
 
+# 类别型标题特征词:标题含这些后缀通常表示岗位类别列表而非具体岗位
+_CATEGORY_TITLE_SUFFIXES = ("类", "岗", "方向", "专业", "领域", "体系", "英才", "计划")
+
+
+def _is_category_title(title: str) -> bool:
+    """检测标题是否为岗位类别列表(如"运营类/产品类"、"算法岗"、"研发设计方向")。
+
+    这类公告正文通常只列类别、无具体岗位名,LLM 会把类别展开为具体岗位,
+    此时校验必须放宽为类别关键词匹配,否则全部被误判为幻觉。
+    """
+    if not title:
+        return False
+    t = title.strip()
+    # 标题包含类别后缀
+    for suffix in _CATEGORY_TITLE_SUFFIXES:
+        if suffix in t:
+            return True
+    # 多个短词用分隔符拼接(如"Java 前端 后端")
+    import re as _re
+    parts = [p for p in _re.split(r"[/、,，\s]+", t) if p]
+    if len(parts) >= 2 and all(len(p) <= 6 for p in parts):
+        return True
+    return False
+
 
 def _is_garbage_content(content: str) -> bool:
     """判断 content 是否为反爬垃圾/UI噪声,不能作为拆岗依据。"""
@@ -187,12 +211,23 @@ class PositionEnricher:
                   min_grade, max_grade, industry_raw, company_type_raw,
                   location, education_req
         """
-        if not content or len(content.strip()) < 30:
-            return []
-
         meta = meta or {}
         # 源文本(用于岗位名回查校验,防止 LLM 编造不存在的岗位)
         source_text = f"{title}\n{content}"
+
+        # 宽松校验模式(lenient)触发条件(满足任一即可):
+        # 1. 正文缺失(与标题相同或过短) → 只能靠标题拆岗
+        # 2. 标题是类别列表(如"运营类/产品类") → 正文无具体岗位名,LLM 需展开类别
+        #    此时若用严格校验,LLM 展开的"运营专员"等会被全部误判为幻觉
+        title_only = (
+            (content.strip() == (title or "").strip())
+            or len(content.strip()) < 100
+            or _is_category_title(title or "")
+        )
+
+        # 内容和标题都为空 → 无法拆岗
+        if not content.strip() and not (title or "").strip():
+            return []
 
         c_hash = _content_hash(content, company=company, title=title)
 
@@ -200,7 +235,7 @@ class PositionEnricher:
         cached = _get_cached_llm_result(c_hash)
         if cached is not None:
             logger.debug(f"LLM 缓存命中: {company} ({len(cached)} 岗位)")
-            return self._validate_positions(cached, source_text)
+            return self._validate_positions(cached, source_text, lenient=title_only)
 
         # 2. 构建源表元数据字符串(注入 prompt,辅助 LLM 理解公告上下文)
         min_g = meta.get("min_grade")
@@ -228,6 +263,16 @@ class PositionEnricher:
             content=content[:8000],  # 截断控制成本(校招公告通常 2000-6000 字)
             job_tree_block=job_tree.prompt_block(),
         )
+        # 宽松模式:标题是类别列表(如"运营类/产品类")或正文过短,
+        # 需要 LLM 把类别展开为具体岗位
+        if title_only:
+            prompt += (
+                "\n\n【特殊模式】当前公告仅提供了岗位类别列表(如'运营类/产品类/职能类'),"
+                "或正文信息不足以确定具体岗位。"
+                "请将每个类别展开为1-3个该类别下常见的具体校招岗位(如'运营类'→'运营专员','产品类'→'产品经理')。"
+                "岗位名必须包含类别中的核心词(如'运营','产品','职能')。"
+                "其余字段根据源表元数据和岗位常识合理填充。"
+            )
 
         for attempt in range(MAX_RETRIES):
             try:
@@ -241,7 +286,7 @@ class PositionEnricher:
                 positions = self._parse_positions(result_text)
                 if positions:
                     # 校验岗位名是否出现在源文本中,过滤幻觉
-                    positions = self._validate_positions(positions, source_text)
+                    positions = self._validate_positions(positions, source_text, lenient=title_only)
                     if positions:
                         _save_llm_result(c_hash, positions)
                         return positions
@@ -260,19 +305,83 @@ class PositionEnricher:
         return []
 
     @staticmethod
-    def _validate_positions(positions: List[Dict], source_text: str) -> List[Dict]:
+    def _validate_positions(positions: List[Dict], source_text: str,
+                            lenient: bool = False) -> List[Dict]:
         """校验岗位名是否出现在源文本中,过滤 LLM 编造的幻觉岗位。
 
         策略:
         - 岗位名必须在 source_text(title+content) 中出现(子串匹配)
         - 允许"通用校招岗"通过(这是降级兜底,非幻觉)
         - 岗位名中常见分隔符(、/,)拆分后,只要任一片段命中即通过
-          (因为 LLM 可能输出"Java开发工程师"而原文是"Java 开发工程师")
+        - lenient=True(标题模式):源文本只有类别列表,放宽为类别关键词匹配
+          (从源文本提取类别核心词,岗位名包含任一核心词即通过)
         """
         if not positions:
             return []
         # 预处理源文本:去空白,方便匹配
         text_norm = source_text.replace(" ", "").replace("\u3000", "").replace("\n", "")
+
+        # lenient 模式:从源文本提取类别关键词
+        category_keywords = set()
+        if lenient:
+            import re as _re
+            # 类别后缀词:出现这些词意味着前面是一个类别核心词
+            cat_suffixes = [
+                "类", "岗", "方向", "体系", "职位", "岗位", "招聘",
+                "英才", "计划", "专项", "专员", "工程师", "研究员",
+                "经理", "主管", "总监", "助理", "设计师", "分析师",
+            ]
+            # 1) 先按分隔符拆分
+            raw_parts = _re.split(r"[/、,，\s;；]+", text_norm)
+            for p in raw_parts:
+                p = p.strip()
+                if len(p) >= 2:
+                    original_p = p
+                    # 去掉末尾类别后缀,取核心词
+                    for suffix in cat_suffixes:
+                        if p.endswith(suffix) and len(p) > len(suffix) + 1:
+                            p = p[: -len(suffix)]
+                            break
+                    # 若去掉后缀后仍很长(>8字符),说明是拼接词,交给步骤2切分
+                    if len(p) >= 2 and len(p) <= 8:
+                        category_keywords.add(p)
+                    elif p == original_p and len(p) > 8:
+                        # 无后缀且很长,可能是拼接的岗位名列表,不整体作为关键词
+                        pass
+            # 2) 对无分隔符的拼接词(如"研发体系生产体系销售体系"),
+            #    按类别后缀切分,提取每个类别的核心词
+            if len(raw_parts) <= 1 or not category_keywords:
+                i = 0
+                n = len(text_norm)
+                while i < n:
+                    found_suffix = None
+                    for suffix in cat_suffixes:
+                        slen = len(suffix)
+                        if i + slen <= n and text_norm[i:i + slen] == suffix:
+                            found_suffix = suffix
+                            break
+                    if found_suffix:
+                        # 向前找核心词起点(到上一个后缀结束或开头)
+                        end = i
+                        start = end
+                        while start > 0:
+                            # 检查 start 位置是否紧接在另一个后缀之后
+                            hit_prev = False
+                            for s in cat_suffixes:
+                                sl = len(s)
+                                if start >= sl and text_norm[start - sl:start] == s:
+                                    hit_prev = True
+                                    break
+                            if hit_prev:
+                                break
+                            start -= 1
+                        kw = text_norm[start:end].strip()
+                        if len(kw) >= 2:
+                            category_keywords.add(kw)
+                        i += len(found_suffix)
+                    else:
+                        i += 1
+
         valid = []
         for pos in positions:
             title = (pos.get("position_title") or "").strip()
@@ -293,6 +402,16 @@ class PositionEnricher:
             if any(p and len(p) >= 2 and p in text_norm for p in parts):
                 valid.append(pos)
                 continue
+            # lenient 模式:类别关键词匹配
+            if lenient:
+                if category_keywords:
+                    if any(kw in title_norm for kw in category_keywords):
+                        valid.append(pos)
+                        continue
+                else:
+                    # 无法提取类别关键词 → 信任 LLM(宽松模式下不做严格过滤)
+                    valid.append(pos)
+                    continue
             # 未命中源文本 → 幻觉,丢弃
             logger.debug(f"过滤幻觉岗位: {title} (未在源文本中找到)")
         return valid
@@ -592,20 +711,28 @@ class PositionEnricher:
             if not pos.get("requirements"):
                 pos["requirements"] = "详见招聘公告"
 
-    def run(self, limit: int = 100, max_workers: int = 5) -> Dict:
+    def run(self, limit: int = 100, max_workers: int = 5,
+            status: str = "pending", clean_old: bool = False) -> Dict:
         """
         批量处理待 LLM 拆岗的公告。
-        limit=100 用于试跑验证(首次全量前先验证效果)。
-        max_workers: 并发线程数,1=串行,>1=线程池并发。
+
+        Args:
+            limit: 处理条数上限
+            max_workers: 并发线程数,1=串行,>1=线程池并发
+            status: 处理的公告状态,'pending'(默认)或'skipped'(重处理)
+            clean_old: 是否在处理前删除该公告下已有岗位(重处理 skipped 时建议 True)
 
         Returns: {"total": N, "success": M, "degraded": K, "failed": L}
         """
-        announcements = job_db.get_announcements_for_llm(limit=limit)
+        announcements = job_db.get_announcements_for_llm(limit=limit, status=status)
         total = len(announcements)
 
         def _process_one(ann) -> Tuple[str, int]:
             """处理单条公告,返回 (状态标签, 岗位数)。"""
             try:
+                # 重处理前清理旧岗位(避免降级岗位与新岗位并存)
+                if clean_old:
+                    job_db.delete_positions_by_announcement(ann["id"])
                 count = self.enrich_announcement(ann)
                 if count > 0:
                     ann_after = job_db.get_announcement_by_id(ann["id"])
@@ -646,7 +773,8 @@ class PositionEnricher:
                         failed += 1
 
         logger.info(
-            f"LLM 拆岗完成: 总计={total} 成功={success} 降级={degraded} 失败={failed} (workers={max_workers})"
+            f"LLM 拆岗完成: 总计={total} 成功={success} 降级={degraded} 失败={failed} "
+            f"(status={status}, workers={max_workers})"
         )
         return {"total": total, "success": success, "degraded": degraded, "failed": failed}
 
@@ -655,3 +783,13 @@ def run_enrichment(limit: int = 100, max_workers: int = 5) -> Dict:
     """便捷函数:批量 LLM 拆岗。limit 默认 100(试跑验证)。max_workers 并发线程数。"""
     enricher = PositionEnricher()
     return enricher.run(limit=limit, max_workers=max_workers)
+
+
+def run_skipped_reprocess(limit: int = 100, max_workers: int = 5) -> Dict:
+    """重处理 skipped 公告:用最新的源表元数据注入方式重新调 DeepSeek 拆岗。
+
+    会先清理每条公告下的旧降级岗位,避免新旧岗位并存。
+    """
+    enricher = PositionEnricher()
+    return enricher.run(limit=limit, max_workers=max_workers,
+                        status="skipped", clean_old=True)

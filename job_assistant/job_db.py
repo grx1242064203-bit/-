@@ -501,7 +501,7 @@ def insert_positions(announcement_id: int, company_id: int,
                         location, education_req, major_req, jd_summary,
                         is_management_trainee, difficulty, company_tier, apply_url, source_url,
                         dedup_hash, status, created_at)
-                       VALUES (?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,'在招',?)""",
+                       VALUES (?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,'在招',?)""",
                     (
                         announcement_id, company_id, company_name, title,
                         pos.get("job_category", ""), pos.get("job_subcategory", ""),

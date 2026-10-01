@@ -615,7 +615,7 @@ class PositionEnricher:
                 return ("failed", 0)
             except Exception as e:
                 logger.error(f"公告 {ann['id']} 处理异常: {e}")
-                job_db.update_llm_status(ann["id"], "failed", error=str(e)[:200])
+                job_db.update_llm_status(ann["id"], "failed", positions_count=0)
                 return ("failed", 0)
 
         success = degraded = failed = 0

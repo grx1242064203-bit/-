@@ -352,6 +352,34 @@ def get_announcements_for_llm(limit: int = 100) -> List[Dict]:
         conn.close()
 
 
+def get_announcements_by_status(status: str, limit: int = 100, offset: int = 0) -> List[Dict]:
+    """按 llm_status 获取公告列表(用于重处理 skipped 公告等场景)。"""
+    conn = _get_conn()
+    try:
+        rows = conn.execute(
+            """SELECT * FROM announcements
+               WHERE llm_status = ?
+               ORDER BY id LIMIT ? OFFSET ?""",
+            (status, limit, offset),
+        ).fetchall()
+        return [dict(r) for r in rows]
+    finally:
+        conn.close()
+
+
+def delete_positions_by_announcement(announcement_id: int) -> int:
+    """删除某公告的所有岗位(重处理前清理旧的降级岗位)。返回删除行数。"""
+    conn = _get_conn()
+    try:
+        cur = conn.execute(
+            "DELETE FROM positions WHERE announcement_id = ?", (announcement_id,)
+        )
+        conn.commit()
+        return cur.rowcount
+    finally:
+        conn.close()
+
+
 def update_crawl_status(announcement_id: int, status: str,
                         error: str = "", content: str = ""):
     """更新公告正文抓取状态,可选存储正文内容。status: success/failed/skipped。"""

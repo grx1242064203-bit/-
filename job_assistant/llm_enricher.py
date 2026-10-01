@@ -111,6 +111,95 @@ POSITION_EXTRACT_PROMPT = """你是校招信息解析专家。请从以下招聘
 """
 
 
+# 源表岗位名填字段 prompt:输入是源表「招聘岗位」字段(已是岗位/类别列表),
+# 无需 LLM 从长文"提取"岗位名,只需解析列表并填充结构化字段。
+POSITION_FILL_PROMPT = """你是校招信息解析专家。以下是某公司招聘公告源表中的「招聘岗位」字段内容,
+该字段可能包含:具体岗位名、岗位类别(如"技术类")、岗位方向(如"AI方向")、招聘专业列表等。
+请解析其中的岗位信息,并为每个岗位填入结构化字段。
+
+公司: {company}
+招聘岗位字段原文: {title}
+
+【源表元数据 — 用于辅助填充字段】
+招聘类型: {recruit_type}
+招聘对象: {recruit_target}
+届数范围: {grade_range}
+行业: {industry}
+公司类型: {company_type}
+招聘地点: {location}
+学历要求: {education_req}
+
+招聘岗位字段内容:
+\"\"\"{content}\"\"\"
+
+请输出 JSON 数组(严格 JSON,不要输出任何 JSON 以外的文字):
+[
+  {{
+    "position_title": "岗位名称(具体岗位名,如:Java开发工程师/产品经理/管培生)",
+    "job_category": "岗位大类(从下方岗位类型树的大类名选1个最贴切的)",
+    "job_subcategory": "岗位子类(从下方岗位类型树的子类名选1个最贴切的;若岗位描述不具体无法确定子类,填所属大类名;实在无法判断填空字符串)",
+    "hard_skills": ["硬技能列表,如:Python/Java/SQL/机器学习,无则空数组"],
+    "soft_skills": ["软技能列表,如:沟通/团队协作,无则空数组"],
+    "certifications": ["证书要求,如:CFA/CPA/法律职业资格,无则空数组"],
+    "languages": ["语言要求,如:英语CET-6,无则空数组"],
+    "major_required": "具体专业要求(如:计算机科学与技术/软件工程,无明确要求填'不限')",
+    "major_category": "专业大类(工科/理科/商科/文科/医科/农学/艺术/不限,选1个)",
+    "min_education": "最低学历(大专/本科/硕士/博士/不限)",
+    "city": "工作城市(如:北京/上海/深圳,多个用逗号分隔,无则空字符串)",
+    "province": "工作省份(如:广东/浙江,无则空字符串)",
+    "has_written_test": false,
+    "responsibilities": "岗位职责(100字内,无则空字符串)",
+    "requirements": "任职要求(100字内,无则空字符串)",
+    "bonus_points": "加分项(50字内,无则空字符串)",
+    "keywords": ["关键词标签,用于匹配,如:Python/机器学习/大厂,提取3-8个"],
+    "jd_summary": "岗位摘要(60字内)",
+    "is_management_trainee": false,
+    "difficulty": "难度(最激烈/较为激烈/中等难度/较低难度)",
+    "company_tier": "公司行业地位(顶/中/保底,根据公司在行业内的知名度、规模、招聘竞争度判断;不确定填'中')",
+    "apply_url": "独立投递链接(无则空字符串)"
+  }}
+]
+
+解析与填充规则(严格遵守):
+
+【岗位类型树 — job_category / job_subcategory 取值依据】
+{job_tree_block}
+
+★ job_category 必须填上面的大类名;job_subcategory 优先填子类名,若岗位描述不具体无法确定子类则填所属大类名,实在无法判断填空。不要填树以外的自造词。
+
+0. 【核心任务】解析「招聘岗位」字段,识别其中所有可投递的岗位/类别,每个输出为数组中的独立对象。
+   - 字段中可能用空格、顿号(、)、逗号(,)、分号(;)、斜杠(/)分隔多个岗位,请逐个拆分。
+   - 若字段内容是岗位类别(如"技术类""产品类""运营类"),请展开为该类别下的具体岗位名(如"技术类"→"技术研发工程师",结合公司行业判断)。
+   - 若字段内容是专业列表(如"计算机、软件工程、电子信息"),这是招聘专业而非岗位,请结合公司行业推断对应岗位(如"计算机"→"软件开发工程师"),并把专业填入 major_required。
+   - 若字段内容模糊或重定向(如"详见附件""具体岗位见链接""未明确""高校毕业生"),输出一个"通用校招岗"。
+   - 严禁输出空数组 []。至少输出一个岗位(实在无法判断时输出"通用校招岗")。
+
+1. is_management_trainee: 管培生/管理培训生/MT/培训生 标记为 true
+2. difficulty: 头部互联网/金融/知名外企=最激烈;中型公司=较为激烈;普通=中等;冷门=较低
+3. keywords 必须包含岗位核心技能/方向词,用于后续匹配
+4. min_education 取最低可投递学历(如"本科及以上"填"本科"),无明确要求填"本科"(校招默认)
+5. company_tier: 根据公司在行业内的知名度/规模/招聘竞争度判断公司地位
+   - 顶: 行业头部(如BAT/华为/大疆/中金/高盛/宁德时代等),校招竞争极激烈
+   - 中: 行业内有一定知名度的中型公司
+   - 保底: 普通中小公司
+   - 不确定时填"中"
+
+6. 【字段填充策略】分三个层次处理,最大化字段填充率:
+   a) 明确信息:字段中明确提到的,直接提取
+   b) 合理推断(允许):根据岗位类型和公司信息可合理推断的,填入
+      - 校招岗位学历通常为"本科"(除非明确要求硕士/博士)
+      - 技术研发类岗位专业大类通常为"工科",金融类为"商科",设计类为"艺术"
+      - 岗位所在城市可从招聘地点推断
+      - 岗位职责可根据岗位名称做简要概括(如"负责Java后端开发工作")
+   c) 无法推断:确实无法确定的,留空(字符串字段)或空数组(数组字段)
+
+7. major_required: 有明确专业要求就填具体专业;没有明确要求但岗位有倾向性(如研发岗),填"计算机相关"等合理范围;完全无要求填"不限"。
+8. responsibilities: 无明确职责但可从岗位名推断的,写一句简要职责;完全无法推断才留空。
+9. jd_summary: 基于岗位名+公司信息,生成60字内摘要,不要留空。
+10. hard_skills: 可从岗位推断的(如Java岗→["Java"]);完全无法推断才空数组。
+"""
+
+
 def _content_hash(content: str, company: str = "", title: str = "") -> str:
     """计算内容 hash,作为 LLM 缓存键。
 
@@ -258,6 +347,176 @@ class PositionEnricher:
                     return []
 
         return []
+
+    def extract_positions_from_title(self, position_text: str, company: str = "",
+                                     title: str = "", meta: Optional[Dict] = None) -> List[Dict]:
+        """从源表「招聘岗位」字段解析并填充岗位字段。
+
+        与 extract_positions 的区别:
+        - 输入是源表已有的岗位/类别列表,不是公告正文,无需"提取"岗位名
+        - 不设 30 字长度门槛(岗位名可能很短)
+        - 使用 POSITION_FILL_PROMPT(解析列表 + 填字段)
+        - 校验更宽松(允许类别展开,如"技术类"→"技术研发工程师")
+        - 长标题(>500字)分块处理,避免 LLM 输出超长被截断
+
+        Args:
+            position_text: 源表「招聘岗位」字段原文
+            meta: 源表元数据 dict
+        """
+        if not position_text or len(position_text.strip()) < 1:
+            return []
+
+        meta = meta or {}
+        source_text = f"{title}\n{position_text}"
+
+        c_hash = _content_hash(position_text, company=company, title=title)
+
+        # 1. 查缓存
+        cached = _get_cached_llm_result(c_hash)
+        if cached is not None:
+            logger.debug(f"标题填字段缓存命中: {company} ({len(cached)} 岗位)")
+            return self._validate_positions_from_title(cached, source_text)
+
+        # 2. 构建元数据字符串
+        min_g = meta.get("min_grade")
+        max_g = meta.get("max_grade")
+        if min_g and max_g:
+            grade_range = f"{min_g}-{max_g}届" if min_g != max_g else f"{min_g}届"
+        elif min_g:
+            grade_range = f"{min_g}届起"
+        elif max_g:
+            grade_range = f"{max_g}届止"
+        else:
+            grade_range = "不限"
+
+        meta_kwargs = dict(
+            company=company or "未知",
+            title=title or "",
+            recruit_type=meta.get("recruit_type", "") or "—",
+            recruit_target=meta.get("recruit_target", "") or "—",
+            grade_range=grade_range,
+            industry=meta.get("industry_raw", "") or meta.get("industry", "") or "—",
+            company_type=meta.get("company_type_raw", "") or meta.get("company_type", "") or "—",
+            location=meta.get("location", "") or "—",
+            education_req=meta.get("education_req", "") or "—",
+            job_tree_block=job_tree.prompt_block(),
+        )
+
+        # 3. 长标题分块:>500字时按分隔符切成 ~400字的块,逐块调 LLM
+        if len(position_text) > 500:
+            chunks = self._split_title_chunks(position_text, max_len=400)
+            logger.info(f"公告标题过长({len(position_text)}字),分 {len(chunks)} 块处理")
+            all_positions = []
+            for chunk in chunks:
+                positions = self._call_fill_llm(chunk, source_text, meta_kwargs)
+                all_positions.extend(positions)
+            if all_positions:
+                all_positions = self._validate_positions_from_title(all_positions, source_text)
+            if all_positions:
+                _save_llm_result(c_hash, all_positions)
+                return all_positions
+            return []
+
+        # 4. 普通标题:单次调用
+        positions = self._call_fill_llm(position_text, source_text, meta_kwargs)
+        if positions:
+            positions = self._validate_positions_from_title(positions, source_text)
+        if positions:
+            _save_llm_result(c_hash, positions)
+            return positions
+        return []
+
+    @staticmethod
+    def _split_title_chunks(text: str, max_len: int = 400) -> List[str]:
+        """将长标题按分隔符切成不超过 max_len 的块。"""
+        import re
+        # 按常见分隔符切分,保留分隔符
+        parts = re.split(r'([、,，;；\n])', text)
+        chunks = []
+        current = ""
+        for part in parts:
+            if len(current) + len(part) > max_len and current.strip():
+                chunks.append(current.strip())
+                current = part
+            else:
+                current += part
+        if current.strip():
+            chunks.append(current.strip())
+        return chunks
+
+    def _call_fill_llm(self, position_text: str, source_text: str,
+                       meta_kwargs: Dict) -> List[Dict]:
+        """单次调用 LLM 填字段,带重试。返回解析后的岗位列表(未校验)。"""
+        for attempt in range(MAX_RETRIES):
+            try:
+                prompt = POSITION_FILL_PROMPT.format(
+                    content=position_text[:4000],
+                    **meta_kwargs,
+                )
+                result_text = self.llm._chat(
+                    [{"role": "user", "content": prompt}],
+                    temperature=0.1, max_tokens=32000,
+                )
+                if not result_text:
+                    raise ValueError("LLM 返回空")
+                positions = self._parse_positions(result_text)
+                if positions:
+                    return positions
+                logger.warning(f"标题填字段解析为空(尝试 {attempt + 1}): {result_text[:200]}")
+            except Exception as e:
+                logger.warning(f"标题填字段失败(尝试 {attempt + 1}/{MAX_RETRIES}): {e}")
+                if attempt < MAX_RETRIES - 1:
+                    time.sleep(2 ** attempt)
+        return []
+
+    @staticmethod
+    def _validate_positions_from_title(positions: List[Dict], source_text: str) -> List[Dict]:
+        """源表标题路径的岗位校验。
+
+        岗位名来自标题本身,LLM 只是解析+展开,幻觉风险较低。
+        策略:
+        - 源文本较短(<15字)时跳过校验:短标题常被 LLM 合理展开
+          (如"人资岗"→"人力资源岗"),严格校验会误杀。
+        - 源文本较长时:岗位名整体/片段/2字子串出现在源文本中才通过,
+          防止 LLM 从长标题中凭空编造无关岗位。
+        - "通用校招岗"始终通过(模糊标题的兜底)。
+        """
+        if not positions:
+            return []
+        text_norm = source_text.replace(" ", "").replace("\u3000", "").replace("\n", "")
+        # 短标题:跳过严格校验,允许 LLM 展开
+        if len(text_norm) < 15:
+            return positions
+        valid = []
+        for pos in positions:
+            ptitle = (pos.get("position_title") or "").strip()
+            if not ptitle:
+                continue
+            if ptitle in ("通用校招岗", "校招岗位"):
+                valid.append(pos)
+                continue
+            ptitle_norm = ptitle.replace(" ", "").replace("\u3000", "")
+            # 整体匹配
+            if ptitle_norm in text_norm:
+                valid.append(pos)
+                continue
+            # 拆分匹配
+            parts = [p for p in ptitle_norm.replace("、", "/").replace(",", "/").split("/") if p]
+            if any(p and len(p) >= 2 and p in text_norm for p in parts):
+                valid.append(pos)
+                continue
+            # 子串重叠匹配
+            _overlap = False
+            for i in range(len(ptitle_norm) - 1):
+                sub = ptitle_norm[i:i + 2]
+                if sub in text_norm:
+                    _overlap = True
+                    break
+            if _overlap:
+                valid.append(pos)
+                continue
+            logger.debug(f"过滤幻觉岗位(标题路径): {ptitle} (与源文本无重叠)")
+        return valid
 
     @staticmethod
     def _validate_positions(positions: List[Dict], source_text: str) -> List[Dict]:
@@ -522,19 +781,29 @@ class PositionEnricher:
             # 不需要 VL(正文足够)→ 标记 not_needed,与 success 区分
             job_db.update_vl_status(ann_id, "not_needed")
 
-        # 对抗性优化:微信公众号反爬严重,正文常抓不到。
-        # 但飞书源表的公告标题本身已包含岗位列表(如"投行经理助理,债券承做助理..."),
-        # 因此正文缺失或为垃圾时,用标题作为 LLM 输入,仍可拆出岗位。
-        # 关键:绝不能把"环境异常"等垃圾内容传给 LLM,否则会产生幻觉。
-        if not content or len(content) < 30 or content_is_garbage:
-            logger.info(f"公告 {ann_id} [{company_name}] 正文缺失/垃圾,用标题拆岗")
-            content = ann_title or ""  # 用标题作为拆岗输入
-
-        # 2. LLM 拆岗
-        positions = self.extract_positions(
-            content, company=company_name, title=ann_title, meta=announcement
-        )
-        c_hash = _content_hash(content, company=company_name, title=ann_title)
+        # 对抗性优化:微信/小红书反爬严重,正文常是 UI 噪声或活动介绍,不含具体岗位。
+        # 但飞书源表的「招聘岗位」字段本身已包含岗位/类别列表,始终可作为兜底。
+        # 策略:先用正文拆岗;若正文拆不出岗位,fallback 到源表岗位名填字段。
+        if content and len(content) >= 30 and not content_is_garbage:
+            # 2a. 正文可用,先试正文拆岗
+            positions = self.extract_positions(
+                content, company=company_name, title=ann_title, meta=announcement
+            )
+            c_hash = _content_hash(content, company=company_name, title=ann_title)
+            # 2b. 正文拆不出岗位(正文是活动介绍/UI噪声等),fallback 到源表岗位名
+            if not positions and ann_title:
+                logger.info(f"公告 {ann_id} [{company_name}] 正文未拆出岗位,fallback 源表岗位名填字段")
+                positions = self.extract_positions_from_title(
+                    ann_title, company=company_name, title=ann_title, meta=announcement
+                )
+                c_hash = _content_hash(ann_title, company=company_name, title=ann_title)
+        else:
+            # 正文缺失/垃圾,直接用源表岗位名填字段
+            logger.info(f"公告 {ann_id} [{company_name}] 正文缺失/垃圾,用源表岗位名填字段")
+            positions = self.extract_positions_from_title(
+                ann_title or "", company=company_name, title=ann_title, meta=announcement
+            )
+            c_hash = _content_hash(ann_title or "", company=company_name, title=ann_title)
 
         if not positions:
             # LLM 失败,降级
@@ -655,3 +924,67 @@ def run_enrichment(limit: int = 100, max_workers: int = 5) -> Dict:
     """便捷函数:批量 LLM 拆岗。limit 默认 100(试跑验证)。max_workers 并发线程数。"""
     enricher = PositionEnricher()
     return enricher.run(limit=limit, max_workers=max_workers)
+
+
+def run_skipped_reprocess(limit: int = 100, max_workers: int = 5) -> Dict:
+    """重处理 llm_status=skipped 的公告。
+
+    流程:取 skipped 公告 → 删旧降级岗位 → 重置为 pending → 走 enrich_announcement
+    (正文缺失时会用源表岗位名填字段路径)。
+
+    Args:
+        limit: 处理条数上限
+        max_workers: 并发线程数
+    Returns: {"total": N, "success": M, "degraded": K, "failed": L}
+    """
+    enricher = PositionEnricher()
+    announcements = job_db.get_announcements_by_status("skipped", limit=limit)
+    total = len(announcements)
+
+    def _process_one(ann) -> Tuple[str, int]:
+        ann_id = ann["id"]
+        try:
+            # 清理旧的降级岗位,避免重复
+            job_db.delete_positions_by_announcement(ann_id)
+            # 重置为 pending,让 enrich_announcement 正常处理
+            job_db.update_llm_status(ann_id, "pending", positions_count=0, cache_hash="")
+            count = enricher.enrich_announcement(ann)
+            if count > 0:
+                ann_after = job_db.get_announcement_by_id(ann_id)
+                if ann_after and ann_after.get("llm_status") == "success":
+                    return ("success", count)
+                return ("degraded", count)
+            return ("failed", 0)
+        except Exception as e:
+            logger.error(f"重处理公告 {ann_id} 异常: {e}")
+            job_db.update_llm_status(ann_id, "failed", positions_count=0)
+            return ("failed", 0)
+
+    success = degraded = failed = 0
+    if max_workers <= 1:
+        for ann in announcements:
+            label, _ = _process_one(ann)
+            if label == "success":
+                success += 1
+            elif label == "degraded":
+                degraded += 1
+            else:
+                failed += 1
+            time.sleep(API_INTERVAL)
+    else:
+        from concurrent.futures import ThreadPoolExecutor, as_completed
+        with ThreadPoolExecutor(max_workers=max_workers) as executor:
+            futures = {executor.submit(_process_one, ann): ann for ann in announcements}
+            for future in as_completed(futures):
+                label, _ = future.result()
+                if label == "success":
+                    success += 1
+                elif label == "degraded":
+                    degraded += 1
+                else:
+                    failed += 1
+
+    logger.info(
+        f"skipped 重处理完成: 总计={total} 成功={success} 降级={degraded} 失败={failed} (workers={max_workers})"
+    )
+    return {"total": total, "success": success, "degraded": degraded, "failed": failed}

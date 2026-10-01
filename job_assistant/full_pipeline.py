@@ -81,16 +81,26 @@ def run_once(batch: int = BATCH_SIZE) -> dict:
 
 
 def has_pending() -> bool:
-    """检查是否还有待抓取或待拆岗的公告。"""
+    """检查是否还有待抓取或待拆岗的公告。
+
+    两处历史 bug 修复(对抗性审查):
+    1. crawl_pending 原条件 `crawl_status != 'success'` 会把 'failed' 也算进来,
+       但 get_announcements_for_crawl 只取 'pending',failed 永不重试 → 死循环。
+       修复:只统计 crawl_status='pending' OR NULL。
+    2. llm_pending 原条件要求 crawl_status='success',但 get_announcements_for_llm
+       取所有 llm_status='pending'(含 crawl 失败的,用标题兜底拆岗)。
+       原条件会漏算这批 → has_pending 提前返回 False,管线提前终止。
+       修复:统计所有 llm_status NOT IN ('success','skipped') OR NULL,不限 crawl 状态。
+    """
     import sqlite3
     from config import settings
     conn = sqlite3.connect(os.path.join(settings.DATA_DIR, "jobs.db"))
     try:
         crawl_pending = conn.execute(
-            "SELECT COUNT(*) FROM announcements WHERE crawl_status != 'success' OR crawl_status IS NULL"
+            "SELECT COUNT(*) FROM announcements WHERE crawl_status = 'pending' OR crawl_status IS NULL"
         ).fetchone()[0]
         llm_pending = conn.execute(
-            "SELECT COUNT(*) FROM announcements WHERE (llm_status NOT IN ('success','skipped') OR llm_status IS NULL) AND crawl_status='success'"
+            "SELECT COUNT(*) FROM announcements WHERE llm_status NOT IN ('success','skipped') OR llm_status IS NULL"
         ).fetchone()[0]
         return crawl_pending > 0 or llm_pending > 0
     finally:

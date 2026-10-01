@@ -4,8 +4,8 @@
 # 每天 8:00 执行增量更新
 0 8 * * * cd /opt/job_assistant && bash scripts/daily_update.sh >> logs/daily.log 2>&1
 
-# 每天 9:00 执行用户匹配分发
-0 9 * * * cd /opt/job_assistant && DATA_DIR=/opt/job_assistant/data python3 -c "from daily_runner import run_daily_pipeline" >> logs/match.log 2>&1
+# 每天 9:00 执行用户匹配分发(遍历所有活跃用户 → 匹配 → 写飞书表 → 推送)
+0 9 * * * cd /opt/job_assistant && DATA_DIR=/opt/job_assistant/data python3 main.py daily >> logs/match.log 2>&1
 
 # 每周一 3:00 全量校验(对比源表记录数,差异告警)
 0 3 * * 1 cd /opt/job_assistant && DATA_DIR=/opt/job_assistant/data python3 -c "from feishu_source import FeishuSourceSync; FeishuSourceSync().sync(full=True)" >> logs/weekly.log 2>&1

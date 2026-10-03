@@ -1,0 +1,310 @@
+{
+  "keywords": [
+    {
+      "kw": "Python",
+      "standard": "python",
+      "category": "hard_skill",
+      "weight": 5.0,
+      "resume_section": "skill",
+      "source": "resume_llm"
+    },
+    {
+      "kw": "Flask",
+      "standard": "flask",
+      "category": "framework",
+      "weight": 4.5,
+      "resume_section": "skill",
+      "source": "resume_llm"
+    },
+    {
+      "kw": "React",
+      "standard": "react",
+      "category": "framework",
+      "weight": 4.5,
+      "resume_section": "skill",
+      "source": "resume_llm"
+    },
+    {
+      "kw": "Java",
+      "standard": "java",
+      "category": "hard_skill",
+      "weight": 4.0,
+      "resume_section": "skill",
+      "source": "resume_llm"
+    },
+    {
+      "kw": "JavaScript",
+      "standard": "javascript",
+      "category": "hard_skill",
+      "weight": 4.0,
+      "resume_section": "skill",
+      "source": "resume_llm"
+    },
+    {
+      "kw": "PyTorch",
+      "standard": "pytorch",
+      "category": "framework",
+      "weight": 4.0,
+      "resume_section": "project",
+      "source": "resume_llm"
+    },
+    {
+      "kw": "计算机科学与技术",
+      "standard": "计算机科学与技术",
+      "category": "education",
+      "weight": 4.0,
+      "resume_section": "education",
+      "source": "resume_llm"
+    },
+    {
+      "kw": "后端开发实习生",
+      "standard": "后端开发实习生",
+      "category": "role",
+      "weight": 4.0,
+      "resume_section": "experience",
+      "source": "resume_llm"
+    },
+    {
+      "kw": "微服务架构设计",
+      "standard": "微服务架构设计",
+      "category": "skill",
+      "weight": 4.0,
+      "resume_section": "experience",
+      "source": "resume_llm"
+    },
+    {
+      "kw": "校园二手交易平台",
+      "standard": "校园二手交易平台",
+      "category": "project",
+      "weight": 4.0,
+      "resume_section": "project",
+      "source": "resume_llm"
+    },
+    {
+      "kw": "基于 BERT 的情感分析系统",
+      "standard": "基于 BERT 的情感分析系统",
+      "category": "project",
+      "weight": 4.0,
+      "resume_section": "project",
+      "source": "resume_llm"
+    },
+    {
+      "kw": "BERT",
+      "standard": "llm",
+      "category": "hard_skill",
+      "weight": 4.0,
+      "resume_section": "project",
+      "source": "resume_llm"
+    },
+    {
+      "kw": "全栈",
+      "standard": "全栈",
+      "category": "skill",
+      "weight": 4.0,
+      "resume_section": "project",
+      "source": "resume_llm"
+    },
+    {
+      "kw": "TypeScript",
+      "standard": "typescript",
+      "category": "hard_skill",
+      "weight": 3.5,
+      "resume_section": "skill",
+      "source": "resume_llm"
+    },
+    {
+      "kw": "Django",
+      "standard": "django",
+      "category": "framework",
+      "weight": 3.5,
+      "resume_section": "skill",
+      "source": "resume_llm"
+    },
+    {
+      "kw": "Spring Boot",
+      "standard": "spring",
+      "category": "framework",
+      "weight": 3.5,
+      "resume_section": "skill",
+      "source": "resume_llm"
+    },
+    {
+      "kw": "Vue",
+      "standard": "vue",
+      "category": "framework",
+      "weight": 3.5,
+      "resume_section": "skill",
+      "source": "resume_llm"
+    },
+    {
+      "kw": "Git",
+      "standard": "Git",
+      "category": "tool",
+      "weight": 3.5,
+      "resume_section": "skill",
+      "source": "resume_llm"
+    },
+    {
+      "kw": "Docker",
+      "standard": "docker",
+      "category": "tool",
+      "weight": 3.5,
+      "resume_section": "skill",
+      "source": "resume_llm"
+    },
+    {
+      "kw": "MySQL",
+      "standard": "mysql",
+      "category": "tool",
+      "weight": 3.5,
+      "resume_section": "skill",
+      "source": "resume_llm"
+    },
+    {
+      "kw": "Redis",
+      "standard": "redis",
+      "category": "tool",
+      "weight": 3.5,
+      "resume_section": "skill",
+      "source": "resume_llm"
+    },
+    {
+      "kw": "数据结构",
+      "standard": "数据结构",
+      "category": "hard_skill",
+      "weight": 3.5,
+      "resume_section": "education",
+      "source": "resume_llm"
+    },
+    {
+      "kw": "算法设计",
+      "standard": "算法设计",
+      "category": "hard_skill",
+      "weight": 3.5,
+      "resume_section": "education",
+      "source": "resume_llm"
+    },
+    {
+      "kw": "操作系统",
+      "standard": "操作系统",
+      "category": "hard_skill",
+      "weight": 3.5,
+      "resume_section": "education",
+      "source": "resume_llm"
+    },
+    {
+      "kw": "计算机网络",
+      "standard": "计算机网络",
+      "category": "hard_skill",
+      "weight": 3.5,
+      "resume_section": "education",
+      "source": "resume_llm"
+    },
+    {
+      "kw": "数据库原理",
+      "standard": "数据库原理",
+      "category": "hard_skill",
+      "weight": 3.5,
+      "resume_section": "education",
+      "source": "resume_llm"
+    },
+    {
+      "kw": "XX大学",
+      "standard": "XX大学",
+      "category": "education",
+      "weight": 3.0,
+      "resume_section": "education",
+      "source": "resume_llm"
+    },
+    {
+      "kw": "本科",
+      "standard": "本科",
+      "category": "education",
+      "weight": 3.0,
+      "resume_section": "education",
+      "source": "resume_llm"
+    },
+    {
+      "kw": "字节跳动",
+      "standard": "字节跳动",
+      "category": "domain",
+      "weight": 3.0,
+      "resume_section": "experience",
+      "source": "resume_llm"
+    },
+    {
+      "kw": "机器学习",
+      "standard": "machine_learning",
+      "category": "hard_skill",
+      "weight": 2.8,
+      "resume_section": "project",
+      "source": "resume_llm"
+    },
+    {
+      "kw": "深度学习",
+      "standard": "deep_learning",
+      "category": "hard_skill",
+      "weight": 2.8,
+      "resume_section": "project",
+      "source": "resume_llm"
+    },
+    {
+      "kw": "CET-6",
+      "standard": "CET-6",
+      "category": "cert",
+      "weight": 2.5,
+      "resume_section": "skill",
+      "source": "resume_llm"
+    }
+  ],
+  "fit_directions": [
+    {
+      "direction": "后端开发",
+      "cat_key": "development",
+      "sub_key": "backend",
+      "category_name": "开发",
+      "weight": 0.95,
+      "evidence": "字节跳动后端开发实习使用 Python+Flask 开发内部工具并参与微服务架构设计，技能栈覆盖 Java/Spring Boot/MySQL/Redis/Docker"
+    },
+    {
+      "direction": "全栈开发",
+      "cat_key": "development",
+      "sub_key": "fullstack",
+      "category_name": "开发",
+      "weight": 0.9,
+      "evidence": "校园二手交易平台为 Flask+React 全栈项目，实习中同时承担 Python 后端与 React 前端开发"
+    },
+    {
+      "direction": "前端开发",
+      "cat_key": "development",
+      "sub_key": "frontend",
+      "category_name": "开发",
+      "weight": 0.75,
+      "evidence": "实习使用 React 开发前端页面，技能列表包含 React、Vue、JavaScript、TypeScript"
+    },
+    {
+      "direction": "NLP算法",
+      "cat_key": "algorithm",
+      "sub_key": "nlp",
+      "category_name": "算法",
+      "weight": 0.7,
+      "evidence": "基于 BERT 的情感分析系统项目使用 PyTorch，具备自然语言处理与深度学习实践基础"
+    },
+    {
+      "direction": "AI Agent开发",
+      "cat_key": "ai_engineering",
+      "sub_key": "agent_dev",
+      "category_name": "AI工程",
+      "weight": 0.55,
+      "evidence": "具备 Python 后端开发与 BERT 模型应用经验，可迁移至大模型应用与 Agent 开发，但缺少直接相关项目"
+    },
+    {
+      "direction": "大模型应用开发",
+      "cat_key": "ai_engineering",
+      "sub_key": "llm_app",
+      "category_name": "AI工程",
+      "weight": 0.5,
+      "evidence": "有 BERT 模型落地经验与 Flask 服务开发能力，但简历未体现大模型微调/部署相关实践"
+    }
+  ]
+}

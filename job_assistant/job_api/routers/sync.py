@@ -5,7 +5,7 @@
 """
 from fastapi import APIRouter, Depends, Query
 
-from deps import verify_token
+from deps import get_current_user
 from services.sync_service import (
     DEFAULT_PAGE_SIZE,
     MAX_PAGE_SIZE,
@@ -15,7 +15,7 @@ from services.sync_service import (
 router = APIRouter(
     prefix="/sync",
     tags=["sync"],
-    dependencies=[Depends(verify_token)],
+    dependencies=[Depends(get_current_user)],
 )
 
 

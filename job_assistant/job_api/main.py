@@ -16,6 +16,7 @@ from routers.auth import limiter as auth_limiter
 from routers.auth import router as auth_router
 from routers.health import router as health_router
 from routers.llm import router as llm_router
+from routers.sync import router as sync_router
 
 settings = get_settings()
 
@@ -66,6 +67,7 @@ app.include_router(health_router)
 # /api/v1 业务路由
 app.include_router(auth_router, prefix="/api/v1")
 app.include_router(llm_router, prefix="/api/v1")
+app.include_router(sync_router, prefix="/api/v1")
 
 # 后续 routers 在此 include_router：
 # from routers import jobs, resume, applications

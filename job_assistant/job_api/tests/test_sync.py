@@ -220,6 +220,11 @@ def _settings():
     return get_settings()
 
 
+def _override_auth():
+    """测试用：override get_current_user 依赖，跳过认证。"""
+    return {"id": "test-user", "user_id": "test-user", "email": "test@test.com", "is_verified": 1}
+
+
 def test_api_sync_jobs_endpoint(tmp_path, monkeypatch):
     """GET /api/v1/sync/jobs 增量分页接口。"""
     pytest.importorskip("fastapi")
@@ -229,6 +234,8 @@ def test_api_sync_jobs_endpoint(tmp_path, monkeypatch):
     monkeypatch.setattr(_settings(), "JOBS_DB_PATH", db)
 
     from main import app
+    from deps import get_current_user
+    app.dependency_overrides[get_current_user] = _override_auth
     client = TestClient(app)
 
     resp = client.get(
@@ -263,6 +270,8 @@ def test_api_sync_stats_endpoint(tmp_path, monkeypatch):
     monkeypatch.setattr(_settings(), "JOBS_DB_PATH", db)
 
     from main import app
+    from deps import get_current_user
+    app.dependency_overrides[get_current_user] = _override_auth
     client = TestClient(app)
 
     resp = client.get("/api/v1/sync/stats")
@@ -281,6 +290,8 @@ def test_api_sync_jobs_limit_validation(tmp_path, monkeypatch):
     monkeypatch.setattr(_settings(), "JOBS_DB_PATH", db)
 
     from main import app
+    from deps import get_current_user
+    app.dependency_overrides[get_current_user] = _override_auth
     client = TestClient(app)
 
     resp = client.get(

@@ -4,6 +4,50 @@
 
 ---
 
+## 2026-10-03 — E2E 端到端验证 ✅
+
+**状态**: 全链路通过
+
+**验证结果**:
+
+### 云端 API（FastAPI）
+- ✅ 健康检查 `/health` → 200
+- ✅ 注册 `/api/v1/auth/register` → 200 + user_id
+- ✅ 验证码生成 → auth.db 读取成功
+- ✅ 邮箱验证 `/api/v1/auth/verify-email` → 200 + JWT token
+- ✅ 登录 `/api/v1/auth/login` → 200 + JWT token
+- ✅ 岗位统计 `/api/v1/sync/stats` → 35,693 条
+- ✅ 岗位同步 `/api/v1/sync/jobs?limit=5` → 5 条
+- ✅ 简历解析 `/api/v1/llm/parse-resume` → 32 keywords + 6 fit_directions
+  - 后端开发 weight=0.95
+  - 全栈开发 weight=0.9
+  - 前端开发 weight=0.75
+
+### Python Sidecar 评分引擎
+- ✅ ping/pong JSON-RPC
+- ✅ score_batch 3 个岗位：
+  - 字节跳动后端：89.2 分 🔥强烈推荐（Python/Flask/Docker/MySQL 全命中）
+  - 腾讯前端：45.0 分 ➖可申请（方向不对，role 硬门槛触发）
+  - 国企行政：37.0 分 ➖可申请（跨大类，硬门槛触发）
+- ✅ 评分逻辑符合第一性原理：方向对齐 > 技能命中 > 竞争力对齐
+
+### 测试总计
+- Python API：32/32 passed
+- Rust Tauri：22/22 passed
+- Python Sidecar：11/11 passed
+
+### 修复的问题
+- sync_router 未挂载到 main.py → 已修复
+- sync_router 用 verify_token 而非 get_current_user → 已修复
+- 测试缺认证 override → 已加 dependency_overrides
+
+### DATA_DIR 配置
+- sidecar.rs 的 spawn_child() 已正确设置 DATA_DIR 环境变量（第 132 行）
+- 开发期 fallback：/workspace/job_assistant/data（kw_dict.json + job_category_tree.json 所在）
+- 生产期：Tauri 启动时通过 env 传入实际数据目录
+
+---
+
 ## 2026-10-03 — T13: 评分 + 推荐视图 ✅
 
 **状态**: 完成

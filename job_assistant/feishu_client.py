@@ -324,6 +324,54 @@ class FeishuClient:
             time.sleep(settings.FEISHU_API_INTERVAL)
         return ids
 
+    def batch_update_records(self, app_token: str, table_id: str,
+                             records: List[Dict[str, Any]]) -> int:
+        """批量更新记录,每批最多 500 条,返回成功更新数。
+
+        records 元素格式: {"record_id": "...", "fields": {...}}
+
+        设计:
+        1. 先清洗每条记录的 fields(剔除 None 值字段)
+        2. 批量更新;若整批失败,降级为逐条更新
+        """
+        app_token = self.resolve_app_token(app_token)
+        if not records:
+            return 0
+        # 清洗:剔除 None 值字段
+        sanitized = []
+        for r in records:
+            rid = r.get("record_id")
+            if not rid:
+                continue
+            fields = self._sanitize_fields(r.get("fields", {}))
+            if fields:
+                sanitized.append({"record_id": rid, "fields": fields})
+        if not sanitized:
+            return 0
+
+        updated = 0
+        batch_size = 500
+        for i in range(0, len(sanitized), batch_size):
+            batch = sanitized[i:i + batch_size]
+            try:
+                data = self._request(
+                    "POST",
+                    f"/open-apis/bitable/v1/apps/{app_token}/tables/{table_id}/records/batch_update",
+                    json_body={"records": batch},
+                )
+                updated += len(data.get("records", []))
+            except RuntimeError as e:
+                # 整批失败:降级为逐条更新,定位并跳过非法记录
+                logger.warning(f"批量更新失败,降级为逐条更新: {e}")
+                for r in batch:
+                    try:
+                        self.update_record(app_token, table_id, r["record_id"], r["fields"])
+                        updated += 1
+                    except RuntimeError as e2:
+                        logger.error(f"单条更新失败,跳过: {e2}")
+            time.sleep(settings.FEISHU_API_INTERVAL)
+        return updated
+
     def search_records(self, app_token: str, table_id: str,
                        filter_expr: str, fields: List[str] = None) -> List[Dict]:
         """按条件查询记录(用于去重 hash 查询)。

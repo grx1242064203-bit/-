@@ -61,6 +61,7 @@ TABLE_VL_FAILURES = "VL识别失败记录"
 
 # VL 失败记录表字段
 VL_FAILURE_FIELDS = [
+    {"name": "公告ID", "type": 2},  # 数字,增量同步唯一键
     {"name": "公司名称", "type": 1},
     {"name": "公告标题", "type": 1},
     {"name": "网申更新", "type": 5},
@@ -72,7 +73,7 @@ VL_FAILURE_FIELDS = [
 ]
 
 VL_FAILURE_COL_WIDTHS = {
-    "公司名称": 120, "公告标题": 200, "网申更新": 90, "VL错误信息": 300,
+    "公告ID": 70, "公司名称": 120, "公告标题": 200, "网申更新": 90, "VL错误信息": 300,
     "图片数量": 70, "正文长度": 80, "公告链接": 120, "网申链接": 120,
 }
 
@@ -108,7 +109,7 @@ POSITION_COL_WIDTHS = {
     "公司类型": 80, "岗位分类": 70, "岗位子类": 90,
     "最低学历": 70, "专业要求": 120, "专业大类": 70, "城市": 90,
     "硬技能": 120, "关键词": 120, "是否管培": 60, "难度": 80,
-    "JD摘要": 150, "投递链接": 100, "公告链接": 100,
+    "JD摘要": 150, "投递链接": 100, "公告链接": 100, "去重ID": 80,
 }
 
 # 岗位总表字段
@@ -134,6 +135,8 @@ POSITION_FIELDS = [
     {"name": "JD摘要", "type": 1},
     {"name": "投递链接", "type": 15},
     {"name": "公告链接", "type": 15},
+    # 去重ID: 增量同步唯一键(dedup_hash),用户侧仅作技术字段展示
+    {"name": "去重ID", "type": 1},
 ]
 
 
@@ -240,6 +243,83 @@ class FeishuMasterTableService:
             else:
                 logger.warning(f"视图设置失败: table={table_id}")
 
+    def _build_existing_map(self, app_token: str, table_id: str,
+                            key_field: str) -> tuple:
+        """拉取表中所有记录,构建 key_field -> {"record_id":..., "fields": 归一化字段} 的映射。
+
+        用于增量 upsert:把飞书侧已有记录按唯一键索引,便于判断新增/更新。
+        fields 经过 normalize_fields 归一化(select→字符串/list, url→{text,link})。
+
+        Returns: (existing_map, total_record_count)
+        total_record_count 用于检测"有记录但缺少 key 字段"的情况(首次迁移),
+        此时需要清表重写一次以补全 key 字段。
+        """
+        existing: Dict[str, Dict] = {}
+        records = self.client.list_all_records(app_token, table_id)
+        for r in records:
+            rid = r.get("record_id", "")
+            fields = r.get("fields", {}) or {}
+            key_val = fields.get(key_field)
+            # key_field 可能是 select(返回 [{"name":...}])、文本、或 URL({"text","link"})
+            if isinstance(key_val, list):
+                key_val = key_val[0].get("name", "") if key_val else ""
+            elif isinstance(key_val, dict):
+                key_val = key_val.get("link") or key_val.get("text", "")
+            if not key_val:
+                continue
+            existing[str(key_val)] = {
+                "record_id": rid,
+                "fields": self.client.normalize_fields(fields),
+            }
+        return existing, len(records)
+
+    @staticmethod
+    def _fields_equal(target: Dict, existing_norm: Dict) -> bool:
+        """比较目标字段与飞书侧已归一化字段是否相等。
+
+        规则:
+        - 缺失键 与 空字符串/空值 视为相等
+        - URL 字段只比较 link(不比较 text)
+        - 单元素列表 与 字符串 视为相等(飞书 normalize 会把单选数组拍平成字符串)
+        - 字符串去首尾空白后比较
+        - 其他类型直接比较
+        """
+        def _canon(v):
+            # 单元素列表拍平为字符串,与 normalize_fields 行为对齐
+            if isinstance(v, list) and len(v) == 1:
+                return v[0]
+            return v
+
+        all_keys = set(target.keys()) | set(existing_norm.keys())
+        for k in all_keys:
+            tv = _canon(target.get(k))
+            ev = _canon(existing_norm.get(k))
+            # 缺失或空值视为相等
+            tv_empty = tv is None or tv == "" or tv == []
+            ev_empty = ev is None or ev == "" or ev == []
+            if tv_empty and ev_empty:
+                continue
+            if tv_empty != ev_empty:
+                return False
+            # URL 字段:只比 link
+            if isinstance(tv, dict) and "link" in tv and isinstance(ev, dict) and "link" in ev:
+                if tv.get("link") != ev.get("link"):
+                    return False
+                continue
+            # 字符串去空白
+            if isinstance(tv, str) and isinstance(ev, str):
+                if tv.strip() != ev.strip():
+                    return False
+                continue
+            # 列表比较(忽略顺序差异,如多选地点)
+            if isinstance(tv, list) and isinstance(ev, list):
+                if sorted(map(str, tv)) != sorted(map(str, ev)):
+                    return False
+                continue
+            if tv != ev:
+                return False
+        return True
+
     @staticmethod
     def _url_field(url: str) -> Dict:
         """飞书 URL 字段需要对象格式。"""
@@ -276,19 +356,25 @@ class FeishuMasterTableService:
             return []
         return [c for c in location.replace("、", " ").replace(",", " ").split() if c]
 
-    def export_companies(self, app_token: str, table_id: str, limit: int = 0) -> int:
-        """导出公司总表数据到飞书(含源表所有字段)。返回写入数。
+    def export_companies(self, app_token: str, table_id: str, limit: int = 0) -> Dict:
+        """增量导出公司总表数据到飞书(按「公司名称」upsert)。
 
-        注意:飞书 API 的 PATCH view 不支持设置 sort/column_width,
-        因此通过写入前排序保证默认展示顺序为「网申更新降序」。
+        返回 {"created": N, "updated": M}。
+
+        增量策略:
+        1. 拉取飞书侧已有记录,按「公司名称」建索引
+        2. 本地不存在的公司 → 新增
+        3. 已存在但字段有变化 → 更新
+        4. 已存在且无变化 → 跳过
+        (不删除飞书侧有但本地没有的公司,避免误删)
         """
         companies = job_db.get_all_companies()
         if limit:
             companies = companies[:limit]
 
+        # 构建目标记录
         records = []
         for c in companies:
-            # 取最新公告的源表字段
             latest_ann = job_db.get_latest_announcement_by_company(c["id"]) or {}
             apply_update = latest_ann.get("apply_update", "")
             record = {
@@ -302,7 +388,7 @@ class FeishuMasterTableService:
                 "学历要求": latest_ann.get("education_req", ""),
                 "截止日期": latest_ann.get("deadline", ""),
                 "招聘岗位": latest_ann.get("announcement_title", ""),
-                "_sort_key": apply_update or "",  # 临时排序键
+                "_sort_key": apply_update or "",
             }
             apply_url = self._url_field(c.get("apply_url", ""))
             if apply_url:
@@ -312,33 +398,71 @@ class FeishuMasterTableService:
                 record["公告链接"] = ann_url
             records.append(record)
 
-        # 按网申更新降序排序(最新在前),空值排最后
         records.sort(key=lambda r: r.get("_sort_key", "") or "", reverse=True)
-        # 移除临时排序键
         for r in records:
             r.pop("_sort_key", None)
 
         if not records:
-            return 0
-        ids = self.client.batch_create_records(app_token, table_id, records)
-        logger.info(f"公司总表写入 {len(ids)}/{len(records)} 条")
-        return len(ids)
+            return {"created": 0, "updated": 0}
 
-    def export_positions(self, app_token: str, table_id: str = "", limit: int = 0) -> int:
-        """导出岗位总表数据到飞书(按专业大类拆分为多个子表)。返回写入总数。
+        # 拉取飞书侧已有记录
+        existing, total = self._build_existing_map(app_token, table_id, "公司名称")
+        # 首次迁移兜底:若表中有记录但缺少「公司名称」,清表重写一次
+        if total > 0 and len(existing) < total:
+            logger.info(f"公司表检测到 {total - len(existing)} 条缺键记录,一次性清表重写")
+            self.client.clear_table_records(app_token, table_id)
+            existing = {}
 
-        拆分原因:单表 3.5 万+ 岗位接近飞书 5 万条上限,且清表时分页 API
-        无法一次取回全部记录,导致清不干净→追加超限。
-        按「专业大类」拆分后,每类最多 ~2.2 万条(工科),远低于上限。
+        to_create = []
+        to_update = []
+        for rec in records:
+            name = rec["公司名称"]
+            if name not in existing:
+                to_create.append(rec)
+                continue
+            old = existing[name]["fields"]
+            if not self._fields_equal(rec, old):
+                to_update.append({
+                    "record_id": existing[name]["record_id"],
+                    "fields": rec,
+                })
 
-        表名规则:「岗位-{专业大类}」,如 岗位-工科 / 岗位-商科 / 岗位-其他。
-        table_id 参数保留兼容旧调用,实际不再使用(按名称动态建表)。
+        created = 0
+        if to_create:
+            ids = self.client.batch_create_records(app_token, table_id, to_create)
+            created = len(ids)
+        updated = 0
+        if to_update:
+            updated = self.client.batch_update_records(app_token, table_id, to_update)
+
+        logger.info(
+            f"公司总表增量同步: 新增 {created} 条, 更新 {updated} 条, "
+            f"跳过 {len(records) - len(to_create) - len(to_update)} 条"
+        )
+        return {"created": created, "updated": updated}
+
+    def export_positions(self, app_token: str, table_id: str = "", limit: int = 0) -> Dict:
+        """增量导出岗位总表数据到飞书(按专业大类拆分子表,按「去重ID」upsert)。
+
+        返回 {"created": N, "updated": M}。
+
+        拆分原因:单表 3.5 万+ 岗位接近飞书 5 万条上限,按「专业大类」拆分后
+        每类最多 ~2.2 万条(工科),远低于上限。
+
+        增量策略(每类子表独立执行):
+        1. 拉取子表已有记录,按「去重ID」(=dedup_hash)建索引
+        2. 本地有、飞书无 → 新增
+        3. 本地有、飞书有但字段变化 → 更新
+        4. 两边都有且无变化 → 跳过
+        (不删除飞书侧有但本地没有的岗位;若岗位大类变更,旧表残留由周度全量兜底)
+
+        表名规则:「岗位-{专业大类}」。table_id 参数保留兼容旧调用,实际不使用。
         """
         positions = job_db.get_all_positions_for_export()
         if limit:
             positions = positions[:limit]
         if not positions:
-            return 0
+            return {"created": 0, "updated": 0}
 
         # 按专业大类分组(空值归入「其他」)
         groups: Dict[str, list] = {}
@@ -346,29 +470,24 @@ class FeishuMasterTableService:
             cat = (p.get("major_category") or "").strip() or "其他"
             groups.setdefault(cat, []).append(p)
 
-        total_written = 0
+        total_created = 0
+        total_updated = 0
         for cat, cat_positions in groups.items():
             table_name = f"岗位-{cat}"
-            # 动态获取或创建该大类的子表
             cat_table_id = self.client.get_or_create_table(
                 app_token, table_name, POSITION_FIELDS, "岗位标题")
             if not cat_table_id:
                 logger.warning(f"无法获取/创建表 {table_name},跳过")
                 continue
 
-            # 清空旧数据(循环清表,避免分页上限导致清不干净)
-            try:
-                self.client.clear_table_records(app_token, cat_table_id)
-            except Exception as e:
-                logger.warning(f"清空表 {table_name} 失败: {e}")
-
-            # 构建记录
+            # 构建目标记录
             records = []
             for p in cat_positions:
                 title = p["position_title"] or "通用校招岗"
                 company = p["company_name"] or ""
                 display_title = f"{title}-{company}" if company else title
                 apply_update = p.get("apply_update", "")
+                dedup_hash = p.get("dedup_hash", "")
                 record = {
                     "岗位标题": display_title,
                     "网申更新": self._date_to_ts(apply_update),
@@ -386,6 +505,7 @@ class FeishuMasterTableService:
                     "是否管培": "是" if p.get("is_management_trainee") else "否",
                     "难度": p.get("difficulty", ""),
                     "JD摘要": p.get("jd_summary", ""),
+                    "去重ID": dedup_hash,
                     "_sort_key": apply_update or "",
                 }
                 url = self._url_field(p.get("apply_url", "") or p.get("source_url", ""))
@@ -403,23 +523,62 @@ class FeishuMasterTableService:
 
             if not records:
                 continue
-            ids = self.client.batch_create_records(app_token, cat_table_id, records)
-            logger.info(f"[{table_name}] 写入 {len(ids)}/{len(records)} 条")
-            total_written += len(ids)
 
-        logger.info(f"岗位总表拆分导出完成: {len(groups)} 个大类,共 {total_written} 条")
-        return total_written
+            # 拉取飞书侧已有记录(按去重ID索引)
+            existing, total = self._build_existing_map(app_token, cat_table_id, "去重ID")
+            # 首次迁移兜底:老记录无「去重ID」字段,清表重写一次补全
+            if total > 0 and len(existing) < total:
+                logger.info(f"[{table_name}] 检测到 {total - len(existing)} 条缺键记录,一次性清表重写")
+                self.client.clear_table_records(app_token, cat_table_id)
+                existing = {}
 
-    def export_vl_failures(self, app_token: str, table_id: str) -> int:
-        """导出 VL 识别失败的公告到飞书记录表。返回写入数。
+            to_create = []
+            to_update = []
+            for rec in records:
+                hid = rec.get("去重ID")
+                if not hid or hid not in existing:
+                    to_create.append(rec)
+                    continue
+                old = existing[hid]["fields"]
+                if not self._fields_equal(rec, old):
+                    to_update.append({
+                        "record_id": existing[hid]["record_id"],
+                        "fields": rec,
+                    })
 
-        只导出 vl_status=failed 的公告,便于排查哪些公告的图片无法被 VL 识别。
+            created = 0
+            if to_create:
+                ids = self.client.batch_create_records(app_token, cat_table_id, to_create)
+                created = len(ids)
+            updated = 0
+            if to_update:
+                updated = self.client.batch_update_records(app_token, cat_table_id, to_update)
+
+            total_created += created
+            total_updated += updated
+            skipped = len(records) - len(to_create) - len(to_update)
+            logger.info(
+                f"[{table_name}] 增量同步: 新增 {created}, 更新 {updated}, 跳过 {skipped}"
+            )
+
+        logger.info(
+            f"岗位总表增量同步完成: {len(groups)} 个大类, "
+            f"新增 {total_created} 条, 更新 {total_updated} 条"
+        )
+        return {"created": total_created, "updated": total_updated}
+
+    def export_vl_failures(self, app_token: str, table_id: str) -> Dict:
+        """增量导出 VL 识别失败的公告到飞书记录表(按「公告ID」upsert,含删除)。
+
+        返回 {"created": N, "updated": M, "deleted": K}。
+
+        与公司/岗位表不同:VL 失败记录是动态集合(识别失败→重处理成功后会移出),
+        因此需要删除飞书侧有但本地已不再失败的记录。
         """
         announcements = job_db.get_vl_failed_announcements()
 
         records = []
         for ann in announcements:
-            # 计算图片数量
             img_count = 0
             images_json = ann.get("content_images", "") or ""
             if images_json:
@@ -431,6 +590,7 @@ class FeishuMasterTableService:
                     pass
 
             record = {
+                "公告ID": ann.get("id"),
                 "公司名称": ann.get("company_name", ""),
                 "公告标题": ann.get("announcement_title", ""),
                 "网申更新": self._date_to_ts(ann.get("apply_update", "")),
@@ -447,48 +607,99 @@ class FeishuMasterTableService:
                 record["网申链接"] = apply_url
             records.append(record)
 
-        # 按网申更新降序排序
         records.sort(key=lambda r: r.get("_sort_key", "") or "", reverse=True)
         for r in records:
             r.pop("_sort_key", None)
 
+        # 拉取飞书侧已有记录(按公告ID索引)
+        existing, total = self._build_existing_map(app_token, table_id, "公告ID")
+        # 首次迁移兜底:老记录无「公告ID」字段,清表重写一次补全
+        if total > 0 and len(existing) < total:
+            logger.info(f"VL失败表检测到 {total - len(existing)} 条缺键记录,一次性清表重写")
+            self.client.clear_table_records(app_token, table_id)
+            existing = {}
+
         if not records:
+            # 本地无失败记录:删除飞书侧全部残留
+            if existing:
+                deleted = self.client.batch_delete_records(
+                    app_token, table_id,
+                    [v["record_id"] for v in existing.values()])
+                logger.info(f"无 VL 失败记录,清理飞书侧残留 {deleted} 条")
+                return {"created": 0, "updated": 0, "deleted": deleted}
             logger.info("无 VL 失败记录,跳过导出")
-            return 0
-        ids = self.client.batch_create_records(app_token, table_id, records)
-        logger.info(f"VL 失败记录表写入 {len(ids)}/{len(records)} 条")
-        return len(ids)
+            return {"created": 0, "updated": 0, "deleted": 0}
+
+        to_create = []
+        to_update = []
+        target_keys = set()
+        for rec in records:
+            aid = rec.get("公告ID")
+            key = str(aid) if aid is not None else None
+            if not key:
+                # 无 ID 的极端情况直接新增(不参与去重)
+                to_create.append(rec)
+                continue
+            target_keys.add(key)
+            if key not in existing:
+                to_create.append(rec)
+                continue
+            old = existing[key]["fields"]
+            if not self._fields_equal(rec, old):
+                to_update.append({
+                    "record_id": existing[key]["record_id"],
+                    "fields": rec,
+                })
+
+        # 删除:飞书侧有但本地已不再失败的记录
+        to_delete = [v["record_id"] for k, v in existing.items() if k not in target_keys]
+
+        created = updated = deleted = 0
+        if to_create:
+            ids = self.client.batch_create_records(app_token, table_id, to_create)
+            created = len(ids)
+        if to_update:
+            updated = self.client.batch_update_records(app_token, table_id, to_update)
+        if to_delete:
+            deleted = self.client.batch_delete_records(app_token, table_id, to_delete)
+
+        logger.info(
+            f"VL 失败记录表增量同步: 新增 {created}, 更新 {updated}, 删除 {deleted}"
+        )
+        return {"created": created, "updated": updated, "deleted": deleted}
 
 
 def create_and_export_master_table(company_limit: int = 0,
                                    position_limit: int = 0) -> Dict:
-    """一键创建总表并导出数据。"""
+    """一键创建总表并导出数据(增量 upsert,新表等价于全量写入)。"""
     service = FeishuMasterTableService()
     result = service.create_master_bitable()
-    n_companies = service.export_companies(
+    r_companies = service.export_companies(
         result["app_token"], result["company_table_id"], limit=company_limit)
-    n_positions = service.export_positions(
+    r_positions = service.export_positions(
         result["app_token"], result["position_table_id"], limit=position_limit)
-    n_vl_failures = service.export_vl_failures(
+    r_vl_failures = service.export_vl_failures(
         result["app_token"], result["vl_failure_table_id"])
-    result["companies_written"] = n_companies
-    result["positions_written"] = n_positions
-    result["vl_failures_written"] = n_vl_failures
+    result["companies"] = r_companies
+    result["positions"] = r_positions
+    result["vl_failures"] = r_vl_failures
     logger.info(
-        f"总表导出完成: 公司 {n_companies} 条, 岗位 {n_positions} 条, "
-        f"VL失败 {n_vl_failures} 条"
+        f"总表导出完成: 公司 {r_companies}, 岗位 {r_positions}, VL失败 {r_vl_failures}"
     )
     logger.info(f"总表链接: {result['share_url']}")
     return result
 
 
 def sync_to_existing_master_table() -> Dict:
-    """同步数据到已存在的飞书总表(清空后全量重写)。
+    """增量同步数据到已存在的飞书总表(upsert,不清表)。
 
-    用于每日管线:把本地 DB 的公司/岗位/VL失败记录同步到飞书总表。
+    用于每日管线:把本地 DB 的公司/岗位/VL失败记录增量同步到飞书总表。
     表的 app_token 和 table_id 从 config.settings 读取。
 
-    Returns: {"companies": N, "positions": M, "vl_failures": K}
+    增量策略:按唯一键 upsert(公司名称 / 去重ID / 公告ID),
+    不清空表,同步期间用户始终能看到完整数据。
+
+    Returns: {"companies": {...}, "positions": {...}, "vl_failures": {...}}
     """
     from config import settings
     service = FeishuMasterTableService()
@@ -499,19 +710,18 @@ def sync_to_existing_master_table() -> Dict:
 
     if not app_token:
         logger.warning("MASTER_APP_TOKEN 未配置,跳过总表同步")
-        return {"companies": 0, "positions": 0, "vl_failures": 0}
+        return {"companies": {}, "positions": {}, "vl_failures": {}}
 
-    result = {"companies": 0, "positions": 0, "vl_failures": 0}
+    result = {"companies": {}, "positions": {}, "vl_failures": {}}
 
-    # 1. 同步公司总表
+    # 1. 增量同步公司总表(按公司名称 upsert)
     if company_table_id:
         try:
-            service.client.clear_table_records(app_token, company_table_id)
             result["companies"] = service.export_companies(app_token, company_table_id)
         except Exception as e:
             logger.error(f"同步公司总表失败: {e}")
 
-    # 2. 同步岗位总表(按专业大类拆分为多个子表,export_positions 内部建表+清表+写入)
+    # 2. 增量同步岗位总表(按专业大类拆分子表,按去重ID upsert)
     #    position_table_id 仅用于判断是否开启岗位同步,实际表按名称动态创建
     if position_table_id:
         try:
@@ -519,16 +729,15 @@ def sync_to_existing_master_table() -> Dict:
         except Exception as e:
             logger.error(f"同步岗位总表失败: {e}")
 
-    # 3. 同步 VL 失败记录表
+    # 3. 增量同步 VL 失败记录表(按公告ID upsert,含删除已恢复记录)
     if vl_failure_table_id:
         try:
-            service.client.clear_table_records(app_token, vl_failure_table_id)
             result["vl_failures"] = service.export_vl_failures(app_token, vl_failure_table_id)
         except Exception as e:
             logger.error(f"同步VL失败记录表失败: {e}")
 
     logger.info(
-        f"总表同步完成: 公司 {result['companies']} 条, "
-        f"岗位 {result['positions']} 条, VL失败 {result['vl_failures']} 条"
+        f"总表增量同步完成: 公司 {result['companies']}, "
+        f"岗位 {result['positions']}, VL失败 {result['vl_failures']}"
     )
     return result

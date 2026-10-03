@@ -301,34 +301,31 @@ class FeishuTableService:
     def sync_master_tables_to_user(self, app_token: str,
                                    company_table_id: str,
                                    position_table_id: str) -> Dict:
-        """把本地 DB 的公司/岗位总库数据同步到用户专属表格的总表页签。
+        """把本地 DB 的公司/岗位总库数据增量同步到用户专属表格的总表页签。
 
         复用 FeishuMasterTableService 的导出逻辑,保证字段与总表一致。
-        用于让用户在一个链接内即可查看全部公司/岗位总库(多页签)。
+        增量 upsert(按公司名称/去重ID),不清表,同步期间数据完整可见。
 
-        Returns: {"companies": N, "positions": M}
+        Returns: {"companies": {...}, "positions": {...}}
         """
         from feishu_master_tables import FeishuMasterTableService
         service = FeishuMasterTableService(client=self.client)
-        result = {"companies": 0, "positions": 0}
+        result = {"companies": {}, "positions": {}}
         try:
-            # 公司总表:先清空再全量写入(避免重复追加)
             if company_table_id:
-                self.client.clear_table_records(app_token, company_table_id)
-            result["companies"] = service.export_companies(
-                app_token, company_table_id
-            )
+                result["companies"] = service.export_companies(
+                    app_token, company_table_id
+                )
         except Exception as e:
             logger.error(f"同步用户公司总表失败: {e}")
         try:
-            # 岗位总表:export_positions 内部按专业大类拆表+清表+写入
             result["positions"] = service.export_positions(
                 app_token, position_table_id
             )
         except Exception as e:
             logger.error(f"同步用户岗位总表失败: {e}")
         logger.info(
-            f"用户总表同步完成: 公司 {result['companies']} 条, "
-            f"岗位 {result['positions']} 条"
+            f"用户总表增量同步完成: 公司 {result['companies']}, "
+            f"岗位 {result['positions']}"
         )
         return result

@@ -1,0 +1,134 @@
+{
+  "keywords": [
+    {
+      "kw": "清华大学",
+      "standard": "清华大学",
+      "category": "education",
+      "weight": 5.0,
+      "resume_section": "education",
+      "source": "resume_llm"
+    },
+    {
+      "kw": "计算机科学硕士",
+      "standard": "计算机科学硕士",
+      "category": "education",
+      "weight": 4.5,
+      "resume_section": "education",
+      "source": "resume_llm"
+    },
+    {
+      "kw": "Python",
+      "standard": "python",
+      "category": "hard_skill",
+      "weight": 4.5,
+      "resume_section": "skill",
+      "source": "resume_llm"
+    },
+    {
+      "kw": "Java",
+      "standard": "java",
+      "category": "hard_skill",
+      "weight": 4.5,
+      "resume_section": "skill",
+      "source": "resume_llm"
+    },
+    {
+      "kw": "后端开发实习经验",
+      "standard": "后端开发实习经验",
+      "category": "role",
+      "weight": 4.0,
+      "resume_section": "experience",
+      "source": "resume_llm"
+    },
+    {
+      "kw": "分布式系统",
+      "standard": "distributed_systems",
+      "category": "skill",
+      "weight": 4.0,
+      "resume_section": "skill",
+      "source": "resume_llm"
+    },
+    {
+      "kw": "微服务架构",
+      "standard": "微服务架构",
+      "category": "skill",
+      "weight": 4.0,
+      "resume_section": "skill",
+      "source": "resume_llm"
+    },
+    {
+      "kw": "ACM竞赛省一等奖",
+      "standard": "ACM竞赛省一等奖",
+      "category": "cert",
+      "weight": 4.0,
+      "resume_section": "other",
+      "source": "resume_llm"
+    },
+    {
+      "kw": "SQL",
+      "standard": "mysql",
+      "category": "hard_skill",
+      "weight": 3.5,
+      "resume_section": "skill",
+      "source": "resume_llm"
+    },
+    {
+      "kw": "React",
+      "standard": "react",
+      "category": "framework",
+      "weight": 3.0,
+      "resume_section": "skill",
+      "source": "resume_llm"
+    },
+    {
+      "kw": "JavaScript",
+      "standard": "javascript",
+      "category": "hard_skill",
+      "weight": 2.1,
+      "resume_section": "skill",
+      "source": "resume_llm"
+    }
+  ],
+  "fit_directions": [
+    {
+      "direction": "后端开发",
+      "cat_key": "development",
+      "sub_key": "backend",
+      "category_name": "开发",
+      "weight": 0.95,
+      "evidence": "3年后端开发实习经验，熟练掌握Java/Python/SQL，熟悉分布式系统与微服务架构"
+    },
+    {
+      "direction": "全栈开发",
+      "cat_key": "development",
+      "sub_key": "fullstack",
+      "category_name": "开发",
+      "weight": 0.75,
+      "evidence": "具备后端开发经验，同时掌握React前端框架，可承担全栈开发工作"
+    },
+    {
+      "direction": "AI Infra",
+      "cat_key": "ai_engineering",
+      "sub_key": "ai_infra",
+      "category_name": "AI工程",
+      "weight": 0.6,
+      "evidence": "有分布式系统与微服务架构经验，可迁移至AI基础设施的分布式训练/推理平台建设"
+    },
+    {
+      "direction": "算法工程化",
+      "cat_key": "ai_engineering",
+      "sub_key": "algorithm_eng",
+      "category_name": "AI工程",
+      "weight": 0.55,
+      "evidence": "计算机科学硕士，ACM竞赛省一等奖，编程能力强，有后端工程经验，适合算法工程化落地"
+    },
+    {
+      "direction": "数据工程",
+      "cat_key": "data",
+      "sub_key": "data_eng",
+      "category_name": "数据",
+      "weight": 0.5,
+      "evidence": "熟练掌握SQL，有后端开发经验，可从事数据管道与数据平台开发"
+    }
+  ]
+}

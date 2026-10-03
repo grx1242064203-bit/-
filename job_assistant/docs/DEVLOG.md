@@ -4,24 +4,47 @@
 
 ---
 
-## 2026-10-03 — E2E 端到端验证 ✅
+## 2026-10-03 — M1 端到端验证 + CI 配置 ✅
 
-**状态**: 全链路通过
+**状态**: 全链路通过，CI 已配置
 
-**验证结果**:
+### 服务启动
+- ✅ API 服务: `uvicorn main:app --port 8000` 运行中
+- ✅ 前端服务: `npm run dev` → Vite 运行在 localhost:1420
+- ✅ 前端 `.env` 配置: `VITE_API_URL=http://localhost:8000`
 
-### 云端 API（FastAPI）
-- ✅ 健康检查 `/health` → 200
-- ✅ 注册 `/api/v1/auth/register` → 200 + user_id
-- ✅ 验证码生成 → auth.db 读取成功
-- ✅ 邮箱验证 `/api/v1/auth/verify-email` → 200 + JWT token
-- ✅ 登录 `/api/v1/auth/login` → 200 + JWT token
-- ✅ 岗位统计 `/api/v1/sync/stats` → 35,693 条
-- ✅ 岗位同步 `/api/v1/sync/jobs?limit=5` → 5 条
-- ✅ 简历解析 `/api/v1/llm/parse-resume` → 32 keywords + 6 fit_directions
+### E2E 验证（完整链路）
+- ✅ 注册 → 200 + user_id
+- ✅ 验证码 → auth.db 读取成功
+- ✅ 邮箱验证 → 200 + JWT
+- ✅ 登录 → 200 + JWT
+- ✅ 岗位统计 → 35,693 条
+- ✅ 岗位同步 → 5 条（伽利略 - 运控算法工程师）
+- ✅ 简历解析 → 11 keywords + 5 fit_directions
   - 后端开发 weight=0.95
-  - 全栈开发 weight=0.9
-  - 前端开发 weight=0.75
+  - 全栈开发 weight=0.75
+  - AI Infra weight=0.6
+- ✅ Sidecar ping/pong
+
+### 测试总计
+- Python API：32/32 passed
+- Rust Tauri：22/22 passed
+- Python Sidecar：11/11 passed
+
+### CI 配置
+- ✅ 创建 `.github/workflows/build.yml`
+- 3 个 build target：mac-arm / mac-intel / windows
+- 触发：push tag `v*` 或手动 workflow_dispatch
+- 产出：GitHub Releases 自动发布 .app/.dmg/.exe/.msi
+
+### 环境配置
+- `job_api/.env`：DEEPSEEK_API_KEY 已配置，JWT_SECRET 已设置
+- `job_workbench/.env`：VITE_API_URL=http://localhost:8000
+- RESEND_API_KEY 暂空（开发模式验证码打印到 stderr）
+
+### 前端预览
+- Vite dev server 运行在 http://localhost:1420
+- 前端页面可正常加载（React + Tailwind 暖橙主题）
 
 ### Python Sidecar 评分引擎
 - ✅ ping/pong JSON-RPC

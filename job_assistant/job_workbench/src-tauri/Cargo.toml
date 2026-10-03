@@ -1,0 +1,41 @@
+[package]
+name = "job-workbench"
+version = "0.1.0"
+description = "求职搭子桌面工作台"
+edition = "2021"
+
+[lib]
+name = "job_workbench_lib"
+crate-type = ["staticlib", "cdylib", "rlib"]
+
+[build-dependencies]
+tauri-build = { version = "2", features = [] }
+
+[dependencies]
+tauri = { version = "2", features = ["protocol-asset"] }
+serde = { version = "1", features = ["derive"] }
+serde_json = "1"
+# SQLite（bundled 自带 SQLite 引擎，无需系统库）
+rusqlite = { version = "0.31", features = ["bundled"] }
+# 异步 runtime（云端 API 调用 / sidecar 进程管理）
+tokio = { version = "1", features = ["full"] }
+# HTTP 客户端（调云端 /auth/* /llm/* /sync/*）
+reqwest = { version = "0.12", features = ["json"] }
+# 时间处理（updated_at / applied_at / last_sync_at 统一 ISO8601 字符串）
+chrono = { version = "0.4", features = ["serde"] }
+# UUID 生成（job_id / app_id / resume_id / event_id）
+uuid = { version = "1", features = ["v4", "serde"] }
+# token / 邮箱密码本机加密存储（base64 + 应用层 XOR 占位，后续替换 keychain）
+base64 = "0.22"
+# 日志
+log = "0.4"
+env_logger = "0.11"
+# 文件系统插件（简历 PDF/图片读写）
+tauri-plugin-fs = "2"
+
+[profile.release]
+panic = "abort"
+codegen-units = 1
+lto = true
+opt-level = "s"
+strip = true

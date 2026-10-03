@@ -1,0 +1,56 @@
+"""求职搭子 API 配置 (Pydantic Settings)。
+
+环境变量通过 .env / 进程注入，缺失项回退到默认值。
+密钥类字段默认留空或占位，生产部署必须通过环境变量覆盖。
+"""
+from functools import lru_cache
+from pathlib import Path
+
+from pydantic_settings import BaseSettings, SettingsConfigDict
+
+
+class Settings(BaseSettings):
+    model_config = SettingsConfigDict(
+        env_file=".env",
+        env_file_encoding="utf-8",
+        extra="ignore",
+    )
+
+    # LLM（简历解析 / JD 评分）
+    DEEPSEEK_API_KEY: str = ""
+    DEEPSEEK_BASE_URL: str = "https://api.deepseek.com"
+
+    # JWT 鉴权
+    JWT_SECRET: str = "change-me-in-prod"
+    JWT_ALG: str = "HS256"
+    JWT_EXPIRE_HOURS: int = 168
+
+    # 邮件（Resend）
+    RESEND_API_KEY: str = ""
+
+    # 数据存储
+    DATA_DIR: Path = Path("../data")
+    JOBS_DB_PATH: Path = Path("../data/jobs.db")
+
+    # CORS 允许源（开发期默认允许所有来源）
+    CORS_ORIGINS: list[str] = ["*"]
+
+    @property
+    def sqlite_url(self) -> str:
+        return f"sqlite:///{self.JOBS_DB_PATH}"
+
+
+@lru_cache
+def get_settings() -> Settings:
+    """单例 Settings 工厂，进程内缓存（FastAPI 依赖注入与启动钩子共用同一实例）。"""
+    return Settings()
+
+
+# 兼容旧入口：导入即用实例
+settings = get_settings()
+
+# 启动时确保数据目录存在（best-effort，不阻断导入）。
+try:
+    settings.DATA_DIR.mkdir(parents=True, exist_ok=True)
+except OSError:
+    pass

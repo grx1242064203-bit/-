@@ -1,0 +1,23 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+/* 暖橙主题 CSS 变量：主色 #F97316，深石板 #0F172A，米白底 #FAFAF9。 */
+:root {
+  --color-brand: #f97316;
+  --color-brand-50: #fff7ed;
+  --color-brand-100: #ffedd5;
+  --color-brand-600: #ea580c;
+  --color-brand-700: #c2410c;
+  --color-slate-deep: #0f172a;
+  --color-cream: #fafaf9;
+  --radius-card: 16px;
+}
+
+body {
+  margin: 0;
+  background-color: var(--color-cream);
+  color: var(--color-slate-deep);
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+}

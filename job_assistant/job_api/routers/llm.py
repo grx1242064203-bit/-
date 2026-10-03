@@ -1,0 +1,130 @@
+"""LLM 代理路由：简历解析 + 补充分析。
+
+接口签名（spec）：
+- POST /api/v1/llm/parse-resume  {resume_text} → {keywords, fit_directions}
+- POST /api/v1/llm/supplement   {user_edited, resume_text} → {fit_directions, hard_skills}
+
+所有端点：
+- 需要 Bearer Token 认证（依赖注入 get_current_user，T3 占位）。
+- 调用前检查每日配额，超额返回 429。
+- 调用成功后增加用量计数。
+- DeepSeek 异常 / 超时 / 缺 API Key → 503。
+
+不直接暴露 DeepSeek API Key，由 LLMProxyService 在服务层注入。
+"""
+import logging
+
+from fastapi import APIRouter, Depends, HTTPException, status
+from pydantic import BaseModel, Field
+
+from config import get_settings
+from deps import get_current_user
+from services.llm_proxy import LLMProxyService
+from services.quota_service import (
+    get_user_quota,
+    increment_usage,
+)
+
+logger = logging.getLogger(__name__)
+
+router = APIRouter(prefix="/llm", tags=["llm"])
+
+# 单例代理服务（API Key 在调用时从 settings 注入；不暴露给路由层以外的模块）
+_settings = get_settings()
+_proxy = LLMProxyService(api_key=_settings.DEEPSEEK_API_KEY)
+
+
+class ParseResumeRequest(BaseModel):
+    resume_text: str = Field(..., min_length=1, description="简历原文")
+
+
+class ParseResumeResponse(BaseModel):
+    keywords: list = []
+    fit_directions: list = []
+
+
+class SupplementRequest(BaseModel):
+    user_edited: dict = Field(..., description="用户编辑后的画像")
+    resume_text: str = ""
+
+
+class SupplementResponse(BaseModel):
+    fit_directions: list = []
+    hard_skills: list = []
+
+
+def _check_quota(user_id: str):
+    """检查配额，超额抛 429。"""
+    quota = get_user_quota(user_id)
+    if quota["remaining"] <= 0:
+        raise HTTPException(
+            status_code=status.HTTP_429_TOO_MANY_REQUESTS,
+            detail=(
+                f"已达每日 LLM 调用配额上限（{quota['limit']} 次/天），"
+                f"明日 0 点重置"
+            ),
+            headers={"Retry-After": "86400"},
+        )
+    return quota
+
+
+def _handle_llm_error(e: Exception, label: str):
+    """统一 LLM 异常映射：超时 / 缺 Key / 其他 → 503。"""
+    logger.error(f"LLM {label} 失败: {e}", exc_info=True)
+    raise HTTPException(
+        status_code=status.HTTP_503_SERVICE_UNAVAILABLE,
+        detail=f"LLM 服务暂时不可用，请稍后重试",
+    )
+
+
+@router.post("/parse-resume", response_model=ParseResumeResponse)
+def parse_resume(
+    req: ParseResumeRequest,
+    user: dict = Depends(get_current_user),
+):
+    """解析简历文本 → 结构化关键词 + 适配岗位方向。"""
+    user_id = user["user_id"]
+    _check_quota(user_id)
+
+    try:
+        result = _proxy.parse_resume(req.resume_text)
+    except TimeoutError as e:
+        _handle_llm_error(e, "parse_resume")
+        return  # 不会被走到（_handle_llm_error 抛出）
+    except Exception as e:
+        _handle_llm_error(e, "parse_resume")
+        return
+
+    # 调用成功后增加用量计数；即使并发竞争导致 False 也返回结果，避免吞掉已成功的调用
+    increment_usage(user_id)
+    return {
+        "keywords": result.get("keywords", []),
+        "fit_directions": result.get("fit_directions", []),
+    }
+
+
+@router.post("/supplement", response_model=SupplementResponse)
+def supplement(
+    req: SupplementRequest,
+    user: dict = Depends(get_current_user),
+):
+    """补充分析 → 基于用户编辑后的画像推荐适配方向 + 硬技能。"""
+    user_id = user["user_id"]
+    _check_quota(user_id)
+
+    try:
+        result = _proxy.supplement(req.user_edited, req.resume_text)
+    except TimeoutError as e:
+        _handle_llm_error(e, "supplement")
+        return
+    except Exception as e:
+        _handle_llm_error(e, "supplement")
+        return
+
+    increment_usage(user_id)
+    # supplement_profile 返回 {fit_directions, structured_keywords, new_directions, new_skills}
+    # API 仅暴露 {fit_directions, hard_skills}（hard_skills = LLM 新补的硬技能 tag）
+    return {
+        "fit_directions": result.get("fit_directions", []),
+        "hard_skills": result.get("new_skills", []),
+    }

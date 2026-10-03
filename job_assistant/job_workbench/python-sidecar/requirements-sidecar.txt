@@ -1,0 +1,10 @@
+# 求职搭子 Python sidecar 评分引擎依赖
+# 仅列 sidecar 评分必需的包,不含 llm_client 的依赖(httpx/openai 等不在此处)。
+# llm_client 在 sidecar 评分路径下不会被 import(scorer.score_job 的 llm_client 参数传 None)。
+
+# 配置加载:.env 解析(config.py 用 dotenv 加载环境变量,DATA_DIR 等)
+python-dotenv>=1.0.0
+
+# 注:标准库 sqlite3 / json / sys / os 等无需列入。
+# 注:keyword_normalizer / job_tree / job_db 仅依赖标准库 + config.settings,
+#     评分主链路不依赖第三方包(除 python-dotenv 用于 .env)。

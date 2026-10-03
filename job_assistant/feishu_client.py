@@ -256,6 +256,34 @@ class FeishuClient:
         )
         return data["table_id"]
 
+    def delete_table(self, app_token: str, table_id: str) -> bool:
+        """删除数据表。成功返回 True。"""
+        app_token = self.resolve_app_token(app_token)
+        try:
+            self._request(
+                "DELETE",
+                f"/open-apis/bitable/v1/apps/{app_token}/tables/{table_id}",
+            )
+            logger.info(f"已删除数据表: {table_id}")
+            return True
+        except RuntimeError as e:
+            logger.warning(f"删除数据表失败 {table_id}: {e}")
+            return False
+
+    def delete_field(self, app_token: str, table_id: str, field_id: str) -> bool:
+        """删除字段。成功返回 True。"""
+        app_token = self.resolve_app_token(app_token)
+        try:
+            self._request(
+                "DELETE",
+                f"/open-apis/bitable/v1/apps/{app_token}/tables/{table_id}/fields/{field_id}",
+            )
+            logger.info(f"已删除字段: {field_id}")
+            return True
+        except RuntimeError as e:
+            logger.warning(f"删除字段失败 {field_id}: {e}")
+            return False
+
     def create_field(self, app_token: str, table_id: str, field_name: str,
                      field_type: int, **kwargs) -> str:
         """创建字段"""

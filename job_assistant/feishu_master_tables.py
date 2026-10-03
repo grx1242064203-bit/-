@@ -147,24 +147,26 @@ class FeishuMasterTableService:
         self.client = client or FeishuClient()
 
     def create_master_bitable(self, name: str = "27届校招汇总表") -> Dict:
-        """创建总表多维表格,返回 app_token 和子表 ID。"""
+        """创建总表多维表格,返回 app_token 和子表 ID。
+
+        表结构(面向用户,产品化):
+        1. 📖 使用说明 — 产品介绍 + 使用指引(首屏可见)
+        2. 27届秋招启动公司汇总 — 公司维度
+        3. 岗位-{专业大类} — 岗位维度(export_positions 动态创建)
+        """
         app_token = self.client.create_bitable(name)
         logger.info(f"创建总表多维表格: {name} -> {app_token}")
 
-        # 创建公司总表
+        # 1. 使用说明表(置于最前,作为产品入口)
+        guide_table_id = self.client.create_table(app_token, "📖 使用说明")
+        self._setup_guide_table(app_token, guide_table_id)
+
+        # 2. 公司总表
         company_table_id = self.client.create_table(app_token, TABLE_COMPANIES)
         self._create_fields(app_token, company_table_id, COMPANY_FIELDS, "公司名称")
         self._setup_view(app_token, company_table_id, COMPANY_COL_WIDTHS, "网申更新")
 
-        # 创建岗位总表
-        position_table_id = self.client.create_table(app_token, TABLE_POSITIONS)
-        self._create_fields(app_token, position_table_id, POSITION_FIELDS, "岗位标题")
-        self._setup_view(app_token, position_table_id, POSITION_COL_WIDTHS, "网申更新")
-
-        # 创建 VL 识别失败记录表
-        vl_failure_table_id = self.client.create_table(app_token, TABLE_VL_FAILURES)
-        self._create_fields(app_token, vl_failure_table_id, VL_FAILURE_FIELDS, "公司名称")
-        self._setup_view(app_token, vl_failure_table_id, VL_FAILURE_COL_WIDTHS, "网申更新")
+        # 岗位分表由 export_positions 按专业大类动态创建,此处不预建
 
         # 设置互联网可查看
         self.client.set_public_share(app_token, doc_type="bitable")
@@ -173,11 +175,55 @@ class FeishuMasterTableService:
 
         return {
             "app_token": app_token,
+            "guide_table_id": guide_table_id,
             "company_table_id": company_table_id,
-            "position_table_id": position_table_id,
-            "vl_failure_table_id": vl_failure_table_id,
+            "position_table_id": "",  # 岗位分表动态创建,此 ID 仅作同步开关
+            "vl_failure_table_id": "",  # VL 失败表已移除
             "share_url": share_url,
         }
+
+    def _setup_guide_table(self, app_token: str, table_id: str):
+        """设置使用说明表:创建字段并写入产品指引内容。
+
+        表结构: 板块(单选) | 标题 | 内容(多行文本)
+        内容覆盖: 产品简介、如何使用、字段说明、更新机制、免责声明。
+        """
+        guide_fields = [
+            {"name": "板块", "type": 3, "property": {"options": [
+                {"name": "产品简介"}, {"name": "使用指南"}, {"name": "字段说明"},
+                {"name": "更新机制"}, {"name": "免责声明"},
+            ]}},
+            {"name": "标题", "type": 1},
+            {"name": "内容", "type": 1},
+        ]
+        self._create_fields(app_token, table_id, guide_fields, "标题")
+
+        rows = [
+            {"板块": "产品简介", "标题": "这是什么",
+             "内容": "27届校招信息汇总,覆盖互联网、制造、金融、快消等行业的校招岗位。\n数据来自公开招聘公告,每日自动更新。"},
+            {"板块": "产品简介", "标题": "能帮你做什么",
+             "内容": "• 按专业大类快速筛选岗位(工科/商科/文科/理科/医科/艺术/农学/不限)\n• 按公司、城市、学历、岗位分类多维筛选\n• 一键跳转网申链接和原始公告"},
+            {"板块": "使用指南", "标题": "怎么找岗位",
+             "内容": "1. 顶部「岗位-工科/商科/...」切换专业大类\n2. 用表头筛选器按城市、学历、岗位分类缩小范围\n3. 点击「投递链接」直接跳转网申\n4. 「网申更新」越近表示信息越新,建议优先看"},
+            {"板块": "使用指南", "标题": "怎么看公司",
+             "内容": "「27届秋招启动公司汇总」按公司维度汇总,可按行业、公司性质筛选;\n「招聘岗位」列显示该公司最新公告的岗位方向。"},
+            {"板块": "字段说明", "标题": "岗位表字段",
+             "内容": "岗位标题: 岗位名-公司名\n网申更新: 该公告最近更新日期\n公司行业/类型: 行业分类与企业性质\n岗位分类/子类: 岗位所属类别\n最低学历: 岗位要求的学历门槛\n专业大类: 适配的专业方向\n城市: 工作地点\n硬技能/关键词: 岗位技能标签\n是否管培: 是否为管培生项目\n难度: 校招竞争难度参考\n投递链接: 官方网申入口\n公告链接: 原始招聘公告"},
+            {"板块": "字段说明", "标题": "公司表字段",
+             "内容": "公司名称/行业/公司类型: 基础信息\n网申更新: 最新公告更新日期\n招聘类型/对象: 校招类型与面向届数\n招聘地点: 工作城市(多选)\n学历要求: 最低学历\n截止日期: 网申截止(招满即止表示无明确截止)\n招聘岗位: 最新公告的岗位方向\n网申链接/公告链接: 官方入口"},
+            {"板块": "更新机制", "标题": "数据从哪来",
+             "内容": "每日凌晨自动抓取公开招聘公告,经结构化解析后写入本表。\n岗位按 公司+岗位名+工作城市 去重,同一岗位只保留一条。"},
+            {"板块": "更新机制", "标题": "更新频率",
+             "内容": "每日更新一次,新增当日发布的校招岗位与公司。\n历史数据持续保留,不删除。"},
+            {"板块": "免责声明", "标题": "使用须知",
+             "内容": "本表信息来自公开渠道,仅供参考,具体以官方公告为准。\n如发现信息有误或岗位已关闭,以官方网申页面为准。"},
+        ]
+        records = [
+            {"板块": r["板块"], "标题": r["标题"], "内容": r["内容"]}
+            for r in rows
+        ]
+        self.client.batch_create_records(app_token, table_id, records)
+        logger.info(f"使用说明表写入 {len(records)} 条指引")
 
     def _create_fields(self, app_token: str, table_id: str,
                        fields: List[Dict], primary_field: str):
@@ -676,15 +722,13 @@ def create_and_export_master_table(company_limit: int = 0,
     result = service.create_master_bitable()
     r_companies = service.export_companies(
         result["app_token"], result["company_table_id"], limit=company_limit)
+    # position_table_id 为空字符串时,export_positions 仍会按名称动态建分表
     r_positions = service.export_positions(
         result["app_token"], result["position_table_id"], limit=position_limit)
-    r_vl_failures = service.export_vl_failures(
-        result["app_token"], result["vl_failure_table_id"])
     result["companies"] = r_companies
     result["positions"] = r_positions
-    result["vl_failures"] = r_vl_failures
     logger.info(
-        f"总表导出完成: 公司 {r_companies}, 岗位 {r_positions}, VL失败 {r_vl_failures}"
+        f"总表导出完成: 公司 {r_companies}, 岗位 {r_positions}"
     )
     logger.info(f"总表链接: {result['share_url']}")
     return result
@@ -693,26 +737,25 @@ def create_and_export_master_table(company_limit: int = 0,
 def sync_to_existing_master_table() -> Dict:
     """增量同步数据到已存在的飞书总表(upsert,不清表)。
 
-    用于每日管线:把本地 DB 的公司/岗位/VL失败记录增量同步到飞书总表。
+    用于每日管线:把本地 DB 的公司/岗位增量同步到飞书总表。
     表的 app_token 和 table_id 从 config.settings 读取。
 
-    增量策略:按唯一键 upsert(公司名称 / 去重ID / 公告ID),
+    增量策略:按唯一键 upsert(公司名称 / 去重ID),
     不清空表,同步期间用户始终能看到完整数据。
 
-    Returns: {"companies": {...}, "positions": {...}, "vl_failures": {...}}
+    Returns: {"companies": {...}, "positions": {...}}
     """
     from config import settings
     service = FeishuMasterTableService()
     app_token = settings.MASTER_APP_TOKEN
     company_table_id = settings.MASTER_COMPANY_TABLE_ID
     position_table_id = settings.MASTER_POSITION_TABLE_ID
-    vl_failure_table_id = settings.MASTER_VL_FAILURE_TABLE_ID
 
     if not app_token:
         logger.warning("MASTER_APP_TOKEN 未配置,跳过总表同步")
-        return {"companies": {}, "positions": {}, "vl_failures": {}}
+        return {"companies": {}, "positions": {}}
 
-    result = {"companies": {}, "positions": {}, "vl_failures": {}}
+    result = {"companies": {}, "positions": {}}
 
     # 1. 增量同步公司总表(按公司名称 upsert)
     if company_table_id:
@@ -729,15 +772,70 @@ def sync_to_existing_master_table() -> Dict:
         except Exception as e:
             logger.error(f"同步岗位总表失败: {e}")
 
-    # 3. 增量同步 VL 失败记录表(按公告ID upsert,含删除已恢复记录)
-    if vl_failure_table_id:
-        try:
-            result["vl_failures"] = service.export_vl_failures(app_token, vl_failure_table_id)
-        except Exception as e:
-            logger.error(f"同步VL失败记录表失败: {e}")
-
     logger.info(
         f"总表增量同步完成: 公司 {result['companies']}, "
-        f"岗位 {result['positions']}, VL失败 {result['vl_failures']}"
+        f"岗位 {result['positions']}"
     )
     return result
+
+
+def cleanup_master_tables() -> Dict:
+    """清理总表中的冗余表与字段(产品化前的一次性整理)。
+
+    执行内容:
+    1. 删除表: 数据表、27届校招岗位汇总(孤儿表)、VL识别失败记录
+    2. 从所有「岗位-*」分表中删除「招聘流程」字段(若存在)
+    """
+    from config import settings
+    service = FeishuMasterTableService()
+    client = service.client
+    app_token = settings.MASTER_APP_TOKEN
+    if not app_token:
+        logger.warning("MASTER_APP_TOKEN 未配置")
+        return {"deleted_tables": [], "deleted_fields": []}
+
+    # 1. 列出所有表,按名称删除冗余表
+    tables = client.list_tables(app_token)
+    tables_to_delete = {"数据表", "27届校招岗位汇总", "VL识别失败记录"}
+    deleted_tables = []
+    position_tables = []
+    for t in tables:
+        name = t.get("name", "")
+        tid = t.get("table_id", "")
+        if name in tables_to_delete:
+            if client.delete_table(app_token, tid):
+                deleted_tables.append(name)
+        elif name.startswith("岗位-"):
+            position_tables.append((name, tid))
+
+    # 2. 从岗位分表中删除「招聘流程」字段
+    deleted_fields = []
+    for name, tid in position_tables:
+        fields = client.list_fields(app_token, tid)
+        for f in fields:
+            if f.get("field_name") == "招聘流程":
+                if client.delete_field(app_token, tid, f["field_id"]):
+                    deleted_fields.append(f"{name}.招聘流程")
+
+    result = {"deleted_tables": deleted_tables, "deleted_fields": deleted_fields}
+    logger.info(f"总表清理完成: 删除表 {deleted_tables}, 删除字段 {deleted_fields}")
+    return result
+
+
+def add_guide_table_to_master() -> str:
+    """给已存在的总表添加「📖 使用说明」表(产品化入口)。
+
+    如果已存在同名表则跳过创建,直接复用。
+    返回 guide_table_id。
+    """
+    from config import settings
+    service = FeishuMasterTableService()
+    client = service.client
+    app_token = settings.MASTER_APP_TOKEN
+    if not app_token:
+        logger.warning("MASTER_APP_TOKEN 未配置")
+        return ""
+
+    guide_table_id = client.get_or_create_table(app_token, "📖 使用说明")
+    service._setup_guide_table(app_token, guide_table_id)
+    return guide_table_id

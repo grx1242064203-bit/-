@@ -27,17 +27,17 @@ RecruitOps 的流程是"抓取→评分→追踪→填写→邮件"的工具链�
 - 顶部筛选栏（城市/学历/管培/分类/公司）+ 搜索框
 - 每条岗位卡片：公司 / 岗位名 / 城市 / 学历 / 管培标签 / 截止日期 / 投递按钮
 - 未上传简历时：列表按更新时间倒序，无匹配分数
-- **上传简历 + LLM 解析后**：自动对全部岗位跑一次评分，列表自动切换到"推荐岗位"视图
+- **上传简历 + LLM 解析后**：LLM 解析简历生成结构化画像（一次性），本地算法对全量岗位秒级评分，列表自动切换到"推荐岗位"视图
 
 **推荐视图（简历解析后自动启用）**
 - 默认只显示"推荐"+"超级推荐"两级岗位
-- 评分等级定义：
-  - 85-100：🔥 超级推荐（绿色高亮）
-  - 70-84：✅ 推荐（蓝色徽章）
-  - 50-69：➖ 一般（灰色，默认隐藏，可展开"查看全部"）
-  - <50：❌ 不推荐（默认隐藏）
-- 顶部 Tab 切换："全部岗位" / "🔥 超级推荐(12)" / "✅ 推荐(28)" / "➖ 一般(45)"
-- 评分是本地缓存的（首次解析后存 SQLite），岗位更新时增量重算
+- 评分等级定义（对齐现有 scorer.py）：
+  - ≥75：🔥 强烈推荐（绿色高亮）
+  - ≥55：✅ 推荐（蓝色徽章）
+  - ≥35：➖ 可申请（灰色，默认隐藏，可展开"查看全部"）
+  - <35：❌ 不建议（默认隐藏）
+- 顶部 Tab 切换："全部岗位" / "🔥 强烈推荐(12)" / "✅ 推荐(28)" / "➖ 可申请(45)"
+- 评分是本地算法计算（scorer.py），毫秒级，缓存到 SQLite，岗位更新时增量重算
 
 **为什么这样设计（第一性原理）**
 1. 用户买这个产品的第一诉求是"看岗位"，不是"看仪表盘"。岗位列表即首页，零认知成本。
@@ -47,27 +47,41 @@ RecruitOps 的流程是"抓取→评分→追踪→填写→邮件"的工具链�
 
 ## 二、架构决策
 
-### 评分策略（成本控制核心）
-全量 35,000 岗位如果都走 LLM 评分，单用户成本 ≈ ¥42，不可行。
-采用"粗筛 + 精评"两段式：
+### 评分策略（复用现有算法体系，LLM 仅解析简历）
+现有代码已有一整套成熟的匹配体系，桌面端直接复用，不重新设计：
 
-**第 1 段：本地规则粗筛（零成本，毫秒级）**
-- 从简历解析出的结构化画像（专业/学历/方向/城市/管培偏好）
-- 用 SQL 筛选：专业方向匹配 + 学历达标 + 城市符合 + 管培偏好一致
-- 从 35,000 筛到 ~500-2000 个候选
-- 复用现有 scorer.py 的规则评分逻辑（10 维加权，不含 LLM）
+**LLM 环节（一次性，仅在简历解析时调用）**
+- resume_parser.py：简历文本 → DeepSeek → 结构化关键词(keywords) + 适配岗位方向(fit_directions)
+- 单用户调用 1 次 LLM，成本 ≈ ¥0.05-0.10
+- 结果缓存到本地 resume_cache/，简历未变不重算
+- 用户编辑画像后可触发第二轮 supplement_from_edits（补充方向/技能），成本 ≈ ¥0.05
 
-**第 2 段：LLM 精评（仅对候选集，有成本）**
-- 只对粗筛后的 ~500 个候选岗位调 LLM 精评
-- 每个岗位：JD 摘要 + 简历画像 → 0-100 分 + 3 条理由
-- 单用户成本 ≈ ¥0.6（500 × 1200 tokens × ¥1/M）
-- 分批异步跑（每批 20 个），前端可继续浏览，评分陆续填充
+**算法评分环节（零 LLM 成本，本地毫秒级）**
+- scorer.py：对全量 35,000 岗位跑 10 维加权评分
+  - skill(0.10) 硬技能覆盖度 + Jaccard
+  - hard_skill(0.15) 硬技能精确命中
+  - cert(0.05) 证书匹配
+  - education(0.15) 学历门槛
+  - major(0.10) 专业大类匹配
+  - city(0.05) 城市偏好
+  - role(0.15) 方向对齐（fit_directions × 岗位树归属，含方向硬门槛）
+  - soft_skill(0.05) 软技能命中
+  - competitiveness(0.10) 候选人档位 vs 企业档位（冲刺/匹配/保底）
+  - company_preference(0.10) 目标公司同行业/类型/地位加分
+- 方向硬门槛：role < 40 时总分上限 45（防止方向错配靠泛技能刷分）
+- 全量 35,000 岗位评分：本地 Python 计算，几秒内跑完，无需分批异步
+
+**评分等级（对齐现有 scorer.py 定义）**
+- ≥75：🔥 强烈推荐（绿色高亮）
+- ≥55：✅ 推荐（蓝色徽章）
+- ≥35：➖ 可申请（灰色，默认隐藏）
+- <35：❌ 不建议（默认隐藏）
 
 **评分缓存**
-- 评分结果存 SQLite jobs.llm_score / llm_reason
+- 评分结果存 SQLite jobs.llm_score / llm_reason（字段名沿用，实际是算法分）
 - 简历未变 + 岗位未更新 → 不重算
-- 岗位更新 → 只重算该岗位
-- 简历重新解析 → 全量重算（用户主动触发）
+- 岗位更新 → 增量重算该岗位
+- 简历重新解析 → 全量重算（本地秒级完成）
 
 ### 整体架构
 ```
@@ -113,12 +127,12 @@ GET  /subscription/status                           → {plan, expires_at, llm_q
 POST /subscription/activate  {code}                 → {plan, expires_at}
 
 LLM 代理（所有请求需 Bearer Token + 订阅有效）：
-POST /llm/parse-resume   {resume_text}              → {structured_profile}
-POST /llm/match-jobs      {profile, job_ids[]}      → {scores[], reasons[]}
-POST /llm/analyze-jd     {jd_text, title, profile}  → {summary, match, advice}
-POST /llm/parse-email    {email_body}               → {type, company, time, location}
+POST /llm/parse-resume   {resume_text}              → {keywords, fit_directions}
+POST /llm/supplement     {user_edited, resume_text}  → {fit_directions, hard_skills}
+POST /llm/parse-email    {email_body}               → {type, company, time, location}  # M2
 
 限流：每用户每日 LLM 调用上限 = 订阅档位配额，超出返回 429
+注：岗位匹配评分不走 LLM，走本地算法（scorer.py）
 
 数据同步：
 GET  /sync/jobs?since={timestamp}&limit=500         → {jobs[], next_cursor}
@@ -211,7 +225,8 @@ schedules (
 | 未上传简历时首页 | 看到全部岗位（按时间倒序），无评分，无推荐 Tab |
 | 上传 PDF 简历→解析 | < 15s 返回结构化画像 |
 | 简历解析后首页自动切换 | 自动显示推荐 Tab，只看 🔥超级推荐+✅推荐 岗位 |
-| 全量评分耗时 | 35,000 岗位分批评分，后台异步跑，前端可继续浏览，评分陆续填充 |
+| 全量评分耗时 | 35,000 岗位本地算法评分，秒级完成，无需等待 |
+| 单用户 LLM 成本 | 简历解析 1 次 ≈ ¥0.05-0.10，不含算法评分（零 LLM） |
 | 断网打开应用 | 能浏览本地岗位、投递记录，LLM 功能提示离线 |
 | 订阅过期后打开 | 能浏览，点评分提示续费 |
 
@@ -219,11 +234,12 @@ schedules (
 
 | 层 | 选型 | 理由 |
 |:---|:---|:---|
-| 桌面框架 | Tauri 2.0 | 安装包 ~10MB，Rust 后端性能好，原生体验 |
+| 桌面框架 | Tauri 2.0 | 安装包 ~40MB（含 Python sidecar），原生体验 |
 | 前端 | React 18 + TypeScript | 生态最大 |
 | UI | Tailwind CSS + Radix UI | 无样式组件库，定制自由度高 |
 | 状态 | Zustand | 比 Redux 轻，适合中等规模 |
 | 桌面本地数据库 | SQLite（rusqlite） | 已有 jobs.db，无缝迁移 |
+| **评分引擎** | **Python sidecar**（PyOxidizer 打包） | 复用 scorer.py + 依赖，本地毫秒级评分 |
 | 后端 | FastAPI（Python） | 直接 import 现有 llm_client/scorer/resume_parser |
 | 用户存储 | SQLite（云端） | MVP 阶段够用，后期迁 PostgreSQL |
 | 邮件发送 | Resend API | 免费版 100封/天，够验证码用 |
@@ -236,7 +252,7 @@ schedules (
 |:---|:---|
 | 用户分享账号给多人 | 单设备同时在线限制：同 token 同时只允许 1 个活跃会话，新登录踢旧 |
 | 用户抓包逆向 API | LLM 接口加 rate limit（按用户/IP）；非订阅用户 403；不暴露 DeepSeek 原始接口 |
-| LLM 成本失控 | 粗筛+精评两段式（35K→500）；每用户每日配额（订阅档位决定），超出 429；服务端全局熔断（日成本阈值）；单用户全量评分成本 ≈ ¥0.6 而非 ¥42 |
+| LLM 成本失控 | LLM 仅用于简历解析（1 次 ≈ ¥0.05-0.10），评分全走本地算法零 LLM；每用户每日配额（订阅档位决定），超出 429；服务端全局熔断（日成本阈值）；单用户全流程 LLM 成本 ≈ ¥0.10 |
 | DeepSeek 宕机 | 服务端保留 last_error 状态，桌面端用缓存评分兜底（旧分数 + "刷新失败"提示） |
 | 简历解析质量差 | 解析后用户可编辑修正；本地存储修正版本，下次匹配用修正版 |
 | 飞书源表停更 | 同步任务失败时保留本地旧数据，UI 标注"数据停止于 X 日" |
@@ -254,8 +270,17 @@ job_workbench/                  # 新桌面端项目（独立于 job_assistant �
 │   │   ├── main.rs
 │   │   ├── db.rs              # SQLite 操作
 │   │   ├── sync.rs            # 数据同步
+│   │   ├── sidecar.rs         # Python sidecar 进程管理（评分 IPC）
 │   │   └── keychain.rs        # OS keychain
+│   ├── bin/                   # PyOxidizer 打包的 Python 评分引擎
 │   └── Cargo.toml
+├── python-sidecar/            # 评分引擎 Python 源码（打包前）
+│   ├── sidecar_server.py     # stdin/stdout JSON-RPC 服务
+│   ├── scorer.py             # 复用现有
+│   ├── keyword_normalizer.py # 复用现有
+│   ├── job_tree.py           # 复用现有
+│   ├── competitiveness.py    # 复用现有
+│   └── job_db.py             # 复用现有（改为读本地 SQLite）
 ├── src/                        # React 前端
 │   ├── pages/
 │   │   ├── Jobs.tsx           # 首页=全部岗位列表+推荐视图
@@ -305,9 +330,14 @@ job_api/                        # 云端 API（复用现有 job_assistant 代码
 
 - 名称"求职搭子"为暂定，可调。备选："Offer搭子""秋招搭子""投递搭子"
 - 首页 = 全部岗位列表，简历解析后切换到推荐 Tab，无冷启动空页面问题
+- **关键技术决策已定：scorer.py 评分执行位置 = 选项 A（内嵌 Python sidecar）**
+  - Tauri sidecar 打包 Python runtime + scorer.py + 依赖（keyword_normalizer/job_tree/competitiveness/job_db）
+  - 评分在本地跑，毫秒级，可离线
+  - 简历解析走云端 API（LLM Key 不出服务器），返回画像后传给本地 sidecar 评分
+  - 安装包 ~40-50MB（含 Python runtime），可接受
 - MVP 不做邮箱功能，但 SQLite schema 已预留 email_accounts/emails/schedules 表，避免 M2 时迁移
 - Resend 免费版 100 封/天，若注册量超 100/天需升级（$20/月 5000 封）
 - 代码签名证书先用自签，正式上线前买
 - Tauri 2.0 还在 RC 阶段，若不稳定降级到 Tauri 1.x
 - 待确认：是否需要做"游客模式"（不登录可浏览岗位但不能用 LLM）—— 倾向不做，强制注册转化更高
-- 待确认：全量评分是否后台静默跑，还是需要用户点"开始匹配"按钮 —— 倾向静默跑+进度条
+- 全量评分在简历解析完成后自动触发，本地算法秒级完成，无需进度条

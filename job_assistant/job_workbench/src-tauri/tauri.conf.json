@@ -47,11 +47,7 @@
   },
   "plugins": {
     "fs": {
-      "scope": [
-        "$APPDATA/**",
-        "$DOCUMENT/**",
-        "$DOWNLOAD/**"
-      ]
+      "requireLiteralLeadingDot": false
     }
   }
 }

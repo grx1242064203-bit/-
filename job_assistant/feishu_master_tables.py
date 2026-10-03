@@ -149,17 +149,21 @@ class FeishuMasterTableService:
     def create_master_bitable(self, name: str = "27届校招汇总表") -> Dict:
         """创建总表多维表格,返回 app_token 和子表 ID。
 
-        表结构(面向用户,产品化):
-        1. 📖 使用说明 — 产品介绍 + 使用指引(首屏可见)
+        结构(面向用户,产品化):
+        1. 必读文档(docx) — 产品介绍 + 使用指引(首屏可见)
         2. 27届秋招启动公司汇总 — 公司维度
         3. 岗位-{专业大类} — 岗位维度(export_positions 动态创建)
         """
         app_token = self.client.create_bitable(name)
         logger.info(f"创建总表多维表格: {name} -> {app_token}")
 
-        # 1. 使用说明表(置于最前,作为产品入口)
-        guide_table_id = self.client.create_table(app_token, "📖 使用说明")
-        self._setup_guide_table(app_token, guide_table_id)
+        # 1. 使用说明文档(docx),口吻参考源表《使用指南》
+        guide_doc_id = self._create_guide_docx()
+        self.client.set_public_share(guide_doc_id, doc_type="docx")
+        guide_url = self.client.get_share_url(guide_doc_id, doc_type="docx")
+        logger.info(f"使用说明文档: {guide_url}")
+        # 注意: 将文档挂为总表标签页需 base:block:create 权限,
+        # 若未开通需手动在飞书 UI 中「+」添加文档并粘贴链接。
 
         # 2. 公司总表
         company_table_id = self.client.create_table(app_token, TABLE_COMPANIES)
@@ -175,133 +179,125 @@ class FeishuMasterTableService:
 
         return {
             "app_token": app_token,
-            "guide_table_id": guide_table_id,
+            "guide_doc_id": guide_doc_id,
+            "guide_url": guide_url,
             "company_table_id": company_table_id,
             "position_table_id": "",  # 岗位分表动态创建,此 ID 仅作同步开关
             "vl_failure_table_id": "",  # VL 失败表已移除
             "share_url": share_url,
         }
 
-    def _setup_guide_table(self, app_token: str, table_id: str):
-        """设置使用说明表:创建字段并写入产品指引内容。
+    def _create_guide_docx(self) -> str:
+        """创建使用说明文档(docx),返回 document_id。
 
         口吻参考源表《27届实习/秋招/春招表格使用指南》:
         直接对学生说话、用真实提问开头、给可操作的筛选技巧、
-        关键提醒单独成段、分编号小节、大量举例。
+        关键提醒加粗突出、分编号小节、大量举例。
         """
-        guide_fields = [
-            {"name": "板块", "type": 3, "property": {"options": [
-                {"name": "开篇"}, {"name": "怎么找岗位"}, {"name": "字段说明"},
-                {"name": "更新机制"}, {"name": "投递提醒"},
-            ]}},
-            {"name": "标题", "type": 1},
-            {"name": "内容", "type": 1},
-        ]
-        self._create_fields(app_token, table_id, guide_fields, "标题")
+        def el(content, bold=False):
+            style = {}
+            if bold:
+                style["bold"] = True
+            return {"text_run": {"content": content, "text_element_style": style}}
 
-        rows = [
-            {"板块": "开篇", "标题": "先别只盯“专业对口”",
-             "内容": "很多同学一打开表格，第一反应是搜自己的专业：\n"
-                     "「数学专业能投什么？」\n"
-                     "「计算机是不是只能搜计算机岗？」\n"
-                     "「JD 没写我的专业，是不是就不能投？」\n\n"
-                     "其实这样很容易漏掉机会。\n"
-                     "企业校招大多数时候不是在找「某个专业的人」，"
-                     "而是在找「能做某类岗位的人」。\n\n"
-                     "所以这份表格更建议按 岗位分类、城市、学历、"
-                     "截止时间 来看，而不是只按专业名搜索。"},
-            {"板块": "开篇", "标题": "这份表格适合谁看？",
-             "内容": "如果你有下面这些情况，可以先从这份表格开始筛选：\n"
-                        "• 不确定自己能投哪些岗位\n"
-                        "• 想看哪些公司正在秋招\n"
-                        "• 想按城市、按专业大类找岗位\n"
-                        "• 想找管培生、不限专业的岗位\n"
-                        "• 想看岗位、截止时间、工作地点、投递入口\n"
-                        "• 不想再被「专业对口」几个字卡住"},
-            {"板块": "怎么找岗位", "标题": "01 先按专业大类切入",
-             "内容": "左侧「岗位-工科 / 商科 / 文科 / 理科 / 医科 / 艺术 / 农学 / 不限」"
-                        "是按岗位适配的专业大类拆分的。\n\n"
-                        "不知道自己专业属于哪类？可以这样判断：\n"
-                        "• 工科：机械、电子、计算机、自动化、土木、化工等\n"
-                        "• 商科：金融、会计、市场、管理、经济等\n"
-                        "• 文科：语言、新闻、法学、教育、历史等\n"
-                        "• 不确定时，先看「岗位-不限」，很多岗位对专业没严格限制"},
-            {"板块": "怎么找岗位", "标题": "02 用「岗位分类」缩小范围",
-             "内容": "确定大类后，用表头筛选器选「岗位分类」。\n"
-                        "比如工科同学可以看：开发、算法、硬件电子、芯片半导体、制造与质量。\n"
-                        "商科同学可以看：金融、商业(销售与市场)、职能、运营与供应链。\n\n"
-                        "想找不限专业的，可以看：管培生、产品、运营、人力资源。\n\n"
-                        "搜岗位时尽量搜岗位关键词（开发、产品、运营、设计…），"
-                        "不要只搜专业名称。"},
-            {"板块": "怎么找岗位", "标题": "03 城市怎么筛？用「包含」",
-             "内容": "城市筛选最容易漏机会。\n\n"
-                        "不要只筛：城市 = 北京\n"
-                        "因为很多公司会写「北京/上海/广州/深圳」或「全国各地」。\n\n"
-                        "筛城市时，建议用「包含」而不是「等于」，"
-                        "并且把「全国各地」一起看。\n\n"
-                        "举例：\n"
-                        "• 想找北京岗位：城市包含「北京」+「全国各地」\n"
-                        "• 想找南京岗位：城市包含「南京」+「江苏」+「全国各地」"},
-            {"板块": "怎么找岗位", "标题": "04 公司总表怎么看",
-             "内容": "「27届秋招启动公司汇总」是按公司维度汇总的。\n\n"
-                        "适合这样用：\n"
-                        "• 按「公司行业」筛你想去的行业（互联网/金融/制造…）\n"
-                        "• 按「公司类型」筛央企/国企/外企/民企\n"
-                        "• 「招聘岗位」列看这家公司最新招哪些方向\n"
-                        "• 点「网申链接」直接进官方投递页\n\n"
-                        "不确定能投什么时，先扫一遍公司总表，"
-                        "看到感兴趣的公司再点进去看具体岗位。"},
-            {"板块": "字段说明", "标题": "岗位表字段怎么看",
-             "内容": "• 岗位标题：岗位名-公司名，一眼看清是什么岗\n"
-                        "• 网申更新：这条信息最近更新的日期，越近越新鲜\n"
-                        "• 公司行业 / 公司类型：行业和企业性质\n"
-                        "• 岗位分类 / 岗位子类：岗位所属类别，可筛选\n"
-                        "• 最低学历：岗位要求的学历门槛\n"
-                        "• 专业大类：这个岗位适配的专业方向\n"
-                        "• 城市：工作地点（一个岗位可能有多个城市）\n"
-                        "• 硬技能 / 关键词：岗位技能标签，快速判断匹配度\n"
-                        "• 是否管培：是不是管培生项目\n"
-                        "• 投递链接：官方网申入口，点进去直接投\n"
-                        "• 公告链接：原始招聘公告，看详细 JD"},
-            {"板块": "字段说明", "标题": "公司表字段怎么看",
-             "内容": "• 公司名称 / 行业 / 公司类型：基础信息\n"
-                        "• 网申更新：最新公告更新日期\n"
-                        "• 招聘类型 / 招聘对象：校招类型和面向届数\n"
-                        "• 招聘地点：工作城市（多选）\n"
-                        "• 学历要求：最低学历门槛\n"
-                        "• 截止日期：网申截止（写「招满即止」表示没明确截止，越早投越好）\n"
-                        "• 招聘岗位：最新公告的岗位方向\n"
-                        "• 网申链接 / 公告链接：官方入口"},
-            {"板块": "更新机制", "标题": "数据从哪来、多久更一次",
-             "内容": "数据来自公开招聘公告，每日凌晨自动抓取、结构化解析后写入本表。\n\n"
-                        "岗位按「公司 + 岗位名 + 工作城市」去重，同一个岗位只保留一条。\n\n"
-                        "每日更新一次，新增当日发布的秋招岗位和公司。历史数据持续保留。"},
-            {"板块": "投递提醒", "标题": "投递前一定要再确认这些",
-             "内容": "表格适合快速筛选，但最终投递前，"
-                        "点进「投递链接」或「公告链接」看清楚：\n"
-                        "• 具体岗位要求和 JD\n"
-                        "• 网申截止时间\n"
-                        "• 是否有测评/笔试\n"
-                        "• 投递城市是否可选\n"
-                        "• 简历投递方式\n"
-                        "• 岗位是否招满即止\n\n"
-                        "有些公司流程很快，入口开着开着就关了。"
-                        "不要一直等「准备好了再投」。"},
-            {"板块": "投递提醒", "标题": "最后提醒",
-             "内容": "投递岗位不是只比谁准备得最完美，"
-                        "也很看谁开始得更早、投得更持续、愿意多试几个方向。\n\n"
-                        "如果你现在还不知道自己能投什么，先别卡在专业名称里。"
-                        "可以先从岗位关键词开始看：\n"
-                        "运营、产品、市场、销售、人力、管培生、开发、研发、测试、设计、项目、供应链……\n\n"
-                        "先看到真实岗位，再判断自己能不能匹配。"
-                        "投起来之后，方向会越来越清楚。"},
+        def para(elements):
+            return {"block_type": 2, "text": {"elements": elements, "style": {}}}
+        def h1(text):
+            return {"block_type": 3, "heading1": {"elements": [el(text, bold=True)], "style": {}}}
+        def h2(text):
+            return {"block_type": 4, "heading2": {"elements": [el(text, bold=True)], "style": {}}}
+        def bullet(text):
+            return {"block_type": 12, "bullet": {"elements": [el(text)], "style": {}}}
+        def blank():
+            return {"block_type": 2, "text": {"elements": [el("")], "style": {}}}
+        def callout(text):
+            return {"block_type": 2, "text": {"elements": [el("⚡ " + text, bold=True)], "style": {}}}
+
+        blocks = [
+            h1("27届秋招岗位汇总表 使用指南"),
+            callout("先别只盯「专业对口」。秋招投递更重要的是：先看岗位需要什么能力，再判断自己能不能匹配。"),
+            blank(),
+            para([el("很多同学一打开表格，第一反应是搜自己的专业：")]),
+            bullet("「数学专业能投什么？」"),
+            bullet("「计算机是不是只能搜计算机岗？」"),
+            bullet("「JD 没写我的专业，是不是就不能投？」"),
+            para([el("其实这样很容易漏掉机会。")]),
+            para([el("企业校招大多数时候不是在找「某个专业的人」，而是在找「能做某类岗位的人」。"
+                    "所以这份表格更建议按 "), el("岗位分类、城市、学历、截止时间", bold=True),
+                  el(" 来看，而不是只按专业名搜索。")]),
+            blank(),
+            h2("01 这份表格适合谁看？"),
+            para([el("如果你有下面这些情况，可以先从这份表格开始筛选：")]),
+            bullet("不确定自己能投哪些岗位"),
+            bullet("想看哪些公司正在秋招"),
+            bullet("想按城市、按专业大类找岗位"),
+            bullet("想找管培生、不限专业的岗位"),
+            bullet("想看岗位、截止时间、工作地点、投递入口"),
+            bullet("不想再被「专业对口」几个字卡住"),
+            blank(),
+            h2("02 先按专业大类切入"),
+            para([el("左侧「岗位-工科 / 商科 / 文科 / 理科 / 医科 / 艺术 / 农学 / 不限」"
+                    "是按岗位适配的专业大类拆分的。")]),
+            para([el("不知道自己专业属于哪类？可以这样判断：")]),
+            bullet("工科：机械、电子、计算机、自动化、土木、化工等"),
+            bullet("商科：金融、会计、市场、管理、经济等"),
+            bullet("文科：语言、新闻、法学、教育、历史等"),
+            bullet("不确定时，先看「岗位-不限」，很多岗位对专业没严格限制"),
+            blank(),
+            h2("03 用「岗位分类」缩小范围"),
+            para([el("确定大类后，用表头筛选器选「岗位分类」。")]),
+            bullet("工科可看：开发、算法、硬件电子、芯片半导体、制造与质量"),
+            bullet("商科可看：金融、商业(销售与市场)、职能、运营与供应链"),
+            bullet("不限专业可看：管培生、产品、运营、人力资源"),
+            para([el("搜岗位时尽量搜岗位关键词（开发、产品、运营、设计…），不要只搜专业名称。")]),
+            blank(),
+            h2("04 城市怎么筛？用「包含」"),
+            para([el("城市筛选最容易漏机会。不要只筛「城市 = 北京」，"
+                    "因为很多公司会写「北京/上海/广州/深圳」或「全国各地」。")]),
+            callout("筛城市时，建议用「包含」而不是「等于」，并且把「全国各地」一起看。"),
+            bullet("想找北京岗位：城市包含「北京」+「全国各地」"),
+            bullet("想找南京岗位：城市包含「南京」+「江苏」+「全国各地」"),
+            blank(),
+            h2("05 公司总表怎么看"),
+            para([el("「27届秋招启动公司汇总」按公司维度汇总，适合这样用：")]),
+            bullet("按「公司行业」筛想去的行业（互联网/金融/制造…）"),
+            bullet("按「公司类型」筛央企/国企/外企/民企"),
+            bullet("「招聘岗位」列看这家公司最新招哪些方向"),
+            bullet("点「网申链接」直接进官方投递页"),
+            para([el("不确定能投什么时，先扫一遍公司总表，看到感兴趣的公司再点进去看具体岗位。")]),
+            blank(),
+            h2("06 投递前一定要再确认这些"),
+            para([el("表格适合快速筛选，最终投递前点进「投递链接」或「公告链接」看清楚：")]),
+            bullet("具体岗位要求和 JD"),
+            bullet("网申截止时间 / 是否有测评笔试"),
+            bullet("投递城市是否可选 / 简历投递方式"),
+            bullet("岗位是否招满即止"),
+            para([el("有些公司流程很快，入口开着开着就关了。不要一直等「准备好了再投」。")]),
+            blank(),
+            h2("07 最后提醒"),
+            para([el("投递岗位不是只比谁准备得最完美，也很看谁开始得更早、"
+                    "投得更持续、愿意多试几个方向。")]),
+            para([el("如果你现在还不知道自己能投什么，先别卡在专业名称里。"
+                    "可以先从岗位关键词开始看：")]),
+            callout("运营、产品、市场、销售、人力、管培生、开发、研发、测试、设计、项目、供应链……"),
+            para([el("先看到真实岗位，再判断自己能不能匹配。投起来之后，方向会越来越清楚。")]),
         ]
-        records = [
-            {"板块": r["板块"], "标题": r["标题"], "内容": r["内容"]}
-            for r in rows
-        ]
-        self.client.batch_create_records(app_token, table_id, records)
-        logger.info(f"使用说明表写入 {len(records)} 条指引")
+
+        doc = self.client._request("POST", "/open-apis/docx/v1/documents",
+                                   json_body={"title": "27届秋招岗位汇总表 使用指南"})
+        doc_id = doc["document"]["document_id"]
+
+        BATCH = 40
+        for i in range(0, len(blocks), BATCH):
+            chunk = blocks[i:i + BATCH]
+            self.client._request(
+                "POST",
+                f"/open-apis/docx/v1/documents/{doc_id}/blocks/{doc_id}/children",
+                json_body={"children": chunk},
+            )
+        logger.info(f"使用说明文档创建完成,共 {len(blocks)} 块: {doc_id}")
+        return doc_id
+
 
     def _create_fields(self, app_token: str, table_id: str,
                        fields: List[Dict], primary_field: str):
@@ -901,11 +897,11 @@ def cleanup_master_tables() -> Dict:
     return result
 
 
-def add_guide_table_to_master() -> str:
-    """给已存在的总表添加「📖 使用说明」表(产品化入口)。
+def add_guide_doc_to_master() -> str:
+    """给已存在的总表创建使用说明文档(docx)并设为公开。
 
-    如果已存在同名表则跳过创建,直接复用。
-    返回 guide_table_id。
+    返回文档分享链接。注意:将文档挂为总表标签页需 base:block:create 权限,
+    若未开通需手动在飞书 UI 中「+」添加文档并粘贴返回的链接。
     """
     from config import settings
     service = FeishuMasterTableService()
@@ -915,6 +911,8 @@ def add_guide_table_to_master() -> str:
         logger.warning("MASTER_APP_TOKEN 未配置")
         return ""
 
-    guide_table_id = client.get_or_create_table(app_token, "📖 使用说明")
-    service._setup_guide_table(app_token, guide_table_id)
-    return guide_table_id
+    doc_id = service._create_guide_docx()
+    client.set_public_share(doc_id, doc_type="docx")
+    url = client.get_share_url(doc_id, doc_type="docx")
+    logger.info(f"使用说明文档: {url}")
+    return url

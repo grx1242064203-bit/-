@@ -194,7 +194,33 @@ impl SyncService {
                 return Err(SyncError(format!("http {status}: {body}")));
             }
 
-            let page: SyncJobsResponse = resp.json().await?;
+            // 调试：先拿文本，打印响应状态/头/长度，再解析 JSON。
+            // 定位 "error decoding response body" 的根因。
+            let status = resp.status();
+            let content_encoding = resp
+                .headers()
+                .get("content-encoding")
+                .and_then(|v| v.to_str().ok())
+                .unwrap_or("<none>")
+                .to_string();
+            let content_length = resp
+                .headers()
+                .get("content-length")
+                .and_then(|v| v.to_str().ok())
+                .unwrap_or("<none>")
+                .to_string();
+            let body_text = resp.text().await?;
+            log::info!(
+                "sync_jobs resp: status={status}, content-encoding={content_encoding}, \
+                 content-length={content_length}, body_len={}",
+                body_text.len()
+            );
+            if body_text.len() < 500 {
+                log::info!("sync_jobs body: {body_text}");
+            } else {
+                log::info!("sync_jobs body(head 500): {}", &body_text[..500]);
+            }
+            let page: SyncJobsResponse = serde_json::from_str(&body_text)?;
 
             for rj in page.jobs {
                 // 推进游标：取本批 max(updated_at)（与云端 (updated_at, job_id) 复合排序一致——

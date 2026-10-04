@@ -215,11 +215,9 @@ impl SyncService {
                  content-length={content_length}, body_len={}",
                 body_text.len()
             );
-            if body_text.len() < 500 {
-                log::info!("sync_jobs body: {body_text}");
-            } else {
-                log::info!("sync_jobs body(head 500): {}", &body_text[..500]);
-            }
+            // 调试：打印响应头 500 字符（按 char 边界截取，避免 panic）。
+            let head: String = body_text.chars().take(500).collect();
+            log::info!("sync_jobs body(head 500 chars): {head}");
             let page: SyncJobsResponse = serde_json::from_str(&body_text)?;
 
             for rj in page.jobs {

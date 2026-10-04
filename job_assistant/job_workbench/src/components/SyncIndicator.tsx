@@ -26,12 +26,12 @@ export default function SyncIndicator() {
   if (isSyncing) {
     const synced = syncProgress?.synced ?? 0;
     return (
-      <div className="flex items-center gap-2 rounded-md bg-brand/10 px-3 py-1.5 text-sm text-brand">
+      <div className="flex items-center gap-2 rounded-md bg-primary-50 px-3 py-1.5 text-sm text-primary">
         <span
-          className="inline-block h-3 w-3 animate-spin rounded-full border-2 border-brand border-t-transparent"
+          className="inline-block h-3 w-3 animate-spin rounded-full border-2 border-primary border-t-transparent"
           aria-hidden="true"
         />
-        {synced > 0 ? `正在同步岗位...（已写入 ${synced} 条）` : "正在同步岗位..."}
+        {synced > 0 ? `正在同步...（已写入 ${synced} 条）` : "正在同步..."}
       </div>
     );
   }

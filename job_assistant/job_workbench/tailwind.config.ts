@@ -1,40 +1,74 @@
 import type { Config } from "tailwindcss";
 
-// 暖橙色主题：主色 #F97316，深石板 #0F172A，米白底 #FAFAF9，圆角 16px+。
+// 求职搭子 · HR Dashboard 设计系统：深空蓝主色 + 暖橙强调。
 // 颜色通过 CSS 变量注入（见 src/index.css），Tailwind 仅做 extend 映射。
 export default {
   content: ["./index.html", "./src/**/*.{ts,tsx}"],
   theme: {
     extend: {
       colors: {
+        primary: {
+          DEFAULT: "var(--color-primary)",
+          50: "var(--color-primary-50)",
+          100: "var(--color-primary-100)",
+          600: "var(--color-primary-600)",
+        },
+        accent: {
+          DEFAULT: "var(--color-accent)",
+          100: "var(--color-accent-100)",
+          600: "var(--color-accent-600)",
+        },
+        success: "var(--color-success)",
+        warning: "var(--color-warning)",
+        danger: "var(--color-danger)",
+        gray: {
+          50: "var(--color-gray-50)",
+          100: "var(--color-gray-100)",
+          200: "var(--color-gray-200)",
+          400: "var(--color-gray-400)",
+          500: "var(--color-gray-500)",
+          700: "var(--color-gray-700)",
+          900: "var(--color-gray-900)",
+        },
+        sidebar: "var(--color-sidebar)",
+        surface: "var(--color-surface)",
+        // 向后兼容：旧代码使用的颜色名映射到新设计系统
         brand: {
-          DEFAULT: "var(--color-brand)",
-          50: "var(--color-brand-50)",
-          100: "var(--color-brand-100)",
-          500: "var(--color-brand)",
-          600: "var(--color-brand-600)",
-          700: "var(--color-brand-700)",
+          DEFAULT: "var(--color-accent)",
+          50: "var(--color-accent-100)",
+          100: "var(--color-accent-100)",
+          500: "var(--color-accent)",
+          600: "var(--color-accent-600)",
+          700: "var(--color-accent-600)",
         },
-        slate: {
-          deep: "var(--color-slate-deep)",
+        "slate-deep": "var(--color-gray-900)",
+        cream: "var(--color-gray-50)",
+        orange: {
+          50: "var(--color-accent-100)",
+          100: "var(--color-accent-100)",
+          500: "var(--color-accent)",
+          600: "var(--color-accent-600)",
+          700: "var(--color-accent-600)",
         },
-        cream: "var(--color-cream)",
       },
       borderRadius: {
-        card: "16px",
-        xl: "16px",
-        "2xl": "20px",
-        "3xl": "24px",
+        sm: "var(--radius-sm)",
+        md: "var(--radius-md)",
+        lg: "var(--radius-lg)",
       },
       boxShadow: {
-        card: "0 8px 32px -12px rgba(15, 23, 42, 0.18)",
+        sm: "var(--shadow-sm)",
+        md: "var(--shadow-md)",
+        lg: "var(--shadow-lg)",
       },
       fontFamily: {
         sans: [
-          "Inter",
+          "-apple-system",
+          "BlinkMacSystemFont",
+          "Segoe UI",
           "PingFang SC",
+          "Hiragino Sans GB",
           "Microsoft YaHei",
-          "system-ui",
           "sans-serif",
         ],
       },

@@ -37,6 +37,49 @@ JOB_FIELDS: tuple[str, ...] = (
 DEFAULT_PAGE_SIZE = 500
 MAX_PAGE_SIZE = 1000
 
+# 公司总表字段（对齐飞书 COMPANY_FIELDS）
+COMPANY_FIELDS: tuple[str, ...] = (
+    "company_id",
+    "company_name",
+    "industry",
+    "company_type",
+    "recruit_type",
+    "recruit_target",
+    "location",
+    "education_req",
+    "deadline",
+    "positions_count",
+    "apply_url",
+    "announcement_url",
+    "last_updated",
+)
+
+# 公司视图：companies + announcements 汇总（每个公司取最新公告）
+_COMPANIES_VIEW_SQL = """
+CREATE VIEW IF NOT EXISTS company_overview AS
+SELECT
+    CAST(c.id AS TEXT) AS company_id,
+    c.name AS company_name,
+    COALESCE(c.industry, '') AS industry,
+    COALESCE(c.company_type, '') AS company_type,
+    COALESCE(a.recruit_type, '') AS recruit_type,
+    COALESCE(a.recruit_target, '') AS recruit_target,
+    COALESCE(a.location, '') AS location,
+    COALESCE(a.education_req, '') AS education_req,
+    a.deadline AS deadline,
+    COALESCE(a.positions_count, 0) AS positions_count,
+    COALESCE(a.apply_url, '') AS apply_url,
+    COALESCE(a.announcement_url, '') AS announcement_url,
+    COALESCE(c.last_updated, '') AS last_updated
+FROM companies c
+LEFT JOIN (
+    SELECT company_id, MAX(last_modified) AS max_modified
+    FROM announcements
+    GROUP BY company_id
+) latest ON c.id = latest.company_id
+LEFT JOIN announcements a ON a.company_id = c.id AND a.last_modified = latest.max_modified
+"""
+
 # jobs.db 没有物理 jobs 表时,从三表 JOIN 出 spec 字段的视图定义。
 _JOBS_VIEW_SQL = """
 CREATE VIEW IF NOT EXISTS jobs AS
@@ -114,6 +157,7 @@ class SyncService:
                     pass
             try:
                 conn.execute(_JOBS_VIEW_SQL)
+                conn.execute(_COMPANIES_VIEW_SQL)
                 conn.commit()
             except sqlite3.Error:
                 # 依赖表不存在等,忽略;调用方需自行保证 jobs 表存在
@@ -218,4 +262,101 @@ class SyncService:
         return {
             "total": row["total"] if row else 0,
             "updated_at": (row["updated_at"] if row and row["updated_at"] else ""),
+        }
+
+    def get_companies(
+        self,
+        limit: int = 200,
+        offset: int = 0,
+        industry: str = "",
+        company_type: str = "",
+        keyword: str = "",
+    ) -> dict:
+        """分页拉取公司总览（对齐飞书公司表字段）。
+
+        Parameters
+        ----------
+        limit: 每页数量，默认 200。
+        offset: 偏移量。
+        industry: 行业筛选（空串=不限）。
+        company_type: 公司类型筛选（空串=不限）。
+        keyword: 公司名关键词搜索。
+        """
+        if limit < 1:
+            limit = 200
+        if limit > MAX_PAGE_SIZE:
+            limit = MAX_PAGE_SIZE
+
+        where = []
+        params: list = []
+        if industry:
+            where.append("industry = ?")
+            params.append(industry)
+        if company_type:
+            where.append("company_type = ?")
+            params.append(company_type)
+        if keyword:
+            where.append("company_name LIKE ?")
+            params.append(f"%{keyword}%")
+
+        where_sql = f"WHERE {' AND '.join(where)}" if where else ""
+        fields = ", ".join(COMPANY_FIELDS)
+
+        conn = self._connect()
+        try:
+            total_row = conn.execute(
+                f"SELECT COUNT(*) AS c FROM company_overview {where_sql}", params
+            ).fetchone()
+            total = total_row["c"] if total_row else 0
+
+            rows = conn.execute(
+                f"SELECT {fields} FROM company_overview {where_sql} "
+                "ORDER BY last_updated DESC LIMIT ? OFFSET ?",
+                [*params, limit, offset],
+            ).fetchall()
+        finally:
+            conn.close()
+
+        companies = [{f: r[f] for f in COMPANY_FIELDS} for r in rows]
+        return {"companies": companies, "total": total, "limit": limit, "offset": offset}
+
+    def get_company_stats(self) -> dict:
+        """公司维度统计：总数 + 行业分布 + 类型分布。"""
+        conn = self._connect()
+        try:
+            total_row = conn.execute(
+                "SELECT COUNT(*) AS c FROM company_overview"
+            ).fetchone()
+            total = total_row["c"] if total_row else 0
+
+            industry_rows = conn.execute(
+                "SELECT industry, COUNT(*) AS c FROM company_overview "
+                "WHERE industry != '' GROUP BY industry ORDER BY c DESC LIMIT 12"
+            ).fetchall()
+            type_rows = conn.execute(
+                "SELECT company_type, COUNT(*) AS c FROM company_overview "
+                "WHERE company_type != '' GROUP BY company_type ORDER BY c DESC"
+            ).fetchall()
+        finally:
+            conn.close()
+
+        return {
+            "total": total,
+            "industries": [{"name": r["industry"], "count": r["c"]} for r in industry_rows],
+            "types": [{"name": r["company_type"], "count": r["c"]} for r in type_rows],
+        }
+
+    def get_job_categories(self) -> dict:
+        """岗位分类统计（用于侧边栏导航）。"""
+        conn = self._connect()
+        try:
+            rows = conn.execute(
+                "SELECT category, COUNT(*) AS c FROM jobs "
+                "WHERE category != '' GROUP BY category ORDER BY c DESC"
+            ).fetchall()
+        finally:
+            conn.close()
+
+        return {
+            "categories": [{"name": r["category"], "count": r["c"]} for r in rows],
         }

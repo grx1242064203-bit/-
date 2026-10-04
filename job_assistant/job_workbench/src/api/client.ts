@@ -126,7 +126,13 @@ export class ApiClient {
       headers: this.buildHeaders(init),
     });
 
-    if (res.status === 401 && allowRetry) {
+    // 登录/注册等认证接口的 401 是"账号密码错误"，不是 token 过期，
+    // 直接透传后端错误信息，不走 refresh + 跳转登录逻辑。
+    const isAuthEndpoint = pathWithQuery.startsWith("/api/v1/auth/login") ||
+      pathWithQuery.startsWith("/api/v1/auth/register") ||
+      pathWithQuery.startsWith("/api/v1/auth/verify-email");
+
+    if (res.status === 401 && !isAuthEndpoint && allowRetry) {
       const refreshed = await this.tryRefresh();
       if (refreshed) return this.request<T>(pathWithQuery, init, false);
       this.accessor.set(null);

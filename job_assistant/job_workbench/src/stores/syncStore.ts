@@ -73,6 +73,8 @@ export const useSyncStore = create<SyncState>((set, get) => ({
       return result;
     } catch (e) {
       const msg = e instanceof Error ? e.message : String(e);
+      // 打印到控制台便于排查（SyncIndicator 只显示通用文案）。
+      console.error("[syncStore] syncJobs failed:", e);
       set({ isSyncing: false, error: msg, syncProgress: null });
       return null;
     }
@@ -86,6 +88,7 @@ export const useSyncStore = create<SyncState>((set, get) => ({
     } catch (e) {
       // 未登录或网络错误：不抛错打断 UI，落 error 让 SyncIndicator 显示重试。
       const msg = e instanceof Error ? e.message : String(e);
+      console.error("[syncStore] getSyncStatus failed:", e);
       set({ error: msg });
       return null;
     }

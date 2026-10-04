@@ -40,6 +40,10 @@ CREATE TABLE IF NOT EXISTS applications (
 );
 CREATE INDEX IF NOT EXISTS idx_app_user ON applications(user_id);
 CREATE INDEX IF NOT EXISTS idx_app_status ON applications(status);
+"""
+
+# 依赖迁移列的索引（必须在 _migrate 补完列后再创建）
+_INDEX_AFTER_MIGRATE = """
 CREATE INDEX IF NOT EXISTS idx_app_link ON applications(link_type, link_id);
 """
 
@@ -68,6 +72,8 @@ def _connect() -> sqlite3.Connection:
     conn.execute("PRAGMA journal_mode=WAL")
     conn.executescript(_SCHEMA_SQL)
     _migrate(conn)
+    # 补列完成后再创建依赖新列的索引（旧表升级时 link_type/link_id 还不存在）
+    conn.executescript(_INDEX_AFTER_MIGRATE)
     return conn
 
 

@@ -48,6 +48,13 @@ def list_jobs_page(
     category: str = Query("", description="岗位分类筛选"),
     keyword: str = Query("", description="关键词搜索"),
     city: str = Query("", description="城市筛选"),
+    industry: str = Query("", description="行业筛选"),
+    company_type: str = Query("", description="公司类型筛选"),
+    subcategory: str = Query("", description="岗位子类筛选"),
+    min_education: str = Query("", description="最低学历筛选"),
+    is_mt: str = Query("", description="是否管培(1/0)"),
+    major_category: str = Query("", description="专业大类筛选"),
+    difficulty: str = Query("", description="难度筛选"),
 ) -> dict:
     """按 offset 分页拉取岗位列表（供前端表格分页）。"""
     return SyncService().get_jobs_page(
@@ -56,6 +63,13 @@ def list_jobs_page(
         category=category,
         keyword=keyword,
         city=city,
+        industry=industry,
+        company_type=company_type,
+        subcategory=subcategory,
+        min_education=min_education,
+        is_mt=is_mt,
+        major_category=major_category,
+        difficulty=difficulty,
     )
 
 
@@ -65,6 +79,12 @@ def stats() -> dict:
     return SyncService().get_stats()
 
 
+@router.get("/stats-overview")
+def stats_overview() -> dict:
+    """公司页/岗位页统计卡片汇总：总数、今日/近7日新增、分布、即将截止。"""
+    return SyncService().get_stats_overview()
+
+
 @router.get("/companies")
 def list_companies(
     limit: int = Query(200, ge=1, le=MAX_PAGE_SIZE),
@@ -72,6 +92,8 @@ def list_companies(
     industry: str = Query("", description="行业筛选"),
     company_type: str = Query("", description="公司类型筛选"),
     keyword: str = Query("", description="公司名关键词"),
+    recruit_type: str = Query("", description="招聘类型筛选"),
+    education_req: str = Query("", description="学历要求筛选"),
 ) -> dict:
     """分页拉取公司总览（对齐飞书公司表字段）。"""
     return SyncService().get_companies(
@@ -80,6 +102,8 @@ def list_companies(
         industry=industry,
         company_type=company_type,
         keyword=keyword,
+        recruit_type=recruit_type,
+        education_req=education_req,
     )
 
 

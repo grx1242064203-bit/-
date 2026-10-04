@@ -1,311 +1,450 @@
-// 岗位列表页面：表格形式 + 左侧岗位分类导航，字段对齐飞书岗位表。Crextio 暖主题。
-import { useEffect, useState } from "react";
+// 岗位列表页面：字段对齐飞书「27届校招汇总表」。
+// 功能：统计卡片、列筛选（多选）、列显隐（默认全显示）、首列固定、长文本截断、彩色标签、链接。
+import { useEffect, useRef, useState, type ReactNode } from "react";
+import { getStatsOverview, type StatsOverview } from "../api/companies";
 import { useJobsStore } from "../stores/jobsStore";
-import { getCategories, type JobCategory } from "../api/categories";
-import { createApplication, type AppStatus } from "../api/applications";
-import type { Job } from "../api/jobs";
+import { colorMap, pillClass } from "../utils/colorMap";
+import { openExternalUrl } from "../utils/link";
+import Truncate from "../components/Truncate";
+import ColumnFilter from "../components/ColumnFilter";
+import ColumnSettings, { type ColumnDef } from "../components/ColumnSettings";
+
+/** 列定义（对齐飞书源表顺序） */
+const COLUMNS: ColumnDef[] = [
+  { key: "title", label: "岗位标题" },
+  { key: "company", label: "公司" },
+  { key: "industry", label: "行业" },
+  { key: "company_type", label: "公司类型" },
+  { key: "category", label: "岗位分类" },
+  { key: "subcategory", label: "岗位子类" },
+  { key: "city", label: "城市" },
+  { key: "min_education", label: "最低学历" },
+  { key: "is_mt", label: "管培" },
+  { key: "major_category", label: "专业大类" },
+  { key: "major_required", label: "专业要求" },
+  { key: "hard_skills", label: "硬技能" },
+  { key: "keywords", label: "关键词" },
+  { key: "jd_summary", label: "JD摘要" },
+  { key: "difficulty", label: "难度" },
+  { key: "updated_at", label: "发布时间" },
+  { key: "deadline", label: "截止时间" },
+  { key: "links", label: "链接" },
+];
+
+/** 分类列（有筛选选项） */
+const FILTER_COLUMNS = new Set([
+  "industry",
+  "company_type",
+  "category",
+  "subcategory",
+  "min_education",
+  "is_mt",
+  "major_category",
+  "difficulty",
+]);
 
 export default function Jobs() {
-  const { jobs, isLoading, error, hasMore, loadJobs, loadMore, loadStats } =
-    useJobsStore();
-  const [categories, setCategories] = useState<JobCategory[]>([]);
-  const [activeCategory, setActiveCategory] = useState("");
-  const [keyword, setKeyword] = useState("");
-  const [city, setCity] = useState("");
+  const {
+    jobs,
+    isLoading,
+    isLoadingMore,
+    error,
+    keyword,
+    columnFilters,
+    total,
+    hasMore,
+    loadJobs,
+    setKeyword,
+    setColumnFilter,
+    clearAllFilters,
+    loadMore,
+  } = useJobsStore();
 
+  const [stats, setStats] = useState<StatsOverview | null>(null);
+  const [visibleKeys, setVisibleKeys] = useState<string[]>(COLUMNS.map((c) => c.key));
+  const scrollRef = useRef<HTMLDivElement>(null);
+  const [kwInput, setKwInput] = useState("");
+
+  // 加载统计（含筛选选项）
+  useEffect(() => {
+    getStatsOverview().then(setStats).catch(() => {});
+  }, []);
+
+  // 首次加载
   useEffect(() => {
     void loadJobs();
-    void loadStats();
-    void getCategories()
-      .then((res) => setCategories(res.categories))
-      .catch(() => {});
-  }, [loadJobs, loadStats]);
+  }, [loadJobs]);
 
-  const handleCategoryClick = (cat: string) => {
-    setActiveCategory(cat);
-    void loadJobs({ category: cat || undefined });
+  // 滚动加载更多
+  const handleScroll = () => {
+    const el = scrollRef.current;
+    if (!el) return;
+    if (el.scrollTop + el.clientHeight >= el.scrollHeight - 200) {
+      void loadMore();
+    }
   };
 
-  const handleSearch = () => {
-    void loadJobs({
-      category: activeCategory || undefined,
-      keyword: keyword || undefined,
-      city: city === "全国各地" ? undefined : city,
-    });
-  };
+  const hasFilter =
+    keyword.trim() !== "" || Object.values(columnFilters).some((v) => v.length);
 
-  // 热门城市列表
-  const CITIES = ["全国各地", "北京", "上海", "深圳", "广州", "杭州", "成都", "南京", "武汉", "西安"];
+  const filterOptions = stats?.jobs.filter_options ?? {};
+
+  /** 把后端 filter_options 的值统一转成 {label, value} */
+  const getOptions = (key: string) => {
+    const raw = filterOptions[key] ?? [];
+    return raw.map((o) =>
+      typeof o === "string" ? { label: o, value: o } : { label: o.label, value: o.value }
+    );
+  };
 
   return (
-    <div className="flex h-full gap-5 animate-fade-in">
-      {/* 左侧分类导航 */}
-      <aside className="glass w-52 flex-shrink-0 overflow-y-auto rounded-xl p-4 shadow-sm">
-        <div className="mb-3 px-2 text-xs font-semibold uppercase tracking-wide text-text-faint">
-          岗位分类
-        </div>
-        <div className="space-y-1">
-          <CategoryButton
-            label="全部岗位"
-            count={categories.reduce((s, c) => s + c.count, 0)}
-            active={activeCategory === ""}
-            onClick={() => handleCategoryClick("")}
-          />
-          {categories.map((c) => (
-            <CategoryButton
-              key={c.name}
-              label={c.name}
-              count={c.count}
-              active={activeCategory === c.name}
-              onClick={() => handleCategoryClick(c.name)}
-            />
-          ))}
-        </div>
-      </aside>
+    <div className="flex h-full flex-col gap-4">
+      {/* 统计卡片 */}
+      {stats && <JobsStatsCards stats={stats} />}
 
-      {/* 右侧表格 */}
-      <div className="flex flex-1 flex-col overflow-hidden space-y-4">
-        {/* 筛选栏 */}
-        <div className="glass flex flex-wrap items-center gap-2 rounded-xl p-3.5 shadow-sm">
+      {/* 工具栏 */}
+      <div className="flex items-center gap-3">
+        <div className="relative flex-1">
           <input
             type="text"
-            placeholder="搜索岗位/公司…"
-            value={keyword}
-            onChange={(e) => setKeyword(e.target.value)}
-            onKeyDown={(e) => e.key === "Enter" && handleSearch()}
-            className="w-44 rounded-pill border border-white/60 bg-white/40 px-4 py-1.5 text-sm text-text placeholder:text-text-faint backdrop-blur-sm focus:border-primary-dark focus:outline-none focus:ring-2 focus:ring-primary/30"
+            value={kwInput}
+            onChange={(e) => setKwInput(e.target.value)}
+            onKeyDown={(e) => {
+              if (e.key === "Enter") setKeyword(kwInput);
+            }}
+            placeholder="搜索岗位 / 公司 / JD（回车确认）..."
+            className="w-full rounded-lg border border-line bg-white/60 px-3 py-2 text-sm outline-none focus:border-primary"
           />
-          <select
-            value={city}
-            onChange={(e) => setCity(e.target.value)}
-            className="rounded-pill border border-white/60 bg-white/40 px-4 py-1.5 text-sm text-text backdrop-blur-sm focus:border-primary-dark focus:outline-none"
-          >
-            {CITIES.map((c) => (
-              <option key={c} value={c}>
-                {c}
-              </option>
-            ))}
-          </select>
+        </div>
+        {hasFilter && (
           <button
             type="button"
-            onClick={handleSearch}
-            className="rounded-pill bg-primary px-5 py-1.5 text-sm font-semibold text-ink transition hover:bg-primary-dark"
+            onClick={() => {
+              clearAllFilters();
+              setKwInput("");
+            }}
+            className="rounded-lg border border-line bg-white/60 px-3 py-2 text-sm text-text-muted hover:bg-white"
           >
-            搜索
+            清除筛选
           </button>
-          <span className="ml-auto text-sm text-text-muted">
-            {jobs.length > 0 && `已加载 ${jobs.length} 条`}
-          </span>
-        </div>
-
-        {/* 错误 */}
-        {error && (
-          <div className="rounded-xl bg-danger-soft px-4 py-2 text-sm text-danger">
-            {error}
-          </div>
         )}
+        <ColumnSettings
+          columns={COLUMNS}
+          tableKey="jobs"
+          visibleKeys={visibleKeys}
+          onChange={setVisibleKeys}
+        />
+      </div>
 
-        {/* 岗位表格 */}
-        <div className="glass flex-1 overflow-hidden rounded-xl shadow-sm">
-          <div className="overflow-x-auto overflow-y-auto" style={{ maxHeight: "calc(100vh - 300px)" }}>
-            <table className="min-w-full">
-              <thead className="sticky top-0 z-10 border-b border-white/40 bg-white/40 backdrop-blur-md">
-                <tr>
-                  <Th>岗位标题</Th>
-                  <Th>公司</Th>
-                  <Th>分类</Th>
-                  <Th>城市</Th>
-                  <Th>学历</Th>
-                  <Th>管培</Th>
-                  <Th>更新时间</Th>
-                  <Th className="text-right">操作</Th>
-                </tr>
-              </thead>
-              <tbody className="divide-y divide-black/5">
-                {isLoading && jobs.length === 0
-                  ? Array.from({ length: 10 }).map((_, i) => (
-                      <tr key={i}>
-                        {Array.from({ length: 8 }).map((_, j) => (
-                          <td key={j} className="px-4 py-3">
-                            <div className="h-4 w-full animate-pulse rounded bg-line" />
-                          </td>
-                        ))}
-                      </tr>
-                    ))
-                  : jobs.map((job) => (
-                      <JobRow key={job.job_id} job={job} />
-                    ))}
-              </tbody>
-            </table>
-          </div>
+      {/* 已选筛选 chip */}
+      {hasFilter && (
+        <div className="flex flex-wrap gap-2">
+          {keyword.trim() && (
+            <FilterChip label={`搜索: ${keyword}`} onClose={() => setKeyword("")} />
+          )}
+          {Object.entries(columnFilters).map(([col, vals]) =>
+            vals.map((v) => (
+              <FilterChip
+                key={`${col}-${v}`}
+                label={`${COLUMNS.find((c) => c.key === col)?.label}: ${v}`}
+                onClose={() =>
+                  setColumnFilter(
+                    col,
+                    (columnFilters[col] ?? []).filter((x) => x !== v)
+                  )
+                }
+              />
+            ))
+          )}
         </div>
+      )}
 
-        {/* 加载更多 */}
-        {hasMore && (
-          <div className="flex justify-center pt-1">
-            <button
-              type="button"
-              onClick={() => void loadMore()}
-              className="glass rounded-pill px-6 py-2 text-sm font-medium text-text-muted transition hover:text-text"
-            >
-              加载更多
-            </button>
-          </div>
+      {error && (
+        <div className="rounded-lg bg-danger-soft px-4 py-2 text-sm text-danger">{error}</div>
+      )}
+
+      {/* 表格 */}
+      <div
+        ref={scrollRef}
+        onScroll={handleScroll}
+        className="flex-1 overflow-auto rounded-xl border border-line bg-white/40 backdrop-blur"
+      >
+        <table className="w-full min-w-[1400px] border-collapse text-sm">
+          <thead className="sticky top-0 z-10">
+            <tr className="bg-white/85 backdrop-blur-md">
+              {COLUMNS.filter((c) => visibleKeys.includes(c.key)).map((col) => {
+                const isFirst = col.key === "title";
+                return (
+                  <th
+                    key={col.key}
+                    className={`border-b border-line px-3 py-2.5 text-left font-medium text-ink ${
+                      isFirst
+                        ? "sticky left-0 z-20 bg-white/85 shadow-[2px_0_4px_-2px_rgba(0,0,0,0.1)]"
+                        : ""
+                    }`}
+                    style={{ minWidth: jobColWidth(col.key) }}
+                  >
+                    <div className="flex items-center">
+                      <span>{col.label}</span>
+                      {FILTER_COLUMNS.has(col.key) && (
+                        <ColumnFilter
+                          columnName={col.label}
+                          value={columnFilters[col.key] ?? []}
+                          options={getOptions(col.key)}
+                          onChange={(vals) => setColumnFilter(col.key, vals)}
+                        />
+                      )}
+                    </div>
+                  </th>
+                );
+              })}
+            </tr>
+          </thead>
+          <tbody>
+            {isLoading ? (
+              <tr>
+                <td colSpan={visibleKeys.length} className="px-3 py-8 text-center text-text-faint">
+                  加载中...
+                </td>
+              </tr>
+            ) : jobs.length === 0 ? (
+              <tr>
+                <td colSpan={visibleKeys.length} className="px-3 py-8 text-center text-text-faint">
+                  暂无数据
+                </td>
+              </tr>
+            ) : (
+              jobs.map((j) => (
+                <JobRow key={j.job_id} job={j} visibleKeys={visibleKeys} />
+              ))
+            )}
+          </tbody>
+        </table>
+      </div>
+
+      {/* 加载更多 */}
+      <div className="flex items-center justify-between text-xs text-text-muted">
+        <span>
+          共 {total} 个岗位，已加载 {jobs.length} 条
+        </span>
+        {isLoadingMore ? (
+          <span>加载更多...</span>
+        ) : hasMore ? (
+          <button
+            type="button"
+            onClick={() => void loadMore()}
+            className="text-primary-dark hover:underline"
+          >
+            加载更多
+          </button>
+        ) : (
+          <span>已加载全部</span>
         )}
       </div>
     </div>
   );
 }
 
-function CategoryButton({
-  label,
-  count,
-  active,
-  onClick,
-}: {
-  label: string;
-  count: number;
-  active: boolean;
-  onClick: () => void;
-}) {
-  return (
-    <button
-      type="button"
-      onClick={onClick}
-      className={`flex w-full items-center justify-between rounded-pill px-3.5 py-2 text-sm transition-colors ${
-        active
-          ? "bg-primary font-semibold text-ink shadow-sm"
-          : "text-text-muted hover:bg-white/40 hover:text-text"
-      }`}
-    >
-      <span className="truncate">{label}</span>
-      <span
-        className={`ml-2 shrink-0 rounded-pill px-1.5 text-xs ${
-          active ? "bg-ink/10 text-ink/70" : "bg-white/50 text-text-faint"
-        }`}
-      >
-        {count}
-      </span>
-    </button>
-  );
+function jobColWidth(key: string): string {
+  switch (key) {
+    case "title":
+      return "200px";
+    case "company":
+      return "140px";
+    case "industry":
+    case "company_type":
+    case "category":
+    case "subcategory":
+    case "min_education":
+    case "is_mt":
+    case "major_category":
+    case "difficulty":
+      return "100px";
+    case "city":
+      return "120px";
+    case "major_required":
+    case "hard_skills":
+    case "keywords":
+      return "160px";
+    case "jd_summary":
+      return "240px";
+    case "updated_at":
+    case "deadline":
+      return "100px";
+    case "links":
+      return "120px";
+    default:
+      return "120px";
+  }
 }
 
-function JobRow({ job }: { job: Job }) {
-  const [favStatus, setFavStatus] = useState<"idle" | "loading" | "done">("idle");
-  const [applyStatus, setApplyStatus] = useState<"idle" | "loading" | "done">("idle");
-
-  const handleFavorite = async () => {
-    if (favStatus === "loading") return;
-    setFavStatus("loading");
-    try {
-      await createApplication({
-        job_id: job.job_id,
-        job_title: job.title,
-        company_name: job.company,
-        status: "favorite" as AppStatus,
-        apply_url: job.apply_url || "",
-      });
-      setFavStatus("done");
-    } catch {
-      setFavStatus("idle");
-    }
-  };
-
-  const handleApply = async () => {
-    if (applyStatus === "loading") return;
-    setApplyStatus("loading");
-    try {
-      await createApplication({
-        job_id: job.job_id,
-        job_title: job.title,
-        company_name: job.company,
-        status: "applied" as AppStatus,
-        apply_url: job.apply_url || "",
-      });
-      setApplyStatus("done");
-      if (job.apply_url) {
-        window.open(job.apply_url, "_blank");
-      }
-    } catch {
-      setApplyStatus("idle");
-    }
+function JobRow({ job, visibleKeys }: { job: import("../api/jobs").Job; visibleKeys: string[] }) {
+  const cells: Record<string, ReactNode> = {
+    title: <Truncate text={job.title} className="font-medium" />,
+    company: <Truncate text={job.company} />,
+    industry: job.industry ? (
+      <span className={pillClass(colorMap.industry(job.industry))}>{job.industry}</span>
+    ) : (
+      <span className="text-text-faint">—</span>
+    ),
+    company_type: job.company_type ? (
+      <span className={pillClass(colorMap.companyType(job.company_type))}>{job.company_type}</span>
+    ) : (
+      <span className="text-text-faint">—</span>
+    ),
+    category: job.category ? (
+      <span className={pillClass(colorMap.category(job.category))}>{job.category}</span>
+    ) : (
+      <span className="text-text-faint">—</span>
+    ),
+    subcategory: (
+      <Truncate text={job.subcategory} className="text-ink-soft" />
+    ),
+    city: <Truncate text={job.city} className="text-ink-soft" />,
+    min_education: job.min_education ? (
+      <span className={pillClass(colorMap.education(job.min_education))}>{job.min_education}</span>
+    ) : (
+      <span className="text-text-faint">—</span>
+    ),
+    is_mt: (
+      <span className={pillClass(colorMap.isMt(job.is_mt))}>
+        {job.is_mt ? "是" : "否"}
+      </span>
+    ),
+    major_category: job.major_category ? (
+      <span className="text-ink-soft">{job.major_category}</span>
+    ) : (
+      <span className="text-text-faint">—</span>
+    ),
+    major_required: (
+      <Truncate text={job.major_required} className="text-ink-soft" />
+    ),
+    hard_skills: (
+      <Truncate text={job.hard_skills} className="text-ink-soft" />
+    ),
+    keywords: (
+      <Truncate text={job.keywords} className="text-ink-soft" />
+    ),
+    jd_summary: (
+      <Truncate text={job.jd_summary} maxLines={2} className="text-ink-soft" />
+    ),
+    difficulty: job.difficulty ? (
+      <span className={pillClass(colorMap.difficulty(job.difficulty))}>{job.difficulty}</span>
+    ) : (
+      <span className="text-text-faint">—</span>
+    ),
+    updated_at: <span className="text-ink-soft">{job.updated_at || "—"}</span>,
+    deadline: <span className="text-ink-soft">{job.deadline ?? "—"}</span>,
+    links: (
+      <div className="flex gap-1">
+        {job.apply_url && <LinkButton url={job.apply_url} label="投递" />}
+        {job.announcement_url && <LinkButton url={job.announcement_url} label="公告" />}
+        {!job.apply_url && !job.announcement_url && <span className="text-text-faint">—</span>}
+      </div>
+    ),
   };
 
   return (
-    <tr className="transition-colors hover:bg-primary-soft/50">
-      <td className="px-4 py-3">
-        <div className="font-medium text-text">{job.title}</div>
-        {job.requirements && (
-          <div className="mt-0.5 line-clamp-1 text-xs text-text-faint">
-            {job.requirements}
-          </div>
-        )}
-      </td>
-      <td className="px-4 py-3 text-sm text-text-muted">{job.company}</td>
-      <td className="px-4 py-3">
-        {job.category && (
-          <span className="rounded-pill bg-primary-soft px-2.5 py-0.5 text-xs font-medium text-ink/80">
-            {job.category}
-          </span>
-        )}
-      </td>
-      <td className="px-4 py-3 text-sm text-text-muted">{job.city || "-"}</td>
-      <td className="px-4 py-3 text-sm text-text-muted">
-        {job.graduation_match ? "应届" : "不限"}
-      </td>
-      <td className="px-4 py-3 text-sm">
-        {job.is_mt ? (
-          <span className="rounded-pill bg-primary-soft px-2.5 py-0.5 text-xs font-medium text-ink/80">
-            管培
-          </span>
-        ) : (
-          <span className="text-text-faint">-</span>
-        )}
-      </td>
-      <td className="px-4 py-3 text-xs text-text-faint">
-        {job.updated_at ? job.updated_at.slice(0, 10) : "-"}
-      </td>
-      <td className="px-4 py-3 text-right">
-        <div className="flex justify-end gap-1.5">
-          <button
-            type="button"
-            onClick={handleFavorite}
-            disabled={favStatus === "loading"}
-            className={`rounded-pill border px-2.5 py-1 text-xs transition ${
-              favStatus === "done"
-                ? "border-primary bg-primary text-ink"
-                : "border-white/60 bg-white/30 text-text-muted hover:border-primary hover:text-ink"
-            }`}
-            title="收藏"
-          >
-            {favStatus === "done" ? "★" : "☆"}
-          </button>
-          <button
-            type="button"
-            onClick={handleApply}
-            disabled={applyStatus === "loading"}
-            className={`rounded-pill px-3 py-1 text-xs font-semibold transition ${
-              applyStatus === "done"
-                ? "bg-success text-white"
-                : "bg-primary text-ink hover:bg-primary-dark"
+    <tr className="border-b border-line/60 hover:bg-white/40">
+      {COLUMNS.filter((c) => visibleKeys.includes(c.key)).map((col) => {
+        const isFirst = col.key === "title";
+        return (
+          <td
+            key={col.key}
+            className={`px-3 py-2 align-middle ${
+              isFirst ? "sticky left-0 z-[1] bg-white/70 backdrop-blur" : ""
             }`}
           >
-            {applyStatus === "done" ? "已投递" : "投递"}
-          </button>
-        </div>
-      </td>
+            {cells[col.key]}
+          </td>
+        );
+      })}
     </tr>
   );
 }
 
-function Th({
-  children,
-  className = "",
-}: {
-  children: React.ReactNode;
-  className?: string;
-}) {
+function LinkButton({ url, label }: { url: string; label: string }) {
   return (
-    <th className={`whitespace-nowrap px-4 py-3 ${className}`}>{children}</th>
+    <button
+      type="button"
+      onClick={() => openExternalUrl(url)}
+      className="rounded bg-primary-soft px-2 py-0.5 text-xs text-primary-dark transition hover:bg-primary-light"
+      title={url}
+    >
+      {label}
+    </button>
+  );
+}
+
+function FilterChip({ label, onClose }: { label: string; onClose: () => void }) {
+  return (
+    <span className="inline-flex items-center gap-1 rounded-full bg-primary-soft px-2.5 py-1 text-xs text-ink">
+      {label}
+      <button type="button" onClick={onClose} className="text-text-muted hover:text-ink">
+        ✕
+      </button>
+    </span>
+  );
+}
+
+function JobsStatsCards({ stats }: { stats: StatsOverview }) {
+  const j = stats.jobs;
+  return (
+    <div className="grid grid-cols-2 gap-3 sm:grid-cols-4 lg:grid-cols-5">
+      <StatCard label="岗位总数" value={j.total} accent="primary" />
+      <StatCard label="今日新增" value={j.today_new} accent="success" />
+      <StatCard label="近7日新增" value={j.week_new} accent="info" />
+      <CategoryBar items={j.top_categories} />
+      <div className="rounded-xl border border-line bg-white/50 px-4 py-3 backdrop-blur">
+        <div className="text-xs text-text-muted">数据更新</div>
+        <div className="mt-1 text-sm font-medium text-ink">每日 08:00 同步</div>
+        <div className="mt-1 text-xs text-text-faint">来源：服务器主库</div>
+      </div>
+    </div>
+  );
+}
+
+function StatCard({
+  label,
+  value,
+  accent,
+}: {
+  label: string;
+  value: number;
+  accent: "primary" | "success" | "info";
+}) {
+  const color = {
+    primary: "text-primary-dark",
+    success: "text-success",
+    info: "text-blue-600",
+  }[accent];
+  return (
+    <div className="rounded-xl border border-line bg-white/50 px-4 py-3 backdrop-blur">
+      <div className="text-xs text-text-muted">{label}</div>
+      <div className={`mt-1 text-2xl font-bold ${color}`}>{value.toLocaleString()}</div>
+    </div>
+  );
+}
+
+function CategoryBar({ items }: { items: { name: string; count: number }[] }) {
+  const max = items[0]?.count ?? 1;
+  return (
+    <div className="rounded-xl border border-line bg-white/50 px-4 py-3 backdrop-blur sm:col-span-2 lg:col-span-2">
+      <div className="mb-2 text-xs text-text-muted">岗位分类 Top8</div>
+      <div className="grid grid-cols-2 gap-x-4 gap-y-1">
+        {items.map((it) => (
+          <div key={it.name} className="flex items-center gap-2 text-xs">
+            <span className="w-20 shrink-0 truncate text-ink-soft">{it.name}</span>
+            <div className="h-1.5 flex-1 overflow-hidden rounded bg-gray-100">
+              <div
+                className="h-full rounded bg-primary"
+                style={{ width: `${(it.count / max) * 100}%` }}
+              />
+            </div>
+            <span className="w-8 text-right text-text-muted">{it.count}</span>
+          </div>
+        ))}
+      </div>
+    </div>
   );
 }

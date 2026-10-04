@@ -12,8 +12,11 @@ export interface Company {
   education_req: string;
   deadline: string | null;
   positions_count: number;
+  /** 该公司招聘岗位标题列表（顿号分隔，最多 15 个） */
+  position_titles: string | null;
   apply_url: string;
   announcement_url: string;
+  /** 公告实际发布/更新时间（apply_update） */
   last_updated: string;
 }
 
@@ -23,6 +26,30 @@ export interface CompanyStats {
   types: { name: string; count: number }[];
 }
 
+export interface FilterOption {
+  value: string;
+  label: string;
+}
+
+export interface StatsOverview {
+  companies: {
+    total: number;
+    today_new: number;
+    week_new: number;
+    closing_soon: number;
+    top_industries: { name: string; count: number }[];
+    top_types: { name: string; count: number }[];
+    filter_options: Record<string, string[]>;
+  };
+  jobs: {
+    total: number;
+    today_new: number;
+    week_new: number;
+    top_categories: { name: string; count: number }[];
+    filter_options: Record<string, (string | FilterOption)[]>;
+  };
+}
+
 export interface CompaniesResponse {
   companies: Company[];
   total: number;
@@ -30,16 +57,27 @@ export interface CompaniesResponse {
   offset: number;
 }
 
-export function getCompanies(params: {
+export interface CompaniesParams {
   limit?: number;
   offset?: number;
   industry?: string;
   company_type?: string;
   keyword?: string;
-}): Promise<CompaniesResponse> {
-  return apiClient.get<CompaniesResponse>("/api/v1/sync/companies", params);
+  recruit_type?: string;
+  education_req?: string;
+}
+
+export function getCompanies(params: CompaniesParams): Promise<CompaniesResponse> {
+  return apiClient.get<CompaniesResponse>(
+    "/api/v1/sync/companies",
+    params as Record<string, unknown>
+  );
 }
 
 export function getCompanyStats(): Promise<CompanyStats> {
   return apiClient.get<CompanyStats>("/api/v1/sync/company-stats");
+}
+
+export function getStatsOverview(): Promise<StatsOverview> {
+  return apiClient.get<StatsOverview>("/api/v1/sync/stats-overview");
 }

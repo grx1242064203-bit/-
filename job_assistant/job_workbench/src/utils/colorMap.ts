@@ -1,0 +1,104 @@
+// 分类字段颜色映射：与飞书源表 select 选项色系对齐。
+// 每个值映射到 { bg, text } 的 Tailwind 类名，用于渲染彩色胶囊标签。
+// 未命中的值走 defaultColor（中性灰）。
+
+type ColorPair = { bg: string; text: string };
+
+/** 行业 → 颜色 */
+const INDUSTRY_COLORS: Record<string, ColorPair> = {
+  "互联网/科技": { bg: "bg-blue-100", text: "text-blue-700" },
+  金融: { bg: "bg-amber-100", text: "text-amber-700" },
+  "制造/工业": { bg: "bg-orange-100", text: "text-orange-700" },
+  "咨询/专业服务": { bg: "bg-violet-100", text: "text-violet-700" },
+  房地产: { bg: "bg-rose-100", text: "text-rose-700" },
+  "房地产/建筑": { bg: "bg-rose-100", text: "text-rose-700" },
+  "快消/零售": { bg: "bg-pink-100", text: "text-pink-700" },
+  医疗: { bg: "bg-emerald-100", text: "text-emerald-700" },
+  "医疗/医药": { bg: "bg-emerald-100", text: "text-emerald-700" },
+  教育: { bg: "bg-cyan-100", text: "text-cyan-700" },
+  传媒: { bg: "bg-fuchsia-100", text: "text-fuchsia-700" },
+  能源: { bg: "bg-yellow-100", text: "text-yellow-700" },
+  汽车: { bg: "bg-slate-100", text: "text-slate-700" },
+  其他: { bg: "bg-gray-100", text: "text-gray-600" },
+};
+
+/** 公司类型 → 颜色 */
+const COMPANY_TYPE_COLORS: Record<string, ColorPair> = {
+  民企: { bg: "bg-slate-100", text: "text-slate-700" },
+  国央企: { bg: "bg-red-100", text: "text-red-700" },
+  外企: { bg: "bg-blue-100", text: "text-blue-700" },
+  "事业单位/政府": { bg: "bg-green-100", text: "text-green-700" },
+  其他: { bg: "bg-gray-100", text: "text-gray-600" },
+};
+
+/** 招聘类型 → 颜色 */
+const RECRUIT_TYPE_COLORS: Record<string, ColorPair> = {
+  校招: { bg: "bg-blue-100", text: "text-blue-700" },
+  实习: { bg: "bg-green-100", text: "text-green-700" },
+  社招: { bg: "bg-gray-100", text: "text-gray-600" },
+};
+
+/** 最低学历 → 颜色（按学历层级） */
+const EDUCATION_COLORS: Record<string, ColorPair> = {
+  不限: { bg: "bg-gray-100", text: "text-gray-600" },
+  专科: { bg: "bg-teal-100", text: "text-teal-700" },
+  "专科起": { bg: "bg-teal-100", text: "text-teal-700" },
+  本科: { bg: "bg-blue-100", text: "text-blue-700" },
+  "本科起": { bg: "bg-blue-100", text: "text-blue-700" },
+  硕士: { bg: "bg-violet-100", text: "text-violet-700" },
+  "硕士起": { bg: "bg-violet-100", text: "text-violet-700" },
+  博士: { bg: "bg-fuchsia-100", text: "text-fuchsia-700" },
+  "博士起": { bg: "bg-fuchsia-100", text: "text-fuchsia-700" },
+};
+
+/** 岗位分类 → 颜色 */
+const CATEGORY_COLORS: Record<string, ColorPair> = {
+  开发: { bg: "bg-blue-100", text: "text-blue-700" },
+  算法: { bg: "bg-violet-100", text: "text-violet-700" },
+  产品: { bg: "bg-amber-100", text: "text-amber-700" },
+  设计: { bg: "bg-pink-100", text: "text-pink-700" },
+  运营: { bg: "bg-cyan-100", text: "text-cyan-700" },
+  "运营与供应链": { bg: "bg-cyan-100", text: "text-cyan-700" },
+  "商业(销售与市场)": { bg: "bg-rose-100", text: "text-rose-700" },
+  职能: { bg: "bg-slate-100", text: "text-slate-700" },
+  "制造与质量": { bg: "bg-orange-100", text: "text-orange-700" },
+  "硬件电子": { bg: "bg-yellow-100", text: "text-yellow-700" },
+  管培生: { bg: "bg-emerald-100", text: "text-emerald-700" },
+  数据: { bg: "bg-indigo-100", text: "text-indigo-700" },
+  市场: { bg: "bg-rose-100", text: "text-rose-700" },
+  销售: { bg: "bg-red-100", text: "text-red-700" },
+};
+
+/** 难度 → 颜色 */
+const DIFFICULTY_COLORS: Record<string, ColorPair> = {
+  简单: { bg: "bg-green-100", text: "text-green-700" },
+  中等: { bg: "bg-amber-100", text: "text-amber-700" },
+  困难: { bg: "bg-red-100", text: "text-red-700" },
+};
+
+const DEFAULT_COLOR: ColorPair = { bg: "bg-gray-100", text: "text-gray-600" };
+
+function pick(map: Record<string, ColorPair>, value: string | null | undefined): ColorPair {
+  if (!value) return DEFAULT_COLOR;
+  const v = value.trim();
+  return map[v] ?? DEFAULT_COLOR;
+}
+
+export const colorMap = {
+  industry: (v: string | null) => pick(INDUSTRY_COLORS, v),
+  companyType: (v: string | null) => pick(COMPANY_TYPE_COLORS, v),
+  recruitType: (v: string | null) => pick(RECRUIT_TYPE_COLORS, v),
+  education: (v: string | null) => pick(EDUCATION_COLORS, v),
+  category: (v: string | null) => pick(CATEGORY_COLORS, v),
+  difficulty: (v: string | null) => pick(DIFFICULTY_COLORS, v),
+  /** 是否管培：1=是(绿), 0=否(灰) */
+  isMt: (v: number | string | null) =>
+    v === 1 || v === "1"
+      ? { bg: "bg-emerald-100", text: "text-emerald-700" }
+      : { bg: "bg-gray-100", text: "text-gray-600" },
+};
+
+/** 通用彩色标签组件用的 className 生成 */
+export function pillClass(pair: ColorPair): string {
+  return `inline-flex items-center rounded-pill px-2 py-0.5 text-xs font-medium ${pair.bg} ${pair.text}`;
+}

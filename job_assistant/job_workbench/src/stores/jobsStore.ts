@@ -50,12 +50,8 @@ export interface JobsState {
 /** 默认 filters：与 JobFilterBar 的下拉默认值对齐。 */
 const DEFAULT_FILTERS: JobFilter = {
   city: "全国各地",
-  education: "不限",
-  is_mt: undefined,
   category: "不限",
-  company: "",
   keyword: "",
-  sort: undefined,
 };
 
 /** 自增序号：loadJobs 并发时丢弃过期响应，避免快速切筛选时旧响应覆盖新结果。 */

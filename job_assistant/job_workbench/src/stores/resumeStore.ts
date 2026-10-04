@@ -1,15 +1,13 @@
 // Zustand resume store：简历上传 / LLM 解析 / 本地持久化的状态中枢。
 //
 // 设计：
-// - activeResume / parsedProfile 双轨：activeResume 是 SQLite resumes 行的镜像（含 raw_text / parsed_profile_json），
+// - activeResume / parsedProfile 双轨：activeResume 是简历数据镜像（含 raw_text / parsed_profile_json），
 //   parsedProfile 是 parsed_profile_json 反序列化后的结构化对象，供组件直接消费。
 // - phase 字段精确反馈"上传中 / 解析中 / 完成"三阶段，UI spinner 文案据此切换。
-// - 文件读取走浏览器 FileReader（@tauri-apps/plugin-fs 未在 package.json，且 Tauri webview 支持 FileReader）；
-//   file_path 存 file.name（浏览器安全限制不暴露完整路径），PDF 暂以"即将支持"拦截。
-// - save_resume 在 Rust 端返回 ()（参考 T14 addApplication 的处理），前端用入参 resume 推断返回态。
+// - 文件读取走浏览器 FileReader；简历数据持久化到 localStorage。
+// - LLM 解析通过 llmApi 调用后端 /api/v1/llm 端点。
 
 import { create } from "zustand";
-import { invoke } from "@tauri-apps/api/core";
 
 import { llmApi, type ParsedProfile } from "../api/llm";
 
@@ -26,6 +24,28 @@ export interface Resume {
 export type ResumePhase = "idle" | "uploading" | "parsing" | "done";
 
 const ACCEPTED_TEXT_EXT = [".txt", ".md", ".markdown", ".text"];
+
+// localStorage 存储键
+const RESUME_STORAGE_KEY = "job_assistant_active_resume";
+
+// 从 localStorage 读取 active resume
+function loadResumeFromStorage(): Resume | null {
+  try {
+    const raw = localStorage.getItem(RESUME_STORAGE_KEY);
+    return raw ? (JSON.parse(raw) as Resume) : null;
+  } catch {
+    return null;
+  }
+}
+
+// 保存 resume 到 localStorage
+function saveResumeToStorage(resume: Resume): void {
+  try {
+    localStorage.setItem(RESUME_STORAGE_KEY, JSON.stringify(resume));
+  } catch {
+    /* localStorage 不可用时静默忽略 */
+  }
+}
 
 // 与 appStore.nowIso 同实现：ISO8601 → "YYYY-MM-DD HH:mm:ss"，对齐 SQLite TEXT 字段。
 function nowIso(): string {
@@ -123,7 +143,7 @@ export const useResumeStore = create<ResumeState>((set, get) => ({
         created_at: nowIso(),
         is_active: 1,
       };
-      await invoke("save_resume", { resume });
+      saveResumeToStorage(resume);
       set({ activeResume: resume, isLoading: false });
       return resume;
     } catch (e) {
@@ -152,7 +172,7 @@ export const useResumeStore = create<ResumeState>((set, get) => ({
       // 回写本地 resume（parsed_profile_json 持久化，刷新 / 重启后 getActiveResume 可还原）
       if (current) {
         const updated: Resume = { ...current, parsed_profile_json: profileJson };
-        await invoke("save_resume", { resume: updated });
+        saveResumeToStorage(updated);
         set({ activeResume: updated });
       }
       set({ parsedProfile: profile, isLoading: false, phase: "done" });
@@ -164,11 +184,11 @@ export const useResumeStore = create<ResumeState>((set, get) => ({
     }
   },
 
-  // 从本地 SQLite 拉 active resume（页面挂载时调用，还原历史解析结果）。
+  // 从 localStorage 拉 active resume（页面挂载时调用，还原历史解析结果）。
   getActiveResume: async () => {
     set({ isLoading: true, error: null });
     try {
-      const resume = await invoke<Resume | null>("get_active_resume");
+      const resume = loadResumeFromStorage();
       if (resume) {
         let profile: ParsedProfile | null = null;
         if (resume.parsed_profile_json) {
@@ -200,9 +220,14 @@ export const useResumeStore = create<ResumeState>((set, get) => ({
     }
   },
 
-  // 仅清本地状态（DB 内 resume 行保留；新上传覆盖 active，旧的被 created_at DESC 顺序遮蔽）。
+  // 清除本地状态和 localStorage 中的简历数据。
   // 用于"重新上传"按钮：UI 切回上传态，等待用户选新文件。
   clearResume: () => {
+    try {
+      localStorage.removeItem(RESUME_STORAGE_KEY);
+    } catch {
+      /* 忽略 */
+    }
     set({
       activeResume: null,
       parsedProfile: null,

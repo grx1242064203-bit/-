@@ -41,6 +41,24 @@ def list_jobs(
     return SyncService().get_jobs_since(since=since, limit=limit, cursor=cursor)
 
 
+@router.get("/jobs/page")
+def list_jobs_page(
+    limit: int = Query(50, ge=1, le=MAX_PAGE_SIZE, description="每页数量"),
+    offset: int = Query(0, ge=0, description="偏移量"),
+    category: str = Query("", description="岗位分类筛选"),
+    keyword: str = Query("", description="关键词搜索"),
+    city: str = Query("", description="城市筛选"),
+) -> dict:
+    """按 offset 分页拉取岗位列表（供前端表格分页）。"""
+    return SyncService().get_jobs_page(
+        limit=limit,
+        offset=offset,
+        category=category,
+        keyword=keyword,
+        city=city,
+    )
+
+
 @router.get("/stats")
 def stats() -> dict:
     """返回岗位总数与最新更新时间。"""

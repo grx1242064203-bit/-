@@ -2,7 +2,9 @@
 // 错误以 { error: string, status: number } 结构抛出（reject），调用方 try/catch 读取。
 
 const ENV = (import.meta as { env?: Record<string, string | undefined> }).env ?? {};
-const BASE_URL = ENV.VITE_API_URL || "http://localhost:8000";
+// 开发期通过 Vite 代理（/api -> localhost:8000）避免跨域；
+// 生产打包后由 Tauri 或部署环境提供绝对地址。
+const BASE_URL = ENV.VITE_API_URL || "";
 
 const TOKEN_KEY = "job_assistant_token";
 

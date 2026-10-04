@@ -31,6 +31,7 @@ class Settings(BaseSettings):
     # 数据存储
     DATA_DIR: Path = Path("../data")
     JOBS_DB_PATH: Path = Path("../data/jobs.db")
+    AUTH_DB_PATH: Path = Path("../data/auth.db")
 
     # CORS 允许源（开发期默认允许所有来源）
     CORS_ORIGINS: list[str] = ["*"]

@@ -250,6 +250,63 @@ class SyncService:
             next_cursor = self._encode_cursor(last["updated_at"], last["job_id"])
         return {"jobs": jobs, "next_cursor": next_cursor}
 
+    def get_jobs_page(
+        self,
+        limit: int = 50,
+        offset: int = 0,
+        category: str = "",
+        keyword: str = "",
+        city: str = "",
+    ) -> dict:
+        """按 offset 分页查询岗位（供前端表格分页使用）。
+
+        Parameters
+        ----------
+        limit: 每页条数，默认 50。
+        offset: 偏移量。
+        category: 岗位分类筛选（空串=不限）。
+        keyword: 关键词搜索（标题/公司/JD）。
+        city: 城市筛选（空串=不限）。
+        """
+        if limit < 1:
+            limit = 50
+        if limit > MAX_PAGE_SIZE:
+            limit = MAX_PAGE_SIZE
+
+        where = []
+        params: list = []
+        if category:
+            where.append("category = ?")
+            params.append(category)
+        if city:
+            where.append("city = ?")
+            params.append(city)
+        if keyword:
+            where.append("(title LIKE ? OR company LIKE ? OR jd_text LIKE ?)")
+            kw = f"%{keyword}%"
+            params.extend([kw, kw, kw])
+
+        where_sql = f"WHERE {' AND '.join(where)}" if where else ""
+        fields = ", ".join(JOB_FIELDS)
+
+        conn = self._connect()
+        try:
+            total_row = conn.execute(
+                f"SELECT COUNT(*) AS c FROM jobs {where_sql}", params
+            ).fetchone()
+            total = total_row["c"] if total_row else 0
+
+            rows = conn.execute(
+                f"SELECT {fields} FROM jobs {where_sql} "
+                "ORDER BY updated_at DESC LIMIT ? OFFSET ?",
+                [*params, limit, offset],
+            ).fetchall()
+        finally:
+            conn.close()
+
+        jobs = [self._row_to_job(r) for r in rows]
+        return {"jobs": jobs, "total": total, "limit": limit, "offset": offset}
+
     def get_stats(self) -> dict:
         """返回 ``{"total": 岗位总数, "updated_at": 最新更新时间}``。"""
         conn = self._connect()

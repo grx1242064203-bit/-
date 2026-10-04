@@ -91,16 +91,16 @@ export default function SyncIndicator() {
     );
   }
 
-  // 5. 本地落后云端：⟳ + 点击同步。
+  // 5. 本地落后云端：⟳ + 点击同步（触发 pull 从服务器拉取最新 jobs.db）。
   if (status?.need_sync) {
     return (
       <button
         type="button"
-        onClick={() => void syncJobs()}
+        onClick={() => void pullDb()}
         className="flex items-center gap-2 rounded-pill bg-warning/20 px-3 py-1.5 text-sm text-ink transition hover:opacity-80"
       >
         <span aria-hidden="true">⟳</span>
-        本地落后云端，点击同步
+        本地数据落后，点击同步最新
       </button>
     );
   }

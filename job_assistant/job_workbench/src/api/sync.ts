@@ -22,6 +22,9 @@ export interface SyncStatus {
 export interface RemoteStats {
   total: number;
   updated_at: string | null;
+  need_sync?: boolean;
+  local_mtime?: number;
+  remote_mtime?: number;
 }
 
 /** 本地 jobs.db 健康状态。 */
@@ -54,10 +57,13 @@ export async function getRemoteStats(): Promise<RemoteStats> {
 }
 
 /**
- * 触发同步（数据已在后端，直接返回远端统计作为同步结果）。
+ * 触发同步：若后端返回 need_sync（本地落后服务器），则从服务器拉取最新 jobs.db。
  */
 export async function syncJobs(_since?: string | null): Promise<SyncResult> {
   const stats = await getRemoteStats();
+  if (stats.need_sync) {
+    await pullDbFromServer();
+  }
   return {
     synced_count: stats.total,
     last_updated_at: stats.updated_at,
@@ -65,12 +71,12 @@ export async function syncJobs(_since?: string | null): Promise<SyncResult> {
 }
 
 /**
- * 查询同步状态：数据始终在后端，need_sync 恒为 false。
+ * 查询同步状态：对比本地 vs 服务器 mtime，need_sync 由后端判定。
  */
 export async function getSyncStatus(): Promise<SyncStatus> {
   const stats = await getRemoteStats();
   return {
-    need_sync: false,
+    need_sync: !!stats.need_sync,
     local_count: stats.total,
     remote_count: stats.total,
     last_sync: stats.updated_at,

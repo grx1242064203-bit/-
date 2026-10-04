@@ -93,7 +93,10 @@ def list_jobs_page(
 
 @router.get("/stats")
 def stats() -> dict:
-    """返回岗位总数与最新更新时间。"""
+    """返回岗位总数与最新更新时间 + 本地是否落后服务器。
+
+    会调用服务器 /api/db/info 对比 mtime，返回 need_sync 字段供前端判断是否需要 pull。
+    """
     return SyncService().get_stats()
 
 

@@ -24,7 +24,7 @@ export interface Resume {
 
 export type ResumePhase = "idle" | "uploading" | "parsing" | "done";
 
-const ACCEPTED_EXT = [".txt", ".md", ".markdown", ".pdf"];
+const ACCEPTED_EXT = [".txt", ".md", ".markdown", ".pdf", ".jpg", ".jpeg", ".png", ".webp", ".bmp"];
 
 // localStorage 存储键
 const RESUME_STORAGE_KEY = "job_assistant_active_resume";
@@ -90,6 +90,19 @@ function isPdfFile(file: File): boolean {
   );
 }
 
+function isImageFile(file: File): boolean {
+  const name = file.name.toLowerCase();
+  return (
+    file.type.startsWith("image/") ||
+    [".jpg", ".jpeg", ".png", ".webp", ".bmp"].some((ext) => name.endsWith(ext))
+  );
+}
+
+/** 需要后端提取文本的文件（PDF / 图片），前端不直接读文本。 */
+function needsServerExtraction(file: File): boolean {
+  return isPdfFile(file) || isImageFile(file);
+}
+
 interface ResumeState {
   activeResume: Resume | null;
   parsedProfile: ParsedProfile | null;
@@ -120,7 +133,7 @@ export const useResumeStore = create<ResumeState>((set, get) => ({
     set({ isLoading: true, phase: "uploading", error: null, lastFileName: file.name });
 
     if (!isAcceptedFile(file)) {
-      const msg = "暂不支持的文件类型，请上传 .pdf / .txt / .md";
+      const msg = "暂不支持的文件类型，请上传 .pdf / .txt / .md / 图片";
       set({ isLoading: false, phase: "idle", error: msg });
       throw new Error(msg);
     }
@@ -133,7 +146,7 @@ export const useResumeStore = create<ResumeState>((set, get) => ({
 
     try {
       // 先创建本地 resume 记录
-      const rawText = isPdfFile(file) ? "" : await readFileAsText(file);
+      const rawText = needsServerExtraction(file) ? "" : await readFileAsText(file);
       const resume: Resume = {
         resume_id: genResumeId(),
         file_path: file.name,
@@ -161,10 +174,10 @@ export const useResumeStore = create<ResumeState>((set, get) => ({
       let profile: ParsedProfile;
       let textForProfile = "";
 
-      if (file && isPdfFile(file)) {
-        // PDF：上传到后端 parse-resume-file
+      if (file && needsServerExtraction(file)) {
+        // PDF / 图片：上传到后端 parse-resume-file（后端提取文本 + LLM 解析）
         profile = await llmApi.parseResumeFile(file);
-        textForProfile = ""; // PDF 原文不在前端，后端解析时已使用
+        textForProfile = ""; // 原文不在前端，后端解析时已使用
       } else {
         const text = resumeText?.trim() || current?.raw_text?.trim() || "";
         if (!text) {

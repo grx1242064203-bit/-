@@ -65,7 +65,7 @@ export default function ResumeUploader() {
       <input
         ref={inputRef}
         type="file"
-        accept=".txt,.md,.markdown,.text,.pdf"
+        accept=".txt,.md,.markdown,.text,.pdf,.jpg,.jpeg,.png,.webp,.bmp"
         className="hidden"
         onChange={(e) => pickFile(e.target.files?.[0])}
       />
@@ -97,7 +97,7 @@ export default function ResumeUploader() {
           拖拽简历到此处，或点击选择文件
         </p>
         <p className="mt-1 text-xs text-slate-500">
-          支持 .pdf / .txt / .md（PDF 自动提取文本）
+          支持 .pdf / .txt / .md / 图片（自动提取文本，图片用 OCR 识别）
         </p>
       </div>
 

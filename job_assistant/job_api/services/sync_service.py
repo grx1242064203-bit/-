@@ -409,19 +409,56 @@ class SyncService:
         return {"jobs": jobs, "total": total, "limit": limit, "offset": offset}
 
     def get_stats(self) -> dict:
-        """返回 ``{"total": 岗位总数, "updated_at": 最新更新时间}``。"""
-        conn = self._connect()
+        """返回 ``{"total", "updated_at", "need_sync", "remote_mtime", "local_mtime"}``。
+
+        对比本地 jobs.db 的 mtime 与服务器 /api/db/info 的 mtime，
+        若服务器更新（mtime 更新）或本地不存在，need_sync=True。
+        """
+        import os
+        from config import get_settings
+
+        s = get_settings()
+        db_path = s.JOBS_DB_PATH
+
+        # 本地统计
+        total = 0
+        updated_at = ""
         try:
-            row = conn.execute(
-                "SELECT COUNT(*) AS total, MAX(updated_at) AS updated_at FROM jobs"
-            ).fetchone()
-        except sqlite3.DatabaseError as e:
-            raise DatabaseCorruptedError(f"数据库损坏: {e}") from e
-        finally:
-            conn.close()
+            conn = self._connect()
+            try:
+                row = conn.execute(
+                    "SELECT COUNT(*) AS total, MAX(updated_at) AS updated_at FROM jobs"
+                ).fetchone()
+                total = row["total"] if row else 0
+                updated_at = row["updated_at"] if row and row["updated_at"] else ""
+            finally:
+                conn.close()
+        except sqlite3.DatabaseError:
+            # 损坏时仍返回 need_sync=True 让前端提示拉取
+            pass
+
+        local_mtime = os.path.getmtime(db_path) if os.path.exists(db_path) else 0
+
+        # 对比服务器 mtime
+        need_sync = False
+        remote_mtime = None
+        try:
+            from services.db_sync_service import fetch_remote_info
+            remote_info = fetch_remote_info()
+            remote_mtime = remote_info.get("mtime")
+            # 服务器 mtime 比本地新（超过 60 秒容差）即认为需要同步
+            if remote_mtime and remote_mtime > local_mtime + 60:
+                need_sync = True
+        except Exception:
+            # 连不上服务器不阻断 stats 返回，need_sync 保持 False
+            pass
+
         return {
-            "total": row["total"] if row else 0,
-            "updated_at": (row["updated_at"] if row and row["updated_at"] else ""),
+            "total": total,
+            "updated_at": updated_at,
+            "need_sync": need_sync,
+            "local_mtime": local_mtime,
+            "remote_mtime": remote_mtime,
         }
 
     def get_companies(

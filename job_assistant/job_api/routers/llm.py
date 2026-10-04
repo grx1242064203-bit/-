@@ -13,8 +13,10 @@
 不直接暴露 DeepSeek API Key，由 LLMProxyService 在服务层注入。
 """
 import logging
+import tempfile
+from pathlib import Path
 
-from fastapi import APIRouter, Depends, HTTPException, status
+from fastapi import APIRouter, Depends, File, HTTPException, UploadFile, status
 from pydantic import BaseModel, Field
 
 from config import get_settings
@@ -97,6 +99,86 @@ def parse_resume(
         return
 
     # 调用成功后增加用量计数；即使并发竞争导致 False 也返回结果，避免吞掉已成功的调用
+    increment_usage(user_id)
+    return {
+        "keywords": result.get("keywords", []),
+        "fit_directions": result.get("fit_directions", []),
+    }
+
+
+@router.post("/parse-resume-file", response_model=ParseResumeResponse)
+async def parse_resume_file(
+    file: UploadFile = File(...),
+    user: dict = Depends(get_current_user),
+):
+    """上传简历文件 → 提取文本 → LLM 解析。
+
+    支持格式：.pdf / .txt / .md / .jpg / .jpeg / .png / .webp / .bmp
+    - PDF: PyMuPDF 提取文本层
+    - 纯文本(.txt/.md): 直接读取
+    - 图片: rapidocr-onnxruntime OCR 提取中文
+    """
+    user_id = user["user_id"]
+    _check_quota(user_id)
+
+    filename = file.filename or ""
+    ext = Path(filename).suffix.lower()
+    supported = {".pdf", ".txt", ".md", ".jpg", ".jpeg", ".png", ".webp", ".bmp"}
+    if ext not in supported:
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail=f"不支持的文件格式: {ext}。支持: {', '.join(sorted(supported))}",
+        )
+
+    raw_bytes = await file.read()
+    if not raw_bytes:
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail="文件为空",
+        )
+
+    # 根据格式提取文本
+    resume_text = ""
+    if ext == ".pdf":
+        from services.pdf_extractor import extract_pdf_text
+        resume_text = extract_pdf_text(raw_bytes)
+        if not resume_text:
+            raise HTTPException(
+                status_code=status.HTTP_400_BAD_REQUEST,
+                detail="PDF 未提取到文本（可能是扫描件或加密）。请转成 .txt 或上传图片。",
+            )
+    elif ext in (".txt", ".md"):
+        try:
+            resume_text = raw_bytes.decode("utf-8")
+        except UnicodeDecodeError:
+            resume_text = raw_bytes.decode("gbk", errors="ignore")
+    else:
+        # 图片 → OCR
+        from services.image_extractor import extract_text_from_image
+        # 写入临时文件供 OCR 引擎读取
+        with tempfile.NamedTemporaryFile(suffix=ext, delete=False) as tmp:
+            tmp.write(raw_bytes)
+            tmp_path = tmp.name
+        try:
+            resume_text = extract_text_from_image(tmp_path)
+        finally:
+            Path(tmp_path).unlink(missing_ok=True)
+        if not resume_text:
+            raise HTTPException(
+                status_code=status.HTTP_400_BAD_REQUEST,
+                detail="图片 OCR 未识别到文本，请上传清晰的简历截图。",
+            )
+
+    # 提取成功 → 走 LLM 解析
+    try:
+        result = _proxy.parse_resume(resume_text)
+    except TimeoutError as e:
+        _handle_llm_error(e, "parse_resume")
+        return
+    except Exception as e:
+        _handle_llm_error(e, "parse_resume")
+        return
+
     increment_usage(user_id)
     return {
         "keywords": result.get("keywords", []),

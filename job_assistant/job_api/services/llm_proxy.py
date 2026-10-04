@@ -89,108 +89,60 @@ class LLMProxyService:
     def company_due_diligence(self, company_name: str, resume_text: str = "") -> Dict[str, Any]:
         """公司尽调：联网搜索 + LLM 生成简介/官网/新闻/个性化面试答案。
 
-        流程：
-        1. DuckDuckGo 搜索公司官网 + 近期新闻（多关键词 fallback）
-        2. 将搜索结果 + 用户简历喂给 LLM，生成：
-           - 公司简介 intro
-           - 「为什么选择这家公司」面试问题 + 结合用户简历的个性化回答思路
-        3. 返回 {intro, official_website, news_links, why_company_questions}
+        搜索：Bing（找官网，直接 URL）+ 百度（补充新闻，国内覆盖最全）
+        LLM：结合搜索结果 + 用户简历，生成专业深度面试回答
         """
         import json
         import re
-        import requests as _requests
-        from urllib.parse import unquote, urlparse, parse_qs
 
         client = self._make_client()
 
-        # 1) 联网搜索：官网 + 新闻（多关键词，提高命中率）
-        official_website = ""
-        news_links: list = []
+        # ============ 1) 联网搜索：官网 + 新闻 ============
+        official_website, news_links = self._search_company_info(company_name)
 
-        search_queries = [
-            f"{company_name} 官网 最新新闻",
-            f"{company_name} official website news",
-        ]
-        for q in search_queries:
-            if official_website and len(news_links) >= 3:
-                break
-            try:
-                search_url = (
-                    "https://html.duckduckgo.com/html/?q="
-                    + _requests.utils.quote(q)
-                )
-                resp = _requests.get(
-                    search_url,
-                    headers={"User-Agent": "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) "
-                                           "AppleWebKit/537.36 (KHTML, like Gecko) "
-                                           "Chrome/120.0.0.0 Safari/537.36"},
-                    timeout=12,
-                )
-                resp.raise_for_status()
-                # 提取 result__a 链接（DDG HTML 搜索结果）
-                links = re.findall(
-                    r'<a[^>]+class="result__a"[^>]+href="([^"]+)"[^>]*>(.*?)</a>',
-                    resp.text,
-                    re.S,
-                )
-                seen = set()
-                for href, title in links[:10]:
-                    title = re.sub(r"<[^>]+>", "", title).strip()
-                    if not title:
-                        continue
-                    # 解析 DDG 重定向 URL
-                    if "uddg=" in href:
-                        parsed = urlparse(href)
-                        raw = parse_qs(parsed.query).get("uddg", [""])[0]
-                        href = unquote(raw) if raw else href
-                    if not href or href in seen:
-                        continue
-                    seen.add(href)
-                    # 过滤搜索引擎/百科/社媒，第一条干净链接作为官网候选
-                    skip_domains = (
-                        "baidu.com", "zhihu.com", "bilibili.com", "sohu.com",
-                        "163.com", "sina.com", "qq.com", "weibo.com",
-                        "duckduckgo.com", "google.com", "bing.com",
-                        "wikipedia.org", "baike.baidu.com", "douyin.com",
-                        "xiaohongshu.com", "linkedin.com",
-                    )
-                    is_skipped = any(d in href for d in skip_domains)
-                    if not official_website and not is_skipped and href.startswith("http"):
-                        official_website = href
-                    news_links.append({"title": title[:80], "url": href})
-                    if len(news_links) >= 5:
-                        break
-            except Exception as e:  # noqa: BLE001 搜索失败不阻塞 LLM 生成
-                logger.warning(f"公司尽调联网搜索失败 ({q}): {e!r}")
-
-        # 2) LLM 生成简介 + 个性化面试问题/答案
+        # ============ 2) LLM 生成简介 + 个性化面试问答 ============
         news_ctx = "\n".join(
             f"- {n['title']}: {n['url']}" for n in news_links
         ) or "（无搜索结果）"
 
-        resume_ctx = resume_text.strip()[:3000] if resume_text else ""
+        resume_ctx = resume_text.strip()[:4000] if resume_text else ""
         resume_block = (
-            f"\n\n用户简历摘要（用于生成个性化面试回答）：\n{resume_ctx}\n"
+            f"\n\n【用户简历】（用于生成个性化、有针对性的面试回答）：\n{resume_ctx}\n"
             if resume_ctx else ""
         )
 
         prompt = (
-            f"你是一位资深求职辅导专家。请针对公司「{company_name}」生成以下内容，"
-            f"严格输出 JSON，不要输出 JSON 以外的文字。\n\n"
-            f"参考搜索结果：\n{news_ctx}\n"
-            f"{resume_block}\n"
-            f"输出字段：\n"
-            f"1. intro: 公司简介（150-250字，包含主营业务、行业地位、核心优势）\n"
-            f"2. why_company_questions: 「为什么选择这家公司」面试问答列表（3-5个）。\n"
-            f"   每个元素格式 {{\"question\": \"面试官可能问的问题\", "
-            f"\"answer\": \"结合公司情况和用户简历的回答思路（80-150字，要具体、有针对性，"
-            f"如果有用户简历需把简历中的经历/技能与公司业务关联起来）\"}}\n"
-            f"   注意：answer 必须是具体的回答思路，不能是空泛的套话。\n"
+            f"你是一位拥有 10 年以上经验的资深职业规划师和面试官辅导专家，"
+            f"深谙互联网/金融/快消/制造等各行业的校招面试套路。\n\n"
+            f"请针对公司「{company_name}」生成以下内容，严格输出 JSON，"
+            f"不要输出 JSON 以外的任何文字。\n\n"
+            f"【参考搜索结果】\n{news_ctx}\n"
+            f"{resume_block}\n\n"
+            f"【输出字段】\n"
+            f"1. intro: 公司简介（200-300字，涵盖主营业务、行业地位、核心产品/技术、"
+            f"近期动态、企业文化/价值观）。要专业、有信息量。\n\n"
+            f"2. why_company_questions: 面试问答列表（3-4个），覆盖面试官最可能追问的"
+            f"核心问题，如：\n"
+            f"   - 「你为什么选择我们公司/这个岗位？」\n"
+            f"   - 「你了解我们公司的哪些业务/产品？」\n"
+            f"   - 「你认为我们公司的核心竞争力是什么？」\n"
+            f"   - 「你的经历和我们岗位的匹配度如何？」\n\n"
+            f"   每个元素格式：{{\"question\": \"面试官问题\", \"answer\": \"专业回答\"}}\n\n"
+            f"   【answer 写作要求（严格遵守）】：\n"
+            f"   - 长度 300-500 字，要充实、有细节，不能空泛\n"
+            f"   - 采用「表态 + 论据1（公司业务/行业洞察）+ 论据2（个人经历+数据）"
+            f"+ 收尾匹配」的结构\n"
+            f"   - 必须结合用户简历中的具体经历/项目/技能，用数据量化（如"
+            f"「在XX项目中负责YY，将ZZ提升了30%」），把个人优势和公司需求强关联\n"
+            f"   - 体现行业洞察力：提到公司的具体产品、业务线、竞争对手、行业趋势\n"
+            f"   - 语言专业、自信，像一个真正了解行业、做过功课的候选人，"
+            f"避免「我觉得」「可能」「大概」这类模糊词\n"
+            f"   - 不要写「求职者应该」「建议」这类第三人称，直接写第一人称的回答内容\n"
         )
         content = client._chat(
             [{"role": "user", "content": prompt}],
-            temperature=0.3,
-            max_tokens=2000,
+            temperature=0.4,
+            max_tokens=3000,
             json_mode=True,
         )
         intro = ""
@@ -200,7 +152,6 @@ class LLMProxyService:
                 data = json.loads(content)
                 intro = data.get("intro", "")
                 raw_questions = data.get("why_company_questions", [])
-                # 兼容旧字段 hint，统一转成 answer
                 for q in raw_questions:
                     if isinstance(q, dict):
                         answer = q.get("answer") or q.get("hint") or ""
@@ -233,6 +184,133 @@ class LLMProxyService:
             "news_links": news_links,
             "why_company_questions": questions,
         }
+
+    def _search_company_info(self, company_name: str):
+        """搜索公司官网 + 近期新闻。Bing 为主（直接 URL），百度为辅（新闻补充）。
+
+        Returns: (official_website: str, news_links: list[dict])
+        """
+        import re
+        import requests as _requests
+
+        browser_headers = {
+            "User-Agent": (
+                "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) "
+                "AppleWebKit/537.36 (KHTML, like Gecko) "
+                "Chrome/120.0.0.0 Safari/537.36"
+            ),
+            "Accept": "text/html,application/xhtml+xml,application/xml;q=0.9,*/*;q=0.8",
+            "Accept-Language": "zh-CN,zh;q=0.9,en;q=0.8",
+            "Accept-Encoding": "gzip, deflate",
+            "Connection": "keep-alive",
+        }
+
+        skip_domains = (
+            "baidu.com", "zhihu.com", "bilibili.com", "sohu.com",
+            "163.com", "sina.com", "qq.com", "weibo.com",
+            "duckduckgo.com", "google.com", "bing.com", "microsoft.com",
+            "wikipedia.org", "baike.baidu.com", "douyin.com",
+            "xiaohongshu.com", "linkedin.com", "csdn.net", "jianshu.com",
+            "maimai.cn",
+        )
+
+        def _is_skipped(href: str) -> bool:
+            return any(d in href for d in skip_domains)
+
+        def _extract_real_url(href: str) -> str:
+            """解析百度跳转链接 / DDG 重定向，返回真实 URL。"""
+            if "baidu.com/link?url=" in href:
+                try:
+                    resp = _requests.head(href, headers=browser_headers,
+                                          allow_redirects=True, timeout=8)
+                    return resp.url
+                except Exception:
+                    return href
+            if "uddg=" in href:
+                from urllib.parse import unquote, urlparse, parse_qs
+                parsed = urlparse(href)
+                raw = parse_qs(parsed.query).get("uddg", [""])[0]
+                return unquote(raw) if raw else href
+            return href
+
+        official_website = ""
+        news_links: list = []
+        seen_urls = set()
+
+        # ---- 1) Bing 搜索（官网 + 新闻，返回直接 URL）----
+        try:
+            r = _requests.get(
+                "https://www.bing.com/search",
+                params={"q": f"{company_name} 官网 最新新闻"},
+                headers=browser_headers,
+                timeout=12,
+            )
+            r.raise_for_status()
+            blocks = re.findall(
+                r'<li[^>]*class="[^"]*b_algo[^"]*"[^>]*>(.*?)</li>',
+                r.text, re.S,
+            )
+            for b in blocks:
+                m = re.search(
+                    r'<a[^>]+href="(https?://[^"]+)"[^>]*>(.*?)</a>', b, re.S
+                )
+                if not m:
+                    continue
+                href = m.group(1)
+                title = re.sub(r"<[^>]+>", "", m.group(2)).strip()
+                if not title or href in seen_urls:
+                    continue
+                seen_urls.add(href)
+                if not official_website and not _is_skipped(href):
+                    official_website = href
+                news_links.append({"title": title[:80], "url": href})
+                if len(news_links) >= 6:
+                    break
+        except Exception as e:  # noqa: BLE001
+            logger.warning(f"Bing 搜索失败 ({company_name}): {e!r}")
+
+        # ---- 2) 百度搜索（补充新闻，国内覆盖最全）----
+        if len(news_links) < 5:
+            try:
+                r = _requests.get(
+                    "https://www.baidu.com/s",
+                    params={"wd": f"{company_name} 最新新闻 动态"},
+                    headers=browser_headers,
+                    timeout=12,
+                )
+                r.raise_for_status()
+                links = re.findall(
+                    r'<h3[^>]*>\s*<a[^>]+href="([^"]+)"[^>]*>(.*?)</a>',
+                    r.text, re.S,
+                )
+                for href, title in links:
+                    title = re.sub(r"<[^>]+>", "", title).strip()
+                    if not title:
+                        continue
+                    real_url = _extract_real_url(href)
+                    if real_url in seen_urls:
+                        continue
+                    seen_urls.add(real_url)
+                    if not official_website and not _is_skipped(real_url):
+                        official_website = real_url
+                    news_links.append({"title": title[:80], "url": real_url})
+                    if len(news_links) >= 8:
+                        break
+            except Exception as e:  # noqa: BLE001
+                logger.warning(f"百度搜索失败 ({company_name}): {e!r}")
+
+        # 去重 + 限制条数
+        final_news = []
+        seen = set()
+        for n in news_links:
+            if n["url"] in seen:
+                continue
+            seen.add(n["url"])
+            final_news.append(n)
+            if len(final_news) >= 6:
+                break
+
+        return official_website, final_news
 
     def _run_with_timeout(self, fn, *args, label: str = "llm_call"):
         """在线程池中执行 fn，超过 self.timeout 抛 TimeoutError。

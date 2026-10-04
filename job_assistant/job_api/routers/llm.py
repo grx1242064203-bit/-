@@ -155,7 +155,7 @@ def company_due_diligence(
     """公司尽调卡：生成公司简介/官网/新闻/个性化面试问答。
 
     自动读取用户的 active 简历画像，把简历文本喂给 LLM，生成结合用户经历的
-    个性化面试回答。结果按 (user_id, company_name) 缓存。
+    专业面试回答。结果按 (user_id, company_name) 缓存。
     """
     user_id = user["user_id"]
     company_name = req.company_name.strip()
@@ -198,71 +198,3 @@ def company_due_diligence(
         why_company_questions=result.get("why_company_questions", []),
     )
     return {**saved, "cached": False}
-
-
-# ===== PDF 简历解析（multipart 上传）=====
-
-from fastapi import UploadFile, File
-
-
-@router.post("/parse-resume-file", response_model=ParseResumeResponse)
-async def parse_resume_file(
-    file: UploadFile = File(...),
-    user: dict = Depends(get_current_user),
-):
-    """上传 PDF / .txt / .md 简历文件 → 提取文本 → LLM 解析。
-
-    优先用文本方式（.txt/.md 直接读），PDF 走 PyMuPDF 提取文本层。
-    扫描件 PDF（无文本层）会返回 keywords=[], fit_directions=[]，前端应提示。
-    """
-    import logging as _logging
-    _log = _logging.getLogger(__name__)
-    user_id = user["user_id"]
-    _check_quota(user_id)
-
-    try:
-        file_bytes = await file.read()
-        filename = (file.filename or "resume").lower()
-
-        # 根据扩展名选择提取方式
-        if filename.endswith(".pdf"):
-            from services.pdf_extractor import extract_pdf_text
-            text = extract_pdf_text(file_bytes)
-            if not text:
-                # PDF 扫描件或加密
-                _log.warning(f"PDF 无法提取文本: {filename}")
-                return {
-                    "keywords": [],
-                    "fit_directions": [],
-                    "warning": "无法从 PDF 提取文本（可能是扫描件或加密文件）。"
-                               "请尝试可复制文本的 PDF，或转为 .txt/.md 后上传。",
-                }
-        elif filename.endswith((".txt", ".md", ".markdown")):
-            text = file_bytes.decode("utf-8", errors="ignore").strip()
-        else:
-            raise HTTPException(
-                status_code=400,
-                detail=f"不支持的文件类型: {filename}。支持 .pdf / .txt / .md",
-            )
-
-        if len(text) < 50:
-            raise HTTPException(
-                status_code=400,
-                detail="简历文本太短（< 50 字符），请确认文件内容完整。",
-            )
-
-        result = _proxy.parse_resume(text)
-    except HTTPException:
-        raise
-    except TimeoutError as e:
-        _handle_llm_error(e, "parse_resume_file")
-        return
-    except Exception as e:
-        _handle_llm_error(e, "parse_resume_file")
-        return
-
-    increment_usage(user_id)
-    return {
-        "keywords": result.get("keywords", []),
-        "fit_directions": result.get("fit_directions", []),
-    }

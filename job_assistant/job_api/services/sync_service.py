@@ -41,7 +41,7 @@ MAX_PAGE_SIZE = 1000
 _JOBS_VIEW_SQL = """
 CREATE VIEW IF NOT EXISTS jobs AS
 SELECT
-    p.id AS job_id,
+    CAST(p.id AS TEXT) AS job_id,
     p.company_name AS company,
     p.position_title AS title,
     COALESCE(p.job_category, '') AS category,
@@ -90,9 +90,10 @@ class SyncService:
     def _ensure_schema(self) -> None:
         """确保 ``jobs`` 表/视图存在。
 
-        - 已存在(物理表或视图):直接复用,不覆盖。
-        - 不存在:尝试从 positions+announcements+companies 创建同名视图。
-        - 依赖表缺失(例如测试只建了 jobs 表):忽略错误,留给调用方建表。
+        - 已存在物理表：直接复用，不覆盖。
+        - 已存在视图：DROP 后重建（兼容旧版视图字段类型变更，如 job_id 需 CAST AS TEXT）。
+        - 不存在：尝试从 positions+announcements+companies 创建同名视图。
+        - 依赖表缺失（例如测试只建了 jobs 表）：忽略错误，留给调用方建表。
         """
         try:
             conn = self._connect()
@@ -103,7 +104,14 @@ class SyncService:
                 "SELECT type FROM sqlite_master WHERE name = 'jobs'"
             ).fetchone()
             if row is not None:
-                return
+                if row["type"] == "table":
+                    # 物理表：尊重既有对象，不覆盖。
+                    return
+                # 视图：DROP 后重建，确保字段定义与当前 _JOBS_VIEW_SQL 一致。
+                try:
+                    conn.execute("DROP VIEW IF EXISTS jobs")
+                except sqlite3.Error:
+                    pass
             try:
                 conn.execute(_JOBS_VIEW_SQL)
                 conn.commit()

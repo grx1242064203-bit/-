@@ -11,7 +11,7 @@ from typing import Optional
 from fastapi import Depends, HTTPException, status
 from fastapi.security import HTTPAuthorizationCredentials, HTTPBearer
 
-from models.user import get_user_by_id
+from models.user import get_user_by_id, init_db
 from services.jwt_service import verify_token
 
 bearer_scheme = HTTPBearer(auto_error=True)
@@ -21,6 +21,8 @@ async def get_current_user(
     credentials: HTTPAuthorizationCredentials = Depends(bearer_scheme),
 ) -> dict:
     """从 Authorization: Bearer <token> 解析用户。失败 → 401。"""
+    # 确保 users 表存在（首次启动或切换数据目录时兜底）。
+    await init_db()
     payload = verify_token(credentials.credentials)
     if not payload:
         raise HTTPException(

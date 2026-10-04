@@ -5,8 +5,9 @@
 import json
 from contextlib import asynccontextmanager
 
-from fastapi import FastAPI
+from fastapi import FastAPI, Request
 from fastapi.middleware.cors import CORSMiddleware
+from fastapi.responses import JSONResponse
 from slowapi import _rate_limit_exceeded_handler
 from slowapi.errors import RateLimitExceeded
 from slowapi.middleware import SlowAPIMiddleware
@@ -14,10 +15,12 @@ from slowapi.middleware import SlowAPIMiddleware
 from config import get_settings
 from routers.auth import limiter as auth_limiter
 from routers.auth import router as auth_router
+from routers.db_sync import router as db_sync_router
 from routers.health import router as health_router
 from routers.llm import router as llm_router
 from routers.sync import router as sync_router
 from routers.applications import router as applications_router
+from services.sync_service import DatabaseCorruptedError
 
 settings = get_settings()
 
@@ -52,6 +55,25 @@ app.state.limiter = auth_limiter
 app.add_exception_handler(RateLimitExceeded, _rate_limit_exceeded_handler)
 app.add_middleware(SlowAPIMiddleware)
 
+
+@app.exception_handler(DatabaseCorruptedError)
+async def database_corrupted_handler(
+    request: Request, exc: DatabaseCorruptedError
+) -> JSONResponse:
+    """本地 jobs.db 损坏时返回 503 + 清晰的修复提示。
+
+    前端 SyncIndicator 检测到该状态码后，应引导用户点击「重新拉取数据库」
+    （POST /api/v1/sync/pull-db），而非简单重试数据接口。
+    """
+    return JSONResponse(
+        status_code=503,
+        content={
+            "error": exc.detail,
+            "code": "DATABASE_CORRUPTED",
+            "suggestion": "点击同步按钮重新从服务器拉取数据库",
+        },
+    )
+
 # CORS 中间件：开发期允许所有来源时禁用 credentials（兼容 CORS 规范）
 allow_credentials = "*" not in settings.CORS_ORIGINS
 app.add_middleware(
@@ -69,4 +91,5 @@ app.include_router(health_router)
 app.include_router(auth_router, prefix="/api/v1")
 app.include_router(llm_router, prefix="/api/v1")
 app.include_router(sync_router, prefix="/api/v1")
+app.include_router(db_sync_router, prefix="/api/v1")
 app.include_router(applications_router, prefix="/api/v1")

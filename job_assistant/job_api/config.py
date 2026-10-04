@@ -33,6 +33,11 @@ class Settings(BaseSettings):
     JOBS_DB_PATH: Path = Path("../data/jobs.db")
     AUTH_DB_PATH: Path = Path("../data/auth.db")
 
+    # 远程主数据库（服务器）：用于从服务器拉取最新 jobs.db
+    REMOTE_DB_BASE_URL: str = "http://47.250.216.165"
+    REMOTE_DB_INFO_PATH: str = "/api/db/info"
+    REMOTE_DB_DOWNLOAD_PATH: str = "/api/db/download"
+
     # CORS 允许源（开发期默认允许所有来源）
     CORS_ORIGINS: list[str] = ["*"]
 

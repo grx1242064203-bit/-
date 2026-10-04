@@ -17,6 +17,14 @@ import sqlite3
 from pathlib import Path
 from typing import Optional
 
+
+class DatabaseCorruptedError(Exception):
+    """本地 jobs.db 损坏时抛出，路由层捕获后返回清晰的 503 + 修复提示。"""
+
+    def __init__(self, detail: str = "本地数据库损坏，请点击同步重新从服务器拉取") -> None:
+        super().__init__(detail)
+        self.detail = detail
+
 # spec 的 jobs 表字段顺序(对外契约,不要随意调整)
 JOB_FIELDS: tuple[str, ...] = (
     "job_id",
@@ -240,6 +248,8 @@ class SyncService:
         conn = self._connect()
         try:
             rows = conn.execute(sql, params).fetchall()
+        except sqlite3.DatabaseError as e:
+            raise DatabaseCorruptedError(f"数据库损坏: {e}") from e
         finally:
             conn.close()
 
@@ -301,6 +311,8 @@ class SyncService:
                 "ORDER BY updated_at DESC LIMIT ? OFFSET ?",
                 [*params, limit, offset],
             ).fetchall()
+        except sqlite3.DatabaseError as e:
+            raise DatabaseCorruptedError(f"数据库损坏: {e}") from e
         finally:
             conn.close()
 
@@ -314,6 +326,8 @@ class SyncService:
             row = conn.execute(
                 "SELECT COUNT(*) AS total, MAX(updated_at) AS updated_at FROM jobs"
             ).fetchone()
+        except sqlite3.DatabaseError as e:
+            raise DatabaseCorruptedError(f"数据库损坏: {e}") from e
         finally:
             conn.close()
         return {
@@ -371,6 +385,8 @@ class SyncService:
                 "ORDER BY last_updated DESC LIMIT ? OFFSET ?",
                 [*params, limit, offset],
             ).fetchall()
+        except sqlite3.DatabaseError as e:
+            raise DatabaseCorruptedError(f"数据库损坏: {e}") from e
         finally:
             conn.close()
 
@@ -394,6 +410,8 @@ class SyncService:
                 "SELECT company_type, COUNT(*) AS c FROM company_overview "
                 "WHERE company_type != '' GROUP BY company_type ORDER BY c DESC"
             ).fetchall()
+        except sqlite3.DatabaseError as e:
+            raise DatabaseCorruptedError(f"数据库损坏: {e}") from e
         finally:
             conn.close()
 
@@ -411,6 +429,8 @@ class SyncService:
                 "SELECT category, COUNT(*) AS c FROM jobs "
                 "WHERE category != '' GROUP BY category ORDER BY c DESC"
             ).fetchall()
+        except sqlite3.DatabaseError as e:
+            raise DatabaseCorruptedError(f"数据库损坏: {e}") from e
         finally:
             conn.close()
 

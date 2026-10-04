@@ -33,6 +33,24 @@ export interface Application {
   offer_at: string | null;
   created_at: string;
   updated_at: string;
+
+  // ===== 后端 enrichment（关联岗位库/公司库后补充，可能为空）=====
+  industry?: string;
+  company_type?: string;
+  publish_time?: string;
+  deadline?: string;
+  // 公司库专属
+  recruit_type?: string;
+  recruit_target?: string;
+  location?: string;
+  // 岗位库专属
+  position_title?: string;
+  job_category?: string;
+  min_education?: string;
+  is_mt?: boolean;
+  jd_summary?: string;
+  difficulty?: string;
+  city?: string;
 }
 
 export function createApplication(data: {

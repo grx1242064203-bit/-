@@ -124,13 +124,64 @@ export default function RecruitmentCard({ application }: Props) {
           </div>
         </div>
 
+        {/* 岗位/公告详情（enrichment 字段） */}
+        {(application.industry || application.company_type || application.deadline ||
+          application.job_category || application.min_education || application.jd_summary) && (
+          <div className="mt-4 rounded-xl border border-white/60 bg-white/30 p-3">
+            <div className="mb-2 text-xs font-semibold text-text-muted">📋 岗位/公告信息</div>
+            <div className="grid grid-cols-2 gap-x-4 gap-y-1.5 text-xs">
+              {application.industry && (
+                <InfoRow label="行业" value={application.industry} />
+              )}
+              {application.company_type && (
+                <InfoRow label="公司类型" value={application.company_type} />
+              )}
+              {application.job_category && (
+                <InfoRow label="岗位分类" value={application.job_category} />
+              )}
+              {application.min_education && (
+                <InfoRow label="最低学历" value={application.min_education} />
+              )}
+              {application.is_mt && (
+                <InfoRow label="管培生" value="是" />
+              )}
+              {application.difficulty && (
+                <InfoRow label="难度" value={application.difficulty} />
+              )}
+              {application.city && (
+                <InfoRow label="工作城市" value={application.city} />
+              )}
+              {application.publish_time && (
+                <InfoRow label="发布时间" value={formatDate(application.publish_time)} />
+              )}
+              {application.deadline && (
+                <InfoRow label="截止时间" value={formatDate(application.deadline)} />
+              )}
+              {application.recruit_type && (
+                <InfoRow label="招聘类型" value={application.recruit_type} />
+              )}
+              {application.recruit_target && (
+                <InfoRow label="招聘对象" value={application.recruit_target} />
+              )}
+            </div>
+            {application.jd_summary && (
+              <div className="mt-2 border-t border-white/40 pt-2">
+                <div className="text-xs font-medium text-text-muted">JD 摘要</div>
+                <p className="mt-1 text-xs leading-relaxed text-text">
+                  {application.jd_summary}
+                </p>
+              </div>
+            )}
+          </div>
+        )}
+
         {/* 链接区：DB 关联显示公告/投递；邮件显示邮件链接 */}
         <div className="mt-4 flex flex-wrap gap-2">
           {isDbLinked && application.announcement_url && (
             <button
               type="button"
               onClick={() => void openExternalUrl(application.announcement_url)}
-              className="rounded-pill bg-primary-soft px-3 py-1.5 text-xs font-medium text-primary-dark hover:bg-primary-light"
+              className="rounded-pill border border-primary/40 bg-white px-3 py-1.5 text-xs font-medium text-primary-dark hover:bg-primary-soft"
             >
               📢 招聘公告
             </button>
@@ -139,7 +190,7 @@ export default function RecruitmentCard({ application }: Props) {
             <button
               type="button"
               onClick={() => void openExternalUrl(application.apply_url)}
-              className="rounded-pill bg-success/15 px-3 py-1.5 text-xs font-medium text-success hover:bg-success/25"
+              className="rounded-pill bg-success px-3 py-1.5 text-xs font-semibold text-white hover:bg-success-dark"
             >
               📮 投递链接
             </button>
@@ -195,13 +246,17 @@ export default function RecruitmentCard({ application }: Props) {
             </div>
           ) : dd ? (
             <div className="mt-3 space-y-3">
-              {dd.intro && (
+              {dd.intro ? (
                 <div>
                   <div className="text-xs font-medium text-text-muted">公司简介</div>
                   <p className="mt-1 text-sm leading-relaxed text-text">{dd.intro}</p>
                 </div>
+              ) : (
+                <div className="rounded-lg bg-warning-soft/30 px-3 py-2 text-xs text-warning-dark">
+                  ⚠️ AI 未能生成公司简介，可能是公司名称不明确或联网搜索受限。可稍后重试。
+                </div>
               )}
-              {dd.official_website && (
+              {dd.official_website ? (
                 <div>
                   <div className="text-xs font-medium text-text-muted">官网</div>
                   <button
@@ -212,8 +267,10 @@ export default function RecruitmentCard({ application }: Props) {
                     {dd.official_website}
                   </button>
                 </div>
+              ) : (
+                <div className="text-xs text-text-faint">官网：暂未识别到</div>
               )}
-              {dd.news_links.length > 0 && (
+              {dd.news_links.length > 0 ? (
                 <div>
                   <div className="text-xs font-medium text-text-muted">近期新闻</div>
                   <ul className="mt-1 space-y-1">
@@ -230,6 +287,8 @@ export default function RecruitmentCard({ application }: Props) {
                     ))}
                   </ul>
                 </div>
+              ) : (
+                <div className="text-xs text-text-faint">近期新闻：暂未搜索到</div>
               )}
               {dd.why_company_questions.length > 0 && (
                 <div>
@@ -248,6 +307,11 @@ export default function RecruitmentCard({ application }: Props) {
                   </div>
                 </div>
               )}
+              {dd.generated_at && (
+                <div className="text-[10px] text-text-faint">
+                  生成时间：{dd.generated_at}
+                </div>
+              )}
             </div>
           ) : (
             <div className="mt-3 text-center text-xs text-text-faint">
@@ -256,6 +320,17 @@ export default function RecruitmentCard({ application }: Props) {
           )}
         </div>
       </div>
+    </div>
+  );
+}
+
+function InfoRow({ label, value }: { label: string; value: string }) {
+  return (
+    <div className="flex items-baseline gap-1">
+      <span className="shrink-0 text-text-faint">{label}:</span>
+      <span className="truncate font-medium text-text" title={value}>
+        {value}
+      </span>
     </div>
   );
 }

@@ -230,9 +230,10 @@ async def create_application(
         row = conn.execute(
             "SELECT * FROM applications WHERE id=?", (app_id,)
         ).fetchone()
-        return _row_to_app(row) if row else {}
+        app = _row_to_app(row) if row else {}
     finally:
         conn.close()
+    return _enrich_linked_data(app) if app else app
 
 
 async def update_application(
@@ -320,9 +321,10 @@ async def list_applications(user_id: int, status: str = "") -> list[dict]:
                 "SELECT * FROM applications WHERE user_id=? ORDER BY updated_at DESC",
                 (user_id,),
             ).fetchall()
-        return [_row_to_app(r) for r in rows]
+        apps = [_row_to_app(r) for r in rows]
     finally:
         conn.close()
+    return [_enrich_linked_data(a) for a in apps]
 
 
 async def get_application(app_id: int, user_id: int) -> dict | None:
@@ -332,6 +334,89 @@ async def get_application(app_id: int, user_id: int) -> dict | None:
         row = conn.execute(
             "SELECT * FROM applications WHERE id=? AND user_id=?", (app_id, user_id)
         ).fetchone()
-        return _row_to_app(row) if row else None
+        if not row:
+            return None
+        app = _row_to_app(row)
     finally:
         conn.close()
+    return _enrich_linked_data(app)
+
+
+def _enrich_linked_data(app: dict) -> dict:
+    """根据 link_type / link_id 关联岗位库/公司库，补充行业、公司类型、发布时间、截止时间等字段。
+
+    - link_type='company' → 查 companies + 最新公告：industry, company_type, publish_time, deadline
+    - link_type='job'    → 查 positions + 公告 + 公司：industry, company_type, job_category,
+                            min_education, is_mt, jd_summary, difficulty, publish_time, deadline
+    - 其他来源不补充，返回原 dict
+    """
+    link_type = app.get("link_type")
+    link_id = app.get("link_id")
+    if not link_type or not link_id:
+        return app
+
+    try:
+        import sqlite3 as _sqlite3
+        from job_db import DB_PATH as _JOBS_DB_PATH
+
+        jobs_conn = _sqlite3.connect(_JOBS_DB_PATH)
+        jobs_conn.row_factory = _sqlite3.Row
+        try:
+            if link_type == "company":
+                row = jobs_conn.execute(
+                    """SELECT c.industry, c.company_type,
+                              a.publish_time, a.deadline,
+                              a.recruit_type, a.recruit_target,
+                              a.location AS location
+                       FROM companies c
+                       LEFT JOIN announcements a
+                         ON a.company_id = c.id
+                        AND a.last_modified = (
+                            SELECT MAX(last_modified) FROM announcements WHERE company_id = c.id
+                        )
+                       WHERE c.id = ?""",
+                    (int(link_id),),
+                ).fetchone()
+                if row:
+                    app.update({
+                        "industry": row["industry"] or "",
+                        "company_type": row["company_type"] or "",
+                        "publish_time": row["publish_time"] or "",
+                        "deadline": row["deadline"] or "",
+                        "recruit_type": row["recruit_type"] or "",
+                        "recruit_target": row["recruit_target"] or "",
+                        "location": row["location"] or "",
+                    })
+            elif link_type == "job":
+                row = jobs_conn.execute(
+                    """SELECT p.position_title, p.job_category, p.min_education,
+                              p.is_management_trainee, p.jd_summary, p.difficulty,
+                              p.city,
+                              c.industry, c.company_type,
+                              a.publish_time, a.deadline
+                       FROM positions p
+                       LEFT JOIN companies c ON c.id = p.company_id
+                       LEFT JOIN announcements a ON a.id = p.announcement_id
+                       WHERE p.id = ?""",
+                    (int(link_id),),
+                ).fetchone()
+                if row:
+                    app.update({
+                        "position_title": row["position_title"] or "",
+                        "job_category": row["job_category"] or "",
+                        "min_education": row["min_education"] or "",
+                        "is_mt": bool(row["is_management_trainee"]),
+                        "jd_summary": row["jd_summary"] or "",
+                        "difficulty": row["difficulty"] or "",
+                        "city": row["city"] or "",
+                        "industry": row["industry"] or "",
+                        "company_type": row["company_type"] or "",
+                        "publish_time": row["publish_time"] or "",
+                        "deadline": row["deadline"] or "",
+                    })
+        finally:
+            jobs_conn.close()
+    except Exception as e:  # noqa: BLE001 enrichment 失败不影响主记录展示
+        import logging
+        logging.getLogger(__name__).warning(f"enrich linked data failed: {e!r}")
+    return app

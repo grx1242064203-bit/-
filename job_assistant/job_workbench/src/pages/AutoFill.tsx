@@ -4,7 +4,7 @@ import { openExternalUrl } from "../utils/link";
 const NOWCODER_INTRO_URL = "https://www.nowcoder.com/my/resume-plugin-intro";
 const NOWCODER_CHROME_URL =
   "https://chromewebstore.google.com/detail/牛客网申助手-免费ai网申自动/djdbmjmjjimlgojgmjcnjkljnhnnplhf";
-const NOWCODER_TUTORIAL_URL = "https://www.nowcoder.com/discuss/1606946";
+const NOWCODER_TUTORIAL_URL = "https://www.bilibili.com/video/BV1vC28BtEFZ/?spm_id_from=333.1391.0.0&vd_source=e05d3335e6f32fe7709e3bcc4d7cb2e4";
 
 export default function AutoFill() {
   return (
@@ -99,7 +99,7 @@ export default function AutoFill() {
               onClick={() => openExternalUrl(NOWCODER_TUTORIAL_URL)}
               className="text-xs text-primary-dark underline-offset-2 hover:underline"
             >
-              官方图文教程 →
+              官方视频教程 →
             </button>
           </div>
           <ol className="space-y-3 text-sm text-text">

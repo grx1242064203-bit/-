@@ -1,4 +1,5 @@
 import { create } from "zustand";
+import { extractErrorMessage } from "../api/client";
 import {
   listApplications,
   updateApplication,
@@ -132,7 +133,7 @@ export const useAppStore = create<AppState>((set) => ({
       const res = await listApplications();
       set({ applications: res.applications, isLoading: false });
     } catch (e) {
-      const msg = e instanceof Error ? e.message : String(e);
+      const msg = extractErrorMessage(e);
       set({ error: msg, isLoading: false });
     }
   },
@@ -143,7 +144,7 @@ export const useAppStore = create<AppState>((set) => ({
       set((s) => ({ applications: [app, ...s.applications] }));
       return app;
     } catch (e) {
-      const msg = e instanceof Error ? e.message : String(e);
+      const msg = extractErrorMessage(e);
       set({ error: msg });
       return null;
     }
@@ -167,7 +168,7 @@ export const useAppStore = create<AppState>((set) => ({
       if (status === "interview") updateData.interview_round = nextRound;
       await updateApplication(app.id, updateData);
     } catch (e) {
-      const msg = e instanceof Error ? e.message : String(e);
+      const msg = extractErrorMessage(e);
       set((s) => ({
         applications: s.applications.map((a) =>
           a.id === app.id ? prev : a
@@ -187,7 +188,7 @@ export const useAppStore = create<AppState>((set) => ({
     try {
       await updateApplication(app.id, { interview_round: round });
     } catch (e) {
-      const msg = e instanceof Error ? e.message : String(e);
+      const msg = extractErrorMessage(e);
       set((s) => ({
         applications: s.applications.map((a) =>
           a.id === app.id ? { ...a, interview_round: app.interview_round } : a
@@ -205,7 +206,7 @@ export const useAppStore = create<AppState>((set) => ({
         selectedAppId: s.selectedAppId === appId ? null : s.selectedAppId,
       }));
     } catch (e) {
-      const msg = e instanceof Error ? e.message : String(e);
+      const msg = extractErrorMessage(e);
       set({ error: msg });
     }
   },

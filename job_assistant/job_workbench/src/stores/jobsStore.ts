@@ -6,6 +6,7 @@
 // 多值在请求时用逗号拼接，后端 IN 子句匹配。
 
 import { create } from "zustand";
+import { extractErrorMessage } from "../api/client";
 import { getJobs, type Job, type JobFilter } from "../api/jobs";
 
 const PAGE_SIZE = 50;
@@ -72,7 +73,7 @@ export const useJobsStore = create<JobsState>((set, get) => ({
       });
     } catch (e) {
       if (seq !== loadSeq) return;
-      const msg = e instanceof Error ? e.message : String(e);
+      const msg = extractErrorMessage(e);
       set({ error: msg, isLoading: false, jobs: [] });
     }
   },
@@ -109,7 +110,7 @@ export const useJobsStore = create<JobsState>((set, get) => ({
       }));
     } catch (e) {
       if (seq !== loadSeq) return;
-      const msg = e instanceof Error ? e.message : String(e);
+      const msg = extractErrorMessage(e);
       set({ error: msg, isLoadingMore: false });
     }
   },

@@ -3,7 +3,7 @@
 import { useEffect, useRef, useState, type ReactNode } from "react";
 import { getStatsOverview, type StatsOverview } from "../api/companies";
 import { useJobsStore } from "../stores/jobsStore";
-import { useAppStore, type AppStatus } from "../stores/appStore";
+import { useAppStore, type AppStatus, type Application } from "../stores/appStore";
 import { colorMap, pillClass } from "../utils/colorMap";
 import { openExternalUrl } from "../utils/link";
 import Truncate from "../components/Truncate";
@@ -67,15 +67,27 @@ export default function Jobs() {
   const scrollRef = useRef<HTMLDivElement>(null);
   const [kwInput, setKwInput] = useState("");
 
+  const applications = useAppStore((s) => s.applications);
+  const loadApplications = useAppStore((s) => s.loadApplications);
+
   // 加载统计（含筛选选项）
   useEffect(() => {
     getStatsOverview().then(setStats).catch(() => {});
   }, []);
 
+  // 加载投递记录（用于按钮状态反馈）
+  useEffect(() => {
+    void loadApplications();
+  }, [loadApplications]);
+
   // 首次加载
   useEffect(() => {
     void loadJobs();
   }, [loadJobs]);
+
+  // 按岗位查匹配的投递记录
+  const appByJob = (jobId: string): Application | undefined =>
+    applications.find((a) => a.link_type === "job" && a.link_id === jobId);
 
   // 滚动加载更多
   const handleScroll = () => {
@@ -217,7 +229,7 @@ export default function Jobs() {
               </tr>
             ) : (
               jobs.map((j) => (
-                <JobRow key={j.job_id} job={j} visibleKeys={visibleKeys} />
+                <JobRow key={j.job_id} job={j} visibleKeys={visibleKeys} application={appByJob(j.job_id)} />
               ))
             )}
           </tbody>
@@ -283,9 +295,23 @@ function jobColWidth(key: string): string {
   }
 }
 
-function JobRow({ job, visibleKeys }: { job: import("../api/jobs").Job; visibleKeys: string[] }) {
+function JobRow({
+  job,
+  visibleKeys,
+  application,
+}: {
+  job: import("../api/jobs").Job;
+  visibleKeys: string[];
+  application?: Application;
+}) {
   const addApplication = useAppStore((s) => s.addApplication);
+  const removeApplication = useAppStore((s) => s.removeApplication);
   const [busy, setBusy] = useState(false);
+
+  const status = application?.status;
+  const isFavorited = status === "favorite";
+  const isApplied = status === "applied";
+  const inPipeline = !!application && !isFavorited && !isApplied;
 
   async function quickAdd(status: AppStatus) {
     if (busy) return;
@@ -306,26 +332,62 @@ function JobRow({ job, visibleKeys }: { job: import("../api/jobs").Job; visibleK
     }
   }
 
+  // 点击收藏：已收藏则取消，否则设为收藏
+  const handleFavorite = () => {
+    if (isFavorited && application) {
+      void removeApplication(application.id);
+    } else {
+      void quickAdd("favorite");
+    }
+  };
+
+  // 点击投递：已投递则取消，否则设为已投递
+  const handleApply = () => {
+    if (isApplied && application) {
+      void removeApplication(application.id);
+    } else {
+      void quickAdd("applied");
+    }
+  };
+
   const cells: Record<string, ReactNode> = {
     actions: (
       <div className="flex items-center gap-1">
         <button
           type="button"
-          onClick={() => void quickAdd("favorite")}
+          onClick={handleFavorite}
           disabled={busy}
-          className="rounded bg-white/60 px-1.5 py-0.5 text-xs text-text-muted transition hover:bg-primary-soft hover:text-primary-dark disabled:opacity-50"
-          title="加入收藏"
+          className={`relative rounded px-1.5 py-0.5 text-xs transition disabled:opacity-50 ${
+            isFavorited
+              ? "bg-primary text-ink"
+              : inPipeline
+                ? "bg-primary-soft/60 text-primary-dark"
+                : "bg-white/60 text-text-muted hover:bg-primary-soft hover:text-primary-dark"
+          }`}
+          title={isFavorited ? "取消收藏" : "加入收藏"}
         >
-          ⭐
+          {isFavorited ? "⭐" : "☆"}
+          {inPipeline && (
+            <span className="absolute -right-0.5 -top-0.5 h-1.5 w-1.5 rounded-full bg-success" />
+          )}
         </button>
         <button
           type="button"
-          onClick={() => void quickAdd("applied")}
+          onClick={handleApply}
           disabled={busy}
-          className="rounded bg-primary-soft px-1.5 py-0.5 text-xs font-medium text-primary-dark transition hover:bg-primary hover:text-ink disabled:opacity-50"
-          title="标记已投递"
+          className={`relative rounded px-1.5 py-0.5 text-xs transition disabled:opacity-50 ${
+            isApplied
+              ? "bg-success text-white"
+              : inPipeline
+                ? "bg-success-soft text-success"
+                : "bg-primary-soft font-medium text-primary-dark hover:bg-primary hover:text-ink"
+          }`}
+          title={isApplied ? "取消投递" : "标记已投递"}
         >
           📮
+          {inPipeline && (
+            <span className="absolute -right-0.5 -top-0.5 h-1.5 w-1.5 rounded-full bg-success" />
+          )}
         </button>
       </div>
     ),

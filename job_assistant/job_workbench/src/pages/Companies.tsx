@@ -1,13 +1,14 @@
 // 公司总览页面：表格形式，字段对齐飞书公司表。
 // 功能：统计卡片、列筛选（多选）、列显隐、首列固定、长文本截断、彩色标签、链接安全打开。
-import { useEffect, useState, type ReactNode } from "react";
+import { useEffect, useRef, useState, type ReactNode } from "react";
+import { extractErrorMessage } from "../api/client";
 import {
   getCompanies,
   getStatsOverview,
   type Company,
   type StatsOverview,
 } from "../api/companies";
-import { useAppStore, type AppStatus } from "../stores/appStore";
+import { useAppStore, type AppStatus, type Application } from "../stores/appStore";
 import { colorMap, pillClass } from "../utils/colorMap";
 import { openExternalUrl } from "../utils/link";
 import Truncate from "../components/Truncate";
@@ -38,39 +39,84 @@ export default function Companies() {
   const [companies, setCompanies] = useState<Company[]>([]);
   const [total, setTotal] = useState(0);
   const [loading, setLoading] = useState(true);
+  const [loadingMore, setLoadingMore] = useState(false);
+  const [hasMore, setHasMore] = useState(true);
   const [error, setError] = useState<string | null>(null);
 
   const [keyword, setKeyword] = useState("");
   const [columnFilters, setColumnFilters] = useState<Record<string, string[]>>({});
   const [stats, setStats] = useState<StatsOverview | null>(null);
   const [visibleKeys, setVisibleKeys] = useState<string[]>(COLUMNS.map((c) => c.key));
+  const scrollRef = useRef<HTMLDivElement>(null);
+
+  const applications = useAppStore((s) => s.applications);
+  const loadApplications = useAppStore((s) => s.loadApplications);
 
   // 加载统计（含筛选选项）
   useEffect(() => {
     getStatsOverview().then(setStats).catch(() => {});
   }, []);
 
-  // 加载公司列表
+  // 加载投递记录（用于按钮状态反馈）
   useEffect(() => {
-    setLoading(true);
-    setError(null);
-    const params: Record<string, string> = {};
+    void loadApplications();
+  }, [loadApplications]);
+
+  // 构建请求参数
+  const buildParams = (offset: number) => {
+    const params: Record<string, string | number> = { limit: PAGE_SIZE, offset };
     if (keyword.trim()) params.keyword = keyword.trim();
     for (const [k, vals] of Object.entries(columnFilters)) {
       if (vals.length) params[k] = vals.join(",");
     }
-    getCompanies({ ...params, limit: PAGE_SIZE, offset: 0 })
+    return params;
+  };
+
+  // 加载公司列表（重置）
+  useEffect(() => {
+    setLoading(true);
+    setError(null);
+    getCompanies(buildParams(0))
       .then((res) => {
         setCompanies(res.companies);
         setTotal(res.total);
+        setHasMore(res.companies.length >= PAGE_SIZE);
       })
-      .catch((e) => setError(e instanceof Error ? e.message : String(e)))
+      .catch((e) => setError(extractErrorMessage(e)))
       .finally(() => setLoading(false));
   }, [keyword, columnFilters]);
+
+  // 加载更多
+  const loadMore = async () => {
+    if (loadingMore || !hasMore) return;
+    setLoadingMore(true);
+    try {
+      const res = await getCompanies(buildParams(companies.length));
+      setCompanies((prev) => [...prev, ...res.companies]);
+      setHasMore(res.companies.length >= PAGE_SIZE);
+    } catch (e) {
+      setError(extractErrorMessage(e));
+    } finally {
+      setLoadingMore(false);
+    }
+  };
+
+  // 滚动到底加载更多
+  const handleScroll = () => {
+    const el = scrollRef.current;
+    if (!el) return;
+    if (el.scrollTop + el.clientHeight >= el.scrollHeight - 200) {
+      void loadMore();
+    }
+  };
 
   const hasFilter = keyword.trim() !== "" || Object.values(columnFilters).some((v) => v.length);
 
   const filterOptions = stats?.companies.filter_options ?? {};
+
+  // 按公司查匹配的投递记录
+  const appByCompany = (companyId: string): Application | undefined =>
+    applications.find((a) => a.link_type === "company" && a.link_id === companyId);
 
   return (
     <div className="flex h-full flex-col gap-4">
@@ -137,7 +183,11 @@ export default function Companies() {
       )}
 
       {/* 表格 */}
-      <div className="flex-1 overflow-auto rounded-xl border border-line bg-white/40 backdrop-blur">
+      <div
+        ref={scrollRef}
+        onScroll={handleScroll}
+        className="flex-1 overflow-auto rounded-xl border border-line bg-white/40 backdrop-blur"
+      >
         <table className="w-full min-w-[900px] border-collapse text-sm">
           <thead className="sticky top-0 z-10">
             <tr className="bg-white/85 backdrop-blur-md">
@@ -189,7 +239,12 @@ export default function Companies() {
               </tr>
             ) : (
               companies.map((c) => (
-                <CompanyRow key={c.company_id} company={c} visibleKeys={visibleKeys} />
+                <CompanyRow
+                  key={c.company_id}
+                  company={c}
+                  visibleKeys={visibleKeys}
+                  application={appByCompany(c.company_id)}
+                />
               ))
             )}
           </tbody>
@@ -197,9 +252,23 @@ export default function Companies() {
       </div>
 
       {/* 分页信息 */}
-      <div className="text-xs text-text-muted">
-        共 {total} 家公司，当前显示 {companies.length} 条
-        {total > PAGE_SIZE && "（更多请使用搜索或筛选）"}
+      <div className="flex items-center justify-between text-xs text-text-muted">
+        <span>
+          共 {total} 家公司，已加载 {companies.length} 条
+        </span>
+        {loadingMore ? (
+          <span>加载更多...</span>
+        ) : hasMore ? (
+          <button
+            type="button"
+            onClick={() => void loadMore()}
+            className="text-primary-dark hover:underline"
+          >
+            加载更多
+          </button>
+        ) : (
+          <span>已加载全部</span>
+        )}
       </div>
     </div>
   );
@@ -230,28 +299,78 @@ function colWidth(key: string): string {
   }
 }
 
-function CompanyRow({ company, visibleKeys }: { company: Company; visibleKeys: string[] }) {
+function CompanyRow({
+  company,
+  visibleKeys,
+  application,
+}: {
+  company: Company;
+  visibleKeys: string[];
+  application?: Application;
+}) {
   const addApplication = useAppStore((s) => s.addApplication);
+  const removeApplication = useAppStore((s) => s.removeApplication);
   const [modal, setModal] = useState<{ status: AppStatus } | null>(null);
+
+  const status = application?.status;
+  const isFavorited = status === "favorite";
+  const isApplied = status === "applied";
+  const inPipeline = !!application && !isFavorited && !isApplied;
+
+  // 点击收藏：已收藏则取消，否则弹窗填岗位名后收藏
+  const handleFavorite = () => {
+    if (isFavorited && application) {
+      void removeApplication(application.id);
+    } else {
+      setModal({ status: "favorite" });
+    }
+  };
+
+  // 点击投递：已投递则取消，否则弹窗填岗位名后投递
+  const handleApply = () => {
+    if (isApplied && application) {
+      void removeApplication(application.id);
+    } else {
+      setModal({ status: "applied" });
+    }
+  };
 
   const cells: Record<string, ReactNode> = {
     actions: (
       <div className="flex items-center gap-1">
         <button
           type="button"
-          onClick={() => setModal({ status: "favorite" })}
-          className="rounded bg-white/60 px-1.5 py-0.5 text-xs text-text-muted transition hover:bg-primary-soft hover:text-primary-dark"
-          title="加入收藏"
+          onClick={handleFavorite}
+          className={`relative rounded px-1.5 py-0.5 text-xs transition ${
+            isFavorited
+              ? "bg-primary text-ink"
+              : inPipeline
+                ? "bg-primary-soft/60 text-primary-dark"
+                : "bg-white/60 text-text-muted hover:bg-primary-soft hover:text-primary-dark"
+          }`}
+          title={isFavorited ? "取消收藏" : "加入收藏"}
         >
-          ⭐
+          {isFavorited ? "⭐" : "☆"}
+          {inPipeline && (
+            <span className="absolute -right-0.5 -top-0.5 h-1.5 w-1.5 rounded-full bg-success" />
+          )}
         </button>
         <button
           type="button"
-          onClick={() => setModal({ status: "applied" })}
-          className="rounded bg-primary-soft px-1.5 py-0.5 text-xs font-medium text-primary-dark transition hover:bg-primary hover:text-ink"
-          title="标记已投递"
+          onClick={handleApply}
+          className={`relative rounded px-1.5 py-0.5 text-xs transition ${
+            isApplied
+              ? "bg-success text-white"
+              : inPipeline
+                ? "bg-success-soft text-success"
+                : "bg-primary-soft px-1.5 py-0.5 font-medium text-primary-dark hover:bg-primary hover:text-ink"
+          }`}
+          title={isApplied ? "取消投递" : "标记已投递"}
         >
           📮
+          {inPipeline && (
+            <span className="absolute -right-0.5 -top-0.5 h-1.5 w-1.5 rounded-full bg-success" />
+          )}
         </button>
       </div>
     ),

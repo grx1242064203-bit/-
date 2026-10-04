@@ -13,6 +13,22 @@ export interface ApiError {
   status: number;
 }
 
+/** 从任意异常中提取可读的错误消息（兼容 Error 实例 / ApiError 对象 / 其他）。 */
+export function extractErrorMessage(e: unknown): string {
+  if (e instanceof Error) return e.message;
+  if (e && typeof e === "object") {
+    const obj = e as Record<string, unknown>;
+    if (typeof obj.error === "string") return obj.error;
+    if (typeof obj.message === "string") return obj.message;
+    try {
+      return JSON.stringify(e);
+    } catch {
+      return String(e);
+    }
+  }
+  return String(e);
+}
+
 type TokenAccessor = {
   get: () => string | null;
   set: (token: string | null) => void;

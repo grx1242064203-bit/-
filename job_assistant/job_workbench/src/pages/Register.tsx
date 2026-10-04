@@ -87,11 +87,11 @@ export default function Register() {
   const displayError = formError || error;
 
   const inputCls =
-    "w-full rounded-xl border border-border bg-surface-soft px-4 py-3 text-text outline-none transition focus:border-primary-dark focus:ring-2 focus:ring-primary/30";
+    "glass-soft w-full rounded-xl px-4 py-3 text-text outline-none transition focus:ring-2 focus:ring-primary/30";
 
   return (
-    <div className="flex min-h-screen items-center justify-center bg-bg px-4 py-10">
-      <div className="w-full max-w-md rounded-2xl bg-surface p-8 shadow-lg">
+    <div className="flex min-h-screen items-center justify-center p-4 sm:p-6">
+      <div className="app-window w-full max-w-md p-8 sm:p-10">
         <div className="mb-8 text-center">
           <div className="mx-auto mb-3 flex h-12 w-12 items-center justify-center rounded-2xl bg-primary">
             <span className="text-lg font-bold text-ink">求</span>
@@ -186,7 +186,7 @@ export default function Register() {
                   value={d}
                   onChange={(e) => handleCodeChange(i, e.target.value)}
                   onKeyDown={(e) => handleCodeKey(i, e)}
-                  className="h-14 w-12 rounded-xl border border-border bg-surface-soft text-center text-2xl font-semibold text-text outline-none transition focus:border-primary-dark focus:ring-2 focus:ring-primary/30"
+                  className="glass-soft h-14 w-12 rounded-xl text-center text-2xl font-semibold text-text outline-none transition focus:ring-2 focus:ring-primary/30"
                 />
               ))}
             </div>

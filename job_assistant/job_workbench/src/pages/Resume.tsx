@@ -107,7 +107,7 @@ export default function Resume() {
           <ResumeUploader />
         </div>
       ) : showParsingSpinner ? (
-        <div className="flex h-64 flex-col items-center justify-center rounded-2xl bg-white shadow-card">
+        <div className="glass flex h-64 flex-col items-center justify-center rounded-2xl shadow-card">
           <div className="h-10 w-10 animate-spin rounded-full border-4 border-orange-200 border-t-orange-500" />
           <p className="mt-4 text-sm font-medium text-slate-deep">
             正在分析你的简历…
@@ -117,11 +117,11 @@ export default function Resume() {
           </p>
         </div>
       ) : showParsed ? (
-        <div className="rounded-card bg-white p-6 shadow-card">
+        <div className="glass rounded-card p-6 shadow-card">
           <ParsedProfileDisplay profile={parsedProfile!} />
         </div>
       ) : showUploadedNotParsed ? (
-        <div className="flex h-64 flex-col items-center justify-center rounded-2xl bg-white shadow-card">
+        <div className="glass flex h-64 flex-col items-center justify-center rounded-2xl shadow-card">
           <div className="text-4xl">📝</div>
           <p className="mt-2 text-base font-medium text-slate-deep">
             简历已上传，尚未解析

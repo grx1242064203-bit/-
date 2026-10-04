@@ -22,20 +22,20 @@ export interface KanbanColumn {
   accentText: string;
 }
 
-// 5 列看板：收藏 → 已投递 → 面试中 → 已录用 → 已拒绝（Crextio 暖主题）
+// 5 列看板：收藏 → 已投递 → 面试中 → 已录用 → 已拒绝（Crextio 玻璃主题）
 export const KANBAN_COLUMNS: KanbanColumn[] = [
   {
     status: "favorite",
     label: "⭐ 收藏",
-    columnBg: "bg-surface-soft",
-    headerBg: "bg-surface",
+    columnBg: "",
+    headerBg: "bg-white/40",
     dotColor: "bg-text-faint",
     accentText: "text-text-muted",
   },
   {
     status: "applied",
     label: "📮 已投递",
-    columnBg: "bg-primary-soft/60",
+    columnBg: "bg-primary-soft/50",
     headerBg: "bg-primary-soft",
     dotColor: "bg-primary-dark",
     accentText: "text-ink",
@@ -43,8 +43,8 @@ export const KANBAN_COLUMNS: KanbanColumn[] = [
   {
     status: "interview",
     label: "💬 面试中",
-    columnBg: "bg-warning/15",
-    headerBg: "bg-warning/25",
+    columnBg: "bg-warning/12",
+    headerBg: "bg-warning/20",
     dotColor: "bg-warning",
     accentText: "text-ink",
   },
@@ -52,7 +52,7 @@ export const KANBAN_COLUMNS: KanbanColumn[] = [
     status: "offer",
     label: "🎉 已录用",
     columnBg: "bg-success-soft",
-    headerBg: "bg-success/20",
+    headerBg: "bg-success/18",
     dotColor: "bg-success",
     accentText: "text-success",
   },
@@ -60,7 +60,7 @@ export const KANBAN_COLUMNS: KanbanColumn[] = [
     status: "rejected",
     label: "❌ 已拒绝",
     columnBg: "bg-danger-soft",
-    headerBg: "bg-danger/15",
+    headerBg: "bg-danger/12",
     dotColor: "bg-danger",
     accentText: "text-danger",
   },

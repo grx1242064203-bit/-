@@ -48,7 +48,7 @@ export default function ApplicationCard({
       }}
       onDragEnd={onDragEnd}
       onClick={() => setExpanded((v) => !v)}
-      className="group cursor-pointer rounded-xl border border-border bg-surface p-3.5 shadow-sm transition hover:-translate-y-0.5 hover:shadow-md"
+      className="glass-soft group cursor-pointer rounded-xl p-3.5 shadow-sm transition hover:-translate-y-0.5 hover:shadow-md"
     >
       <div className="flex items-start justify-between gap-2">
         <div className="min-w-0">
@@ -89,13 +89,13 @@ export default function ApplicationCard({
             onChange={(e) => setNotes(e.target.value)}
             placeholder="添加备注（如 HR 联系方式、面试反馈）…"
             rows={3}
-            className="w-full resize-none rounded-lg border border-border bg-surface-soft p-2 text-xs text-text placeholder:text-text-faint focus:border-primary-dark focus:outline-none focus:ring-2 focus:ring-primary/30"
+            className="w-full resize-none rounded-lg border border-white/60 bg-white/40 p-2 text-xs text-text placeholder:text-text-faint backdrop-blur-sm focus:border-primary-dark focus:outline-none focus:ring-2 focus:ring-primary/30"
           />
           <div className="flex justify-end gap-2">
             <button
               type="button"
               onClick={() => setExpanded(false)}
-              className="rounded-pill bg-surface-soft px-3 py-1 text-xs font-medium text-text-muted hover:bg-line"
+              className="glass-soft rounded-pill px-3 py-1 text-xs font-medium text-text-muted hover:text-text"
             >
               取消
             </button>

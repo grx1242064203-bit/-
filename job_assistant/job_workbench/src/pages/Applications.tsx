@@ -21,7 +21,7 @@ export default function Applications() {
         <button
           type="button"
           onClick={() => void loadApplications()}
-          className="ml-auto rounded-pill border border-border bg-surface px-4 py-1.5 text-sm text-text-muted transition hover:border-border-strong hover:text-text"
+          className="glass-soft ml-auto rounded-pill px-4 py-1.5 text-sm text-text-muted transition hover:text-text"
         >
           刷新
         </button>
@@ -37,10 +37,10 @@ export default function Applications() {
       {/* 主体：加载 / 空状态 / 看板 */}
       {isLoading ? (
         <div className="flex h-64 items-center justify-center">
-          <div className="h-8 w-8 animate-spin rounded-full border-4 border-border border-t-primary" />
+          <div className="h-8 w-8 animate-spin rounded-full border-4 border-white/50 border-t-primary" />
         </div>
       ) : isEmpty ? (
-        <div className="flex h-64 flex-col items-center justify-center rounded-xl border border-border bg-surface shadow-sm">
+        <div className="glass flex h-64 flex-col items-center justify-center rounded-xl shadow-sm">
           <div className="text-4xl">📭</div>
           <p className="mt-2 text-base font-medium text-text">
             还没有投递记录

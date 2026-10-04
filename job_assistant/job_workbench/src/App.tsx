@@ -10,7 +10,7 @@ import AuthGuard from "./components/AuthGuard";
 import { useAuthStore } from "./stores/authStore";
 import SyncIndicator from "./components/SyncIndicator";
 
-// 顶部胶囊导航项（对齐 Crextio 顶部导航风格）
+// 顶部胶囊导航项
 interface NavItem {
   to: string;
   label: string;
@@ -36,7 +36,7 @@ function TopNav() {
   };
 
   return (
-    <header className="flex h-16 items-center justify-between border-b border-line bg-surface px-6">
+    <header className="glass-strong flex h-16 items-center justify-between border-b border-white/40 px-6">
       {/* Logo */}
       <div className="flex items-center gap-3">
         <div className="flex h-9 w-9 items-center justify-center rounded-lg bg-primary text-lg font-bold text-ink">
@@ -49,7 +49,7 @@ function TopNav() {
       </div>
 
       {/* 胶囊导航 */}
-      <nav className="flex items-center gap-1 rounded-pill bg-surface-soft p-1 shadow-sm">
+      <nav className="glass-soft flex items-center gap-1 rounded-pill p-1 shadow-sm">
         {NAV_ITEMS.map((item) => {
           const isActive = item.end
             ? location.pathname === item.to
@@ -75,7 +75,7 @@ function TopNav() {
       <div className="flex items-center gap-3">
         <SyncIndicator />
         {user?.email && (
-          <div className="flex items-center gap-2 rounded-pill bg-surface-soft px-3 py-1.5">
+          <div className="glass-soft flex items-center gap-2 rounded-pill px-3 py-1.5">
             <div className="flex h-7 w-7 items-center justify-center rounded-pill bg-primary text-xs font-semibold text-ink">
               {user.email.slice(0, 1).toUpperCase()}
             </div>
@@ -87,7 +87,7 @@ function TopNav() {
         <button
           type="button"
           onClick={handleLogout}
-          className="rounded-pill border border-border px-3 py-1.5 text-xs text-text-muted transition hover:border-border-strong hover:text-text"
+          className="glass-soft rounded-pill px-3 py-1.5 text-xs text-text-muted transition hover:text-text"
         >
           退出
         </button>
@@ -114,12 +114,14 @@ function PageTitle() {
 
 function Layout({ children }: { children: ReactNode }) {
   return (
-    <div className="flex h-screen flex-col overflow-hidden bg-bg">
-      <TopNav />
-      <main className="flex-1 overflow-auto p-6">
-        <PageTitle />
-        {children}
-      </main>
+    <div className="flex min-h-screen items-center justify-center p-3 sm:p-5">
+      <div className="app-window flex h-[calc(100vh-1.5rem)] w-full max-w-[1440px] flex-col sm:h-[calc(100vh-2.5rem)]">
+        <TopNav />
+        <main className="flex-1 overflow-auto p-6">
+          <PageTitle />
+          {children}
+        </main>
+      </div>
     </div>
   );
 }

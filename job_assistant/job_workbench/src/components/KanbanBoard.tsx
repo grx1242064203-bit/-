@@ -54,7 +54,7 @@ export default function KanbanBoard() {
             onDragOver={(e) => handleDragOver(e, col.status)}
             onDragLeave={(e) => handleDragLeave(e, col.status)}
             onDrop={() => handleDrop(col.status)}
-            className={`flex min-h-[60vh] flex-col rounded-xl border border-border p-3 shadow-sm ${col.columnBg} ${
+            className={`glass flex min-h-[60vh] flex-col rounded-xl p-3 shadow-sm ${col.columnBg} ${
               isOver ? "ring-2 ring-primary ring-offset-1" : ""
             }`}
           >
@@ -64,14 +64,14 @@ export default function KanbanBoard() {
               <span className={`text-sm font-semibold ${col.accentText}`}>
                 {col.label}
               </span>
-              <span className="rounded-pill bg-surface px-2 py-0.5 text-xs font-medium text-text-muted shadow-sm">
+              <span className="rounded-pill bg-white/60 px-2 py-0.5 text-xs font-medium text-text-muted shadow-sm backdrop-blur-sm">
                 {items.length}
               </span>
             </div>
 
             <div className="flex flex-1 flex-col gap-2 overflow-y-auto">
               {items.length === 0 ? (
-                <div className="rounded-xl border border-dashed border-border-strong bg-surface/50 p-3 text-center text-xs text-text-faint">
+                <div className="rounded-xl border border-dashed border-white/50 bg-white/20 p-3 text-center text-xs text-text-faint">
                   暂无
                 </div>
               ) : (

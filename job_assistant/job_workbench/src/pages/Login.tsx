@@ -29,8 +29,8 @@ export default function Login() {
   const displayError = formError || error;
 
   return (
-    <div className="flex min-h-screen items-center justify-center bg-bg px-4 py-10">
-      <div className="w-full max-w-md rounded-2xl bg-surface p-8 shadow-lg">
+    <div className="flex min-h-screen items-center justify-center p-4 sm:p-6">
+      <div className="app-window flex w-full max-w-md flex-col items-center justify-center p-8 sm:p-10">
         <div className="mb-8 text-center">
           <div className="mx-auto mb-3 flex h-12 w-12 items-center justify-center rounded-2xl bg-primary">
             <span className="text-lg font-bold text-ink">求</span>
@@ -42,12 +42,12 @@ export default function Login() {
         </div>
 
         {displayError && (
-          <div className="mb-4 rounded-xl bg-danger-soft px-4 py-3 text-sm text-danger">
+          <div className="mb-4 w-full rounded-xl bg-danger-soft px-4 py-3 text-sm text-danger">
             {displayError}
           </div>
         )}
 
-        <form onSubmit={handleSubmit} className="space-y-4" noValidate>
+        <form onSubmit={handleSubmit} className="w-full space-y-4" noValidate>
           <div>
             <label className="mb-1 block text-sm font-medium text-text">
               邮箱
@@ -58,7 +58,7 @@ export default function Login() {
               value={email}
               onChange={(e) => setEmail(e.target.value)}
               placeholder="you@example.com"
-              className="w-full rounded-xl border border-border bg-surface-soft px-4 py-3 text-text outline-none transition focus:border-primary-dark focus:ring-2 focus:ring-primary/30"
+              className="glass-soft w-full rounded-xl px-4 py-3 text-text outline-none transition focus:ring-2 focus:ring-primary/30"
             />
           </div>
           <div>
@@ -71,7 +71,7 @@ export default function Login() {
               value={password}
               onChange={(e) => setPassword(e.target.value)}
               placeholder="至少 6 位"
-              className="w-full rounded-xl border border-border bg-surface-soft px-4 py-3 text-text outline-none transition focus:border-primary-dark focus:ring-2 focus:ring-primary/30"
+              className="glass-soft w-full rounded-xl px-4 py-3 text-text outline-none transition focus:ring-2 focus:ring-primary/30"
             />
           </div>
           <button

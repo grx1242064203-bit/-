@@ -64,7 +64,7 @@ function KeywordItem({ kw, maxWeight }: { kw: KeywordTag; maxWeight: number }) {
 function FitDirectionCard({ dir, maxWeight }: { dir: FitDirection; maxWeight: number }) {
   const pct = maxWeight > 0 ? Math.min(100, Math.max(6, (dir.weight / maxWeight) * 100)) : 0;
   return (
-    <div className="rounded-2xl border border-orange-100 bg-white p-4 shadow-card transition hover:-translate-y-0.5 hover:shadow-lg">
+    <div className="glass rounded-2xl p-4 shadow-card transition hover:-translate-y-0.5 hover:shadow-lg">
       <div className="flex items-start justify-between gap-3">
         <div className="min-w-0">
           <div className="text-sm font-semibold text-slate-deep">
@@ -178,7 +178,7 @@ export default function ParsedProfileDisplay({ profile }: Props) {
           {groups.map(({ meta, items, max }) => (
             <div
               key={meta.key}
-              className="rounded-2xl border border-orange-100 bg-white p-4 shadow-card"
+              className="glass rounded-2xl p-4 shadow-card"
             >
               <div className="mb-3 flex items-center gap-2">
                 <span

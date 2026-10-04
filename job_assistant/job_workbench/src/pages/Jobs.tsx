@@ -40,7 +40,7 @@ export default function Jobs() {
   return (
     <div className="flex h-full gap-5 animate-fade-in">
       {/* 左侧分类导航 */}
-      <aside className="w-52 flex-shrink-0 overflow-y-auto rounded-xl border border-border bg-surface p-4 shadow-sm">
+      <aside className="glass w-52 flex-shrink-0 overflow-y-auto rounded-xl p-4 shadow-sm">
         <div className="mb-3 px-2 text-xs font-semibold uppercase tracking-wide text-text-faint">
           岗位分类
         </div>
@@ -66,19 +66,19 @@ export default function Jobs() {
       {/* 右侧表格 */}
       <div className="flex flex-1 flex-col overflow-hidden space-y-4">
         {/* 筛选栏 */}
-        <div className="flex flex-wrap items-center gap-2 rounded-xl border border-border bg-surface p-3.5 shadow-sm">
+        <div className="glass flex flex-wrap items-center gap-2 rounded-xl p-3.5 shadow-sm">
           <input
             type="text"
             placeholder="搜索岗位/公司…"
             value={keyword}
             onChange={(e) => setKeyword(e.target.value)}
             onKeyDown={(e) => e.key === "Enter" && handleSearch()}
-            className="w-44 rounded-pill border border-border bg-surface-soft px-4 py-1.5 text-sm text-text placeholder:text-text-faint focus:border-primary-dark focus:outline-none focus:ring-2 focus:ring-primary/30"
+            className="w-44 rounded-pill border border-white/60 bg-white/40 px-4 py-1.5 text-sm text-text placeholder:text-text-faint backdrop-blur-sm focus:border-primary-dark focus:outline-none focus:ring-2 focus:ring-primary/30"
           />
           <select
             value={city}
             onChange={(e) => setCity(e.target.value)}
-            className="rounded-pill border border-border bg-surface-soft px-4 py-1.5 text-sm text-text focus:border-primary-dark focus:outline-none"
+            className="rounded-pill border border-white/60 bg-white/40 px-4 py-1.5 text-sm text-text backdrop-blur-sm focus:border-primary-dark focus:outline-none"
           >
             {CITIES.map((c) => (
               <option key={c} value={c}>
@@ -106,10 +106,10 @@ export default function Jobs() {
         )}
 
         {/* 岗位表格 */}
-        <div className="flex-1 overflow-hidden rounded-xl border border-border bg-surface shadow-sm">
+        <div className="glass flex-1 overflow-hidden rounded-xl shadow-sm">
           <div className="overflow-x-auto overflow-y-auto" style={{ maxHeight: "calc(100vh - 300px)" }}>
             <table className="min-w-full">
-              <thead className="sticky top-0 z-10 border-b border-border bg-surface-soft">
+              <thead className="sticky top-0 z-10 border-b border-white/40 bg-white/40 backdrop-blur-md">
                 <tr>
                   <Th>岗位标题</Th>
                   <Th>公司</Th>
@@ -121,7 +121,7 @@ export default function Jobs() {
                   <Th className="text-right">操作</Th>
                 </tr>
               </thead>
-              <tbody className="divide-y divide-line">
+              <tbody className="divide-y divide-black/5">
                 {isLoading && jobs.length === 0
                   ? Array.from({ length: 10 }).map((_, i) => (
                       <tr key={i}>
@@ -146,7 +146,7 @@ export default function Jobs() {
             <button
               type="button"
               onClick={() => void loadMore()}
-              className="rounded-pill border border-border bg-surface px-6 py-2 text-sm font-medium text-text-muted transition hover:border-border-strong hover:text-text"
+              className="glass rounded-pill px-6 py-2 text-sm font-medium text-text-muted transition hover:text-text"
             >
               加载更多
             </button>
@@ -175,13 +175,13 @@ function CategoryButton({
       className={`flex w-full items-center justify-between rounded-pill px-3.5 py-2 text-sm transition-colors ${
         active
           ? "bg-primary font-semibold text-ink shadow-sm"
-          : "text-text-muted hover:bg-surface-soft hover:text-text"
+          : "text-text-muted hover:bg-white/40 hover:text-text"
       }`}
     >
       <span className="truncate">{label}</span>
       <span
         className={`ml-2 shrink-0 rounded-pill px-1.5 text-xs ${
-          active ? "bg-ink/10 text-ink/70" : "bg-surface-soft text-text-faint"
+          active ? "bg-ink/10 text-ink/70" : "bg-white/50 text-text-faint"
         }`}
       >
         {count}
@@ -274,7 +274,7 @@ function JobRow({ job }: { job: Job }) {
             className={`rounded-pill border px-2.5 py-1 text-xs transition ${
               favStatus === "done"
                 ? "border-primary bg-primary text-ink"
-                : "border-border text-text-muted hover:border-primary hover:text-ink"
+                : "border-white/60 bg-white/30 text-text-muted hover:border-primary hover:text-ink"
             }`}
             title="收藏"
           >

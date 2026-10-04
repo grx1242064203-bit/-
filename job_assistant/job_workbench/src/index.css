@@ -3,58 +3,82 @@
 @tailwind utilities;
 
 /* ============================================================
-   求职搭子 · Crextio 风格设计系统
-   暖奶油黄主色 + 白卡片 + 大圆角 + 软阴影 + 顶部胶囊导航
+   求职搭子 · Crextio Glass 设计系统
+   暖奶油黄主色 + 毛玻璃卡片 + 渐变背景 + 大圆角 + 软阴影
+   设计语言：iPhone 式透明感 / 现代玻璃拟态
    ============================================================ */
 :root {
   /* 主色：暖奶油黄（行动、高亮、选中态） */
   --color-primary: #ffd23f;
   --color-primary-dark: #f5b800;
   --color-primary-light: #fff4c2;
-  --color-primary-soft: #fdf6dc;
+  --color-primary-soft: rgba(255, 210, 63, 0.18);
 
   /* 深色（导航激活、深色卡片） */
-  --color-ink: #2a2a2a;
+  --color-ink: #1f1f1f;
   --color-ink-soft: #3d3d3d;
 
   /* 成功/警告/危险 */
   --color-success: #34d399;
-  --color-success-soft: #d1fae5;
+  --color-success-soft: rgba(52, 211, 153, 0.16);
   --color-warning: #fbbf24;
   --color-danger: #f87171;
-  --color-danger-soft: #fee2e2;
+  --color-danger-soft: rgba(248, 113, 113, 0.16);
 
   /* 中性色阶（暖灰） */
   --color-text: #1f1f1f;
-  --color-text-muted: #8a8a8a;
-  --color-text-faint: #b5b5b5;
-  --color-border: #efece4;
-  --color-border-strong: #e5e1d8;
-  --color-line: #f2efe8;
+  --color-text-muted: #7a7a7a;
+  --color-text-faint: #b0b0b0;
+  --color-border: rgba(255, 255, 255, 0.6);
+  --color-border-strong: rgba(0, 0, 0, 0.08);
+  --color-line: rgba(0, 0, 0, 0.06);
 
   /* 背景与表面 */
   --color-bg: #f7f5ef;
   --color-surface: #ffffff;
   --color-surface-soft: #faf8f3;
 
+  /* —— 玻璃拟态核心令牌 —— */
+  --glass-bg: rgba(255, 255, 255, 0.55);
+  --glass-bg-strong: rgba(255, 255, 255, 0.72);
+  --glass-bg-soft: rgba(255, 255, 255, 0.35);
+  --glass-border: rgba(255, 255, 255, 0.65);
+  --glass-border-soft: rgba(255, 255, 255, 0.4);
+  --glass-blur: 24px;
+  --glass-saturate: 180%;
+
+  /* App 容器（参考图的大圆角窗口） */
+  --app-bg-gradient: linear-gradient(
+    135deg,
+    #fdfbf3 0%,
+    #faf4e0 45%,
+    #fbeeb5 100%
+  );
+  --app-radius: 30px;
+  --app-shadow: 0 40px 90px -30px rgba(60, 50, 20, 0.28),
+    0 10px 30px -10px rgba(60, 50, 20, 0.12);
+  --app-border: 1px solid rgba(255, 255, 255, 0.5);
+
   /* 尺寸 */
   --radius-xs: 8px;
   --radius-sm: 12px;
   --radius-md: 16px;
-  --radius-lg: 20px;
+  --radius-lg: 22px;
   --radius-pill: 9999px;
-  --shadow-sm: 0 2px 8px -2px rgba(0, 0, 0, 0.05);
-  --shadow-md: 0 8px 24px -8px rgba(0, 0, 0, 0.08);
-  --shadow-lg: 0 16px 40px -12px rgba(0, 0, 0, 0.12);
+  --shadow-sm: 0 2px 10px -2px rgba(60, 50, 20, 0.06);
+  --shadow-md: 0 12px 30px -10px rgba(60, 50, 20, 0.12);
+  --shadow-lg: 0 24px 50px -16px rgba(60, 50, 20, 0.18);
 }
 
 * {
   box-sizing: border-box;
 }
 
+/* 页面底色：中性灰，衬托 app 窗口 */
+html,
 body {
   margin: 0;
-  background-color: var(--color-bg);
+  background-color: #e8e4dc;
   color: var(--color-text);
   font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", "PingFang SC",
     "Hiragino Sans GB", "Microsoft YaHei", sans-serif;
@@ -64,7 +88,7 @@ body {
   -moz-osx-font-smoothing: grayscale;
 }
 
-/* 滚动条：细窄、低对比、暖灰 */
+/* 滚动条：细窄、低对比 */
 ::-webkit-scrollbar {
   width: 8px;
   height: 8px;
@@ -73,11 +97,11 @@ body {
   background: transparent;
 }
 ::-webkit-scrollbar-thumb {
-  background: #e0dccd;
+  background: rgba(0, 0, 0, 0.15);
   border-radius: 9999px;
 }
 ::-webkit-scrollbar-thumb:hover {
-  background: #c9c4b4;
+  background: rgba(0, 0, 0, 0.25);
 }
 
 /* 通用工具类 */
@@ -86,6 +110,43 @@ body {
 }
 .bg-primary {
   background-color: var(--color-primary);
+}
+
+/* ============================================================
+   玻璃拟态组件类
+   ============================================================ */
+.glass {
+  background: var(--glass-bg);
+  backdrop-filter: blur(var(--glass-blur)) saturate(var(--glass-saturate));
+  -webkit-backdrop-filter: blur(var(--glass-blur))
+    saturate(var(--glass-saturate));
+  border: 1px solid var(--glass-border);
+}
+
+.glass-strong {
+  background: var(--glass-bg-strong);
+  backdrop-filter: blur(calc(var(--glass-blur) + 8px))
+    saturate(var(--glass-saturate));
+  -webkit-backdrop-filter: blur(calc(var(--glass-blur) + 8px))
+    saturate(var(--glass-saturate));
+  border: 1px solid var(--glass-border);
+}
+
+.glass-soft {
+  background: var(--glass-bg-soft);
+  backdrop-filter: blur(var(--glass-blur)) saturate(var(--glass-saturate));
+  -webkit-backdrop-filter: blur(var(--glass-blur))
+    saturate(var(--glass-saturate));
+  border: 1px solid var(--glass-border-soft);
+}
+
+/* App 主窗口：大圆角 + 渐变背景 + 外阴影 */
+.app-window {
+  background: var(--app-bg-gradient);
+  border-radius: var(--app-radius);
+  box-shadow: var(--app-shadow);
+  border: var(--app-border);
+  overflow: hidden;
 }
 
 /* 表格基础样式 */
@@ -105,7 +166,7 @@ th {
 @keyframes fadeIn {
   from {
     opacity: 0;
-    transform: translateY(4px);
+    transform: translateY(6px);
   }
   to {
     opacity: 1;
@@ -113,7 +174,7 @@ th {
   }
 }
 .animate-fade-in {
-  animation: fadeIn 0.25s ease-out;
+  animation: fadeIn 0.3s ease-out;
 }
 
 @keyframes spin {

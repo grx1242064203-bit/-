@@ -83,7 +83,7 @@ export default function ResumeUploader() {
             inputRef.current?.click();
           }
         }}
-        className={`flex cursor-pointer flex-col items-center justify-center rounded-2xl border-2 border-dashed bg-white px-6 py-12 text-center shadow-card transition ${
+        className={`flex cursor-pointer flex-col items-center justify-center rounded-2xl border-2 border-dashed bg-white/50 px-6 py-12 text-center shadow-card backdrop-blur-md transition ${
           dragOver
             ? "border-orange-400 bg-orange-50/60 ring-4 ring-orange-100"
             : "border-orange-200 hover:border-orange-300 hover:bg-orange-50/30"
@@ -102,7 +102,7 @@ export default function ResumeUploader() {
 
       {/* 已选文件卡片 */}
       {file && (
-        <div className="mt-4 flex items-center gap-3 rounded-2xl border border-orange-100 bg-white px-4 py-3 shadow-card">
+        <div className="glass mt-4 flex items-center gap-3 rounded-2xl px-4 py-3 shadow-card">
           <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl bg-orange-50 text-lg">
             📝
           </div>

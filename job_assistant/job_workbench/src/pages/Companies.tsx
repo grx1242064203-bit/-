@@ -76,19 +76,19 @@ export default function Companies() {
       )}
 
       {/* 筛选栏 */}
-      <div className="flex flex-wrap items-center gap-3 rounded-xl border border-border bg-surface p-4 shadow-sm">
+      <div className="glass flex flex-wrap items-center gap-3 rounded-xl p-4 shadow-sm">
         <input
           type="text"
           placeholder="搜索公司名称…"
           value={keyword}
           onChange={(e) => setKeyword(e.target.value)}
           onKeyDown={(e) => e.key === "Enter" && handleFilter()}
-          className="w-48 rounded-pill border border-border bg-surface-soft px-4 py-1.5 text-sm text-text placeholder:text-text-faint focus:border-primary-dark focus:outline-none focus:ring-2 focus:ring-primary/30"
+          className="w-48 rounded-pill border border-white/60 bg-white/40 px-4 py-1.5 text-sm text-text placeholder:text-text-faint backdrop-blur-sm focus:border-primary-dark focus:outline-none focus:ring-2 focus:ring-primary/30"
         />
         <select
           value={industry}
           onChange={(e) => setIndustry(e.target.value)}
-          className="rounded-pill border border-border bg-surface-soft px-4 py-1.5 text-sm text-text focus:border-primary-dark focus:outline-none"
+          className="rounded-pill border border-white/60 bg-white/40 px-4 py-1.5 text-sm text-text backdrop-blur-sm focus:border-primary-dark focus:outline-none"
         >
           <option value="">全部行业</option>
           {stats?.industries.map((i) => (
@@ -100,7 +100,7 @@ export default function Companies() {
         <select
           value={companyType}
           onChange={(e) => setCompanyType(e.target.value)}
-          className="rounded-pill border border-border bg-surface-soft px-4 py-1.5 text-sm text-text focus:border-primary-dark focus:outline-none"
+          className="rounded-pill border border-white/60 bg-white/40 px-4 py-1.5 text-sm text-text backdrop-blur-sm focus:border-primary-dark focus:outline-none"
         >
           <option value="">全部类型</option>
           {stats?.types.map((t) => (
@@ -129,10 +129,10 @@ export default function Companies() {
       )}
 
       {/* 公司表格 */}
-      <div className="overflow-hidden rounded-xl border border-border bg-surface shadow-sm">
+      <div className="glass overflow-hidden rounded-xl shadow-sm">
         <div className="overflow-x-auto">
           <table className="min-w-full">
-            <thead className="border-b border-border bg-surface-soft">
+            <thead className="border-b border-white/40 bg-white/30">
               <tr>
                 <Th>公司名称</Th>
                 <Th>行业</Th>
@@ -146,7 +146,7 @@ export default function Companies() {
                 <Th className="text-right">操作</Th>
               </tr>
             </thead>
-            <tbody className="divide-y divide-line">
+            <tbody className="divide-y divide-black/5">
               {loading && companies.length === 0
                 ? Array.from({ length: 8 }).map((_, i) => (
                     <tr key={i}>
@@ -172,7 +172,7 @@ export default function Companies() {
             type="button"
             onClick={handleLoadMore}
             disabled={loading}
-            className="rounded-pill border border-border bg-surface px-6 py-2 text-sm font-medium text-text-muted transition hover:border-border-strong hover:text-text disabled:opacity-50"
+            className="glass rounded-pill px-6 py-2 text-sm font-medium text-text-muted transition hover:text-text disabled:opacity-50"
           >
             {loading ? "加载中…" : `加载更多（${companies.length}/${total}）`}
           </button>
@@ -193,10 +193,10 @@ function StatCard({
 }) {
   return (
     <div
-      className={`rounded-xl border p-5 shadow-sm transition hover:shadow-md ${
+      className={`rounded-xl p-5 shadow-sm transition hover:shadow-md ${
         accent
-          ? "border-primary/40 bg-gradient-to-br from-primary to-primary-light"
-          : "border-border bg-surface"
+          ? "bg-gradient-to-br from-primary to-primary-light"
+          : "glass"
       }`}
     >
       <div
@@ -291,7 +291,7 @@ function CompanyRow({ company }: { company: Company }) {
             className={`rounded-pill border px-2.5 py-1 text-xs transition ${
               favStatus === "done"
                 ? "border-primary bg-primary text-ink"
-                : "border-border text-text-muted hover:border-primary hover:text-ink"
+                : "border-white/60 bg-white/30 text-text-muted hover:border-primary hover:text-ink"
             }`}
             title="收藏"
           >
@@ -312,7 +312,7 @@ function CompanyRow({ company }: { company: Company }) {
               href={company.announcement_url}
               target="_blank"
               rel="noreferrer"
-              className="rounded-pill border border-border px-3.5 py-1 text-xs font-medium text-text-muted transition hover:border-border-strong hover:text-text"
+              className="glass-soft rounded-pill px-3.5 py-1 text-xs font-medium text-text-muted transition hover:text-text"
             >
               公告
             </a>

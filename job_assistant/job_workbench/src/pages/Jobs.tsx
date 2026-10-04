@@ -341,12 +341,16 @@ function JobRow({
     }
   };
 
-  // 点击投递：已投递则取消，否则设为已投递
-  const handleApply = () => {
+  // 点击投递：已投递则取消，否则设为已投递并打开投递链接
+  const handleApply = async () => {
     if (isApplied && application) {
-      void removeApplication(application.id);
+      await removeApplication(application.id);
     } else {
-      void quickAdd("applied");
+      await quickAdd("applied");
+      // 投递成功后自动打开投递链接，用户用牛客插件填表
+      if (job.apply_url) {
+        openExternalUrl(job.apply_url);
+      }
     }
   };
 

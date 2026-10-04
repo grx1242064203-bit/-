@@ -6,6 +6,7 @@ import Resume from "./pages/Resume";
 import Applications from "./pages/Applications";
 import Email from "./pages/Email";
 import Schedules from "./pages/Schedules";
+import AutoFill from "./pages/AutoFill";
 import Login from "./pages/Login";
 import Register from "./pages/Register";
 import AuthGuard from "./components/AuthGuard";
@@ -26,6 +27,7 @@ const NAV_ITEMS: NavItem[] = [
   { to: "/companies", label: "公司总览", icon: "🏢" },
   { to: "/", label: "岗位列表", icon: "💼", end: true },
   { to: "/applications", label: "投递控制台", icon: "📋" },
+  { to: "/autofill", label: "网申自动填写", icon: "⚡" },
   { to: "/email", label: "邮件同步", icon: "📧" },
   { to: "/schedules", label: "日程", icon: "📅" },
   { to: "/resume", label: "简历解析", icon: "📄" },
@@ -110,6 +112,7 @@ function PageTitle() {
     "/companies": "秋招公司总览",
     "/": "岗位列表",
     "/applications": "投递控制台",
+    "/autofill": "网申自动填写",
     "/email": "邮件同步",
     "/schedules": "日程与提醒",
     "/resume": "简历解析",
@@ -178,6 +181,16 @@ export default function App() {
           <AuthGuard>
             <Layout>
               <Applications />
+            </Layout>
+          </AuthGuard>
+        }
+      />
+      <Route
+        path="/autofill"
+        element={
+          <AuthGuard>
+            <Layout>
+              <AutoFill />
             </Layout>
           </AuthGuard>
         }

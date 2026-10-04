@@ -32,6 +32,75 @@ function guessImap(email: string): { server: string; port: number } {
   return { server: `imap.${domain}`, port: 993 };
 }
 
+function ImapHelp() {
+  const [open, setOpen] = useState(false);
+  return (
+    <div className="rounded-lg bg-amber-50 p-3">
+      <button
+        type="button"
+        onClick={() => setOpen(!open)}
+        className="flex w-full items-center justify-between text-left"
+      >
+        <span className="text-xs font-medium text-amber-700">
+          如何获取 IMAP 授权码？{open ? "收起" : "展开"}
+        </span>
+        <span className="text-amber-600">{open ? "▲" : "▼"}</span>
+      </button>
+      {open && (
+        <div className="mt-2 space-y-2 text-[11px] leading-relaxed text-text-muted">
+          <div>
+            <a
+              href="https://service.mail.qq.com/detail/0/75"
+              target="_blank"
+              rel="noreferrer"
+              className="font-medium text-primary-dark hover:underline"
+            >
+              QQ 邮箱 / Foxmail
+            </a>
+            <p>设置 → 账户 → 开启「IMAP/SMTP服务」→ 点击「生成授权码」→ 短信验证后复制授权码</p>
+          </div>
+          <div>
+            <a
+              href="https://help.mail.163.com/faq.do?m=list&categoryID=171"
+              target="_blank"
+              rel="noreferrer"
+              className="font-medium text-primary-dark hover:underline"
+            >
+              163 / 126 邮箱
+            </a>
+            <p>设置 → POP3/SMTP/IMAP → 开启 IMAP → 设置「客户端授权密码」</p>
+          </div>
+          <div>
+            <a
+              href="https://support.google.com/mail/answer/185833"
+              target="_blank"
+              rel="noreferrer"
+              className="font-medium text-primary-dark hover:underline"
+            >
+              Gmail
+            </a>
+            <p>先开启「两步验证」→ Google 账号 → 安全 → 应用专用密码 → 生成 16 位密码</p>
+          </div>
+          <div>
+            <a
+              href="https://support.microsoft.com/zh-cn/account-billing/5896ed9b-4263-e681-128a-a6f2979a7944"
+              target="_blank"
+              rel="noreferrer"
+              className="font-medium text-primary-dark hover:underline"
+            >
+              Outlook / Hotmail
+            </a>
+            <p>先开启「两步验证」→ 安全 → 高级安全选项 → 应用密码 → 创建并复制</p>
+          </div>
+          <p className="pt-1 text-amber-600">
+            💡 授权码一般是一串字母，粘贴到上方「密码/授权码」框即可。
+          </p>
+        </div>
+      )}
+    </div>
+  );
+}
+
 function AddAccountModal({ onClose }: { onClose: () => void }) {
   const addAccount = useEmailStore((s) => s.addAccount);
   const [email, setEmail] = useState("");
@@ -120,7 +189,11 @@ function AddAccountModal({ onClose }: { onClose: () => void }) {
               placeholder="IMAP 授权码（非登录密码）"
               className="w-full rounded-lg border border-line px-3 py-2 text-sm"
             />
+            <p className="mt-1 text-[11px] text-text-muted">
+              ⚠️ 这里填的是 <b>IMAP 授权码</b>，不是邮箱登录密码。需要先在邮箱设置里开启 IMAP 并生成授权码。
+            </p>
           </div>
+          <ImapHelp />
           {error && <p className="text-xs text-red-500">{error}</p>}
         </div>
         <div className="mt-5 flex justify-end gap-2">

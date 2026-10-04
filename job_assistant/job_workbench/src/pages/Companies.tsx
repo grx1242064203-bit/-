@@ -7,6 +7,7 @@ import {
   type Company,
   type StatsOverview,
 } from "../api/companies";
+import { useAppStore, type AppStatus } from "../stores/appStore";
 import { colorMap, pillClass } from "../utils/colorMap";
 import { openExternalUrl } from "../utils/link";
 import Truncate from "../components/Truncate";
@@ -17,6 +18,7 @@ const PAGE_SIZE = 100;
 
 /** 列定义（顺序即默认显示顺序） */
 const COLUMNS: ColumnDef[] = [
+  { key: "actions", label: "操作" },
   { key: "company_name", label: "公司名称" },
   { key: "industry", label: "行业" },
   { key: "company_type", label: "公司类型" },
@@ -205,6 +207,8 @@ export default function Companies() {
 
 function colWidth(key: string): string {
   switch (key) {
+    case "actions":
+      return "70px";
     case "company_name":
       return "180px";
     case "industry":
@@ -227,7 +231,30 @@ function colWidth(key: string): string {
 }
 
 function CompanyRow({ company, visibleKeys }: { company: Company; visibleKeys: string[] }) {
+  const addApplication = useAppStore((s) => s.addApplication);
+  const [modal, setModal] = useState<{ status: AppStatus } | null>(null);
+
   const cells: Record<string, ReactNode> = {
+    actions: (
+      <div className="flex items-center gap-1">
+        <button
+          type="button"
+          onClick={() => setModal({ status: "favorite" })}
+          className="rounded bg-white/60 px-1.5 py-0.5 text-xs text-text-muted transition hover:bg-primary-soft hover:text-primary-dark"
+          title="加入收藏"
+        >
+          ⭐
+        </button>
+        <button
+          type="button"
+          onClick={() => setModal({ status: "applied" })}
+          className="rounded bg-primary-soft px-1.5 py-0.5 text-xs font-medium text-primary-dark transition hover:bg-primary hover:text-ink"
+          title="标记已投递"
+        >
+          📮
+        </button>
+      </div>
+    ),
     company_name: (
       <Truncate text={company.company_name} className="font-medium" />
     ),
@@ -286,21 +313,125 @@ function CompanyRow({ company, visibleKeys }: { company: Company; visibleKeys: s
   };
 
   return (
-    <tr className="border-b border-line/60 hover:bg-white/40">
-      {COLUMNS.filter((c) => visibleKeys.includes(c.key)).map((col) => {
-        const isFirst = col.key === "company_name";
-        return (
-          <td
-            key={col.key}
-            className={`px-3 py-2 align-middle ${
-              isFirst ? "sticky left-0 z-[1] bg-white/70 backdrop-blur" : ""
-            }`}
+    <>
+      <tr className="border-b border-line/60 hover:bg-white/40">
+        {COLUMNS.filter((c) => visibleKeys.includes(c.key)).map((col) => {
+          const isFirst = col.key === "company_name";
+          return (
+            <td
+              key={col.key}
+              className={`px-3 py-2 align-middle ${
+                isFirst ? "sticky left-0 z-[1] bg-white/70 backdrop-blur" : ""
+              }`}
+            >
+              {cells[col.key]}
+            </td>
+          );
+        })}
+      </tr>
+      {modal && (
+        <CompanyQuickModal
+          company={company}
+          status={modal.status}
+          onClose={() => setModal(null)}
+          onSubmit={async (jobTitle) => {
+            await addApplication({
+              source: "db_company",
+              link_type: "company",
+              link_id: company.company_id,
+              company_name: company.company_name,
+              job_title: jobTitle,
+              status: modal.status,
+              apply_url: company.apply_url || undefined,
+              announcement_url: company.announcement_url || undefined,
+            });
+            setModal(null);
+          }}
+        />
+      )}
+    </>
+  );
+}
+
+/** 公司维度快速收藏/投递小表单：仅填岗位名（可选）。 */
+function CompanyQuickModal({
+  company,
+  status,
+  onClose,
+  onSubmit,
+}: {
+  company: Company;
+  status: AppStatus;
+  onClose: () => void;
+  onSubmit: (jobTitle: string) => void | Promise<void>;
+}) {
+  const [jobTitle, setJobTitle] = useState("");
+  const [submitting, setSubmitting] = useState(false);
+  const statusLabel = status === "favorite" ? "收藏" : "已投递";
+
+  async function handleSubmit() {
+    setSubmitting(true);
+    try {
+      await onSubmit(jobTitle.trim());
+    } finally {
+      setSubmitting(false);
+    }
+  }
+
+  return (
+    <div
+      className="fixed inset-0 z-50 flex items-center justify-center bg-black/40 backdrop-blur-sm"
+      onClick={onClose}
+    >
+      <div
+        className="glass w-80 rounded-2xl p-5 shadow-xl"
+        onClick={(e) => e.stopPropagation()}
+      >
+        <h3 className="text-base font-semibold text-text">
+          {status === "favorite" ? "⭐ 加入收藏" : "📮 标记已投递"}
+        </h3>
+        <p className="mt-1 text-xs text-text-muted">{company.company_name}</p>
+
+        <div className="mt-4 space-y-3">
+          <div>
+            <label className="text-xs font-medium text-text-muted">
+              岗位名称（可选，不填仅按公司匹配）
+            </label>
+            <input
+              value={jobTitle}
+              onChange={(e) => setJobTitle(e.target.value)}
+              placeholder="如：后端开发工程师"
+              className="mt-1 w-full rounded-lg border border-white/60 bg-white/40 px-3 py-2 text-sm focus:border-primary-dark focus:outline-none focus:ring-2 focus:ring-primary/30"
+              autoFocus
+              onKeyDown={(e) => {
+                if (e.key === "Enter") void handleSubmit();
+              }}
+            />
+          </div>
+          <p className="text-[11px] text-text-faint">
+            已存在同公司{jobTitle.trim() ? "+岗位" : ""}记录时仅更新状态为「{statusLabel}」，否则新建。
+          </p>
+        </div>
+
+        <div className="mt-5 flex justify-end gap-2">
+          <button
+            type="button"
+            onClick={onClose}
+            className="glass-soft rounded-pill px-4 py-1.5 text-sm text-text-muted hover:text-text"
           >
-            {cells[col.key]}
-          </td>
-        );
-      })}
-    </tr>
+            取消
+          </button>
+          <button
+            type="button"
+            onClick={() => void handleSubmit()}
+            disabled={submitting}
+            className="rounded-pill bg-primary px-4 py-1.5 text-sm font-semibold text-ink hover:bg-primary-dark disabled:opacity-50"
+          >
+            {submitting ? "处理中…" : statusLabel}
+          </button>
+        </div>
+      </div>
+    </div>
   );
 }
 

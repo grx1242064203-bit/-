@@ -24,6 +24,8 @@ export default {
         warning: "var(--color-warning)",
         danger: "var(--color-danger)",
         "danger-soft": "var(--color-danger-soft)",
+        info: "var(--color-info)",
+        "info-soft": "var(--color-info-soft)",
         // 文本色阶
         text: {
           DEFAULT: "var(--color-text)",

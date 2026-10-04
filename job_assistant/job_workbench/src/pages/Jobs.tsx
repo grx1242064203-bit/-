@@ -3,6 +3,7 @@
 import { useEffect, useRef, useState, type ReactNode } from "react";
 import { getStatsOverview, type StatsOverview } from "../api/companies";
 import { useJobsStore } from "../stores/jobsStore";
+import { useAppStore, type AppStatus } from "../stores/appStore";
 import { colorMap, pillClass } from "../utils/colorMap";
 import { openExternalUrl } from "../utils/link";
 import Truncate from "../components/Truncate";
@@ -11,6 +12,7 @@ import ColumnSettings, { type ColumnDef } from "../components/ColumnSettings";
 
 /** 列定义（对齐飞书源表顺序） */
 const COLUMNS: ColumnDef[] = [
+  { key: "actions", label: "操作" },
   { key: "title", label: "岗位标题" },
   { key: "company", label: "公司" },
   { key: "industry", label: "行业" },
@@ -247,6 +249,8 @@ export default function Jobs() {
 
 function jobColWidth(key: string): string {
   switch (key) {
+    case "actions":
+      return "70px";
     case "title":
       return "200px";
     case "company":
@@ -280,7 +284,51 @@ function jobColWidth(key: string): string {
 }
 
 function JobRow({ job, visibleKeys }: { job: import("../api/jobs").Job; visibleKeys: string[] }) {
+  const addApplication = useAppStore((s) => s.addApplication);
+  const [busy, setBusy] = useState(false);
+
+  async function quickAdd(status: AppStatus) {
+    if (busy) return;
+    setBusy(true);
+    try {
+      await addApplication({
+        source: "db_job",
+        link_type: "job",
+        link_id: job.job_id,
+        company_name: job.company,
+        job_title: job.title,
+        status,
+        apply_url: job.apply_url || undefined,
+        announcement_url: job.announcement_url || undefined,
+      });
+    } finally {
+      setBusy(false);
+    }
+  }
+
   const cells: Record<string, ReactNode> = {
+    actions: (
+      <div className="flex items-center gap-1">
+        <button
+          type="button"
+          onClick={() => void quickAdd("favorite")}
+          disabled={busy}
+          className="rounded bg-white/60 px-1.5 py-0.5 text-xs text-text-muted transition hover:bg-primary-soft hover:text-primary-dark disabled:opacity-50"
+          title="加入收藏"
+        >
+          ⭐
+        </button>
+        <button
+          type="button"
+          onClick={() => void quickAdd("applied")}
+          disabled={busy}
+          className="rounded bg-primary-soft px-1.5 py-0.5 text-xs font-medium text-primary-dark transition hover:bg-primary hover:text-ink disabled:opacity-50"
+          title="标记已投递"
+        >
+          📮
+        </button>
+      </div>
+    ),
     title: <Truncate text={job.title} className="font-medium" />,
     company: <Truncate text={job.company} />,
     industry: job.industry ? (

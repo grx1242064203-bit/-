@@ -19,6 +19,7 @@ from pydantic import BaseModel, Field
 
 from config import get_settings
 from deps import get_current_user
+from models import company_due_diligence as dd_model
 from services.llm_proxy import LLMProxyService
 from services.quota_service import (
     get_user_quota,
@@ -128,3 +129,60 @@ def supplement(
         "fit_directions": result.get("fit_directions", []),
         "hard_skills": result.get("new_skills", []),
     }
+
+
+# ===== 公司尽调：联网搜索 + LLM 生成 =====
+
+class CompanyDueDiligenceRequest(BaseModel):
+    company_name: str = Field(..., min_length=1, description="公司名称")
+
+
+class CompanyDueDiligenceResponse(BaseModel):
+    company_name: str
+    intro: str = ""
+    official_website: str = ""
+    news_links: list = []
+    why_company_questions: list = []
+    generated_at: str = ""
+    cached: bool = False
+
+
+@router.post("/company-due-diligence", response_model=CompanyDueDiligenceResponse)
+def company_due_diligence(
+    req: CompanyDueDiligenceRequest,
+    user: dict = Depends(get_current_user),
+):
+    """公司尽调卡：生成公司简介/官网/新闻/「为什么选择这家公司」面试问题。
+
+    同一公司结果缓存到 company_due_diligence 表，后续直接读取，不重复消耗 LLM 配额。
+    """
+    user_id = user["user_id"]
+    company_name = req.company_name.strip()
+
+    # 1) 命中缓存直接返回
+    cached = dd_model.get_due_diligence_sync(company_name)
+    if cached:
+        return {**cached, "cached": True}
+
+    # 2) 未命中：检查配额 + 生成
+    _check_quota(user_id)
+    try:
+        result = _proxy.company_due_diligence(company_name)
+    except TimeoutError as e:
+        _handle_llm_error(e, "company_due_diligence")
+        return
+    except Exception as e:
+        _handle_llm_error(e, "company_due_diligence")
+        return
+
+    increment_usage(user_id)
+
+    # 3) 写入缓存
+    saved = dd_model.upsert_due_diligence_sync(
+        company_name=company_name,
+        intro=result.get("intro", ""),
+        official_website=result.get("official_website", ""),
+        news_links=result.get("news_links", []),
+        why_company_questions=result.get("why_company_questions", []),
+    )
+    return {**saved, "cached": False}

@@ -6,12 +6,28 @@ interface Props {
   application: Application;
   onDragStart: (app: Application) => void;
   onDragEnd: () => void;
+  onClick?: () => void;
 }
+
+const SOURCE_LABEL: Record<string, string> = {
+  db_job: "岗位库",
+  db_company: "公司库",
+  manual: "自建",
+  email: "邮件",
+};
+
+const SOURCE_COLOR: Record<string, string> = {
+  db_job: "bg-primary-soft text-primary-dark",
+  db_company: "bg-info-soft text-info",
+  manual: "bg-white/60 text-text-muted",
+  email: "bg-success/15 text-success",
+};
 
 export default function ApplicationCard({
   application,
   onDragStart,
   onDragEnd,
+  onClick,
 }: Props) {
   const [expanded, setExpanded] = useState(false);
   const [notes, setNotes] = useState(application.notes ?? "");
@@ -21,12 +37,12 @@ export default function ApplicationCard({
   const updatedAt = application.updated_at
     ? application.updated_at.slice(0, 10)
     : null;
+  const sourceLabel = SOURCE_LABEL[application.source] || application.source;
 
   function handleSaveNotes() {
     setSaving(true);
     updateApplication(application.id, { notes: notes.trim() || null })
       .then(() => {
-        // 更新本地 store
         useAppStore.setState((s) => ({
           applications: s.applications.map((a) =>
             a.id === application.id ? { ...a, notes: notes.trim() || null } : a
@@ -38,6 +54,11 @@ export default function ApplicationCard({
       .finally(() => setSaving(false));
   }
 
+  function handleCardClick() {
+    if (expanded) return; // 编辑备注时不触发打开详情
+    onClick?.();
+  }
+
   return (
     <div
       draggable
@@ -47,12 +68,24 @@ export default function ApplicationCard({
         onDragStart(application);
       }}
       onDragEnd={onDragEnd}
-      onClick={() => setExpanded((v) => !v)}
-      className="glass-soft group cursor-pointer rounded-xl p-3.5 shadow-sm transition hover:-translate-y-0.5 hover:shadow-md"
+      onClick={handleCardClick}
+      className="glass-soft group cursor-pointer rounded-xl p-3 shadow-sm transition hover:-translate-y-0.5 hover:shadow-md"
     >
       <div className="flex items-start justify-between gap-2">
         <div className="min-w-0">
-          <div className="truncate text-sm font-semibold text-text">
+          <div className="flex items-center gap-1.5">
+            <span
+              className={`rounded px-1.5 py-0.5 text-[10px] font-medium ${SOURCE_COLOR[application.source] || "bg-white/60 text-text-muted"}`}
+            >
+              {sourceLabel}
+            </span>
+            {application.status === "interview" && application.interview_round > 0 && (
+              <span className="rounded bg-warning/20 px-1.5 py-0.5 text-[10px] font-medium text-ink">
+                {application.interview_round}面
+              </span>
+            )}
+          </div>
+          <div className="mt-1 truncate text-sm font-semibold text-text">
             {application.company_name || "（未知公司）"}
           </div>
           <div className="truncate text-xs text-text-muted">
@@ -109,6 +142,19 @@ export default function ApplicationCard({
             </button>
           </div>
         </div>
+      )}
+
+      {!expanded && (
+        <button
+          type="button"
+          onClick={(e) => {
+            e.stopPropagation();
+            setExpanded(true);
+          }}
+          className="mt-1 text-[11px] text-text-faint opacity-0 transition hover:text-text-muted group-hover:opacity-100"
+        >
+          {application.notes ? "编辑备注" : "添加备注"}
+        </button>
       )}
     </div>
   );

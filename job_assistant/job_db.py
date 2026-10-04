@@ -473,8 +473,8 @@ def get_announcement_by_id(announcement_id: int) -> Optional[Dict]:
 def get_last_sync_time() -> str:
     """获取最近一次同步的游标(apply_update 最大值)。
 
-    已废弃:不再用 apply_update 做游标,改用 get_last_sync_timestamp()。
-    保留此函数避免旧代码调用报错。
+    飞书 Bitable API 当前未返回 last_modified_time,降级用 apply_update
+    (网申更新日期)作为增量同步游标。
     """
     conn = _get_conn()
     try:
@@ -484,51 +484,6 @@ def get_last_sync_time() -> str:
         return row["au"] if row and row["au"] else ""
     finally:
         conn.close()
-
-
-def get_last_sync_timestamp() -> int:
-    """获取上次同步的 Unix 时间戳(秒)。用于 last_modified_time 增量优化。
-
-    优先从 data/.last_sync 文件读取(精确记录上次同步时间)。
-    若文件不存在,降级用 announcements.synced_at 最大值推断。
-    0 表示从未同步。
-    """
-    import os
-    ts_file = os.path.join(settings.DATA_DIR, ".last_sync")
-    try:
-        if os.path.exists(ts_file):
-            with open(ts_file) as f:
-                return int(f.read().strip())
-    except (ValueError, OSError):
-        pass
-
-    conn = _get_conn()
-    try:
-        row = conn.execute(
-            "SELECT MAX(synced_at) as sa FROM announcements"
-        ).fetchone()
-        sa = row["sa"] if row and row["sa"] else ""
-        if not sa:
-            return 0
-        try:
-            import time as _time
-            return int(_time.mktime(_time.strptime(sa, "%Y-%m-%d %H:%M:%S")))
-        except Exception:
-            return 0
-    finally:
-        conn.close()
-
-
-def set_last_sync_timestamp(ts: int) -> None:
-    """记录同步时间戳到 data/.last_sync 文件。"""
-    import os
-    ts_file = os.path.join(settings.DATA_DIR, ".last_sync")
-    try:
-        os.makedirs(os.path.dirname(ts_file), exist_ok=True)
-        with open(ts_file, "w") as f:
-            f.write(str(ts))
-    except OSError:
-        pass
 
 
 # ==================== positions ====================

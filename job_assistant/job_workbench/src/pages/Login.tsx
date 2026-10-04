@@ -1,6 +1,7 @@
 import { useState, type FormEvent } from "react";
 import { Link, useNavigate } from "react-router-dom";
 import { useAuthStore } from "../stores/authStore";
+import logoImg from "../assets/logo.png";
 
 const EMAIL_RE = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
 
@@ -32,10 +33,12 @@ export default function Login() {
     <div className="flex min-h-screen items-center justify-center p-4 sm:p-6">
       <div className="app-window flex w-full max-w-md flex-col items-center justify-center p-8 sm:p-10">
         <div className="mb-8 text-center">
-          <div className="mx-auto mb-3 flex h-12 w-12 items-center justify-center rounded-2xl bg-primary">
-            <span className="text-lg font-bold text-ink">求</span>
-          </div>
-          <h1 className="text-2xl font-bold text-text">登录求职搭子</h1>
+          <img
+            src={logoImg}
+            alt="Offer搭子"
+            className="mx-auto mb-3 h-16 w-16 rounded-2xl object-contain drop-shadow-md"
+          />
+          <h1 className="text-2xl font-bold text-text">登录 Offer搭子</h1>
           <p className="mt-2 text-sm text-text-muted">
             输入邮箱与密码，开启你的求职工作台
           </p>

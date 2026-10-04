@@ -1,5 +1,5 @@
 """
-求职搭子桌面工作台 — Python sidecar 评分引擎。
+Offer搭子桌面工作台 — Python sidecar 评分引擎。
 
 协议: stdin/stdout JSON-RPC(每行一个 JSON)。
 - 请求:  {"id": 1, "method": "score_one", "params": {...}}

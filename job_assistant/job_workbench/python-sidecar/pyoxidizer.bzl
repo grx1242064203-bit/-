@@ -1,4 +1,4 @@
-# PyOxidizer build script for the "求职搭子" Python sidecar scoring engine.
+# PyOxidizer build script for the "Offer搭子" Python sidecar scoring engine.
 #
 # PyOxidizer 把 Python 解释器 + 评分代码 + 依赖打成一个单一可执行文件,
 # Tauri Rust 端可以把它当资源随安装包分发,运行期作为子进程拉起,

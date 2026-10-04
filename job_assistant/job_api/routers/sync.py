@@ -6,6 +6,8 @@
 - ``GET /api/v1/sync/company-stats`` 公司维度统计
 - ``GET /api/v1/sync/categories`` 岗位分类统计
 """
+from typing import Optional
+
 from fastapi import APIRouter, Depends, Query
 
 from deps import get_current_user
@@ -33,7 +35,7 @@ def list_jobs(
         le=MAX_PAGE_SIZE,
         description="每页数量,默认 500,最大 1000",
     ),
-    cursor: str | None = Query(
+    cursor: Optional[str] = Query(
         None, description="分页游标,上一页返回的 next_cursor"
     ),
 ) -> dict:
@@ -47,7 +49,7 @@ def list_jobs_page(
     offset: int = Query(0, ge=0, description="偏移量"),
     category: str = Query("", description="岗位分类筛选"),
     keyword: str = Query("", description="关键词搜索"),
-    city: str = Query("", description="城市筛选"),
+    city: str = Query("", description="城市模糊搜索"),
     industry: str = Query("", description="行业筛选"),
     company_type: str = Query("", description="公司类型筛选"),
     subcategory: str = Query("", description="岗位子类筛选"),
@@ -55,6 +57,14 @@ def list_jobs_page(
     is_mt: str = Query("", description="是否管培(1/0)"),
     major_category: str = Query("", description="专业大类筛选"),
     difficulty: str = Query("", description="难度筛选"),
+    title: str = Query("", description="岗位标题模糊搜索"),
+    company: str = Query("", description="公司名模糊搜索"),
+    major_required: str = Query("", description="专业要求模糊搜索"),
+    hard_skills: str = Query("", description="硬技能模糊搜索"),
+    keywords: str = Query("", description="关键词模糊搜索"),
+    jd_summary: str = Query("", description="JD摘要模糊搜索"),
+    updated_at: str = Query("", description="发布时间模糊搜索"),
+    deadline: str = Query("", description="截止时间模糊搜索"),
 ) -> dict:
     """按 offset 分页拉取岗位列表（供前端表格分页）。"""
     return SyncService().get_jobs_page(
@@ -70,6 +80,14 @@ def list_jobs_page(
         is_mt=is_mt,
         major_category=major_category,
         difficulty=difficulty,
+        title=title,
+        company=company,
+        major_required=major_required,
+        hard_skills=hard_skills,
+        keywords=keywords,
+        jd_summary=jd_summary,
+        updated_at=updated_at,
+        deadline=deadline,
     )
 
 
@@ -94,6 +112,11 @@ def list_companies(
     keyword: str = Query("", description="公司名关键词"),
     recruit_type: str = Query("", description="招聘类型筛选"),
     education_req: str = Query("", description="学历要求筛选"),
+    location: str = Query("", description="工作地点模糊搜索"),
+    position_titles: str = Query("", description="招聘岗位模糊搜索"),
+    recruit_target: str = Query("", description="招聘对象模糊搜索"),
+    deadline: str = Query("", description="截止时间模糊搜索"),
+    last_updated: str = Query("", description="发布时间模糊搜索"),
 ) -> dict:
     """分页拉取公司总览（对齐飞书公司表字段）。"""
     return SyncService().get_companies(
@@ -104,6 +127,11 @@ def list_companies(
         keyword=keyword,
         recruit_type=recruit_type,
         education_req=education_req,
+        location=location,
+        position_titles=position_titles,
+        recruit_target=recruit_target,
+        deadline=deadline,
+        last_updated=last_updated,
     )
 
 

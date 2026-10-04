@@ -132,6 +132,22 @@ JOIN companies c ON p.company_id = c.id
 """
 
 
+# 公司表分类列（多选 IN）；其余列为文本列（LIKE）
+COMPANY_CATEGORY_COLUMNS = {"industry", "company_type", "recruit_type", "education_req"}
+
+# 岗位表分类列（多选 IN）；其余列为文本列（LIKE）
+JOB_CATEGORY_COLUMNS = {
+    "industry",
+    "company_type",
+    "category",
+    "subcategory",
+    "min_education",
+    "is_mt",
+    "major_category",
+    "difficulty",
+}
+
+
 class SyncService:
     """岗位增量同步服务。
 
@@ -301,6 +317,7 @@ class SyncService:
         is_mt: str = "",
         major_category: str = "",
         difficulty: str = "",
+        **text_filters: str,
     ) -> dict:
         """按 offset 分页查询岗位（供前端表格分页使用）。
 
@@ -308,16 +325,12 @@ class SyncService:
         ----------
         limit: 每页条数，默认 50。
         offset: 偏移量。
-        category: 岗位分类筛选（空串=不限）。
+        category/industry/company_type/subcategory/min_education/is_mt/major_category/difficulty:
+            分类列筛选（多选，逗号分隔 → IN）。
         keyword: 关键词搜索（标题/公司/JD）。
-        city: 城市筛选（空串=不限）。
-        industry: 行业筛选。
-        company_type: 公司类型筛选。
-        subcategory: 岗位子类筛选。
-        min_education: 最低学历筛选。
-        is_mt: 是否管培筛选（"1"/"0"）。
-        major_category: 专业大类筛选。
-        difficulty: 难度筛选。
+        city: 城市筛选（文本，LIKE）。
+        **text_filters: 其余文本列模糊搜索（LIKE），如 title / company /
+            major_required / hard_skills / keywords / jd_summary / updated_at / deadline。
         """
         if limit < 1:
             limit = 50
@@ -328,7 +341,7 @@ class SyncService:
         params: list = []
 
         def _add_multi(field: str, raw: str) -> None:
-            """支持逗号分隔多值：category=a,b → category IN (?, ?)。"""
+            """分类列：逗号分隔多值 → IN (?, ?)。"""
             vals = [v.strip() for v in raw.split(",") if v.strip()]
             if not vals:
                 return
@@ -336,10 +349,17 @@ class SyncService:
             where.append(f"{field} IN ({placeholders})")
             params.extend(vals)
 
+        def _add_like(field: str, raw: str) -> None:
+            """文本列：单值 → field LIKE '%raw%'。"""
+            val = raw.strip()
+            if not val:
+                return
+            where.append(f"{field} LIKE ?")
+            params.append(f"%{val}%")
+
+        # 分类列（IN）
         if category:
             _add_multi("category", category)
-        if city:
-            _add_multi("city", city)
         if industry:
             _add_multi("industry", industry)
         if company_type:
@@ -354,6 +374,12 @@ class SyncService:
             _add_multi("major_category", major_category)
         if difficulty:
             _add_multi("difficulty", difficulty)
+        # 文本列（LIKE）
+        if city:
+            _add_like("city", city)
+        for field, raw in text_filters.items():
+            if raw:
+                _add_like(field, raw)
         if keyword:
             where.append("(title LIKE ? OR company LIKE ? OR jd_summary LIKE ?)")
             kw = f"%{keyword}%"
@@ -407,6 +433,7 @@ class SyncService:
         keyword: str = "",
         recruit_type: str = "",
         education_req: str = "",
+        **text_filters: str,
     ) -> dict:
         """分页拉取公司总览（对齐飞书公司表字段）。
 
@@ -414,11 +441,11 @@ class SyncService:
         ----------
         limit: 每页数量，默认 200。
         offset: 偏移量。
-        industry: 行业筛选（空串=不限）。
-        company_type: 公司类型筛选（空串=不限）。
+        industry/company_type/recruit_type/education_req:
+            分类列筛选（多选，逗号分隔 → IN）。
         keyword: 公司名关键词搜索。
-        recruit_type: 招聘类型筛选。
-        education_req: 学历要求筛选。
+        **text_filters: 其余文本列模糊搜索（LIKE），如 location /
+            position_titles / recruit_target / deadline / last_updated。
         """
         if limit < 1:
             limit = 200
@@ -428,7 +455,8 @@ class SyncService:
         where = []
         params: list = []
 
-        def _add_multi_c(field: str, raw: str) -> None:
+        def _add_multi(field: str, raw: str) -> None:
+            """分类列：逗号分隔多值 → IN (?, ?)。"""
             vals = [v.strip() for v in raw.split(",") if v.strip()]
             if not vals:
                 return
@@ -436,14 +464,27 @@ class SyncService:
             where.append(f"{field} IN ({placeholders})")
             params.extend(vals)
 
+        def _add_like(field: str, raw: str) -> None:
+            """文本列：单值 → field LIKE '%raw%'。"""
+            val = raw.strip()
+            if not val:
+                return
+            where.append(f"{field} LIKE ?")
+            params.append(f"%{val}%")
+
+        # 分类列（IN）
         if industry:
-            _add_multi_c("industry", industry)
+            _add_multi("industry", industry)
         if company_type:
-            _add_multi_c("company_type", company_type)
+            _add_multi("company_type", company_type)
         if recruit_type:
-            _add_multi_c("recruit_type", recruit_type)
+            _add_multi("recruit_type", recruit_type)
         if education_req:
-            _add_multi_c("education_req", education_req)
+            _add_multi("education_req", education_req)
+        # 文本列（LIKE）
+        for field, raw in text_filters.items():
+            if raw:
+                _add_like(field, raw)
         if keyword:
             where.append("company_name LIKE ?")
             params.append(f"%{keyword}%")

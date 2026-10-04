@@ -20,22 +20,30 @@ def _make_db(tmp_path: Path) -> Path:
     """在临时目录建一个 mock jobs 物理表(spec 字段),插入 10 条。"""
     db = tmp_path / "jobs.db"
     conn = sqlite3.connect(str(db))
+    # 表结构对齐 sync_service.JOB_FIELDS（20 列）
     conn.execute(
         """
         CREATE TABLE jobs (
             job_id INTEGER PRIMARY KEY,
-            company TEXT,
             title TEXT,
+            company TEXT,
+            industry TEXT,
+            company_type TEXT,
             category TEXT,
+            subcategory TEXT,
             city TEXT,
-            requirements TEXT,
-            jd_text TEXT,
-            apply_url TEXT,
-            deadline TEXT,
-            source TEXT,
-            graduation_match INTEGER,
+            min_education TEXT,
             is_mt INTEGER,
-            updated_at TEXT
+            major_category TEXT,
+            major_required TEXT,
+            hard_skills TEXT,
+            keywords TEXT,
+            jd_summary TEXT,
+            difficulty TEXT,
+            updated_at TEXT,
+            deadline TEXT,
+            apply_url TEXT,
+            announcement_url TEXT
         )
         """
     )
@@ -43,23 +51,30 @@ def _make_db(tmp_path: Path) -> Path:
     for i in range(1, 11):
         rows.append(
             (
-                i,
-                f"公司{i}",
-                f"岗位{i}",
-                "技术",
-                "北京",
-                "本科",
-                f"JD{i}",
-                f"http://apply/{i}",
-                "2026-12-31",
-                "feishu",
-                1 if i % 2 == 0 else 0,
-                1 if i % 3 == 0 else 0,
-                f"2026-01-{i:02d} 00:00:00",
+                i,                                    # job_id
+                f"岗位{i}",                            # title
+                f"公司{i}",                            # company
+                "互联网",                              # industry
+                "民营",                                # company_type
+                "技术",                                # category
+                "后端",                                # subcategory
+                "北京",                                # city
+                "本科",                                # min_education
+                1 if i % 3 == 0 else 0,               # is_mt
+                "计算机",                              # major_category
+                "计算机相关",                          # major_required
+                "Python",                              # hard_skills
+                "后端",                                # keywords
+                f"JD{i}",                              # jd_summary
+                "中等",                                # difficulty
+                f"2026-01-{i:02d} 00:00:00",          # updated_at
+                "2026-12-31",                          # deadline
+                f"http://apply/{i}",                   # apply_url
+                f"http://announce/{i}",                # announcement_url
             )
         )
     conn.executemany(
-        "INSERT INTO jobs VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)",
+        "INSERT INTO jobs VALUES (" + ", ".join(["?"] * 20) + ")",
         rows,
     )
     conn.commit()
@@ -124,18 +139,19 @@ def test_get_jobs_since_cursor_same_timestamp(tmp_path):
         """
         CREATE TABLE jobs (
             job_id INTEGER PRIMARY KEY,
-            company TEXT, title TEXT, category TEXT, city TEXT,
-            requirements TEXT, jd_text TEXT, apply_url TEXT,
-            deadline TEXT, source TEXT,
-            graduation_match INTEGER, is_mt INTEGER, updated_at TEXT
+            title TEXT, company TEXT, industry TEXT, company_type TEXT,
+            category TEXT, subcategory TEXT, city TEXT, min_education TEXT,
+            is_mt INTEGER, major_category TEXT, major_required TEXT,
+            hard_skills TEXT, keywords TEXT, jd_summary TEXT, difficulty TEXT,
+            updated_at TEXT, deadline TEXT, apply_url TEXT, announcement_url TEXT
         )
         """
     )
     # 5 条同一时间戳,job_id 1..5
     conn.executemany(
-        "INSERT INTO jobs VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)",
+        "INSERT INTO jobs VALUES (" + ", ".join(["?"] * 20) + ")",
         [
-            (i, f"c{i}", f"t{i}", "cat", "city", "req", "jd", "url", "dl", "src", 0, 0, "2026-01-01 00:00:00")
+            (i, f"t{i}", f"c{i}", "", "", "cat", "", "city", "", 0, "", "", "", "", "jd", "", "2026-01-01 00:00:00", "", "url", "")
             for i in range(1, 6)
         ],
     )

@@ -29,9 +29,9 @@ async def send_verification_code(email: str, code: str) -> None:
     payload = {
         "from": FROM_EMAIL,
         "to": [email],
-        "subject": "【求职搭子】邮箱验证码",
+        "subject": "【Offer搭子】邮箱验证码",
         "text": (
-            f"你的求职搭子验证码是：{code}\n"
+            f"你的Offer搭子验证码是：{code}\n"
             "该验证码 6 小时内有效。\n"
             "如果不是你本人操作，请忽略此邮件。"
         ),

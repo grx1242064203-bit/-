@@ -29,8 +29,8 @@ const COLUMNS: ColumnDef[] = [
   { key: "links", label: "链接" },
 ];
 
-/** 需要列筛选的分类列 */
-const FILTER_COLUMNS = new Set(["industry", "company_type", "recruit_type", "education_req"]);
+/** 分类列（有后端筛选选项，多选 IN）；其余列为文本搜索列（LIKE） */
+const CATEGORY_COLUMNS = new Set(["industry", "company_type", "recruit_type", "education_req"]);
 
 export default function Companies() {
   const [companies, setCompanies] = useState<Company[]>([]);
@@ -151,19 +151,21 @@ export default function Companies() {
                   >
                     <div className="flex items-center">
                       <span>{col.label}</span>
-                      {FILTER_COLUMNS.has(col.key) && (
-                        <ColumnFilter
-                          columnName={col.label}
-                          value={columnFilters[col.key] ?? []}
-                          options={(filterOptions[col.key] ?? []).map((v) => ({
-                            label: v,
-                            value: v,
-                          }))}
-                          onChange={(vals) =>
-                            setColumnFilters((prev) => ({ ...prev, [col.key]: vals }))
-                          }
-                        />
-                      )}
+                      <ColumnFilter
+                        columnName={col.label}
+                        value={columnFilters[col.key] ?? []}
+                        options={
+                          CATEGORY_COLUMNS.has(col.key)
+                            ? (filterOptions[col.key] ?? []).map((v) => ({
+                                label: v,
+                                value: v,
+                              }))
+                            : undefined
+                        }
+                        onChange={(vals) =>
+                          setColumnFilters((prev) => ({ ...prev, [col.key]: vals }))
+                        }
+                      />
                     </div>
                   </th>
                 );
@@ -213,7 +215,7 @@ function colWidth(key: string): string {
     case "position_titles":
       return "280px";
     case "location":
-      return "160px";
+      return "120px";
     case "deadline":
     case "last_updated":
       return "110px";
@@ -306,7 +308,7 @@ function LinkButton({ url, label }: { url: string; label: string }) {
   return (
     <button
       type="button"
-      onClick={() => openExternalUrl(url)}
+      onClick={() => { void openExternalUrl(url); }}
       className="rounded bg-primary-soft px-2 py-0.5 text-xs text-primary-dark transition hover:bg-primary-light"
       title={url}
     >

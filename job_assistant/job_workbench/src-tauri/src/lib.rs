@@ -276,6 +276,7 @@ pub fn run() {
 
     tauri::Builder::default()
         .plugin(tauri_plugin_fs::init())
+        .plugin(tauri_plugin_shell::init())
         .setup(|app| {
             // app_data_dir 在 macOS 上是 ~/Library/Application Support/<identifier>/，
             // 在 Linux 上是 ~/.local/share/<identifier>/，Windows 上是 %APPDATA%/<identifier>/。
@@ -327,5 +328,5 @@ pub fn run() {
 // 保留 T1 的示例命令，便于前端最小连通性自测。
 #[tauri::command]
 fn greet(name: &str) -> String {
-    format!("你好，{}！求职搭子已就绪。", name)
+    format!("你好，{}！Offer搭子已就绪。", name)
 }

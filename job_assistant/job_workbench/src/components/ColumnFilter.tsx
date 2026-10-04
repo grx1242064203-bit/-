@@ -1,9 +1,9 @@
 // 列筛选器：表头下拉面板。
-// - 文本列：显示搜索框（模糊匹配）
-// - 分类列：显示可搜索的多选列表（选项由调用方传入）
+// - 分类列（传入 options）：可搜索的多选列表
+// - 文本列（不传 options）：关键词搜索框，回车或失焦时应用
 //
-// 筛选状态由父组件管理（受控组件），onChange 回传选中值数组。
-// 支持多选，空数组 = 不筛选。
+// 筛选状态由父组件管理（受控组件）。
+// 分类列：value 为选中值数组；文本列：value[0] 为搜索关键词。
 
 import { useEffect, useRef, useState } from "react";
 
@@ -14,13 +14,9 @@ export interface ColumnFilterOption {
 }
 
 interface ColumnFilterProps {
-  /** 当前选中的值 */
   value: string[];
-  /** 选项列表（分类列必传；文本列不传则仅显示搜索框） */
   options?: ColumnFilterOption[];
-  /** 变更回调 */
   onChange: (value: string[]) => void;
-  /** 列名，显示在面板顶部 */
   columnName: string;
 }
 
@@ -34,7 +30,6 @@ export default function ColumnFilter({
   const [search, setSearch] = useState("");
   const ref = useRef<HTMLDivElement>(null);
 
-  // 点击外部关闭
   useEffect(() => {
     if (!open) return;
     const handler = (e: MouseEvent) => {
@@ -47,6 +42,7 @@ export default function ColumnFilter({
   }, [open]);
 
   const hasFilter = value.length > 0;
+  const isTextMode = !options;
   const filteredOptions = (options ?? []).filter((o) =>
     o.label.toLowerCase().includes(search.toLowerCase())
   );
@@ -59,11 +55,23 @@ export default function ColumnFilter({
     }
   };
 
+  // 文本模式：回车应用搜索
+  const applyTextSearch = () => {
+    if (search.trim()) {
+      onChange([search.trim()]);
+    } else {
+      onChange([]);
+    }
+  };
+
   return (
     <div className="relative" ref={ref}>
       <button
         type="button"
-        onClick={() => setOpen((o) => !o)}
+        onClick={() => {
+          setOpen((o) => !o);
+          if (isTextMode) setSearch(value[0] ?? "");
+        }}
         className={`ml-1 inline-flex h-4 w-4 items-center justify-center rounded text-[10px] transition ${
           hasFilter
             ? "bg-primary text-ink"
@@ -79,13 +87,19 @@ export default function ColumnFilter({
           <div className="mb-2 text-xs font-medium text-text-muted">{columnName}</div>
           <input
             type="text"
-            value={search}
+            value={isTextMode ? search : search}
             onChange={(e) => setSearch(e.target.value)}
-            placeholder={options ? "搜索选项..." : "输入关键词..."}
+            onKeyDown={(e) => {
+              if (e.key === "Enter" && isTextMode) {
+                applyTextSearch();
+                setOpen(false);
+              }
+            }}
+            placeholder={isTextMode ? "输入关键词搜索..." : "搜索选项..."}
             className="mb-2 w-full rounded border border-line px-2 py-1 text-xs outline-none focus:border-primary"
           />
 
-          {options ? (
+          {!isTextMode && (
             <div className="max-h-56 overflow-y-auto">
               {filteredOptions.map((o) => {
                 const checked = value.includes(o.value);
@@ -111,14 +125,19 @@ export default function ColumnFilter({
                 <div className="py-2 text-center text-xs text-text-faint">无匹配项</div>
               )}
             </div>
-          ) : (
-            <div className="text-xs text-text-faint">输入后按回车或点击外部应用</div>
+          )}
+
+          {isTextMode && (
+            <div className="text-xs text-text-faint">输入后按回车应用，支持模糊匹配</div>
           )}
 
           {hasFilter && (
             <button
               type="button"
-              onClick={() => onChange([])}
+              onClick={() => {
+                onChange([]);
+                setSearch("");
+              }}
               className="mt-2 w-full rounded bg-surface-soft py-1 text-xs text-text-muted hover:bg-gray-100"
             >
               清除筛选

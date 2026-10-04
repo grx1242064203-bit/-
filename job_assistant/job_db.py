@@ -471,13 +471,17 @@ def get_announcement_by_id(announcement_id: int) -> Optional[Dict]:
 
 
 def get_last_sync_time() -> str:
-    """获取最近一次同步的 last_modified 最大值(增量同步游标)。"""
+    """获取最近一次同步的游标(apply_update 最大值)。
+
+    飞书 Bitable API 当前未返回 last_modified_time,降级用 apply_update
+    (网申更新日期)作为增量同步游标。
+    """
     conn = _get_conn()
     try:
         row = conn.execute(
-            "SELECT MAX(last_modified) as lm FROM announcements"
+            "SELECT MAX(apply_update) as au FROM announcements"
         ).fetchone()
-        return row["lm"] if row and row["lm"] else ""
+        return row["au"] if row and row["au"] else ""
     finally:
         conn.close()
 

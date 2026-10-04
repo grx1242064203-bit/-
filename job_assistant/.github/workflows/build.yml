@@ -57,7 +57,7 @@ jobs:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         with:
           tagName: ${{ github.ref_name }}
-          releaseName: '求职搭子 v__VERSION__'
+          releaseName: 'Offer搭子 v__VERSION__'
           releaseBody: '桌面工作台安装包'
           releaseDraft: true
           prerelease: false

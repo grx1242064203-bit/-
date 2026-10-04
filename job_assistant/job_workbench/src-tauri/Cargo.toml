@@ -1,7 +1,7 @@
 [package]
 name = "job-workbench"
 version = "0.1.0"
-description = "求职搭子桌面工作台"
+description = "Offer搭子桌面工作台"
 edition = "2021"
 
 [lib]
@@ -33,6 +33,7 @@ log = "0.4"
 env_logger = "0.11"
 # 文件系统插件（简历 PDF/图片读写）
 tauri-plugin-fs = "2"
+tauri-plugin-shell = "2"
 
 [profile.release]
 panic = "abort"

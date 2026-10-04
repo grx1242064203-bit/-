@@ -1,4 +1,4 @@
-"""求职搭子 云端 API 入口 (FastAPI)。
+"""Offer搭子 云端 API 入口 (FastAPI)。
 
 提供 /health 健康检查、CORS 中间件、配置加载、/api/v1 业务路由（auth）。
 """
@@ -44,9 +44,9 @@ async def lifespan(app: FastAPI):
 
 
 app = FastAPI(
-    title="求职搭子 API",
+    title="Offer搭子 API",
     version="0.1.0",
-    description="求职搭子桌面工作台云端 API",
+    description="Offer搭子桌面工作台云端 API",
     lifespan=lifespan,
 )
 

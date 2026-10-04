@@ -43,6 +43,8 @@ export interface JobFilter {
   is_mt?: string;
   major_category?: string;
   difficulty?: string;
+  // 文本列模糊搜索（LIKE）：title / company / major_required / hard_skills / keywords / jd_summary 等
+  [key: string]: string | undefined;
 }
 
 export function getJobs(

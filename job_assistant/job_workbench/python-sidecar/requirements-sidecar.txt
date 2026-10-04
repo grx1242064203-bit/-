@@ -1,4 +1,4 @@
-# 求职搭子 Python sidecar 评分引擎依赖
+# Offer搭子 Python sidecar 评分引擎依赖
 # 仅列 sidecar 评分必需的包,不含 llm_client 的依赖(httpx/openai 等不在此处)。
 # llm_client 在 sidecar 评分路径下不会被 import(scorer.score_job 的 llm_client 参数传 None)。
 

@@ -1,6 +1,6 @@
 import type { Config } from "tailwindcss";
 
-// 求职搭子 · Crextio 风格设计系统：暖奶油黄主色 + 白卡片 + 大圆角。
+// Offer搭子 · Crextio 风格设计系统：暖奶油黄主色 + 白卡片 + 大圆角。
 export default {
   content: ["./index.html", "./src/**/*.{ts,tsx}"],
   theme: {

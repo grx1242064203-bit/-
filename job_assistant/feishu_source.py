@@ -245,39 +245,47 @@ class FeishuSourceSync:
         """
         同步源表到本地数据库。
 
+        增量游标:优先用 last_modified_time(飞书记录修改时间),
+        若 API 未返回该字段则降级用 apply_update(网申更新日期)。
+
         Args:
-            full: True=全量同步(首次), False=增量同步(只处理 last_modified > 游标的记录)
+            full: True=全量同步(首次), False=增量同步(只处理变更记录)
 
         Returns: {"total": N, "processed": M, "new": K, "updated": U, "skipped": S}
         """
         job_db.init_db()
         records = self._fetch_all_records()
 
-        # 增量游标
+        # 增量游标:取 apply_update 最大值作为日期游标
+        # (飞书 Bitable API 当前未返回 last_modified_time,降级用 apply_update)
         cursor = "" if full else job_db.get_last_sync_time()
-        cursor_ts = 0
-        if cursor:
-            try:
-                cursor_ts = int(time.mktime(time.strptime(cursor, "%Y-%m-%d %H:%M:%S")))
-            except Exception:
-                cursor_ts = 0
 
         total = len(records)
         processed = 0
         new_count = 0
         updated_count = 0
         skipped = 0
-        max_modified_ts = cursor_ts
 
         for record in records:
-            # 增量过滤:跳过未变更记录
-            if not full:
+            # 增量过滤:跳过早于游标的记录
+            if not full and cursor:
                 mod_ts = record.get("last_modified_time", 0)
-                if mod_ts and mod_ts / 1000 <= cursor_ts:
-                    skipped += 1
-                    continue
-                if mod_ts and mod_ts / 1000 > max_modified_ts:
-                    max_modified_ts = mod_ts / 1000
+                if mod_ts:
+                    # 有 last_modified_time 时用它精确比较
+                    try:
+                        cursor_ts = int(time.mktime(time.strptime(cursor, "%Y-%m-%d")))
+                        if mod_ts / 1000 <= cursor_ts:
+                            skipped += 1
+                            continue
+                    except Exception:
+                        pass
+                else:
+                    # 降级:用 apply_update 日期比较
+                    fields = record.get("fields", {})
+                    apply_update = _extract_datetime(fields, "apply_update")
+                    if apply_update and apply_update < cursor:
+                        skipped += 1
+                        continue
 
             result = self._process_record(record)
             if result is None:
@@ -292,7 +300,7 @@ class FeishuSourceSync:
 
         logger.info(
             f"同步完成: 总计={total} 处理={processed} 新增={new_count} "
-            f"更新={updated_count} 跳过={skipped}"
+            f"更新={updated_count} 跳过={skipped} 游标={cursor!r}"
         )
 
         # 打印未命中归一化告警

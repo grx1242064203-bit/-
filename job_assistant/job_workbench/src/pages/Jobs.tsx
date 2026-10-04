@@ -31,8 +31,8 @@ const COLUMNS: ColumnDef[] = [
   { key: "links", label: "链接" },
 ];
 
-/** 分类列（有筛选选项） */
-const FILTER_COLUMNS = new Set([
+/** 分类列（有筛选选项，多选 IN）；其余列为文本搜索列（LIKE） */
+const CATEGORY_COLUMNS = new Set([
   "industry",
   "company_type",
   "category",
@@ -186,14 +186,14 @@ export default function Jobs() {
                   >
                     <div className="flex items-center">
                       <span>{col.label}</span>
-                      {FILTER_COLUMNS.has(col.key) && (
-                        <ColumnFilter
-                          columnName={col.label}
-                          value={columnFilters[col.key] ?? []}
-                          options={getOptions(col.key)}
-                          onChange={(vals) => setColumnFilter(col.key, vals)}
-                        />
-                      )}
+                      <ColumnFilter
+                        columnName={col.label}
+                        value={columnFilters[col.key] ?? []}
+                        options={
+                          CATEGORY_COLUMNS.has(col.key) ? getOptions(col.key) : undefined
+                        }
+                        onChange={(vals) => setColumnFilter(col.key, vals)}
+                      />
                     </div>
                   </th>
                 );
@@ -263,9 +263,10 @@ function jobColWidth(key: string): string {
     case "city":
       return "120px";
     case "major_required":
+      return "120px";
     case "hard_skills":
     case "keywords":
-      return "160px";
+      return "140px";
     case "jd_summary":
       return "240px";
     case "updated_at":
@@ -367,7 +368,7 @@ function LinkButton({ url, label }: { url: string; label: string }) {
   return (
     <button
       type="button"
-      onClick={() => openExternalUrl(url)}
+      onClick={() => { void openExternalUrl(url); }}
       className="rounded bg-primary-soft px-2 py-0.5 text-xs text-primary-dark transition hover:bg-primary-light"
       title={url}
     >

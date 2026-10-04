@@ -5,6 +5,8 @@
 - ``PATCH /api/v1/applications/{id}`` 更新状态/备注
 - ``DELETE /api/v1/applications/{id}`` 删除记录
 """
+from typing import Optional
+
 from fastapi import APIRouter, Depends, HTTPException, Query
 from pydantic import BaseModel
 
@@ -24,8 +26,8 @@ class CreateApplicationRequest(BaseModel):
 
 
 class UpdateApplicationRequest(BaseModel):
-    status: str | None = None
-    notes: str | None = None
+    status: Optional[str] = None
+    notes: Optional[str] = None
 
 
 @router.post("")

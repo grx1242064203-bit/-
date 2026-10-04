@@ -9,6 +9,7 @@ import Register from "./pages/Register";
 import AuthGuard from "./components/AuthGuard";
 import { useAuthStore } from "./stores/authStore";
 import SyncIndicator from "./components/SyncIndicator";
+import logoImg from "./assets/logo.png";
 
 // 顶部胶囊导航项
 interface NavItem {
@@ -39,11 +40,13 @@ function TopNav() {
     <header className="glass-strong flex h-16 items-center justify-between border-b border-white/40 px-6">
       {/* Logo */}
       <div className="flex items-center gap-3">
-        <div className="flex h-9 w-9 items-center justify-center rounded-lg bg-primary text-lg font-bold text-ink">
-          搭
-        </div>
+        <img
+          src={logoImg}
+          alt="Offer搭子"
+          className="h-10 w-10 rounded-lg object-contain drop-shadow-sm"
+        />
         <div>
-          <div className="text-base font-semibold text-text">求职搭子</div>
+          <div className="text-base font-semibold text-text">Offer搭子</div>
           <div className="text-[11px] text-text-muted">27届校招工作台</div>
         </div>
       </div>
@@ -104,7 +107,7 @@ function PageTitle() {
     "/applications": "投递控制台",
     "/resume": "简历解析",
   };
-  const title = titleMap[location.pathname] ?? "求职搭子";
+  const title = titleMap[location.pathname] ?? "Offer搭子";
   return (
     <div className="mb-5">
       <h1 className="text-2xl font-bold text-text">{title}</h1>

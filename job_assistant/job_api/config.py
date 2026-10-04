@@ -1,10 +1,13 @@
-"""求职搭子 API 配置 (Pydantic Settings)。
+"""Offer搭子 API 配置 (Pydantic Settings)。
 
 环境变量通过 .env / 进程注入，缺失项回退到默认值。
 密钥类字段默认留空或占位，生产部署必须通过环境变量覆盖。
 """
+from __future__ import annotations
+
 from functools import lru_cache
 from pathlib import Path
+from typing import List
 
 from pydantic_settings import BaseSettings, SettingsConfigDict
 
@@ -39,7 +42,7 @@ class Settings(BaseSettings):
     REMOTE_DB_DOWNLOAD_PATH: str = "/api/db/download"
 
     # CORS 允许源（开发期默认允许所有来源）
-    CORS_ORIGINS: list[str] = ["*"]
+    CORS_ORIGINS: List[str] = ["*"]
 
     @property
     def sqlite_url(self) -> str:

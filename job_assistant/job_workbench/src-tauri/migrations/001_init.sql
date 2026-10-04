@@ -1,4 +1,4 @@
--- 求职搭子桌面端本地数据库 Schema（SQLite）
+-- Offer搭子桌面端本地数据库 Schema（SQLite）
 -- 对齐 spec: docs/staging/specs/2026-10-03-desktop-workbench.md#四本地数据库-schemasqlite
 -- 所有表均 IF NOT EXISTS，幂等可重入；migrations/001_init.sql 由 db::init_db_with_conn 一次性 execute_batch 落库。
 

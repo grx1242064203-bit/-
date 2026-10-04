@@ -65,6 +65,8 @@ export interface CompaniesParams {
   keyword?: string;
   recruit_type?: string;
   education_req?: string;
+  // 文本列模糊搜索（LIKE）：location / position_titles / deadline / last_updated 等
+  [key: string]: number | string | undefined;
 }
 
 export function getCompanies(params: CompaniesParams): Promise<CompaniesResponse> {

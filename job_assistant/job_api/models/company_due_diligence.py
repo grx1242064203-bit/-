@@ -1,6 +1,7 @@
 """公司尽调模型：缓存 LLM 生成的公司简介/官网/新闻/面试问题。
 
-按 company_name 主键缓存，同一公司只生成一次，避免重复消耗 LLM 配额。
+按 (user_id, company_name) 缓存——面试答案结合了用户简历，是个性化的，
+所以每个用户独立缓存，避免串数据。
 """
 from __future__ import annotations
 
@@ -12,13 +13,20 @@ from config import get_settings
 
 _SCHEMA_SQL = """
 CREATE TABLE IF NOT EXISTS company_due_diligence (
-    company_name TEXT PRIMARY KEY,
+    user_id INTEGER NOT NULL,
+    company_name TEXT NOT NULL,
     intro TEXT DEFAULT '',
     official_website TEXT DEFAULT '',
     news_links TEXT DEFAULT '[]',
     why_company_questions TEXT DEFAULT '[]',
-    generated_at TEXT NOT NULL
+    generated_at TEXT NOT NULL,
+    PRIMARY KEY (user_id, company_name)
 );
+"""
+
+# 旧表只有 company_name 主键，迁移时加 user_id 列
+_MIGRATE_SQL = """
+ALTER TABLE company_due_diligence ADD COLUMN user_id INTEGER NOT NULL DEFAULT 0;
 """
 
 
@@ -27,6 +35,13 @@ def _connect() -> sqlite3.Connection:
     conn.row_factory = sqlite3.Row
     conn.execute("PRAGMA journal_mode=WAL")
     conn.executescript(_SCHEMA_SQL)
+    # 迁移旧表：旧表 company_name 为主键且无 user_id 列
+    try:
+        cols = [r[1] for r in conn.execute("PRAGMA table_info(company_due_diligence)").fetchall()]
+        if "user_id" not in cols:
+            conn.executescript(_MIGRATE_SQL)
+    except sqlite3.OperationalError:
+        pass
     return conn
 
 
@@ -51,30 +66,30 @@ def _row_to_dd(row: sqlite3.Row) -> dict:
     }
 
 
-async def get_due_diligence(company_name: str) -> Optional[dict]:
+async def get_due_diligence(user_id: int, company_name: str) -> Optional[dict]:
     """获取公司尽调缓存。不存在返回 None。"""
     if not company_name:
         return None
     conn = _connect()
     try:
         row = conn.execute(
-            "SELECT * FROM company_due_diligence WHERE company_name=?",
-            (company_name,),
+            "SELECT * FROM company_due_diligence WHERE user_id=? AND company_name=?",
+            (user_id, company_name),
         ).fetchone()
         return _row_to_dd(row) if row else None
     finally:
         conn.close()
 
 
-def get_due_diligence_sync(company_name: str) -> Optional[dict]:
+def get_due_diligence_sync(user_id: int, company_name: str) -> Optional[dict]:
     """同步版本（供同步路由调用）。"""
     if not company_name:
         return None
     conn = _connect()
     try:
         row = conn.execute(
-            "SELECT * FROM company_due_diligence WHERE company_name=?",
-            (company_name,),
+            "SELECT * FROM company_due_diligence WHERE user_id=? AND company_name=?",
+            (user_id, company_name),
         ).fetchone()
         return _row_to_dd(row) if row else None
     finally:
@@ -82,6 +97,7 @@ def get_due_diligence_sync(company_name: str) -> Optional[dict]:
 
 
 async def upsert_due_diligence(
+    user_id: int,
     company_name: str,
     intro: str = "",
     official_website: str = "",
@@ -97,20 +113,20 @@ async def upsert_due_diligence(
     try:
         conn.execute(
             """INSERT INTO company_due_diligence
-               (company_name, intro, official_website, news_links, why_company_questions, generated_at)
-               VALUES (?, ?, ?, ?, ?, ?)
-               ON CONFLICT(company_name) DO UPDATE SET
+               (user_id, company_name, intro, official_website, news_links, why_company_questions, generated_at)
+               VALUES (?, ?, ?, ?, ?, ?, ?)
+               ON CONFLICT(user_id, company_name) DO UPDATE SET
                    intro=excluded.intro,
                    official_website=excluded.official_website,
                    news_links=excluded.news_links,
                    why_company_questions=excluded.why_company_questions,
                    generated_at=excluded.generated_at""",
-            (company_name, intro, official_website, news_json, questions_json, now),
+            (user_id, company_name, intro, official_website, news_json, questions_json, now),
         )
         conn.commit()
         row = conn.execute(
-            "SELECT * FROM company_due_diligence WHERE company_name=?",
-            (company_name,),
+            "SELECT * FROM company_due_diligence WHERE user_id=? AND company_name=?",
+            (user_id, company_name),
         ).fetchone()
         return _row_to_dd(row)
     finally:
@@ -118,6 +134,7 @@ async def upsert_due_diligence(
 
 
 def upsert_due_diligence_sync(
+    user_id: int,
     company_name: str,
     intro: str = "",
     official_website: str = "",
@@ -133,20 +150,20 @@ def upsert_due_diligence_sync(
     try:
         conn.execute(
             """INSERT INTO company_due_diligence
-               (company_name, intro, official_website, news_links, why_company_questions, generated_at)
-               VALUES (?, ?, ?, ?, ?, ?)
-               ON CONFLICT(company_name) DO UPDATE SET
+               (user_id, company_name, intro, official_website, news_links, why_company_questions, generated_at)
+               VALUES (?, ?, ?, ?, ?, ?, ?)
+               ON CONFLICT(user_id, company_name) DO UPDATE SET
                    intro=excluded.intro,
                    official_website=excluded.official_website,
                    news_links=excluded.news_links,
                    why_company_questions=excluded.why_company_questions,
                    generated_at=excluded.generated_at""",
-            (company_name, intro, official_website, news_json, questions_json, now),
+            (user_id, company_name, intro, official_website, news_json, questions_json, now),
         )
         conn.commit()
         row = conn.execute(
-            "SELECT * FROM company_due_diligence WHERE company_name=?",
-            (company_name,),
+            "SELECT * FROM company_due_diligence WHERE user_id=? AND company_name=?",
+            (user_id, company_name),
         ).fetchone()
         return _row_to_dd(row)
     finally:

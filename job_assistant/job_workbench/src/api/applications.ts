@@ -101,12 +101,20 @@ export function deleteApplication(id: number): Promise<{ ok: boolean }> {
 }
 
 // ===== 公司尽调 =====
+export interface DueDiligenceQuestion {
+  question: string;
+  /** 结合公司情况 + 用户简历的个性化回答思路 */
+  answer: string;
+  /** 兼容旧缓存字段 */
+  hint?: string;
+}
+
 export interface DueDiligence {
   company_name: string;
   intro: string;
   official_website: string;
   news_links: { title: string; url: string }[];
-  why_company_questions: { question: string; hint: string }[];
+  why_company_questions: DueDiligenceQuestion[];
   generated_at: string;
   cached: boolean;
 }

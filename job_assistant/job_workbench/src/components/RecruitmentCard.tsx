@@ -296,14 +296,19 @@ export default function RecruitmentCard({ application }: Props) {
                     面试准备：「为什么选择这家公司」
                   </div>
                   <div className="mt-1 space-y-2">
-                    {dd.why_company_questions.map((q, i) => (
-                      <div key={i} className="rounded-lg bg-white/40 p-2">
-                        <div className="text-sm font-medium text-text">Q: {q.question}</div>
-                        {q.hint && (
-                          <div className="mt-0.5 text-xs text-text-muted">💡 {q.hint}</div>
-                        )}
-                      </div>
-                    ))}
+                    {dd.why_company_questions.map((q, i) => {
+                      const answer = q.answer || q.hint || "";
+                      return (
+                        <div key={i} className="rounded-lg bg-white/40 p-2">
+                          <div className="text-sm font-medium text-text">Q: {q.question}</div>
+                          {answer && (
+                            <div className="mt-0.5 text-xs leading-relaxed text-text-muted">
+                              💡 {answer}
+                            </div>
+                          )}
+                        </div>
+                      );
+                    })}
                   </div>
                 </div>
               )}

@@ -152,22 +152,33 @@ def company_due_diligence(
     req: CompanyDueDiligenceRequest,
     user: dict = Depends(get_current_user),
 ):
-    """公司尽调卡：生成公司简介/官网/新闻/「为什么选择这家公司」面试问题。
+    """公司尽调卡：生成公司简介/官网/新闻/个性化面试问答。
 
-    同一公司结果缓存到 company_due_diligence 表，后续直接读取，不重复消耗 LLM 配额。
+    自动读取用户的 active 简历画像，把简历文本喂给 LLM，生成结合用户经历的
+    个性化面试回答。结果按 (user_id, company_name) 缓存。
     """
     user_id = user["user_id"]
     company_name = req.company_name.strip()
 
     # 1) 命中缓存直接返回
-    cached = dd_model.get_due_diligence_sync(company_name)
+    cached = dd_model.get_due_diligence_sync(user_id, company_name)
     if cached:
         return {**cached, "cached": True}
 
-    # 2) 未命中：检查配额 + 生成
+    # 2) 读取用户简历（用于个性化面试回答）
+    resume_text = ""
+    try:
+        from models.resume_profile import get_active_profile
+        profile = get_active_profile(user_id)
+        if profile:
+            resume_text = profile.get("resume_text", "")
+    except Exception as e:  # noqa: BLE001 简历读取失败不阻塞尽调生成
+        logger.warning(f"读取用户简历失败 (user_id={user_id}): {e!r}")
+
+    # 3) 未命中：检查配额 + 生成
     _check_quota(user_id)
     try:
-        result = _proxy.company_due_diligence(company_name)
+        result = _proxy.company_due_diligence(company_name, resume_text=resume_text)
     except TimeoutError as e:
         _handle_llm_error(e, "company_due_diligence")
         return
@@ -177,8 +188,9 @@ def company_due_diligence(
 
     increment_usage(user_id)
 
-    # 3) 写入缓存
+    # 4) 写入缓存（按 user_id + company_name）
     saved = dd_model.upsert_due_diligence_sync(
+        user_id=user_id,
         company_name=company_name,
         intro=result.get("intro", ""),
         official_website=result.get("official_website", ""),

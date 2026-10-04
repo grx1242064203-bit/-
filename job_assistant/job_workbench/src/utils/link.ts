@@ -1,7 +1,10 @@
 // 链接工具：在 Tauri 中通过 shell 插件调用系统浏览器打开外部链接，
 // Web 环境降级为 window.open。同时校验 URL 合法性。
 
-import { open as shellOpen } from "@tauri-apps/plugin-shell";
+// 检测是否在 Tauri 环境中运行
+function isTauri(): boolean {
+  return typeof window !== "undefined" && "__TAURI_INTERNALS__" in window;
+}
 
 /**
  * 判断是否为可打开的 URL。
@@ -56,23 +59,28 @@ export async function openExternalUrl(url: string | null | undefined): Promise<b
   const target = normalizeUrl(url);
   if (!target) return false;
 
-  try {
-    // Tauri shell 插件：调用系统默认浏览器
-    await shellOpen(target);
-    return true;
-  } catch {
-    // 降级：Web 环境或 shell 插件不可用时
+  // Tauri 环境：动态加载 shell 插件，调用系统默认浏览器
+  if (isTauri()) {
     try {
-      window.open(target, "_blank", "noopener,noreferrer");
+      const { open: shellOpen } = await import("@tauri-apps/plugin-shell");
+      await shellOpen(target);
       return true;
     } catch {
-      // 最后兜底：修改当前窗口 location（仅 Web 环境有效）
-      try {
-        window.location.href = target;
-        return true;
-      } catch {
-        return false;
-      }
+      // shell 插件不可用，降级
+    }
+  }
+
+  // Web 环境降级：window.open
+  try {
+    window.open(target, "_blank", "noopener,noreferrer");
+    return true;
+  } catch {
+    // 最后兜底：修改当前窗口 location
+    try {
+      window.location.href = target;
+      return true;
+    } catch {
+      return false;
     }
   }
 }

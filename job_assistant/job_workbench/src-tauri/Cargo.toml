@@ -20,7 +20,8 @@ rusqlite = { version = "0.31", features = ["bundled"] }
 # 异步 runtime（云端 API 调用 / sidecar 进程管理）
 tokio = { version = "1", features = ["full"] }
 # HTTP 客户端（调云端 /auth/* /llm/* /sync/*）
-reqwest = { version = "0.12", features = ["json"] }
+# gzip/brotli/deflate：自动解压响应体，避免 "error decoding response body"
+reqwest = { version = "0.12", features = ["json", "gzip", "brotli", "deflate"] }
 # 时间处理（updated_at / applied_at / last_sync_at 统一 ISO8601 字符串）
 chrono = { version = "0.4", features = ["serde"] }
 # UUID 生成（job_id / app_id / resume_id / event_id）

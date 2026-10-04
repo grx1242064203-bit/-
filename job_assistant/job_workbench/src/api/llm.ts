@@ -88,6 +88,35 @@ export const llmApi = {
       .then(normalizeParsedProfile);
   },
 
+  /** 上传简历文件（PDF / .txt / .md）→ 后端提取文本 → LLM 解析。 */
+  async parseResumeFile(file: File): Promise<ParsedProfile> {
+    const formData = new FormData();
+    formData.append("file", file);
+
+    const token = (() => {
+      try {
+        return localStorage.getItem("job_assistant_token") || "";
+      } catch {
+        return "";
+      }
+    })();
+
+    const res = await fetch(`${import.meta.env.VITE_API_URL || ""}/api/v1/llm/parse-resume-file`, {
+      method: "POST",
+      headers: token ? { Authorization: `Bearer ${token}` } : {},
+      body: formData,
+    });
+
+    if (!res.ok) {
+      const data = await res.json().catch(() => ({}));
+      const msg = data?.detail || data?.message || data?.error || `上传失败 (${res.status})`;
+      throw new Error(msg);
+    }
+
+    const json = await res.json();
+    return normalizeParsedProfile(json);
+  },
+
   /** 用户编辑后请求 LLM 补充画像（合并用户已编辑 + 原文重新解析）。 */
   supplementProfile(
     userEdited: ParsedProfile,

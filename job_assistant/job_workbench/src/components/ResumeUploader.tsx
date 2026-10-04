@@ -41,7 +41,8 @@ export default function ResumeUploader() {
     if (!file || isLoading) return;
     try {
       await uploadResume(file);
-      await parseResume();
+      // PDF 必须把 file 传进去让后端提取；文本类可以不传（用 localStorage 的 raw_text）
+      await parseResume(undefined, file);
     } catch {
       // error 已写入 store，此处无需再处理
     }
@@ -96,7 +97,7 @@ export default function ResumeUploader() {
           拖拽简历到此处，或点击选择文件
         </p>
         <p className="mt-1 text-xs text-slate-500">
-          支持 .txt / .md（.pdf 即将支持）
+          支持 .pdf / .txt / .md（PDF 自动提取文本）
         </p>
       </div>
 

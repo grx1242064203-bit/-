@@ -2,8 +2,11 @@
 // 功能：统计卡片、列筛选（多选）、列显隐（默认全显示）、首列固定、长文本截断、彩色标签、链接。
 import { useEffect, useRef, useState, type ReactNode } from "react";
 import { getStatsOverview, type StatsOverview } from "../api/companies";
+import { jobsRecommendApi, type RecommendedJob } from "../api/jobsRecommend";
+import { extractErrorMessage } from "../api/client";
 import { useJobsStore } from "../stores/jobsStore";
 import { useAppStore, type AppStatus, type Application } from "../stores/appStore";
+import { useResumeStore } from "../stores/resumeStore";
 import { colorMap, pillClass } from "../utils/colorMap";
 import { openExternalUrl } from "../utils/link";
 import Truncate from "../components/Truncate";
@@ -67,6 +70,42 @@ export default function Jobs() {
   const scrollRef = useRef<HTMLDivElement>(null);
   const [kwInput, setKwInput] = useState("");
 
+  // === 推荐视图状态 ===
+  const [activeTab, setActiveTab] = useState<"all" | "recommend">("all");
+  const [recommendJobs, setRecommendJobs] = useState<RecommendedJob[]>([]);
+  const [recommendLoading, setRecommendLoading] = useState(false);
+  const [recommendError, setRecommendError] = useState<string | null>(null);
+  const serverProfile = useResumeStore((s) => s.serverProfile);
+
+  // 切到推荐 tab 时自动拉取
+  useEffect(() => {
+    if (activeTab !== "recommend") return;
+    if (!serverProfile) {
+      setRecommendJobs([]);
+      setRecommendError(null);
+      return;
+    }
+    let cancelled = false;
+    setRecommendLoading(true);
+    setRecommendError(null);
+    jobsRecommendApi
+      .recommend(200)
+      .then((res) => {
+        if (cancelled) return;
+        setRecommendJobs(res.jobs);
+      })
+      .catch((e) => {
+        if (cancelled) return;
+        setRecommendError(extractErrorMessage(e));
+      })
+      .finally(() => {
+        if (!cancelled) setRecommendLoading(false);
+      });
+    return () => {
+      cancelled = true;
+    };
+  }, [activeTab, serverProfile]);
+
   const applications = useAppStore((s) => s.applications);
   const loadApplications = useAppStore((s) => s.loadApplications);
 
@@ -113,9 +152,63 @@ export default function Jobs() {
 
   return (
     <div className="flex h-full flex-col gap-4">
-      {/* 统计卡片 */}
-      {stats && <JobsStatsCards stats={stats} />}
+      {/* 统计卡片（仅全部岗位视图显示） */}
+      {activeTab === "all" && stats && <JobsStatsCards stats={stats} />}
 
+      {/* Tab 切换 */}
+      <div className="flex items-center gap-2">
+        <button
+          type="button"
+          onClick={() => setActiveTab("all")}
+          className={`rounded-full px-4 py-1.5 text-sm font-medium transition ${
+            activeTab === "all"
+              ? "bg-ink text-white shadow-sm"
+              : "bg-white/60 text-text-muted hover:text-text"
+          }`}
+        >
+          📋 全部岗位 <span className="opacity-60">({total})</span>
+        </button>
+        <button
+          type="button"
+          onClick={() => setActiveTab("recommend")}
+          className={`rounded-full px-4 py-1.5 text-sm font-medium transition ${
+            activeTab === "recommend"
+              ? "bg-ink text-white shadow-sm"
+              : "bg-white/60 text-text-muted hover:text-text"
+          }`}
+        >
+          🎯 为我推荐
+          {serverProfile && <span className="ml-1 text-xs opacity-60">({recommendJobs.length}/200)</span>}
+        </button>
+        {activeTab === "recommend" && recommendJobs.length > 0 && (
+          <button
+            type="button"
+            onClick={() => setRecommendLoading(true)}
+            className="ml-auto rounded-lg border border-line bg-white/60 px-3 py-1.5 text-xs text-text-muted hover:bg-white"
+          >
+            🔄 刷新推荐
+          </button>
+        )}
+      </div>
+
+      {activeTab === "recommend" && !serverProfile && (
+        <div className="rounded-xl bg-warning-soft/50 p-4 text-sm text-warning-dark">
+          ⚠️ 请先到「简历解析」页上传并解析简历，系统才能为你推荐匹配的岗位。
+        </div>
+      )}
+
+      {activeTab === "recommend" && (
+        <RecommendJobsList
+          jobs={recommendJobs}
+          loading={recommendLoading}
+          error={recommendError}
+          appByJob={appByJob}
+          onOpenApply={(url) => url && openExternalUrl(url)}
+        />
+      )}
+
+      {activeTab !== "recommend" && (
+        <>
       {/* 工具栏 */}
       <div className="flex items-center gap-3">
         <div className="relative flex-1">
@@ -255,6 +348,8 @@ export default function Jobs() {
           <span>已加载全部</span>
         )}
       </div>
+        </>
+      )}
     </div>
   );
 }
@@ -560,6 +655,173 @@ function CategoryBar({ items }: { items: { name: string; count: number }[] }) {
           </div>
         ))}
       </div>
+    </div>
+  );
+}
+
+function RecommendJobsList({
+  jobs,
+  loading,
+  error,
+  appByJob,
+  onOpenApply,
+}: {
+  jobs: RecommendedJob[];
+  loading: boolean;
+  error: string | null;
+  appByJob: (jobId: string) => Application | undefined;
+  onOpenApply: (url: string) => void;
+}) {
+  if (loading) {
+    return (
+      <div className="flex flex-1 items-center justify-center rounded-xl border border-line bg-white/40 py-16">
+        <div className="h-10 w-10 animate-spin rounded-full border-4 border-primary-soft border-t-primary" />
+        <p className="ml-3 text-sm text-text-muted">AI 正在匹配你的简历…</p>
+      </div>
+    );
+  }
+
+  if (error) {
+    return (
+      <div className="rounded-xl border border-danger-soft bg-danger-soft/30 px-4 py-3 text-sm text-danger">
+        ⚠️ 推荐失败：{error}
+      </div>
+    );
+  }
+
+  if (jobs.length === 0) {
+    return (
+      <div className="flex flex-1 items-center justify-center rounded-xl border border-line bg-white/40 py-16 text-text-faint">
+        暂无推荐岗位，请先上传简历解析
+      </div>
+    );
+  }
+
+  // 按 recommend_level 分组：超级推荐 / 推荐 / 其他
+  const groups: Record<string, RecommendedJob[]> = {
+    超级推荐: jobs.filter((j) => j.recommend_level === "super_recommend"),
+    推荐: jobs.filter((j) => j.recommend_level === "recommend"),
+    其他: jobs.filter((j) => j.recommend_level !== "super_recommend" && j.recommend_level !== "recommend"),
+  };
+
+  return (
+    <div className="flex-1 overflow-auto rounded-xl border border-line bg-white/40">
+      <div className="p-3 text-xs text-text-muted">
+        共 {jobs.length} 个岗位：超级推荐 {groups["超级推荐"].length} · 推荐 {groups["推荐"].length}
+      </div>
+
+      {Object.entries(groups).map(([groupName, groupJobs]) => {
+        if (groupJobs.length === 0) return null;
+        const isTop = groupName === "超级推荐";
+        return (
+          <div key={groupName} className={isTop ? "border-t-2 border-primary/30 bg-primary/5" : ""}>
+            <div className="flex items-center gap-2 px-4 py-2">
+              <span
+                className={`rounded-full px-2 py-0.5 text-xs font-medium ${
+                  isTop
+                    ? "bg-primary text-ink"
+                    : groupName === "推荐"
+                    ? "bg-success-soft text-success"
+                    : "bg-white/60 text-text-muted"
+                }`}
+              >
+                {groupName}
+              </span>
+              <span className="text-xs text-text-muted">{groupJobs.length} 个岗位</span>
+            </div>
+
+            {groupJobs.map((job, idx) => {
+              const app = appByJob(job.job_id);
+              const isApplied = app?.status === "applied";
+              const scoreColor =
+                job.score >= 80
+                  ? "bg-success"
+                  : job.score >= 60
+                  ? "bg-primary"
+                  : job.score >= 40
+                  ? "bg-warning"
+                  : "bg-slate-400";
+
+              return (
+                <div
+                  key={job.job_id}
+                  className={`border-b border-line/50 px-4 py-3 transition hover:bg-white/60 ${
+                    isTop && idx === 0 ? "" : ""
+                  }`}
+                >
+                  <div className="flex items-start justify-between gap-3">
+                    <div className="min-w-0 flex-1">
+                      <div className="flex items-center gap-2">
+                        <span className="text-sm font-semibold text-text">
+                          {job.title}
+                        </span>
+                        {app && (
+                          <span className="rounded-full bg-success-soft px-1.5 py-0.5 text-[10px] text-success">
+                            已投递
+                          </span>
+                        )}
+                      </div>
+                      <div className="mt-0.5 text-xs text-text-muted">
+                        {job.company}
+                        {job.city && ` · ${job.city}`}
+                        {job.min_education && ` · ${job.min_education}`}
+                        {job.industry && ` · ${job.industry}`}
+                      </div>
+
+                      {/* 匹配度条 */}
+                      <div className="mt-2 flex items-center gap-2">
+                        <div className="h-1.5 w-28 overflow-hidden rounded bg-gray-200">
+                          <div
+                            className={`h-full rounded ${scoreColor}`}
+                            style={{ width: `${Math.min(100, job.score)}%` }}
+                          />
+                        </div>
+                        <span className="text-xs font-medium text-text">
+                          {job.score.toFixed(0)}%
+                        </span>
+                        <span className="text-xs text-text-faint">
+                          {job.recommend || ""}
+                        </span>
+                      </div>
+
+                      {/* 前 2 条推荐理由 */}
+                      {job.reasons && job.reasons.length > 0 && (
+                        <div className="mt-1.5 space-y-0.5 text-[11px] text-text-muted">
+                          {job.reasons.slice(0, 2).map((r, i) => {
+                            // 去掉 [skill] [hard_skill] 这种前缀标签的括号
+                            const clean = r.replace(/^\[([^\]]+)\]\s*/, "");
+                            return (
+                              <div key={i} className="truncate" title={r}>
+                                <span className="mr-1 text-text-faint">•</span>
+                                {clean}
+                              </div>
+                            );
+                          })}
+                        </div>
+                      )}
+                    </div>
+
+                    {/* 投递按钮 */}
+                    {job.apply_url && (
+                      <button
+                        type="button"
+                        onClick={() => onOpenApply(job.apply_url)}
+                        className={`shrink-0 rounded-lg px-3 py-1.5 text-xs font-medium transition ${
+                          isApplied
+                            ? "bg-success-soft text-success hover:bg-success/10"
+                            : "bg-primary text-ink hover:bg-primary-light"
+                        }`}
+                      >
+                        {isApplied ? "📮 已投递" : "📮 投递"}
+                      </button>
+                    )}
+                  </div>
+                </div>
+              );
+            })}
+          </div>
+        );
+      })}
     </div>
   );
 }

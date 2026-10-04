@@ -259,3 +259,8 @@ class Settings:
 
 
 settings = Settings()
+
+
+def get_settings() -> Settings:
+    """获取全局 Settings 单例（FastAPI 启动时已加载 .env）。"""
+    return settings

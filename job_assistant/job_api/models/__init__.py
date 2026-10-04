@@ -1,9 +1,10 @@
-"""Offer搭子 API 数据访问层（SQLite + aiosqlite）。"""
-from models import (
+"""Offer搭子 API 数据访问层（SQLite）。"""
+from . import (
     application,
     company_due_diligence,
     email,
     email_account,
+    resume_profile,
     schedule,
     user,
 )
@@ -17,3 +18,4 @@ async def init_all_db() -> None:
     await email_account.init_db()
     await email.init_db()
     await schedule.init_db()
+    resume_profile._ensure_schema()

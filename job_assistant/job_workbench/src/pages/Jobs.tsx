@@ -2,6 +2,7 @@
 import { useEffect, useState } from "react";
 import { useJobsStore } from "../stores/jobsStore";
 import { getCategories, type JobCategory } from "../api/categories";
+import { createApplication, type AppStatus } from "../api/applications";
 import type { Job } from "../api/jobs";
 
 export default function Jobs() {
@@ -190,6 +191,46 @@ function CategoryButton({
 }
 
 function JobRow({ job }: { job: Job }) {
+  const [favStatus, setFavStatus] = useState<"idle" | "loading" | "done">("idle");
+  const [applyStatus, setApplyStatus] = useState<"idle" | "loading" | "done">("idle");
+
+  const handleFavorite = async () => {
+    if (favStatus === "loading") return;
+    setFavStatus("loading");
+    try {
+      await createApplication({
+        job_id: job.job_id,
+        job_title: job.title,
+        company_name: job.company,
+        status: "favorite" as AppStatus,
+        apply_url: job.apply_url || "",
+      });
+      setFavStatus("done");
+    } catch {
+      setFavStatus("idle");
+    }
+  };
+
+  const handleApply = async () => {
+    if (applyStatus === "loading") return;
+    setApplyStatus("loading");
+    try {
+      await createApplication({
+        job_id: job.job_id,
+        job_title: job.title,
+        company_name: job.company,
+        status: "applied" as AppStatus,
+        apply_url: job.apply_url || "",
+      });
+      setApplyStatus("done");
+      if (job.apply_url) {
+        window.open(job.apply_url, "_blank");
+      }
+    } catch {
+      setApplyStatus("idle");
+    }
+  };
+
   return (
     <tr className="transition-colors hover:bg-gray-50">
       <td className="px-4 py-3">
@@ -228,21 +269,29 @@ function JobRow({ job }: { job: Job }) {
         <div className="flex justify-end gap-1.5">
           <button
             type="button"
-            className="rounded-md border border-gray-200 px-2 py-1 text-xs text-gray-500 transition hover:bg-gray-50"
+            onClick={handleFavorite}
+            disabled={favStatus === "loading"}
+            className={`rounded-md border px-2 py-1 text-xs transition ${
+              favStatus === "done"
+                ? "border-accent bg-accent-100 text-accent-600"
+                : "border-gray-200 text-gray-500 hover:bg-gray-50"
+            }`}
             title="收藏"
           >
-            ☆
+            {favStatus === "done" ? "★" : "☆"}
           </button>
-          {job.apply_url && (
-            <a
-              href={job.apply_url}
-              target="_blank"
-              rel="noreferrer"
-              className="rounded-md bg-accent px-2.5 py-1 text-xs font-medium text-white transition hover:bg-accent-600"
-            >
-              投递
-            </a>
-          )}
+          <button
+            type="button"
+            onClick={handleApply}
+            disabled={applyStatus === "loading"}
+            className={`rounded-md px-2.5 py-1 text-xs font-medium text-white transition ${
+              applyStatus === "done"
+                ? "bg-success"
+                : "bg-accent hover:bg-accent-600"
+            }`}
+          >
+            {applyStatus === "done" ? "已投递" : "投递"}
+          </button>
         </div>
       </td>
     </tr>

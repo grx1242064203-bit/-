@@ -6,6 +6,7 @@ import {
   type Company,
   type CompanyStats,
 } from "../api/companies";
+import { createApplication, type AppStatus } from "../api/applications";
 
 const PAGE_SIZE = 100;
 
@@ -160,56 +161,7 @@ export default function Companies() {
                     </tr>
                   ))
                 : companies.map((c) => (
-                    <tr
-                      key={c.company_id}
-                      className="transition-colors hover:bg-gray-50"
-                    >
-                      <Td className="font-medium text-gray-900">
-                        {c.company_name}
-                      </Td>
-                      <Td>
-                        {c.industry && (
-                          <span className="rounded-full bg-primary-50 px-2 py-0.5 text-xs text-primary">
-                            {c.industry}
-                          </span>
-                        )}
-                      </Td>
-                      <Td className="text-gray-600">{c.company_type}</Td>
-                      <Td className="text-gray-600">{c.recruit_type}</Td>
-                      <Td className="text-gray-600">{c.location}</Td>
-                      <Td className="text-gray-600">{c.education_req}</Td>
-                      <Td className="text-gray-600">{c.positions_count}</Td>
-                      <Td className="text-gray-600">
-                        {c.deadline ? c.deadline.slice(0, 10) : "-"}
-                      </Td>
-                      <Td className="text-xs text-gray-400">
-                        {c.last_updated.slice(0, 10)}
-                      </Td>
-                      <Td className="text-right">
-                        <div className="flex justify-end gap-2">
-                          {c.apply_url && (
-                            <a
-                              href={c.apply_url}
-                              target="_blank"
-                              rel="noreferrer"
-                              className="rounded-md bg-accent px-3 py-1 text-xs font-medium text-white transition hover:bg-accent-600"
-                            >
-                              网申
-                            </a>
-                          )}
-                          {c.announcement_url && (
-                            <a
-                              href={c.announcement_url}
-                              target="_blank"
-                              rel="noreferrer"
-                              className="rounded-md border border-gray-200 px-3 py-1 text-xs font-medium text-gray-600 transition hover:bg-gray-50"
-                            >
-                              公告
-                            </a>
-                          )}
-                        </div>
-                      </Td>
-                    </tr>
+                    <CompanyRow key={c.company_id} company={c} />
                   ))}
             </tbody>
           </table>
@@ -289,5 +241,87 @@ function Td({
     <td className={`whitespace-nowrap px-4 py-3 text-sm ${className}`}>
       {children}
     </td>
+  );
+}
+
+function CompanyRow({ company }: { company: Company }) {
+  const [favStatus, setFavStatus] = useState<"idle" | "loading" | "done">("idle");
+
+  const handleFavorite = async () => {
+    if (favStatus === "loading") return;
+    setFavStatus("loading");
+    try {
+      await createApplication({
+        job_id: `company:${company.company_id}`,
+        job_title: company.company_name,
+        company_name: company.company_name,
+        status: "favorite" as AppStatus,
+        apply_url: company.apply_url,
+      });
+      setFavStatus("done");
+    } catch {
+      setFavStatus("idle");
+    }
+  };
+
+  return (
+    <tr className="transition-colors hover:bg-gray-50">
+      <Td className="font-medium text-gray-900">{company.company_name}</Td>
+      <Td>
+        {company.industry && (
+          <span className="rounded-full bg-primary-50 px-2 py-0.5 text-xs text-primary">
+            {company.industry}
+          </span>
+        )}
+      </Td>
+      <Td className="text-gray-600">{company.company_type}</Td>
+      <Td className="text-gray-600">{company.recruit_type}</Td>
+      <Td className="text-gray-600">{company.location}</Td>
+      <Td className="text-gray-600">{company.education_req}</Td>
+      <Td className="text-gray-600">{company.positions_count}</Td>
+      <Td className="text-gray-600">
+        {company.deadline ? company.deadline.slice(0, 10) : "-"}
+      </Td>
+      <Td className="text-xs text-gray-400">
+        {company.last_updated.slice(0, 10)}
+      </Td>
+      <Td className="text-right">
+        <div className="flex justify-end gap-1.5">
+          <button
+            type="button"
+            onClick={handleFavorite}
+            disabled={favStatus === "loading"}
+            className={`rounded-md border px-2 py-1 text-xs transition ${
+              favStatus === "done"
+                ? "border-accent bg-accent-100 text-accent-600"
+                : "border-gray-200 text-gray-500 hover:bg-gray-50"
+            }`}
+            title="收藏"
+          >
+            {favStatus === "done" ? "★" : "☆"}
+          </button>
+          {company.apply_url && (
+            <a
+              href={company.apply_url}
+              target="_blank"
+              rel="noreferrer"
+              className="rounded-md bg-accent px-3 py-1 text-xs font-medium text-white transition hover:bg-accent-600"
+            >
+              网申
+            </a>
+          )}
+          {company.announcement_url && (
+            <a
+              href={company.announcement_url}
+              target="_blank"
+              rel="noreferrer"
+              className="rounded-md border border-gray-200 px-3 py-1 text-xs font-medium text-gray-600 transition hover:bg-gray-50"
+            >
+              公告
+            </a>
+          )}
+        </div>
+      </Td>
+    </tr>
   );
 }

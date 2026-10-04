@@ -10,7 +10,7 @@ import AuthGuard from "./components/AuthGuard";
 import { useAuthStore } from "./stores/authStore";
 import SyncIndicator from "./components/SyncIndicator";
 
-// 侧边栏导航项
+// 顶部胶囊导航项（对齐 Crextio 顶部导航风格）
 interface NavItem {
   to: string;
   label: string;
@@ -25,7 +25,7 @@ const NAV_ITEMS: NavItem[] = [
   { to: "/resume", label: "简历解析", icon: "📄" },
 ];
 
-function Sidebar() {
+function TopNav() {
   const user = useAuthStore((s) => s.user);
   const logout = useAuthStore((s) => s.logout);
   const location = useLocation();
@@ -36,20 +36,20 @@ function Sidebar() {
   };
 
   return (
-    <aside className="flex h-screen w-60 flex-shrink-0 flex-col bg-sidebar text-white">
+    <header className="flex h-16 items-center justify-between border-b border-line bg-surface px-6">
       {/* Logo */}
-      <div className="flex items-center gap-3 px-6 py-5">
-        <div className="flex h-9 w-9 items-center justify-center rounded-lg bg-accent text-lg font-bold">
+      <div className="flex items-center gap-3">
+        <div className="flex h-9 w-9 items-center justify-center rounded-lg bg-primary text-lg font-bold text-ink">
           搭
         </div>
         <div>
-          <div className="text-base font-semibold">求职搭子</div>
-          <div className="text-xs text-gray-400">27届校招工作台</div>
+          <div className="text-base font-semibold text-text">求职搭子</div>
+          <div className="text-[11px] text-text-muted">27届校招工作台</div>
         </div>
       </div>
 
-      {/* Nav */}
-      <nav className="flex-1 space-y-1 px-3 py-4">
+      {/* 胶囊导航 */}
+      <nav className="flex items-center gap-1 rounded-pill bg-surface-soft p-1 shadow-sm">
         {NAV_ITEMS.map((item) => {
           const isActive = item.end
             ? location.pathname === item.to
@@ -58,10 +58,10 @@ function Sidebar() {
             <NavLink
               key={item.to}
               to={item.to}
-              className={`flex items-center gap-3 rounded-lg px-4 py-2.5 text-sm font-medium transition-colors ${
+              className={`flex items-center gap-2 rounded-pill px-4 py-1.5 text-sm font-medium transition-all ${
                 isActive
-                  ? "bg-primary text-white"
-                  : "text-gray-300 hover:bg-white/5 hover:text-white"
+                  ? "bg-ink text-white shadow-sm"
+                  : "text-text-muted hover:text-text"
               }`}
             >
               <span className="text-base">{item.icon}</span>
@@ -71,24 +71,32 @@ function Sidebar() {
         })}
       </nav>
 
-      {/* User */}
-      <div className="border-t border-white/10 p-4">
+      {/* 右侧：用户 + 同步 + 退出 */}
+      <div className="flex items-center gap-3">
+        <SyncIndicator />
         {user?.email && (
-          <div className="mb-3 truncate text-xs text-gray-400">{user.email}</div>
+          <div className="flex items-center gap-2 rounded-pill bg-surface-soft px-3 py-1.5">
+            <div className="flex h-7 w-7 items-center justify-center rounded-pill bg-primary text-xs font-semibold text-ink">
+              {user.email.slice(0, 1).toUpperCase()}
+            </div>
+            <span className="max-w-[120px] truncate text-xs text-text-muted">
+              {user.email}
+            </span>
+          </div>
         )}
         <button
           type="button"
           onClick={handleLogout}
-          className="w-full rounded-lg border border-white/10 px-4 py-2 text-sm text-gray-300 transition hover:bg-white/5 hover:text-white"
+          className="rounded-pill border border-border px-3 py-1.5 text-xs text-text-muted transition hover:border-border-strong hover:text-text"
         >
-          退出登录
+          退出
         </button>
       </div>
-    </aside>
+    </header>
   );
 }
 
-function TopBar() {
+function PageTitle() {
   const location = useLocation();
   const titleMap: Record<string, string> = {
     "/companies": "秋招公司总览",
@@ -98,25 +106,20 @@ function TopBar() {
   };
   const title = titleMap[location.pathname] ?? "求职搭子";
   return (
-    <header className="flex h-14 items-center justify-between border-b border-gray-200 bg-surface px-6">
-      <div className="flex items-center gap-4">
-        <h2 className="text-lg font-semibold text-gray-900">{title}</h2>
-      </div>
-      <div className="flex items-center gap-4">
-        <SyncIndicator />
-      </div>
-    </header>
+    <div className="mb-5">
+      <h1 className="text-2xl font-bold text-text">{title}</h1>
+    </div>
   );
 }
 
 function Layout({ children }: { children: ReactNode }) {
   return (
-    <div className="flex h-screen overflow-hidden bg-gray-50">
-      <Sidebar />
-      <div className="flex flex-1 flex-col overflow-hidden">
-        <TopBar />
-        <main className="flex-1 overflow-auto p-6">{children}</main>
-      </div>
+    <div className="flex h-screen flex-col overflow-hidden bg-bg">
+      <TopNav />
+      <main className="flex-1 overflow-auto p-6">
+        <PageTitle />
+        {children}
+      </main>
     </div>
   );
 }

@@ -1,65 +1,109 @@
 import type { Config } from "tailwindcss";
 
-// 求职搭子 · HR Dashboard 设计系统：深空蓝主色 + 暖橙强调。
-// 颜色通过 CSS 变量注入（见 src/index.css），Tailwind 仅做 extend 映射。
+// 求职搭子 · Crextio 风格设计系统：暖奶油黄主色 + 白卡片 + 大圆角。
 export default {
   content: ["./index.html", "./src/**/*.{ts,tsx}"],
   theme: {
     extend: {
       colors: {
+        // 主色：暖奶油黄
         primary: {
           DEFAULT: "var(--color-primary)",
-          50: "var(--color-primary-50)",
-          100: "var(--color-primary-100)",
-          600: "var(--color-primary-600)",
+          dark: "var(--color-primary-dark)",
+          light: "var(--color-primary-light)",
+          soft: "var(--color-primary-soft)",
         },
-        accent: {
-          DEFAULT: "var(--color-accent)",
-          100: "var(--color-accent-100)",
-          600: "var(--color-accent-600)",
+        // 深色（导航激活、深色卡片）
+        ink: {
+          DEFAULT: "var(--color-ink)",
+          soft: "var(--color-ink-soft)",
         },
+        // 语义色
         success: "var(--color-success)",
+        "success-soft": "var(--color-success-soft)",
         warning: "var(--color-warning)",
         danger: "var(--color-danger)",
-        gray: {
-          50: "var(--color-gray-50)",
-          100: "var(--color-gray-100)",
-          200: "var(--color-gray-200)",
-          400: "var(--color-gray-400)",
-          500: "var(--color-gray-500)",
-          700: "var(--color-gray-700)",
-          900: "var(--color-gray-900)",
+        "danger-soft": "var(--color-danger-soft)",
+        // 文本色阶
+        text: {
+          DEFAULT: "var(--color-text)",
+          muted: "var(--color-text-muted)",
+          faint: "var(--color-text-faint)",
         },
-        sidebar: "var(--color-sidebar)",
-        surface: "var(--color-surface)",
-        // 向后兼容：旧代码使用的颜色名映射到新设计系统
+        // 边框
+        border: {
+          DEFAULT: "var(--color-border)",
+          strong: "var(--color-border-strong)",
+        },
+        line: "var(--color-line)",
+        // 表面
+        surface: {
+          DEFAULT: "var(--color-surface)",
+          soft: "var(--color-surface-soft)",
+        },
+        bg: "var(--color-bg)",
+
+        // —— 向后兼容：旧代码里用到的颜色名，映射到新主题 ——
+        // 旧 primary(深空蓝) 不再使用；保留别名指向新主色以避免编译失败
+        accent: {
+          DEFAULT: "var(--color-primary)",
+          100: "var(--color-primary-soft)",
+          600: "var(--color-primary-dark)",
+        },
         brand: {
-          DEFAULT: "var(--color-accent)",
-          50: "var(--color-accent-100)",
-          100: "var(--color-accent-100)",
-          500: "var(--color-accent)",
-          600: "var(--color-accent-600)",
-          700: "var(--color-accent-600)",
+          DEFAULT: "var(--color-primary)",
+          50: "var(--color-primary-soft)",
+          100: "var(--color-primary-soft)",
+          500: "var(--color-primary)",
+          600: "var(--color-primary-dark)",
+          700: "var(--color-primary-dark)",
         },
-        "slate-deep": "var(--color-gray-900)",
-        cream: "var(--color-gray-50)",
         orange: {
-          50: "var(--color-accent-100)",
-          100: "var(--color-accent-100)",
-          500: "var(--color-accent)",
-          600: "var(--color-accent-600)",
-          700: "var(--color-accent-600)",
+          50: "var(--color-primary-soft)",
+          100: "var(--color-primary-soft)",
+          500: "var(--color-primary)",
+          600: "var(--color-primary-dark)",
+          700: "var(--color-primary-dark)",
+        },
+        gray: {
+          50: "var(--color-surface-soft)",
+          100: "var(--color-line)",
+          200: "var(--color-border)",
+          300: "var(--color-border-strong)",
+          400: "var(--color-text-faint)",
+          500: "var(--color-text-muted)",
+          600: "var(--color-text-muted)",
+          700: "var(--color-text)",
+          900: "var(--color-text)",
+        },
+        sidebar: "var(--color-surface)",
+        "slate-deep": "var(--color-text)",
+        cream: "var(--color-surface-soft)",
+        // slate 系列全部映射到暖灰色阶，保证旧组件一致渲染
+        slate: {
+          50: "var(--color-surface-soft)",
+          100: "var(--color-line)",
+          200: "var(--color-border)",
+          300: "var(--color-border-strong)",
+          400: "var(--color-text-faint)",
+          500: "var(--color-text-muted)",
+          600: "var(--color-text-muted)",
+          700: "var(--color-text)",
+          deep: "var(--color-text)",
         },
       },
       borderRadius: {
+        xs: "var(--radius-xs)",
         sm: "var(--radius-sm)",
         md: "var(--radius-md)",
         lg: "var(--radius-lg)",
+        pill: "var(--radius-pill)",
       },
       boxShadow: {
         sm: "var(--shadow-sm)",
         md: "var(--shadow-md)",
         lg: "var(--shadow-lg)",
+        card: "var(--shadow-md)",
       },
       fontFamily: {
         sans: [

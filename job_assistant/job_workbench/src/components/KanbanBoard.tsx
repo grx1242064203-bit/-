@@ -42,7 +42,7 @@ export default function KanbanBoard() {
   }
 
   return (
-    <div className="grid grid-cols-5 gap-3">
+    <div className="grid grid-cols-5 gap-4">
       {KANBAN_COLUMNS.map((col) => {
         const items = applications.filter(
           (a: Application) => a.status === col.status
@@ -54,24 +54,24 @@ export default function KanbanBoard() {
             onDragOver={(e) => handleDragOver(e, col.status)}
             onDragLeave={(e) => handleDragLeave(e, col.status)}
             onDrop={() => handleDrop(col.status)}
-            className={`flex min-h-[60vh] flex-col rounded-lg p-2 ${col.columnBg} ${
-              isOver ? "ring-2 ring-accent ring-offset-1" : ""
+            className={`flex min-h-[60vh] flex-col rounded-xl border border-border p-3 shadow-sm ${col.columnBg} ${
+              isOver ? "ring-2 ring-primary ring-offset-1" : ""
             }`}
           >
             <div
-              className={`mb-2 flex items-center justify-between rounded-md px-3 py-2 ${col.headerBg}`}
+              className={`mb-3 flex items-center justify-between rounded-pill px-3 py-2 ${col.headerBg}`}
             >
               <span className={`text-sm font-semibold ${col.accentText}`}>
                 {col.label}
               </span>
-              <span className="rounded-full bg-white/70 px-2 py-0.5 text-xs font-medium text-gray-700">
+              <span className="rounded-pill bg-surface px-2 py-0.5 text-xs font-medium text-text-muted shadow-sm">
                 {items.length}
               </span>
             </div>
 
             <div className="flex flex-1 flex-col gap-2 overflow-y-auto">
               {items.length === 0 ? (
-                <div className="rounded-md border border-dashed border-gray-300 bg-white/40 p-3 text-center text-xs text-gray-400">
+                <div className="rounded-xl border border-dashed border-border-strong bg-surface/50 p-3 text-center text-xs text-text-faint">
                   暂无
                 </div>
               ) : (

@@ -40,7 +40,6 @@ export default function Register() {
       setRegistered(true);
       setTimeout(() => inputs.current[0]?.focus(), 0);
     } else {
-      // 不需要验证（理论上不会出现），回登录页直接登录。
       navigate("/login");
     }
   };
@@ -88,19 +87,19 @@ export default function Register() {
   const displayError = formError || error;
 
   const inputCls =
-    "w-full rounded-2xl border border-slate-200 bg-white px-4 py-3 text-slate-deep outline-none transition focus:border-brand focus:ring-2 focus:ring-brand-100";
+    "w-full rounded-xl border border-border bg-surface-soft px-4 py-3 text-text outline-none transition focus:border-primary-dark focus:ring-2 focus:ring-primary/30";
 
   return (
-    <div className="flex min-h-screen items-center justify-center bg-cream px-4 py-10">
-      <div className="w-full max-w-md rounded-2xl bg-white p-8 shadow-card">
+    <div className="flex min-h-screen items-center justify-center bg-bg px-4 py-10">
+      <div className="w-full max-w-md rounded-2xl bg-surface p-8 shadow-lg">
         <div className="mb-8 text-center">
-          <div className="mx-auto mb-3 flex h-12 w-12 items-center justify-center rounded-2xl bg-brand-50">
-            <span className="text-lg font-semibold text-brand">求</span>
+          <div className="mx-auto mb-3 flex h-12 w-12 items-center justify-center rounded-2xl bg-primary">
+            <span className="text-lg font-bold text-ink">求</span>
           </div>
-          <h1 className="text-2xl font-semibold text-slate-deep">
+          <h1 className="text-2xl font-bold text-text">
             {registered ? "输入验证码" : "注册求职搭子"}
           </h1>
-          <p className="mt-2 text-sm text-slate-500">
+          <p className="mt-2 text-sm text-text-muted">
             {registered
               ? `验证码已发送至 ${email}`
               : "创建账号开启求职工作台"}
@@ -108,7 +107,7 @@ export default function Register() {
         </div>
 
         {displayError && (
-          <div className="mb-4 rounded-2xl bg-brand-50 px-4 py-3 text-sm text-brand-700">
+          <div className="mb-4 rounded-xl bg-danger-soft px-4 py-3 text-sm text-danger">
             {displayError}
           </div>
         )}
@@ -116,7 +115,7 @@ export default function Register() {
         {!registered ? (
           <form onSubmit={handleRegister} className="space-y-4" noValidate>
             <div>
-              <label className="mb-1 block text-sm font-medium text-slate-deep">
+              <label className="mb-1 block text-sm font-medium text-text">
                 邮箱
               </label>
               <input
@@ -129,7 +128,7 @@ export default function Register() {
               />
             </div>
             <div>
-              <label className="mb-1 block text-sm font-medium text-slate-deep">
+              <label className="mb-1 block text-sm font-medium text-text">
                 密码
               </label>
               <input
@@ -142,7 +141,7 @@ export default function Register() {
               />
             </div>
             <div>
-              <label className="mb-1 block text-sm font-medium text-slate-deep">
+              <label className="mb-1 block text-sm font-medium text-text">
                 确认密码
               </label>
               <input
@@ -157,11 +156,11 @@ export default function Register() {
             <button
               type="submit"
               disabled={isLoading}
-              className="flex w-full items-center justify-center rounded-2xl bg-brand px-4 py-3 font-medium text-white transition hover:bg-brand-600 disabled:cursor-not-allowed disabled:opacity-60"
+              className="flex w-full items-center justify-center rounded-xl bg-primary px-4 py-3 font-semibold text-ink transition hover:bg-primary-dark disabled:cursor-not-allowed disabled:opacity-60"
             >
               {isLoading ? (
                 <span className="flex items-center gap-2">
-                  <span className="h-4 w-4 animate-spin rounded-full border-2 border-white border-t-transparent" />
+                  <span className="h-4 w-4 animate-spin rounded-full border-2 border-ink border-t-transparent" />
                   注册中...
                 </span>
               ) : (
@@ -187,18 +186,18 @@ export default function Register() {
                   value={d}
                   onChange={(e) => handleCodeChange(i, e.target.value)}
                   onKeyDown={(e) => handleCodeKey(i, e)}
-                  className="h-14 w-12 rounded-2xl border border-slate-200 bg-white text-center text-2xl font-semibold text-slate-deep outline-none transition focus:border-brand focus:ring-2 focus:ring-brand-100"
+                  className="h-14 w-12 rounded-xl border border-border bg-surface-soft text-center text-2xl font-semibold text-text outline-none transition focus:border-primary-dark focus:ring-2 focus:ring-primary/30"
                 />
               ))}
             </div>
             <button
               type="submit"
               disabled={isLoading}
-              className="flex w-full items-center justify-center rounded-2xl bg-brand px-4 py-3 font-medium text-white transition hover:bg-brand-600 disabled:cursor-not-allowed disabled:opacity-60"
+              className="flex w-full items-center justify-center rounded-xl bg-primary px-4 py-3 font-semibold text-ink transition hover:bg-primary-dark disabled:cursor-not-allowed disabled:opacity-60"
             >
               {isLoading ? (
                 <span className="flex items-center gap-2">
-                  <span className="h-4 w-4 animate-spin rounded-full border-2 border-white border-t-transparent" />
+                  <span className="h-4 w-4 animate-spin rounded-full border-2 border-ink border-t-transparent" />
                   验证中...
                 </span>
               ) : (
@@ -208,11 +207,11 @@ export default function Register() {
           </form>
         )}
 
-        <p className="mt-6 text-center text-sm text-slate-500">
+        <p className="mt-6 text-center text-sm text-text-muted">
           已有账号？{" "}
           <Link
             to="/login"
-            className="font-medium text-brand transition hover:text-brand-600"
+            className="font-medium text-primary-dark transition hover:underline"
           >
             登录
           </Link>

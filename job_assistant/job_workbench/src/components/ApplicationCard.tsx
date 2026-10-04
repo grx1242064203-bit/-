@@ -48,14 +48,14 @@ export default function ApplicationCard({
       }}
       onDragEnd={onDragEnd}
       onClick={() => setExpanded((v) => !v)}
-      className="group cursor-pointer rounded-lg border border-gray-200 bg-white p-3 shadow-sm transition hover:-translate-y-0.5 hover:shadow-md"
+      className="group cursor-pointer rounded-xl border border-border bg-surface p-3.5 shadow-sm transition hover:-translate-y-0.5 hover:shadow-md"
     >
       <div className="flex items-start justify-between gap-2">
         <div className="min-w-0">
-          <div className="truncate text-sm font-semibold text-gray-900">
+          <div className="truncate text-sm font-semibold text-text">
             {application.company_name || "（未知公司）"}
           </div>
-          <div className="truncate text-xs text-gray-500">
+          <div className="truncate text-xs text-text-muted">
             {application.job_title || "（未知岗位）"}
           </div>
         </div>
@@ -65,7 +65,7 @@ export default function ApplicationCard({
             e.stopPropagation();
             void removeApplication(application.id);
           }}
-          className="text-xs text-gray-300 opacity-0 transition hover:text-red-500 group-hover:opacity-100"
+          className="text-xs text-text-faint opacity-0 transition hover:text-danger group-hover:opacity-100"
           title="删除"
         >
           ✕
@@ -73,11 +73,11 @@ export default function ApplicationCard({
       </div>
 
       {updatedAt && (
-        <div className="mt-1 text-xs text-gray-400">更新：{updatedAt}</div>
+        <div className="mt-1 text-xs text-text-faint">更新：{updatedAt}</div>
       )}
 
       {!expanded && application.notes && (
-        <div className="mt-1 line-clamp-2 text-xs text-gray-500">
+        <div className="mt-1 line-clamp-2 text-xs text-text-muted">
           {application.notes}
         </div>
       )}
@@ -89,13 +89,13 @@ export default function ApplicationCard({
             onChange={(e) => setNotes(e.target.value)}
             placeholder="添加备注（如 HR 联系方式、面试反馈）…"
             rows={3}
-            className="w-full resize-none rounded-md border border-gray-200 bg-gray-50 p-2 text-xs text-gray-900 placeholder:text-gray-400 focus:outline-none focus:ring-2 focus:ring-primary"
+            className="w-full resize-none rounded-lg border border-border bg-surface-soft p-2 text-xs text-text placeholder:text-text-faint focus:border-primary-dark focus:outline-none focus:ring-2 focus:ring-primary/30"
           />
           <div className="flex justify-end gap-2">
             <button
               type="button"
               onClick={() => setExpanded(false)}
-              className="rounded-md bg-gray-100 px-3 py-1 text-xs font-medium text-gray-500 hover:bg-gray-200"
+              className="rounded-pill bg-surface-soft px-3 py-1 text-xs font-medium text-text-muted hover:bg-line"
             >
               取消
             </button>
@@ -103,7 +103,7 @@ export default function ApplicationCard({
               type="button"
               onClick={handleSaveNotes}
               disabled={saving}
-              className="rounded-md bg-primary px-3 py-1 text-xs font-medium text-white hover:bg-primary-600 disabled:opacity-50"
+              className="rounded-pill bg-primary px-3 py-1 text-xs font-semibold text-ink hover:bg-primary-dark disabled:opacity-50"
             >
               {saving ? "保存中…" : "保存备注"}
             </button>

@@ -7,6 +7,9 @@ import {
   type AppStatus,
 } from "../api/applications";
 
+// 重新导出类型，供 KanbanBoard / ApplicationCard 使用
+export type { Application };
+
 // 投递状态枚举（与后端 models/application.py 对齐）
 export type ApplicationStatus = AppStatus;
 
@@ -19,47 +22,47 @@ export interface KanbanColumn {
   accentText: string;
 }
 
-// 5 列看板：收藏 → 已投递 → 面试中 → 已录用 → 已拒绝
+// 5 列看板：收藏 → 已投递 → 面试中 → 已录用 → 已拒绝（Crextio 暖主题）
 export const KANBAN_COLUMNS: KanbanColumn[] = [
   {
     status: "favorite",
     label: "⭐ 收藏",
-    columnBg: "bg-gray-50",
-    headerBg: "bg-gray-100",
-    dotColor: "bg-gray-400",
-    accentText: "text-gray-600",
+    columnBg: "bg-surface-soft",
+    headerBg: "bg-surface",
+    dotColor: "bg-text-faint",
+    accentText: "text-text-muted",
   },
   {
     status: "applied",
     label: "📮 已投递",
-    columnBg: "bg-blue-50",
-    headerBg: "bg-blue-100",
-    dotColor: "bg-blue-500",
-    accentText: "text-blue-600",
+    columnBg: "bg-primary-soft/60",
+    headerBg: "bg-primary-soft",
+    dotColor: "bg-primary-dark",
+    accentText: "text-ink",
   },
   {
     status: "interview",
     label: "💬 面试中",
-    columnBg: "bg-amber-50",
-    headerBg: "bg-amber-100",
-    dotColor: "bg-amber-500",
-    accentText: "text-amber-700",
+    columnBg: "bg-warning/15",
+    headerBg: "bg-warning/25",
+    dotColor: "bg-warning",
+    accentText: "text-ink",
   },
   {
     status: "offer",
     label: "🎉 已录用",
-    columnBg: "bg-green-50",
-    headerBg: "bg-green-100",
-    dotColor: "bg-green-500",
-    accentText: "text-green-700",
+    columnBg: "bg-success-soft",
+    headerBg: "bg-success/20",
+    dotColor: "bg-success",
+    accentText: "text-success",
   },
   {
     status: "rejected",
     label: "❌ 已拒绝",
-    columnBg: "bg-red-50",
-    headerBg: "bg-red-100",
-    dotColor: "bg-red-500",
-    accentText: "text-red-600",
+    columnBg: "bg-danger-soft",
+    headerBg: "bg-danger/15",
+    dotColor: "bg-danger",
+    accentText: "text-danger",
   },
 ];
 

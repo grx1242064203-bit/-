@@ -3,48 +3,49 @@
 @tailwind utilities;
 
 /* ============================================================
-   求职搭子 · HR Dashboard 设计系统
-   配色：深空蓝主色 + 暖橙强调 + 中性灰阶，专业数据密集型
+   求职搭子 · Crextio 风格设计系统
+   暖奶油黄主色 + 白卡片 + 大圆角 + 软阴影 + 顶部胶囊导航
    ============================================================ */
 :root {
-  /* 主色：深空蓝（沉稳、专业） */
-  --color-primary: #1e3a5f;
-  --color-primary-600: #2c5282;
-  --color-primary-100: #ebf4ff;
-  --color-primary-50: #f0f7ff;
+  /* 主色：暖奶油黄（行动、高亮、选中态） */
+  --color-primary: #ffd23f;
+  --color-primary-dark: #f5b800;
+  --color-primary-light: #fff4c2;
+  --color-primary-soft: #fdf6dc;
 
-  /* 强调色：暖橙（行动、高亮） */
-  --color-accent: #f97316;
-  --color-accent-600: #ea580c;
-  --color-accent-100: #fff7ed;
+  /* 深色（导航激活、深色卡片） */
+  --color-ink: #2a2a2a;
+  --color-ink-soft: #3d3d3d;
 
   /* 成功/警告/危险 */
-  --color-success: #10b981;
-  --color-warning: #f59e0b;
-  --color-danger: #ef4444;
+  --color-success: #34d399;
+  --color-success-soft: #d1fae5;
+  --color-warning: #fbbf24;
+  --color-danger: #f87171;
+  --color-danger-soft: #fee2e2;
 
-  /* 中性色阶 */
-  --color-gray-900: #0f172a;
-  --color-gray-700: #334155;
-  --color-gray-500: #64748b;
-  --color-gray-400: #94a3b8;
-  --color-gray-200: #e2e8f0;
-  --color-gray-100: #f1f5f9;
-  --color-gray-50: #f8fafc;
-  --color-white: #ffffff;
+  /* 中性色阶（暖灰） */
+  --color-text: #1f1f1f;
+  --color-text-muted: #8a8a8a;
+  --color-text-faint: #b5b5b5;
+  --color-border: #efece4;
+  --color-border-strong: #e5e1d8;
+  --color-line: #f2efe8;
 
-  /* 背景 */
-  --color-bg: #f5f7fa;
+  /* 背景与表面 */
+  --color-bg: #f7f5ef;
   --color-surface: #ffffff;
-  --color-sidebar: #0f172a;
+  --color-surface-soft: #faf8f3;
 
   /* 尺寸 */
-  --radius-sm: 6px;
-  --radius-md: 10px;
-  --radius-lg: 14px;
-  --shadow-sm: 0 1px 2px 0 rgba(0, 0, 0, 0.04);
-  --shadow-md: 0 4px 12px -2px rgba(0, 0, 0, 0.08);
-  --shadow-lg: 0 12px 32px -8px rgba(0, 0, 0, 0.12);
+  --radius-xs: 8px;
+  --radius-sm: 12px;
+  --radius-md: 16px;
+  --radius-lg: 20px;
+  --radius-pill: 9999px;
+  --shadow-sm: 0 2px 8px -2px rgba(0, 0, 0, 0.05);
+  --shadow-md: 0 8px 24px -8px rgba(0, 0, 0, 0.08);
+  --shadow-lg: 0 16px 40px -12px rgba(0, 0, 0, 0.12);
 }
 
 * {
@@ -54,7 +55,7 @@
 body {
   margin: 0;
   background-color: var(--color-bg);
-  color: var(--color-gray-900);
+  color: var(--color-text);
   font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", "PingFang SC",
     "Hiragino Sans GB", "Microsoft YaHei", sans-serif;
   font-size: 14px;
@@ -63,7 +64,7 @@ body {
   -moz-osx-font-smoothing: grayscale;
 }
 
-/* 滚动条：细窄、低对比 */
+/* 滚动条：细窄、低对比、暖灰 */
 ::-webkit-scrollbar {
   width: 8px;
   height: 8px;
@@ -72,25 +73,19 @@ body {
   background: transparent;
 }
 ::-webkit-scrollbar-thumb {
-  background: #cbd5e1;
-  border-radius: 4px;
+  background: #e0dccd;
+  border-radius: 9999px;
 }
 ::-webkit-scrollbar-thumb:hover {
-  background: #94a3b8;
+  background: #c9c4b4;
 }
 
 /* 通用工具类 */
 .text-primary {
-  color: var(--color-primary);
-}
-.text-accent {
-  color: var(--color-accent);
+  color: var(--color-primary-dark);
 }
 .bg-primary {
   background-color: var(--color-primary);
-}
-.bg-accent {
-  background-color: var(--color-accent);
 }
 
 /* 表格基础样式 */
@@ -101,10 +96,9 @@ table {
 th {
   text-align: left;
   font-weight: 600;
-  color: var(--color-gray-500);
+  color: var(--color-text-muted);
   font-size: 12px;
-  text-transform: uppercase;
-  letter-spacing: 0.03em;
+  letter-spacing: 0.02em;
 }
 
 /* 动画 */

@@ -26,9 +26,9 @@ export default function SyncIndicator() {
   if (isSyncing) {
     const synced = syncProgress?.synced ?? 0;
     return (
-      <div className="flex items-center gap-2 rounded-md bg-primary-50 px-3 py-1.5 text-sm text-primary">
+      <div className="flex items-center gap-2 rounded-pill bg-primary-soft px-3 py-1.5 text-sm text-ink">
         <span
-          className="inline-block h-3 w-3 animate-spin rounded-full border-2 border-primary border-t-transparent"
+          className="inline-block h-3 w-3 animate-spin rounded-full border-2 border-primary-dark border-t-transparent"
           aria-hidden="true"
         />
         {synced > 0 ? `正在同步...（已写入 ${synced} 条）` : "正在同步..."}
@@ -42,7 +42,7 @@ export default function SyncIndicator() {
       <button
         type="button"
         onClick={() => void syncJobs()}
-        className="flex items-center gap-2 rounded-md bg-red-100 px-3 py-1.5 text-sm text-red-700 transition hover:bg-red-200"
+        className="flex items-center gap-2 rounded-pill bg-danger-soft px-3 py-1.5 text-sm text-danger transition hover:opacity-80"
         title={error}
       >
         <span aria-hidden="true">⚠</span>
@@ -57,7 +57,7 @@ export default function SyncIndicator() {
       <button
         type="button"
         onClick={() => void syncJobs()}
-        className="flex items-center gap-2 rounded-md bg-amber-100 px-3 py-1.5 text-sm text-amber-800 transition hover:bg-amber-200"
+        className="flex items-center gap-2 rounded-pill bg-warning/20 px-3 py-1.5 text-sm text-ink transition hover:opacity-80"
       >
         <span aria-hidden="true">⟳</span>
         本地落后云端，点击同步
@@ -67,7 +67,7 @@ export default function SyncIndicator() {
 
   // 已同步：✓ + 最后同步时间。
   return (
-    <div className="flex items-center gap-2 rounded-md bg-green-100 px-3 py-1.5 text-sm text-green-700">
+    <div className="flex items-center gap-2 rounded-pill bg-success-soft px-3 py-1.5 text-sm text-success">
       <span aria-hidden="true">✓</span>
       {lastSyncAt ? `已同步（${formatTime(lastSyncAt)}）` : "已同步"}
     </div>

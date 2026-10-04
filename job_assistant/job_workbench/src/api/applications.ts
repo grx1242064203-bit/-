@@ -11,7 +11,7 @@ export interface Application {
   company_name: string;
   status: AppStatus;
   apply_url: string;
-  notes: string;
+  notes: string | null;
   created_at: string;
   updated_at: string;
 }
@@ -33,7 +33,7 @@ export function listApplications(status?: AppStatus): Promise<{ applications: Ap
 
 export function updateApplication(
   id: number,
-  data: { status?: AppStatus; notes?: string }
+  data: { status?: AppStatus; notes?: string | null }
 ): Promise<Application> {
   return apiClient.patch<Application>(`/api/v1/applications/${id}`, data);
 }

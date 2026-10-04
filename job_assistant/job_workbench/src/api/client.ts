@@ -173,6 +173,13 @@ export class ApiClient {
     });
   }
 
+  patch<T>(path: string, body?: unknown): Promise<T> {
+    return this.request<T>(path, {
+      method: "PATCH",
+      body: body === undefined ? undefined : JSON.stringify(body),
+    });
+  }
+
   delete<T>(path: string, params?: Record<string, unknown>): Promise<T> {
     return this.request<T>(`${path}${toQuery(params)}`, { method: "DELETE" });
   }

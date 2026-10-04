@@ -1,4 +1,4 @@
-// 公司总览页面：表格形式，字段对齐飞书公司表。
+// 公司总览页面：表格形式，字段对齐飞书公司表。Crextio 暖主题。
 import { useEffect, useState } from "react";
 import {
   getCompanies,
@@ -58,15 +58,12 @@ export default function Companies() {
   };
 
   return (
-    <div className="space-y-4 animate-fade-in">
+    <div className="space-y-5 animate-fade-in">
       {/* 统计卡片 */}
       {stats && (
         <div className="grid grid-cols-2 gap-4 lg:grid-cols-4">
           <StatCard label="公司总数" value={stats.total} accent />
-          <StatCard
-            label="覆盖行业"
-            value={stats.industries.length}
-          />
+          <StatCard label="覆盖行业" value={stats.industries.length} />
           <StatCard
             label="国央企"
             value={stats.types.find((t) => t.name === "国央企")?.count ?? 0}
@@ -79,19 +76,19 @@ export default function Companies() {
       )}
 
       {/* 筛选栏 */}
-      <div className="flex flex-wrap items-center gap-3 rounded-lg border border-gray-200 bg-surface p-4 shadow-sm">
+      <div className="flex flex-wrap items-center gap-3 rounded-xl border border-border bg-surface p-4 shadow-sm">
         <input
           type="text"
           placeholder="搜索公司名称…"
           value={keyword}
           onChange={(e) => setKeyword(e.target.value)}
           onKeyDown={(e) => e.key === "Enter" && handleFilter()}
-          className="w-48 rounded-md border border-gray-200 px-3 py-1.5 text-sm focus:border-primary focus:outline-none"
+          className="w-48 rounded-pill border border-border bg-surface-soft px-4 py-1.5 text-sm text-text placeholder:text-text-faint focus:border-primary-dark focus:outline-none focus:ring-2 focus:ring-primary/30"
         />
         <select
           value={industry}
           onChange={(e) => setIndustry(e.target.value)}
-          className="rounded-md border border-gray-200 px-3 py-1.5 text-sm focus:border-primary focus:outline-none"
+          className="rounded-pill border border-border bg-surface-soft px-4 py-1.5 text-sm text-text focus:border-primary-dark focus:outline-none"
         >
           <option value="">全部行业</option>
           {stats?.industries.map((i) => (
@@ -103,7 +100,7 @@ export default function Companies() {
         <select
           value={companyType}
           onChange={(e) => setCompanyType(e.target.value)}
-          className="rounded-md border border-gray-200 px-3 py-1.5 text-sm focus:border-primary focus:outline-none"
+          className="rounded-pill border border-border bg-surface-soft px-4 py-1.5 text-sm text-text focus:border-primary-dark focus:outline-none"
         >
           <option value="">全部类型</option>
           {stats?.types.map((t) => (
@@ -115,27 +112,27 @@ export default function Companies() {
         <button
           type="button"
           onClick={handleFilter}
-          className="rounded-md bg-primary px-4 py-1.5 text-sm font-medium text-white transition hover:bg-primary-600"
+          className="rounded-pill bg-primary px-5 py-1.5 text-sm font-semibold text-ink transition hover:bg-primary-dark"
         >
           筛选
         </button>
-        <span className="ml-auto text-sm text-gray-500">
+        <span className="ml-auto text-sm text-text-muted">
           共 {total} 家公司
         </span>
       </div>
 
       {/* 错误提示 */}
       {error && (
-        <div className="rounded-lg bg-red-50 px-4 py-2 text-sm text-red-600">
+        <div className="rounded-xl bg-danger-soft px-4 py-2 text-sm text-danger">
           {error}
         </div>
       )}
 
       {/* 公司表格 */}
-      <div className="overflow-hidden rounded-lg border border-gray-200 bg-surface shadow-sm">
+      <div className="overflow-hidden rounded-xl border border-border bg-surface shadow-sm">
         <div className="overflow-x-auto">
           <table className="min-w-full">
-            <thead className="border-b border-gray-200 bg-gray-50">
+            <thead className="border-b border-border bg-surface-soft">
               <tr>
                 <Th>公司名称</Th>
                 <Th>行业</Th>
@@ -149,13 +146,13 @@ export default function Companies() {
                 <Th className="text-right">操作</Th>
               </tr>
             </thead>
-            <tbody className="divide-y divide-gray-100">
+            <tbody className="divide-y divide-line">
               {loading && companies.length === 0
                 ? Array.from({ length: 8 }).map((_, i) => (
                     <tr key={i}>
                       {Array.from({ length: 10 }).map((_, j) => (
                         <td key={j} className="px-4 py-3">
-                          <div className="h-4 w-full animate-pulse rounded bg-gray-100" />
+                          <div className="h-4 w-full animate-pulse rounded bg-line" />
                         </td>
                       ))}
                     </tr>
@@ -170,12 +167,12 @@ export default function Companies() {
 
       {/* 加载更多 */}
       {companies.length < total && (
-        <div className="flex justify-center pt-2">
+        <div className="flex justify-center pt-1">
           <button
             type="button"
             onClick={handleLoadMore}
             disabled={loading}
-            className="rounded-lg border border-gray-200 bg-surface px-6 py-2 text-sm font-medium text-gray-700 transition hover:bg-gray-50 disabled:opacity-50"
+            className="rounded-pill border border-border bg-surface px-6 py-2 text-sm font-medium text-text-muted transition hover:border-border-strong hover:text-text disabled:opacity-50"
           >
             {loading ? "加载中…" : `加载更多（${companies.length}/${total}）`}
           </button>
@@ -196,16 +193,20 @@ function StatCard({
 }) {
   return (
     <div
-      className={`rounded-lg border p-4 shadow-sm ${
+      className={`rounded-xl border p-5 shadow-sm transition hover:shadow-md ${
         accent
-          ? "border-primary-100 bg-primary-50"
-          : "border-gray-200 bg-surface"
+          ? "border-primary/40 bg-gradient-to-br from-primary to-primary-light"
+          : "border-border bg-surface"
       }`}
     >
-      <div className="text-sm text-gray-500">{label}</div>
       <div
-        className={`mt-1 text-2xl font-bold ${
-          accent ? "text-primary" : "text-gray-900"
+        className={`text-sm ${accent ? "text-ink/70" : "text-text-muted"}`}
+      >
+        {label}
+      </div>
+      <div
+        className={`mt-1.5 text-3xl font-bold ${
+          accent ? "text-ink" : "text-text"
         }`}
       >
         {value.toLocaleString()}
@@ -222,11 +223,7 @@ function Th({
   className?: string;
 }) {
   return (
-    <th
-      className={`whitespace-nowrap px-4 py-3 ${className}`}
-    >
-      {children}
-    </th>
+    <th className={`whitespace-nowrap px-4 py-3 ${className}`}>{children}</th>
   );
 }
 
@@ -265,24 +262,24 @@ function CompanyRow({ company }: { company: Company }) {
   };
 
   return (
-    <tr className="transition-colors hover:bg-gray-50">
-      <Td className="font-medium text-gray-900">{company.company_name}</Td>
+    <tr className="transition-colors hover:bg-primary-soft/50">
+      <Td className="font-medium text-text">{company.company_name}</Td>
       <Td>
         {company.industry && (
-          <span className="rounded-full bg-primary-50 px-2 py-0.5 text-xs text-primary">
+          <span className="rounded-pill bg-primary-soft px-2.5 py-0.5 text-xs font-medium text-ink/80">
             {company.industry}
           </span>
         )}
       </Td>
-      <Td className="text-gray-600">{company.company_type}</Td>
-      <Td className="text-gray-600">{company.recruit_type}</Td>
-      <Td className="text-gray-600">{company.location}</Td>
-      <Td className="text-gray-600">{company.education_req}</Td>
-      <Td className="text-gray-600">{company.positions_count}</Td>
-      <Td className="text-gray-600">
+      <Td className="text-text-muted">{company.company_type}</Td>
+      <Td className="text-text-muted">{company.recruit_type}</Td>
+      <Td className="text-text-muted">{company.location}</Td>
+      <Td className="text-text-muted">{company.education_req}</Td>
+      <Td className="text-text-muted">{company.positions_count}</Td>
+      <Td className="text-text-muted">
         {company.deadline ? company.deadline.slice(0, 10) : "-"}
       </Td>
-      <Td className="text-xs text-gray-400">
+      <Td className="text-xs text-text-faint">
         {company.last_updated.slice(0, 10)}
       </Td>
       <Td className="text-right">
@@ -291,10 +288,10 @@ function CompanyRow({ company }: { company: Company }) {
             type="button"
             onClick={handleFavorite}
             disabled={favStatus === "loading"}
-            className={`rounded-md border px-2 py-1 text-xs transition ${
+            className={`rounded-pill border px-2.5 py-1 text-xs transition ${
               favStatus === "done"
-                ? "border-accent bg-accent-100 text-accent-600"
-                : "border-gray-200 text-gray-500 hover:bg-gray-50"
+                ? "border-primary bg-primary text-ink"
+                : "border-border text-text-muted hover:border-primary hover:text-ink"
             }`}
             title="收藏"
           >
@@ -305,7 +302,7 @@ function CompanyRow({ company }: { company: Company }) {
               href={company.apply_url}
               target="_blank"
               rel="noreferrer"
-              className="rounded-md bg-accent px-3 py-1 text-xs font-medium text-white transition hover:bg-accent-600"
+              className="rounded-pill bg-primary px-3.5 py-1 text-xs font-semibold text-ink transition hover:bg-primary-dark"
             >
               网申
             </a>
@@ -315,7 +312,7 @@ function CompanyRow({ company }: { company: Company }) {
               href={company.announcement_url}
               target="_blank"
               rel="noreferrer"
-              className="rounded-md border border-gray-200 px-3 py-1 text-xs font-medium text-gray-600 transition hover:bg-gray-50"
+              className="rounded-pill border border-border px-3.5 py-1 text-xs font-medium text-text-muted transition hover:border-border-strong hover:text-text"
             >
               公告
             </a>

@@ -1,4 +1,4 @@
-// 岗位列表页面：表格形式 + 左侧岗位分类导航，字段对齐飞书岗位表。
+// 岗位列表页面：表格形式 + 左侧岗位分类导航，字段对齐飞书岗位表。Crextio 暖主题。
 import { useEffect, useState } from "react";
 import { useJobsStore } from "../stores/jobsStore";
 import { getCategories, type JobCategory } from "../api/categories";
@@ -38,13 +38,13 @@ export default function Jobs() {
   const CITIES = ["全国各地", "北京", "上海", "深圳", "广州", "杭州", "成都", "南京", "武汉", "西安"];
 
   return (
-    <div className="flex h-full gap-4 animate-fade-in">
+    <div className="flex h-full gap-5 animate-fade-in">
       {/* 左侧分类导航 */}
-      <aside className="w-48 flex-shrink-0 overflow-y-auto rounded-lg border border-gray-200 bg-surface p-3 shadow-sm">
-        <div className="mb-2 px-2 text-xs font-semibold uppercase tracking-wide text-gray-400">
+      <aside className="w-52 flex-shrink-0 overflow-y-auto rounded-xl border border-border bg-surface p-4 shadow-sm">
+        <div className="mb-3 px-2 text-xs font-semibold uppercase tracking-wide text-text-faint">
           岗位分类
         </div>
-        <div className="space-y-0.5">
+        <div className="space-y-1">
           <CategoryButton
             label="全部岗位"
             count={categories.reduce((s, c) => s + c.count, 0)}
@@ -64,21 +64,21 @@ export default function Jobs() {
       </aside>
 
       {/* 右侧表格 */}
-      <div className="flex-1 overflow-hidden space-y-3">
+      <div className="flex flex-1 flex-col overflow-hidden space-y-4">
         {/* 筛选栏 */}
-        <div className="flex flex-wrap items-center gap-2 rounded-lg border border-gray-200 bg-surface p-3 shadow-sm">
+        <div className="flex flex-wrap items-center gap-2 rounded-xl border border-border bg-surface p-3.5 shadow-sm">
           <input
             type="text"
             placeholder="搜索岗位/公司…"
             value={keyword}
             onChange={(e) => setKeyword(e.target.value)}
             onKeyDown={(e) => e.key === "Enter" && handleSearch()}
-            className="w-44 rounded-md border border-gray-200 px-3 py-1.5 text-sm focus:border-primary focus:outline-none"
+            className="w-44 rounded-pill border border-border bg-surface-soft px-4 py-1.5 text-sm text-text placeholder:text-text-faint focus:border-primary-dark focus:outline-none focus:ring-2 focus:ring-primary/30"
           />
           <select
             value={city}
             onChange={(e) => setCity(e.target.value)}
-            className="rounded-md border border-gray-200 px-3 py-1.5 text-sm focus:border-primary focus:outline-none"
+            className="rounded-pill border border-border bg-surface-soft px-4 py-1.5 text-sm text-text focus:border-primary-dark focus:outline-none"
           >
             {CITIES.map((c) => (
               <option key={c} value={c}>
@@ -89,27 +89,27 @@ export default function Jobs() {
           <button
             type="button"
             onClick={handleSearch}
-            className="rounded-md bg-primary px-4 py-1.5 text-sm font-medium text-white transition hover:bg-primary-600"
+            className="rounded-pill bg-primary px-5 py-1.5 text-sm font-semibold text-ink transition hover:bg-primary-dark"
           >
             搜索
           </button>
-          <span className="ml-auto text-sm text-gray-500">
+          <span className="ml-auto text-sm text-text-muted">
             {jobs.length > 0 && `已加载 ${jobs.length} 条`}
           </span>
         </div>
 
         {/* 错误 */}
         {error && (
-          <div className="rounded-lg bg-red-50 px-4 py-2 text-sm text-red-600">
+          <div className="rounded-xl bg-danger-soft px-4 py-2 text-sm text-danger">
             {error}
           </div>
         )}
 
         {/* 岗位表格 */}
-        <div className="overflow-hidden rounded-lg border border-gray-200 bg-surface shadow-sm">
-          <div className="overflow-x-auto overflow-y-auto" style={{ maxHeight: "calc(100vh - 280px)" }}>
+        <div className="flex-1 overflow-hidden rounded-xl border border-border bg-surface shadow-sm">
+          <div className="overflow-x-auto overflow-y-auto" style={{ maxHeight: "calc(100vh - 300px)" }}>
             <table className="min-w-full">
-              <thead className="sticky top-0 z-10 border-b border-gray-200 bg-gray-50">
+              <thead className="sticky top-0 z-10 border-b border-border bg-surface-soft">
                 <tr>
                   <Th>岗位标题</Th>
                   <Th>公司</Th>
@@ -121,13 +121,13 @@ export default function Jobs() {
                   <Th className="text-right">操作</Th>
                 </tr>
               </thead>
-              <tbody className="divide-y divide-gray-100">
+              <tbody className="divide-y divide-line">
                 {isLoading && jobs.length === 0
                   ? Array.from({ length: 10 }).map((_, i) => (
                       <tr key={i}>
                         {Array.from({ length: 8 }).map((_, j) => (
                           <td key={j} className="px-4 py-3">
-                            <div className="h-4 w-full animate-pulse rounded bg-gray-100" />
+                            <div className="h-4 w-full animate-pulse rounded bg-line" />
                           </td>
                         ))}
                       </tr>
@@ -146,7 +146,7 @@ export default function Jobs() {
             <button
               type="button"
               onClick={() => void loadMore()}
-              className="rounded-lg border border-gray-200 bg-surface px-6 py-2 text-sm font-medium text-gray-700 transition hover:bg-gray-50"
+              className="rounded-pill border border-border bg-surface px-6 py-2 text-sm font-medium text-text-muted transition hover:border-border-strong hover:text-text"
             >
               加载更多
             </button>
@@ -172,16 +172,16 @@ function CategoryButton({
     <button
       type="button"
       onClick={onClick}
-      className={`flex w-full items-center justify-between rounded-md px-3 py-2 text-sm transition-colors ${
+      className={`flex w-full items-center justify-between rounded-pill px-3.5 py-2 text-sm transition-colors ${
         active
-          ? "bg-primary-50 font-medium text-primary"
-          : "text-gray-600 hover:bg-gray-50"
+          ? "bg-primary font-semibold text-ink shadow-sm"
+          : "text-text-muted hover:bg-surface-soft hover:text-text"
       }`}
     >
       <span className="truncate">{label}</span>
       <span
-        className={`ml-2 shrink-0 rounded-full px-1.5 text-xs ${
-          active ? "bg-primary text-white" : "bg-gray-100 text-gray-400"
+        className={`ml-2 shrink-0 rounded-pill px-1.5 text-xs ${
+          active ? "bg-ink/10 text-ink/70" : "bg-surface-soft text-text-faint"
         }`}
       >
         {count}
@@ -232,37 +232,37 @@ function JobRow({ job }: { job: Job }) {
   };
 
   return (
-    <tr className="transition-colors hover:bg-gray-50">
+    <tr className="transition-colors hover:bg-primary-soft/50">
       <td className="px-4 py-3">
-        <div className="font-medium text-gray-900">{job.title}</div>
+        <div className="font-medium text-text">{job.title}</div>
         {job.requirements && (
-          <div className="mt-0.5 line-clamp-1 text-xs text-gray-400">
+          <div className="mt-0.5 line-clamp-1 text-xs text-text-faint">
             {job.requirements}
           </div>
         )}
       </td>
-      <td className="px-4 py-3 text-sm text-gray-600">{job.company}</td>
+      <td className="px-4 py-3 text-sm text-text-muted">{job.company}</td>
       <td className="px-4 py-3">
         {job.category && (
-          <span className="rounded-full bg-primary-50 px-2 py-0.5 text-xs text-primary">
+          <span className="rounded-pill bg-primary-soft px-2.5 py-0.5 text-xs font-medium text-ink/80">
             {job.category}
           </span>
         )}
       </td>
-      <td className="px-4 py-3 text-sm text-gray-600">{job.city || "-"}</td>
-      <td className="px-4 py-3 text-sm text-gray-600">
+      <td className="px-4 py-3 text-sm text-text-muted">{job.city || "-"}</td>
+      <td className="px-4 py-3 text-sm text-text-muted">
         {job.graduation_match ? "应届" : "不限"}
       </td>
       <td className="px-4 py-3 text-sm">
         {job.is_mt ? (
-          <span className="rounded-full bg-accent-100 px-2 py-0.5 text-xs text-accent-600">
+          <span className="rounded-pill bg-primary-soft px-2.5 py-0.5 text-xs font-medium text-ink/80">
             管培
           </span>
         ) : (
-          <span className="text-gray-300">-</span>
+          <span className="text-text-faint">-</span>
         )}
       </td>
-      <td className="px-4 py-3 text-xs text-gray-400">
+      <td className="px-4 py-3 text-xs text-text-faint">
         {job.updated_at ? job.updated_at.slice(0, 10) : "-"}
       </td>
       <td className="px-4 py-3 text-right">
@@ -271,10 +271,10 @@ function JobRow({ job }: { job: Job }) {
             type="button"
             onClick={handleFavorite}
             disabled={favStatus === "loading"}
-            className={`rounded-md border px-2 py-1 text-xs transition ${
+            className={`rounded-pill border px-2.5 py-1 text-xs transition ${
               favStatus === "done"
-                ? "border-accent bg-accent-100 text-accent-600"
-                : "border-gray-200 text-gray-500 hover:bg-gray-50"
+                ? "border-primary bg-primary text-ink"
+                : "border-border text-text-muted hover:border-primary hover:text-ink"
             }`}
             title="收藏"
           >
@@ -284,10 +284,10 @@ function JobRow({ job }: { job: Job }) {
             type="button"
             onClick={handleApply}
             disabled={applyStatus === "loading"}
-            className={`rounded-md px-2.5 py-1 text-xs font-medium text-white transition ${
+            className={`rounded-pill px-3 py-1 text-xs font-semibold transition ${
               applyStatus === "done"
-                ? "bg-success"
-                : "bg-accent hover:bg-accent-600"
+                ? "bg-success text-white"
+                : "bg-primary text-ink hover:bg-primary-dark"
             }`}
           >
             {applyStatus === "done" ? "已投递" : "投递"}

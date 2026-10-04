@@ -31,6 +31,9 @@ class Settings(BaseSettings):
     # 邮件（Resend）
     RESEND_API_KEY: str = ""
 
+    # 邮箱密码加密密钥（Fernet），生产环境必须通过环境变量覆盖
+    EMAIL_ENCRYPTION_KEY: str = ""
+
     # 数据存储
     DATA_DIR: Path = Path("../data")
     JOBS_DB_PATH: Path = Path("../data/jobs.db")

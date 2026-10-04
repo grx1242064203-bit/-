@@ -34,6 +34,8 @@ env_logger = "0.11"
 # 文件系统插件（简历 PDF/图片读写）
 tauri-plugin-fs = "2"
 tauri-plugin-shell = "2"
+# 系统通知（日程提醒弹窗）
+tauri-plugin-notification = "2"
 
 [profile.release]
 panic = "abort"

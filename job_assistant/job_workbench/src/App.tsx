@@ -4,11 +4,14 @@ import Jobs from "./pages/Jobs";
 import Companies from "./pages/Companies";
 import Resume from "./pages/Resume";
 import Applications from "./pages/Applications";
+import Email from "./pages/Email";
+import Schedules from "./pages/Schedules";
 import Login from "./pages/Login";
 import Register from "./pages/Register";
 import AuthGuard from "./components/AuthGuard";
 import { useAuthStore } from "./stores/authStore";
 import SyncIndicator from "./components/SyncIndicator";
+import ReminderPoller from "./components/ReminderPoller";
 import logoImg from "./assets/logo.png";
 
 // 顶部胶囊导航项
@@ -23,6 +26,8 @@ const NAV_ITEMS: NavItem[] = [
   { to: "/companies", label: "公司总览", icon: "🏢" },
   { to: "/", label: "岗位列表", icon: "💼", end: true },
   { to: "/applications", label: "投递控制台", icon: "📋" },
+  { to: "/email", label: "邮件同步", icon: "📧" },
+  { to: "/schedules", label: "日程", icon: "📅" },
   { to: "/resume", label: "简历解析", icon: "📄" },
 ];
 
@@ -105,6 +110,8 @@ function PageTitle() {
     "/companies": "秋招公司总览",
     "/": "岗位列表",
     "/applications": "投递控制台",
+    "/email": "邮件同步",
+    "/schedules": "日程与提醒",
     "/resume": "简历解析",
   };
   const title = titleMap[location.pathname] ?? "Offer搭子";
@@ -124,6 +131,7 @@ function Layout({ children }: { children: ReactNode }) {
           <PageTitle />
           {children}
         </main>
+        <ReminderPoller />
       </div>
     </div>
   );
@@ -170,6 +178,26 @@ export default function App() {
           <AuthGuard>
             <Layout>
               <Applications />
+            </Layout>
+          </AuthGuard>
+        }
+      />
+      <Route
+        path="/email"
+        element={
+          <AuthGuard>
+            <Layout>
+              <Email />
+            </Layout>
+          </AuthGuard>
+        }
+      />
+      <Route
+        path="/schedules"
+        element={
+          <AuthGuard>
+            <Layout>
+              <Schedules />
             </Layout>
           </AuthGuard>
         }

@@ -12,6 +12,7 @@ aiosqlite>=0.20.0
 slowapi>=0.1.9
 resend>=2.0.0
 python-dotenv>=1.0.0
+cryptography>=42.0.0
 pytest>=8.0.0
 # LLM 代理（T4）依赖父目录 llm_client.py（DeepSeek 调用走 requests + PIL）
 requests>=2.31.0

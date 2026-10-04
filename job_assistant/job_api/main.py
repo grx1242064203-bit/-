@@ -13,11 +13,14 @@ from slowapi.errors import RateLimitExceeded
 from slowapi.middleware import SlowAPIMiddleware
 
 from config import get_settings
+from models import init_all_db
 from routers.auth import limiter as auth_limiter
 from routers.auth import router as auth_router
 from routers.db_sync import router as db_sync_router
+from routers.emails import router as emails_router
 from routers.health import router as health_router
 from routers.llm import router as llm_router
+from routers.schedules import router as schedules_router
 from routers.sync import router as sync_router
 from routers.applications import router as applications_router
 from services.sync_service import DatabaseCorruptedError
@@ -27,6 +30,8 @@ settings = get_settings()
 
 @asynccontextmanager
 async def lifespan(app: FastAPI):
+    # 初始化所有数据表（幂等）
+    await init_all_db()
     # 启动时打印配置摘要（脱敏：仅暴露非敏感字段与密钥是否已设置）
     summary = {
         "DEEPSEEK_BASE_URL": settings.DEEPSEEK_BASE_URL,
@@ -93,3 +98,5 @@ app.include_router(llm_router, prefix="/api/v1")
 app.include_router(sync_router, prefix="/api/v1")
 app.include_router(db_sync_router, prefix="/api/v1")
 app.include_router(applications_router, prefix="/api/v1")
+app.include_router(emails_router, prefix="/api/v1")
+app.include_router(schedules_router, prefix="/api/v1")

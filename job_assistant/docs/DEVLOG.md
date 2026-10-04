@@ -4,6 +4,61 @@
 
 ---
 
+## 2026-10-04 — 投递看板全流程 + 公司尽调 + 匹配去重
+
+**状态**: 完成并推送至 `origin/main`（commit `0c39282`）
+
+### 投递看板 6 列状态机
+- **状态枚举**：`favorite → applied → assessment → interview → offer | rejected`（收藏 / 已投递 / 测评中 / 面试中 / Offer / 已拒绝）
+- `appStore.ts`：`KANBAN_COLUMNS` 定义 6 列（含新增 `assessment` 测评列，`info` 色系）
+- `index.css` + `tailwind.config.ts`：补充 `info` 色阶（`info-50/100/...`）支持测评列样式
+- `ApplicationCard.tsx`：按 `source` 渲染来源标签（DB岗位 / DB公司 / 手动 / 邮件），显示面试轮次
+
+### 面试轮次展开 + 列内拖拽
+- `appStore.ts`：`interviewExpanded` 状态控制面试列展开；展开后显示「一面 / 二面 / 三面 / 终面」4 个子列
+- `KanbanBoard.tsx`：面试列头部可展开/收起；展开时按 `interview_round` 分发卡片到对应轮次子列
+- **列内拖拽**：在面试列内拖到不同轮次子列 → 调 `updateInterviewRound(app, round)` 持久化轮次
+- **拖入面试列默认轮次=1**：`updateApplicationStatus` 在状态变为 `interview` 时将 `interview_round` 设为 `max(当前轮次, 1)`，新建面试记录后端也默认 `interview_round=1`
+
+### 逆向拖拽确认
+- `KanbanBoard.tsx`：从后往前拖（如 offer→interview、interview→applied）弹出确认弹窗，防止误操作回退状态
+- 同列拖拽、面试列内轮次切换不弹确认
+
+### 公司尽调（LLM + 联网搜索 + 缓存）
+- 新表 `company_due_diligence`（`company_name` 主键）：缓存 `intro / official_website / news / interview_questions / generated_at`
+- `services/llm_proxy.py`：`company_due_diligence(company_name)` → DuckDuckGo HTML 解析抓官网/新闻 → DeepSeek 生成简介 + 面试问题；30s 超时保护
+- `routers/llm.py`：`POST /api/v1/llm/company-due-diligence` 端点，命中缓存直接返回，避免重复消耗 LLM 配额
+- `RecruitmentCard.tsx`：招聘卡弹窗内嵌尽调卡，按 `source`（db_job / db_company / manual / email）渲染不同内容
+
+### 精确匹配去重（一个公司仅一条 / 公司+岗位精确匹配）
+- `models/application.py::create_application` 匹配优先级：
+  1. DB 来源（有 `link_type`+`link_id`）→ 按 `(link_type, link_id)` 去重
+  2. 手动/邮件来源 → 按 `(company_name, job_title)` 精确匹配；若仅 `company_name` 有值 → 按公司名匹配（一公司一条）
+  3. 匹配命中 → **仅更新状态**（+ 阶段时间戳 + 链接 + 岗位名），不新建
+  4. 未命中 → 新建
+- 状态为 `interview` 时 `interview_round` 默认 1；非面试状态重置为 0
+
+### Jobs / Companies 表收藏 / 投递按钮
+- `Jobs.tsx`：操作列新增 ⭐ 收藏 / 📮 投递 按钮，直接 `addApplication({source:"db_job", link_type:"job", link_id})`
+- `Companies.tsx`：操作列新增 ⭐/📮 按钮，点击弹出小表单（仅岗位名输入框，可选），提交后 `addApplication({source:"db_company", link_type:"company", link_id})`
+- 后端按 link 去重，同一岗位/公司重复点击只会更新状态
+
+### 构建修复
+- `tsconfig.json`：移除 TS 7 已废弃的 `baseUrl`，`paths` 改用 `"./src/*"` 相对路径
+- 清理 3 处未使用变量：`KanbanBoard.tsx` 的 `DragEvent` import、`Applications.tsx` 的 `setSelectedAppId`、`appStore.ts` 的 `get` 参数
+
+### 验证
+- ✅ `tsc --noEmit` 零错误，`vite build` 成功
+- ✅ 后端匹配逻辑实测：同公司+同岗位更新状态（同 id）、同公司不同岗位新建、仅公司名匹配到已有记录、新建面试记录轮次=1
+
+**关键设计决策**:
+- **匹配去重用 company_name+job_title 而非仅 link**：手动/邮件来源无 link_id，必须用业务字段去重；"一个公司仅一条"通过仅填公司名时按公司名匹配实现
+- **面试轮次存整数 interview_round 而非独立表**：4 轮固定，整型足够；列内拖拽直接改字段，无需关联表
+- **尽调按公司缓存**：同一公司多次查看只调用一次 LLM；新闻/官网链接随生成结果缓存
+- **逆向拖拽确认而非禁止**：用户可能确实需要回退状态（如 offer 被拒→rejected），用确认弹窗比硬禁止更友好
+
+---
+
 ## 2026-10-04 — Offer搭子 UI/UX 增强 + 数据同步修复 + 品牌改名
 
 ### 品牌改名

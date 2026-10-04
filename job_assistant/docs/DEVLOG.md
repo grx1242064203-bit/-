@@ -4,6 +4,54 @@
 
 ---
 
+## 2026-10-04 — Offer搭子 UI/UX 增强 + 数据同步修复 + 品牌改名
+
+### 品牌改名
+- 产品名从"求职搭子"改为"Offer搭子"
+- tauri.conf.json: productName 和窗口标题改为 "Offer搭子"
+- App.tsx: 顶部导航 logo + 标题改为 "Offer搭子"
+- main.py: FastAPI title 改为 "Offer搭子 API"
+- email_service.py: 邮件标题改为 "【Offer搭子】邮箱验证码"
+- logo.png: 更新为用户提供的 1254×1254 PNG (272KB)
+- vite-env.d.ts: 添加 *.png/*.jpg/*.jpeg/*.svg/*.gif 模块声明
+
+### 链接打不开修复
+- link.ts: 放宽 URL 校验（允许含中文/特殊字符的 URL）
+- link.ts: normalizeUrl() 无协议时自动补 https://，从含中文标点文本中提取 URL
+- link.ts: 静态 import 改为动态 import（`await import("@tauri-apps/plugin-shell")`），避免非 Tauri 环境打包失败
+- link.ts: Tauri 环境用 shell 插件调用系统浏览器，Web 环境降级 window.open
+- tauri.conf.json: 启用 tauri-plugin-shell
+- capabilities/default.json: 添加 shell:allow-open 权限
+- Cargo.toml: 添加 tauri-plugin-shell = "2" 依赖
+- lib.rs: 添加 .plugin(tauri_plugin_shell::init())
+
+### 非分类列搜索功能
+- ColumnFilter.tsx: 支持两种模式——分类列（多选 IN）和文本列（关键词 LIKE 搜索，回车应用）
+- Companies.tsx: 所有列均渲染 ColumnFilter，分类列传 options，文本列不传自动进入搜索模式
+- Jobs.tsx: 同上
+- sync_service.py: get_companies 和 get_jobs_page 支持 **text_filters 文本列 LIKE 模糊搜索
+- sync.py: 路由接收 location/position_titles/title/company/major_required/hard_skills/keywords/jd_summary/updated_at/deadline 等文本列参数
+- companies.ts / jobs.ts: API 接口支持文本列模糊搜索参数
+
+### 表格列宽优化
+- Companies.tsx: location 列宽 160px → 120px
+- Jobs.tsx: major_required 列宽 160px → 120px
+
+### 数据同步链路修复
+- feishu_source.py: 增量同步游标从 last_modified_time 改为 apply_update（飞书 Bitable API 不返回 last_modified_time）
+- job_db.py: get_last_sync_time() 从 MAX(last_modified) 改为 MAX(apply_update)
+- sync_service.py: company_overview 视图 last_updated 取 a.apply_update，jobs 视图 updated_at 取 a.apply_update
+
+### 测试修复
+- test_sync.py: 更新 _make_db() 和 test_get_jobs_since_cursor_same_timestamp 中的 jobs 表 schema，从 13 列（旧 spec）改为 20 列（对齐 JOB_FIELDS）
+- 全部 32 个后端测试通过
+
+### 构建验证
+- tsc + vite build 成功（81 模块转换，无错误）
+- @tauri-apps/plugin-shell 被拆为独立 chunk（3.56KB），只在 Tauri 环境运行时动态加载
+
+---
+
 ## 2026-10-03 — M1 端到端验证 + CI 配置 ✅
 
 **状态**: 全链路通过，CI 已配置

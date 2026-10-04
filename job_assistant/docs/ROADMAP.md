@@ -1,4 +1,4 @@
-# 求职搭子 桌面工作台 开发路线图
+# Offer搭子 桌面工作台 开发路线图
 
 ## M1: MVP 桌面端 + 核心匹配（当前）
 - [x] 云端 API 骨架（FastAPI + 认证 + LLM 代理）
@@ -10,6 +10,13 @@
 - [x] 简历上传 + LLM 解析
 - [x] 岗位匹配评分
 - [x] 投递记录 Kanban
+
+### M1.1: UI/UX 增强 + 品牌改名（2026-10-04）
+- [x] 品牌改名"求职搭子" → "Offer搭子"，logo 更新
+- [x] 网申/公告链接打不开修复（动态 import shell 插件 + URL 校验放宽）
+- [x] 非分类列文本搜索（ColumnFilter 双模式 + 后端 LIKE 支持）
+- [x] 表格列宽优化（location/major_required 120px）
+- [x] 数据同步游标修复（apply_update 替代 last_modified_time）
 
 ## M2: 邮箱追踪 + 日程
 - [ ] 邮箱 IMAP 配置（本机 keychain 存储）

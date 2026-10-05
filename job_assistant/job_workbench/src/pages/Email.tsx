@@ -132,7 +132,7 @@ function AddAccountModal({ onClose }: { onClose: () => void }) {
       await addAccount({ email, imap_server: imapServer, imap_port: imapPort, username, password });
       onClose();
     } catch (e) {
-      // ApiError 不是 Error 实例,instanceof Error 会丢失信息,必须用 extractErrorMessage
+      // ApiError 不是 Error 实例,必须用 extractErrorMessage 提取真实错误
       setError(extractErrorMessage(e));
     } finally {
       setBusy(false);

@@ -113,6 +113,10 @@ interface ResumeState {
   uploadResume: (file: File) => Promise<Resume>;
   parseResume: (resumeText?: string) => Promise<ParsedProfile>;
   getActiveResume: () => Promise<void>;
+  /** 保存用户手动编辑后的画像(Phase 1 纯人工编辑,不调 LLM)。
+   * 后端画像存在 → PATCH 后端 + 同步本地;不存在 → 仅同步本地。
+   * 推荐接口下次读取 active 画像时用新值。 */
+  saveProfileEdits: (edited: ParsedProfile) => Promise<void>;
   clearResume: () => void;
   clearError: () => void;
 }
@@ -345,6 +349,40 @@ export const useResumeStore = create<ResumeState>((set, get) => ({
       error: null,
       lastFileName: null,
     });
+  },
+
+  // 用户手动编辑后保存(Phase 1 纯人工编辑,不调 LLM):
+  // - 后端画像存在 → PATCH /resume-profiles/{id} 更新 keywords/fit_directions
+  // - 同步更新本地 localStorage 的 parsed_profile_json,保证刷新后仍为编辑后版本
+  // - 推荐接口下次调用时读后端 active 画像,自动用新值匹配
+  saveProfileEdits: async (edited) => {
+    const current = get().activeResume;
+    // 1) 本地同步(无论后端是否成功都先同步,避免编辑成果丢失)
+    if (current) {
+      const updated: Resume = {
+        ...current,
+        parsed_profile_json: JSON.stringify(edited),
+      };
+      saveResumeToStorage(updated);
+      set({ activeResume: updated, parsedProfile: edited });
+    } else {
+      set({ parsedProfile: edited });
+    }
+
+    // 2) 后端画像存在则 PATCH
+    const sp = get().serverProfile;
+    if (sp) {
+      try {
+        const updated = await resumeProfilesApi.update(sp.profile_id, {
+          keywords: edited.keywords,
+          fit_directions: edited.fit_directions,
+        });
+        set({ serverProfile: updated });
+      } catch (e) {
+        // 后端保存失败时不阻塞 UI(本地已保存),控制台告警
+        console.warn("后端画像保存失败(本地已保存):", e);
+      }
+    }
   },
 
   clearError: () => set({ error: null }),

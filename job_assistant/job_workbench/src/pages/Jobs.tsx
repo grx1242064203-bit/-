@@ -296,15 +296,19 @@ export default function Jobs() {
           <thead className="sticky top-0 z-10">
             <tr className="bg-white/85 backdrop-blur-md">
               {COLUMNS.filter((c) => visibleKeys.includes(c.key)).map((col) => {
-                const isFirst = col.key === "title";
+                // 与行级一致的固定列判断:actions 最左 + links 紧随其后
+                // 注意:Tailwind JIT 只识别静态类名,w-[72px]/left-[72px] 必须字面量
+                const isActionsSticky = col.key === "actions";
+                const isLinksSticky = col.key === "links";
+                const stickyClass = isActionsSticky
+                  ? "sticky left-0 z-20 bg-white/85 backdrop-blur w-[72px] min-w-[72px] shadow-[2px_0_4px_-2px_rgba(0,0,0,0.1)]"
+                  : isLinksSticky
+                  ? "sticky left-[72px] z-20 bg-white/85 backdrop-blur shadow-[2px_0_4px_-2px_rgba(0,0,0,0.1)]"
+                  : "";
                 return (
                   <th
                     key={col.key}
-                    className={`border-b border-line px-3 py-2.5 text-left font-medium text-ink ${
-                      isFirst
-                        ? "sticky left-0 z-20 bg-white/85 shadow-[2px_0_4px_-2px_rgba(0,0,0,0.1)]"
-                        : ""
-                    }`}
+                    className={`border-b border-line px-3 py-2.5 text-left font-medium text-ink ${stickyClass}`}
                     style={{ minWidth: jobColWidth(col.key) }}
                   >
                     <div className="flex items-center">

@@ -19,13 +19,25 @@ export default {
           soft: "var(--color-ink-soft)",
         },
         // 语义色
-        success: "var(--color-success)",
-        "success-soft": "var(--color-success-soft)",
-        warning: "var(--color-warning)",
-        danger: "var(--color-danger)",
-        "danger-soft": "var(--color-danger-soft)",
-        info: "var(--color-info)",
-        "info-soft": "var(--color-info-soft)",
+        success: {
+          DEFAULT: "var(--color-success)",
+          dark: "var(--color-success-dark)",
+          soft: "var(--color-success-soft)",
+        },
+        warning: {
+          DEFAULT: "var(--color-warning)",
+          dark: "var(--color-warning-dark)",
+          soft: "var(--color-warning-soft)",
+        },
+        danger: {
+          DEFAULT: "var(--color-danger)",
+          soft: "var(--color-danger-soft)",
+        },
+        info: {
+          DEFAULT: "var(--color-info)",
+          dark: "var(--color-info-dark)",
+          soft: "var(--color-info-soft)",
+        },
         // 文本色阶
         text: {
           DEFAULT: "var(--color-text)",

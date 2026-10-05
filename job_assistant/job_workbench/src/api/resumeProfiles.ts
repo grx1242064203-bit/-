@@ -43,4 +43,21 @@ export const resumeProfilesApi = {
   delete(profileId: string): Promise<void> {
     return apiClient.delete(`/api/v1/resume-profiles/${profileId}`);
   },
+
+  /** 部分更新画像(用户手动编辑后保存;Phase 1 纯人工编辑,不调 LLM) */
+  update(
+    profileId: string,
+    data: {
+      keywords?: any[];
+      fit_directions?: any[];
+      degree?: string;
+      major?: string;
+      target_cities?: string[];
+    }
+  ): Promise<ResumeProfile> {
+    return apiClient.patch<ResumeProfile>(
+      `/api/v1/resume-profiles/${profileId}`,
+      data
+    );
+  },
 };

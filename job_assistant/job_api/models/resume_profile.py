@@ -154,6 +154,60 @@ def delete_profile(profile_id: str, user_id: str) -> bool:
         conn.close()
 
 
+def update_profile(
+    profile_id: str,
+    user_id: str,
+    keywords: Optional[list] = None,
+    fit_directions: Optional[list] = None,
+    degree: Optional[str] = None,
+    major: Optional[str] = None,
+    target_cities: Optional[list] = None,
+) -> Optional[dict]:
+    """部分更新画像字段。传入 None 表示不更新该字段。
+
+    用于用户在简历解析页手动编辑后保存(Phase 1：纯人工编辑,不调 LLM)。
+    返回更新后的画像;不存在或无权访问返回 None。
+    """
+    existing = get_profile(profile_id)
+    if not existing or existing["user_id"] != user_id:
+        return None
+
+    new_keywords = json.dumps(
+        keywords if keywords is not None else existing["keywords"],
+        ensure_ascii=False,
+    )
+    new_fit_dirs = json.dumps(
+        fit_directions if fit_directions is not None else existing["fit_directions"],
+        ensure_ascii=False,
+    )
+    new_degree = degree if degree is not None else existing["degree"]
+    new_major = major if major is not None else existing["major"]
+    new_cities = json.dumps(
+        target_cities if target_cities is not None else existing["target_cities"],
+        ensure_ascii=False,
+    )
+    now = _now()
+    conn = _conn()
+    try:
+        conn.execute(
+            """UPDATE resume_profiles SET
+               keywords_json = ?, fit_directions_json = ?,
+               degree = ?, major = ?, target_cities_json = ?,
+               updated_at = ?
+               WHERE profile_id = ? AND user_id = ?""",
+            (
+                new_keywords, new_fit_dirs,
+                new_degree, new_major, new_cities,
+                now,
+                profile_id, user_id,
+            ),
+        )
+        conn.commit()
+        return get_profile(profile_id)
+    finally:
+        conn.close()
+
+
 def _row_to_dict(row: sqlite3.Row) -> dict:
     d = dict(row)
     d["keywords"] = json.loads(d.pop("keywords_json", "[]"))

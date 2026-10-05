@@ -17,10 +17,12 @@ import ColumnSettings, { type ColumnDef } from "../components/ColumnSettings";
 
 const PAGE_SIZE = 100;
 
-/** 列定义（顺序即默认显示顺序） */
+/** 列定义（顺序即默认显示顺序）
+ * 操作 + 公司名 + 链接 三列固定在左侧,与岗位表对齐,滚动时常驻可见 */
 const COLUMNS: ColumnDef[] = [
   { key: "actions", label: "操作" },
   { key: "company_name", label: "公司名称" },
+  { key: "links", label: "链接" },
   { key: "industry", label: "行业" },
   { key: "company_type", label: "公司类型" },
   { key: "recruit_type", label: "招聘类型" },
@@ -29,7 +31,6 @@ const COLUMNS: ColumnDef[] = [
   { key: "education_req", label: "学历" },
   { key: "deadline", label: "截止时间" },
   { key: "last_updated", label: "发布时间" },
-  { key: "links", label: "链接" },
 ];
 
 /** 分类列（有后端筛选选项，多选 IN）；其余列为文本搜索列（LIKE） */
@@ -192,13 +193,22 @@ export default function Companies() {
           <thead className="sticky top-0 z-10">
             <tr className="bg-white/85 backdrop-blur-md">
               {COLUMNS.filter((c) => visibleKeys.includes(c.key)).map((col) => {
-                const isFirst = col.key === "company_name";
+                // 三列固定:actions(left-0) + company_name(left-[72px]) + links(left-[272px])
+                // Tailwind JIT 只识别字面量类名,所以 left-[272px] 必须以字面量出现
+                const isActionsSticky = col.key === "actions";
+                const isNameSticky = col.key === "company_name";
+                const isLinksSticky = col.key === "links";
+                const stickyClass = isActionsSticky
+                  ? "sticky left-0 z-20 bg-white/85 backdrop-blur w-[72px] min-w-[72px] shadow-[2px_0_4px_-2px_rgba(0,0,0,0.1)]"
+                  : isNameSticky
+                  ? "sticky left-[72px] z-20 bg-white/85 backdrop-blur min-w-[200px] shadow-[2px_0_4px_-2px_rgba(0,0,0,0.1)]"
+                  : isLinksSticky
+                  ? "sticky left-[272px] z-20 bg-white/85 backdrop-blur shadow-[2px_0_4px_-2px_rgba(0,0,0,0.1)]"
+                  : "";
                 return (
                   <th
                     key={col.key}
-                    className={`border-b border-line px-3 py-2.5 text-left font-medium text-ink ${
-                      isFirst ? "sticky left-0 z-20 bg-white/85 shadow-[2px_0_4px_-2px_rgba(0,0,0,0.1)]" : ""
-                    }`}
+                    className={`border-b border-line px-3 py-2.5 text-left font-medium text-ink ${stickyClass}`}
                     style={{ minWidth: colWidth(col.key) }}
                   >
                     <div className="flex items-center">
@@ -419,7 +429,7 @@ function CompanyRow({
     links: (
       <div className="flex gap-1">
         {company.apply_url && (
-          <LinkButton url={company.apply_url} label="网申" />
+          <LinkButton url={company.apply_url} label="投递" />
         )}
         {company.announcement_url && (
           <LinkButton url={company.announcement_url} label="公告" />
@@ -435,13 +445,21 @@ function CompanyRow({
     <>
       <tr className="border-b border-line/60 hover:bg-white/40">
         {COLUMNS.filter((c) => visibleKeys.includes(c.key)).map((col) => {
-          const isFirst = col.key === "company_name";
+          // 与表头一致的三列固定:actions + company_name + links
+          const isActionsSticky = col.key === "actions";
+          const isNameSticky = col.key === "company_name";
+          const isLinksSticky = col.key === "links";
+          const stickyClass = isActionsSticky
+            ? "sticky left-0 z-[2] bg-white/85 backdrop-blur w-[72px] min-w-[72px]"
+            : isNameSticky
+            ? "sticky left-[72px] z-[2] bg-white/85 backdrop-blur min-w-[200px]"
+            : isLinksSticky
+            ? "sticky left-[272px] z-[2] bg-white/85 backdrop-blur"
+            : "";
           return (
             <td
               key={col.key}
-              className={`px-3 py-2 align-middle ${
-                isFirst ? "sticky left-0 z-[1] bg-white/70 backdrop-blur" : ""
-              }`}
+              className={`px-3 py-2 align-middle ${stickyClass}`}
             >
               {cells[col.key]}
             </td>
@@ -555,11 +573,17 @@ function CompanyQuickModal({
 }
 
 function LinkButton({ url, label }: { url: string; label: string }) {
+  // 与岗位表(Jobs.tsx) LinkButton 配色一致:投递=success 绿,公告=info 蓝
+  // 暖橙背景下用强对比色,避免按钮和背景太相近
+  const isApply = label === "投递";
+  const colorClass = isApply
+    ? "bg-success-soft text-success hover:bg-success hover:text-white"
+    : "bg-info-soft text-info hover:bg-info hover:text-white";
   return (
     <button
       type="button"
       onClick={() => { void openExternalUrl(url); }}
-      className="rounded bg-primary-soft px-2 py-0.5 text-xs text-primary-dark transition hover:bg-primary-light"
+      className={`rounded px-2 py-0.5 text-xs font-medium transition ${colorClass}`}
       title={url}
     >
       {label}

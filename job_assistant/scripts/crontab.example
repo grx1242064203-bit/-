@@ -1,11 +1,14 @@
-# 招聘情报助手 — crontab 配置示例
+# Offer搭子 — crontab 配置示例
 # 用法: crontab -e  然后粘贴下面内容
+#
+# V4 简化后架构:飞书侧仅保留"源表读取 + 总表回写",无用户分发/机器人推送。
+# 桌面端通过 job_api (FastAPI :8000) 直接消费中心化数据。
 
-# 每天 8:00 执行增量更新
+# 每天 8:00 执行中心化管线:飞书源表增量同步 → 抓正文 → LLM 拆岗 → 回写飞书总表
 0 8 * * * cd /opt/job_assistant && bash scripts/daily_update.sh >> logs/daily.log 2>&1
-
-# 每天 9:00 执行用户匹配分发(遍历所有活跃用户 → 匹配 → 写飞书表 → 推送)
-0 9 * * * cd /opt/job_assistant && DATA_DIR=/opt/job_assistant/data python3 main.py daily >> logs/match.log 2>&1
 
 # 每周一 3:00 全量校验(对比源表记录数,差异告警)
 0 3 * * 1 cd /opt/job_assistant && DATA_DIR=/opt/job_assistant/data python3 -c "from feishu_source import FeishuSourceSync; FeishuSourceSync().sync(full=True)" >> logs/weekly.log 2>&1
+
+# 桌面端 API 服务(部署时由 systemd / supervisor 管理,此处仅作示例)
+# 0 0 * * * cd /opt/job_assistant/job_api && uvicorn main:app --host 0.0.0.0 --port 8000

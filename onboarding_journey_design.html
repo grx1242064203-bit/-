@@ -1,0 +1,332 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Offer搭子 Onboarding 旅程设计</title>
+<style>
+  :root {
+    --primary: #F97316;
+    --ink: #0F172A;
+    --text: #1F2937;
+    --text-muted: #6B7280;
+    --bg: #FAFAF9;
+    --card: #FFFFFF;
+    --border: #E5E7EB;
+    --success: #16A34A;
+    --success-soft: #DCFCE7;
+    --warning: #D97706;
+    --warning-soft: #FEF3C7;
+    --danger: #DC2626;
+    --danger-soft: #FEE2E2;
+    --code-bg: #F3F4F6;
+  }
+  * { box-sizing: border-box; }
+  body {
+    font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", "PingFang SC", "Hiragino Sans GB", "Microsoft YaHei", sans-serif;
+    background: var(--bg); color: var(--text); margin: 0; line-height: 1.65; font-size: 15px;
+  }
+  .container { max-width: 1080px; margin: 0 auto; padding: 32px 24px 80px; }
+  header { border-bottom: 3px solid var(--primary); padding-bottom: 20px; margin-bottom: 28px; }
+  h1 { font-size: 26px; font-weight: 800; color: var(--ink); margin: 0 0 8px; }
+  .subtitle { color: var(--text-muted); font-size: 14px; }
+  .meta { display: flex; flex-wrap: wrap; gap: 12px; margin-top: 12px; font-size: 13px; color: var(--text-muted); }
+  .meta span { background: var(--card); border: 1px solid var(--border); padding: 4px 10px; border-radius: 999px; }
+  code { background: var(--code-bg); padding: 2px 6px; border-radius: 4px; font-family: "SF Mono", Menlo, Consolas, monospace; font-size: 13px; color: var(--ink); }
+  .file-ref { color: var(--primary); text-decoration: none; font-family: "SF Mono", Menlo, Consolas, monospace; font-size: 13px; word-break: break-all; }
+  .file-ref:hover { text-decoration: underline; }
+
+  h2 { font-size: 21px; font-weight: 700; color: var(--ink); margin: 40px 0 16px; padding-left: 12px; border-left: 4px solid var(--primary); }
+  h3 { font-size: 17px; font-weight: 700; color: var(--ink); margin: 24px 0 10px; }
+  h4 { font-size: 15px; font-weight: 700; color: var(--text); margin: 16px 0 8px; }
+  p { margin: 8px 0; }
+
+  .journey {
+    background: var(--card);
+    border: 1px solid var(--border);
+    border-radius: 16px;
+    padding: 24px;
+    margin: 16px 0;
+    overflow-x: auto;
+  }
+  .journey-row { display: flex; align-items: stretch; gap: 8px; min-width: 920px; }
+  .step {
+    flex: 1;
+    border-radius: 12px;
+    padding: 14px 12px;
+    border: 2px solid;
+    display: flex;
+    flex-direction: column;
+    min-height: 130px;
+  }
+  .step .num { font-size: 11px; font-weight: 700; opacity: 0.7; }
+  .step .title { font-size: 14px; font-weight: 700; margin: 4px 0 6px; }
+  .step .status { font-size: 11px; padding: 2px 6px; border-radius: 4px; display: inline-block; align-self: flex-start; margin-bottom: 6px; }
+  .step .desc { font-size: 11px; line-height: 1.5; opacity: 0.9; }
+  .s-done { background: var(--success-soft); border-color: var(--success); color: #14532D; }
+  .s-done .status { background: var(--success); color: white; }
+  .s-partial { background: var(--warning-soft); border-color: var(--warning); color: #78350F; }
+  .s-partial .status { background: var(--warning); color: white; }
+  .s-gap { background: var(--danger-soft); border-color: var(--danger); color: #7F1D1D; }
+  .s-gap .status { background: var(--danger); color: white; }
+  .arrow { display: flex; align-items: center; color: var(--text-muted); font-size: 20px; font-weight: 700; }
+
+  table { width: 100%; border-collapse: collapse; margin: 12px 0; background: var(--card); border-radius: 12px; overflow: hidden; box-shadow: 0 1px 3px rgba(0,0,0,0.04); }
+  th { background: #F3F4F6; text-align: left; padding: 12px; font-size: 13px; font-weight: 700; color: var(--ink); border-bottom: 1px solid var(--border); }
+  td { padding: 12px; border-bottom: 1px solid var(--border); font-size: 13px; vertical-align: top; }
+  tr:last-child td { border-bottom: none; }
+  tr:hover td { background: #FFFBEB; }
+  .badge { display: inline-block; padding: 2px 8px; border-radius: 999px; font-size: 12px; font-weight: 700; }
+  .b-ok { background: var(--success-soft); color: var(--success); }
+  .b-warn { background: var(--warning-soft); color: var(--warning); }
+  .b-bad { background: var(--danger-soft); color: var(--danger); }
+
+  .callout { background: linear-gradient(135deg, #FFF7ED 0%, #FFFBEB 100%); border: 1px solid var(--primary); border-radius: 12px; padding: 16px 20px; margin: 16px 0; font-size: 14px; }
+  .callout strong { color: var(--primary); }
+  .callout-success { background: linear-gradient(135deg, #F0FDF4 0%, #DCFCE7 100%); border-color: var(--success); }
+  .callout-success strong { color: var(--success); }
+
+  ul, ol { padding-left: 22px; }
+  li { margin: 4px 0; font-size: 14px; }
+  .footer { margin-top: 60px; padding-top: 20px; border-top: 1px solid var(--border); color: var(--text-muted); font-size: 12px; text-align: center; }
+</style>
+</head>
+<body>
+<div class="container">
+
+  <header>
+    <h1>Offer搭子 Onboarding 旅程设计</h1>
+    <div class="subtitle">新方案（V4 简化版）下的用户旅程梳理：下载桌面端 → 注册/登录 → 上传简历 → 看岗位 → 投递追踪</div>
+    <div class="meta">
+      <span>方案：飞书侧只保留总表回写，桌面端功能不变</span>
+      <span>日期：2026-10-05</span>
+      <span>评估口径：现状盘点 + 缺口标注</span>
+    </div>
+  </header>
+
+  <div class="callout callout-success">
+    <strong>核心结论：</strong>5 步旅程中,前 2 步（注册/登录）后端 + 前端框架已完整就绪,后 3 步（上传简历/看岗位/投递追踪）功能已实现但<strong>缺少新用户引导串联</strong>。最大缺口是"登录后未上传简历时 Jobs 页面是空的,没有引导用户先上传简历",导致新用户首次进入易困惑。补一个 WelcomeWizard 引导组件即可串联整条旅程。
+  </div>
+
+  <h2>一、旅程全景图</h2>
+  <div class="journey">
+    <div class="journey-row">
+      <div class="step s-done">
+        <div class="num">STEP 1</div>
+        <div class="title">下载桌面端</div>
+        <span class="status">✅ 现成</span>
+        <div class="desc">Tauri 2 安装包<br>make build-app 产物</div>
+      </div>
+      <div class="arrow">→</div>
+      <div class="step s-done">
+        <div class="num">STEP 2</div>
+        <div class="title">注册/登录</div>
+        <span class="status">✅ 现成</span>
+        <div class="desc">Login.tsx + Register.tsx<br>/api/v1/auth/* + JWT</div>
+      </div>
+      <div class="arrow">→</div>
+      <div class="step s-partial">
+        <div class="num">STEP 3</div>
+        <div class="title">上传简历</div>
+        <span class="status">⚠️ 功能有,缺引导</span>
+        <div class="desc">ResumeUploader + parse-resume-file<br>但登录后直接跳 Jobs 不引导</div>
+      </div>
+      <div class="arrow">→</div>
+      <div class="step s-partial">
+        <div class="num">STEP 4</div>
+        <div class="title">看岗位</div>
+        <span class="status">⚠️ 功能有,空状态差</span>
+        <div class="desc">Jobs + job_matcher_adapter<br>无简历时空推荐,无引导</div>
+      </div>
+      <div class="arrow">→</div>
+      <div class="step s-done">
+        <div class="num">STEP 5</div>
+        <div class="title">投递追踪</div>
+        <span class="status">✅ 现成</span>
+        <div class="desc">Applications + KanbanBoard<br>拖拽冲突修复完备</div>
+      </div>
+    </div>
+  </div>
+
+  <h2>二、5 步旅程现状盘点</h2>
+
+  <h3>STEP 1 · 下载桌面端</h3>
+  <p><strong>状态：✅ 现成</strong>（Tauri 2 安装包分发）</p>
+  <ul>
+    <li>桌面端项目：<a class="file-ref" href="file:///workspace/job_assistant/job_workbench/">job_workbench/</a>，Tauri 2 + React 18 + TypeScript + Tailwind + Zustand</li>
+    <li>构建命令：<code>make build-app</code>（产出 .dmg / .msi / .AppImage）</li>
+    <li>分发渠道：待定（官网下载页 / GitHub Release / 网盘）</li>
+  </ul>
+  <p><strong>无缺口</strong>，桌面端分发能力本身已具备。</p>
+
+  <h3>STEP 2 · 注册/登录</h3>
+  <p><strong>状态：✅ 现成</strong>（前后端均完整）</p>
+  <table>
+    <thead><tr><th>环节</th><th>前端</th><th>后端</th><th>对齐</th></tr></thead>
+    <tbody>
+      <tr><td>注册</td><td><a class="file-ref" href="file:///workspace/job_assistant/job_workbench/src/pages/Register.tsx">Register.tsx</a> <code>register(email, password)</code></td><td><a class="file-ref" href="file:///workspace/job_assistant/job_api/routers/auth.py">auth.py</a> <code>POST /api/v1/auth/register</code></td><td><span class="badge b-ok">✅</span></td></tr>
+      <tr><td>邮箱验证</td><td>Register.tsx 验证码流程</td><td><code>POST /api/v1/auth/verify-email</code></td><td><span class="badge b-ok">✅</span></td></tr>
+      <tr><td>登录</td><td><a class="file-ref" href="file:///workspace/job_assistant/job_workbench/src/pages/Login.tsx">Login.tsx</a> <code>login(email, password)</code> → 跳 <code>/</code></td><td><code>POST /api/v1/auth/login</code> 签 JWT</td><td><span class="badge b-ok">✅</span></td></tr>
+      <tr><td>Token 持久化</td><td><a class="file-ref" href="file:///workspace/job_assistant/job_workbench/src/stores/authStore.ts">authStore.ts</a> localStorage + <code>loadFromStorage</code></td><td><code>POST /api/v1/auth/refresh</code></td><td><span class="badge b-ok">✅</span></td></tr>
+      <tr><td>路由守卫</td><td><a class="file-ref" href="file:///workspace/job_assistant/job_workbench/src/components/AuthGuard.tsx">AuthGuard.tsx</a> 未登录跳 <code>/login</code></td><td>JWT Bearer <a class="file-ref" href="file:///workspace/job_assistant/job_api/deps.py">deps.py</a></td><td><span class="badge b-ok">✅</span></td></tr>
+    </tbody>
+  </table>
+  <p><strong>无缺口</strong>，注册/登录链路完整可用。</p>
+
+  <h3>STEP 3 · 上传简历</h3>
+  <p><strong>状态：⚠️ 功能完整,但缺少新用户引导串联</strong></p>
+  <table>
+    <thead><tr><th>环节</th><th>实现</th><th>状态</th></tr></thead>
+    <tbody>
+      <tr><td>上传组件</td><td><a class="file-ref" href="file:///workspace/job_assistant/job_workbench/src/components/ResumeUploader.tsx">ResumeUploader.tsx</a> 支持 .txt/.md/.pdf/.jpg/.png</td><td><span class="badge b-ok">✅</span></td></tr>
+      <tr><td>纯文本解析</td><td><code>POST /api/v1/llm/parse-resume</code></td><td><span class="badge b-ok">✅</span></td></tr>
+      <tr><td>文件/PDF/图片解析</td><td><code>POST /api/v1/llm/parse-resume-file</code>（pdf_extractor + DeepSeek-VL OCR）</td><td><span class="badge b-ok">✅</span></td></tr>
+      <tr><td>画像持久化</td><td><code>/api/v1/resume-profiles</code> CRUD + resumeStore 本地缓存</td><td><span class="badge b-ok">✅</span></td></tr>
+      <tr><td><strong>登录后引导上传</strong></td><td>❌ 登录后直接跳 <code>/</code>(Jobs),无引导组件</td><td><span class="badge b-bad">❌ 缺口</span></td></tr>
+      <tr><td><strong>未上传简历时的提示</strong></td><td>❌ Jobs 页面无空状态引导</td><td><span class="badge b-bad">❌ 缺口</span></td></tr>
+    </tbody>
+  </table>
+
+  <h3>STEP 4 · 看岗位</h3>
+  <p><strong>状态：⚠️ 功能完整,但无简历时岗位推荐为空,缺引导</strong></p>
+  <ul>
+    <li>岗位匹配适配器：<a class="file-ref" href="file:///workspace/job_assistant/job_api/services/job_matcher_adapter.py">job_matcher_adapter.py</a>，构建用户画像 → 调 <code>UserMatcher.match_jobs_for_user</code> → 评分 → 推荐等级</li>
+    <li>岗位数据源：中心化管线每日同步进 positions 表（飞书源表 → 抓正文 → LLM 拆岗）</li>
+    <li><strong>缺口</strong>：用户画像来自 STEP 3 上传的简历。新用户没简历 → 画像为空 → 岗位匹配返回空 → Jobs 页面空白 → 用户困惑</li>
+    <li><strong>缺口</strong>：Jobs 页面无"先上传简历"的空状态 CTA</li>
+  </ul>
+
+  <h3>STEP 5 · 投递追踪</h3>
+  <p><strong>状态：✅ 现成</strong>（功能完备）</p>
+  <ul>
+    <li><a class="file-ref" href="file:///workspace/job_assistant/job_workbench/src/pages/Applications.tsx">Applications.tsx</a> + <a class="file-ref" href="file:///workspace/job_assistant/job_workbench/src/components/KanbanBoard.tsx">KanbanBoard.tsx</a> 拖拽状态机 + 逆向确认</li>
+    <li><a class="file-ref" href="file:///workspace/job_assistant/job_workbench/src/components/RecruitmentCard.tsx">RecruitmentCard.tsx</a> 重试按钮</li>
+    <li>邮件→日程闭环：<code>/api/v1/email</code> + <code>/api/v1/schedules</code> + <code>schedule_service.confirm_email_task</code></li>
+  </ul>
+  <p><strong>无缺口</strong>，投递追踪能力完整。</p>
+
+  <h2>三、关键缺口与建议（不实施,供后续规划）</h2>
+
+  <div class="callout">
+    <strong>缺口 1：登录后缺少 WelcomeWizard 引导组件（建议优先级 P1）</strong><br>
+    <strong>症状：</strong>新用户登录后直接跳 <code>/</code>(Jobs),Jobs 因无简历画像返回空数据,用户看到空页面困惑。<br>
+    <strong>第一性原理：</strong>求职工具的核心价值依赖用户画像,新用户必须先上传简历才能解锁岗位推荐。应有引导组件串联"上传简历 → 解析 → 看岗位"。<br>
+    <strong>建议方案：</strong>在 <code>App.tsx</code> 路由层加一个 <code>OnboardingGuard</code>,检测 <code>resumeStore.activeResume</code> 为空时跳 <code>/welcome</code> 引导页,引导页含三步:① 介绍产品 → ② 上传简历(复用 ResumeUploader) → ③ 跳 Jobs 看推荐。完成后跳回原路径。<br>
+    <strong>改动范围：</strong>新增 <code>job_workbench/src/pages/Welcome.tsx</code> + <code>job_workbench/src/components/OnboardingGuard.tsx</code>,在 App.tsx 包裹受保护路由。后端无需改动。
+  </div>
+
+  <div class="callout">
+    <strong>缺口 2：Jobs 页面缺少"无简历"空状态 CTA（建议优先级 P2）</strong><br>
+    <strong>症状：</strong>即使用户绕过 WelcomeWizard 直接访问 Jobs,看到的是空列表,无明确"请先上传简历"提示。<br>
+    <strong>建议方案：</strong>在 Jobs 页面加 EmptyState 组件,检测 <code>resumeStore.activeResume</code> 为空时显示"上传简历解锁岗位推荐"卡片 + 跳转按钮。
+  </div>
+
+  <div class="callout">
+    <strong>缺口 3：投递追踪缺少"截止日期提醒"看护逻辑（建议优先级 P1,新方案评估报告已标注）</strong><br>
+    <strong>症状：</strong>原 DailyRunner._check_deadline_reminders 与 _check_applied_jobs 已随 DailyRunner 类删除,用户失去"截止日期≤3天提醒"和"已投递岗位关闭通知"。<br>
+    <strong>用户决定：</strong>"其他 P1 和 P2 风险我会再考虑,先不动"——本缺口按用户决定暂不实施,在此仅作记录。<br>
+    <strong>建议方案（待用户决定后实施）：</strong>把看护逻辑提取为独立函数 <code>check_deadlines()</code> / <code>check_applied_status()</code>,改为读 job_api 的 applications 表(不读飞书用户表),结果写入 <code>notifications</code> 表供桌面端拉取 + Tauri 系统通知。
+  </div>
+
+  <h2>四、Onboarding 旅程目标流程（含建议串联）</h2>
+  <div class="journey">
+    <div class="journey-row">
+      <div class="step s-done">
+        <div class="num">STEP 1</div>
+        <div class="title">下载桌面端</div>
+        <span class="status">✅ 现成</span>
+        <div class="desc">Tauri 2 安装包</div>
+      </div>
+      <div class="arrow">→</div>
+      <div class="step s-done">
+        <div class="num">STEP 2</div>
+        <div class="title">首次启动 → /login</div>
+        <span class="status">✅ 现成</span>
+        <div class="desc">AuthGuard 拦截</div>
+      </div>
+      <div class="arrow">→</div>
+      <div class="step s-done">
+        <div class="num">STEP 2.5</div>
+        <div class="title">注册(新用户)</div>
+        <span class="status">✅ 现成</span>
+        <div class="desc">Register.tsx + 邮箱验证</div>
+      </div>
+      <div class="arrow">→</div>
+      <div class="step s-gap">
+        <div class="num">STEP 2.9</div>
+        <div class="title">WelcomeWizard</div>
+        <span class="status">❌ 待实现</span>
+        <div class="desc">OnboardingGuard 检测无简历<br>跳 /welcome 引导页</div>
+      </div>
+      <div class="arrow">→</div>
+      <div class="step s-done">
+        <div class="num">STEP 3</div>
+        <div class="title">上传简历</div>
+        <span class="status">✅ 现成</span>
+        <div class="desc">ResumeUploader + parse-resume-file</div>
+      </div>
+      <div class="arrow">→</div>
+      <div class="step s-done">
+        <div class="num">STEP 4</div>
+        <div class="title">看推荐岗位</div>
+        <span class="status">✅ 现成</span>
+        <div class="desc">job_matcher_adapter 评分</div>
+      </div>
+      <div class="arrow">→</div>
+      <div class="step s-done">
+        <div class="num">STEP 5</div>
+        <div class="title">投递追踪</div>
+        <span class="status">✅ 现成</span>
+        <div class="desc">KanbanBoard 拖拽</div>
+      </div>
+    </div>
+  </div>
+  <p style="margin-top: 16px; font-size: 13px; color: var(--text-muted);">注：绿色 = 已实现,红色 = 待实现。补一个 WelcomeWizard（绿色虚线串联）即可让整条旅程贯通。</p>
+
+  <h2>五、改动清单总结</h2>
+
+  <h3>本次已实施（P0 减法）</h3>
+  <table>
+    <thead><tr><th>类型</th><th>对象</th><th>处置</th></tr></thead>
+    <tbody>
+      <tr><td>删除文件</td><td>callback_server.py / bind_wxpusher.py / wxpusher_client.py / onboarding.py / onboarding_page.html / web_setup.py / simulate_user_flow.py / verify_fix.py / onboard_user_u1.py / scripts/start_web.sh / weekly_rankings.py / feishu_table_service.py</td><td><span class="badge b-bad">删除</span></td></tr>
+      <tr><td>重写文件</td><td><a class="file-ref" href="file:///workspace/job_assistant/daily_runner.py">daily_runner.py</a>(仅保留 run_daily_pipeline) / <a class="file-ref" href="file:///workspace/job_assistant/main.py">main.py</a>(无命令,仅说明)</td><td><span class="badge b-warn">重写</span></td></tr>
+      <tr><td>清理方法</td><td><a class="file-ref" href="file:///workspace/job_assistant/feishu_client.py">feishu_client.py</a> 删除 create_doc/append_doc_blocks/share_with_user/transfer_owner/send_message/send_card_message;保留 set_public_share/get_share_url</td><td><span class="badge b-warn">清理</span></td></tr>
+      <tr><td>更新配置</td><td><a class="file-ref" href="file:///workspace/job_assistant/scripts/crontab.example">scripts/crontab.example</a>(删 main.py daily) / <a class="file-ref" href="file:///workspace/job_assistant/.env.example">.env.example</a>(删 WXPUSHER_*,加 JWT_SECRET/MASTER_APP_TOKEN/SOURCE_*) / <a class="file-ref" href="file:///workspace/job_assistant/README.md">README.md</a>(架构图+目录结构)</td><td><span class="badge b-warn">更新</span></td></tr>
+      <tr><td>残留引用校验</td><td>grep 全仓 callback_server/DailyRunner/onboarding/wxpusher_client/web_setup/weekly_rankings/feishu_table_service/send_message/send_card_message 等</td><td><span class="badge b-ok">✅ 无残留</span></td></tr>
+    </tbody>
+  </table>
+
+  <h3>未实施(用户决定后续考虑)</h3>
+  <table>
+    <thead><tr><th>类型</th><th>对象</th><th>状态</th></tr></thead>
+    <tbody>
+      <tr><td>看护逻辑迁移</td><td>check_deadlines / check_applied_status 提取为独立函数,读 job_api DB</td><td><span class="badge b-warn">P1 待用户决定</span></td></tr>
+      <tr><td>桌面端主动通知</td><td>Tauri notification API + 截止日期红色徽标</td><td><span class="badge b-warn">P1 待用户决定</span></td></tr>
+      <tr><td>飞书总表只读说明</td><td>feishu_master_tables 写入时加说明行</td><td><span class="badge b-warn">P2 待用户决定</span></td></tr>
+      <tr><td>WelcomeWizard 引导组件</td><td>新增 Welcome.tsx + OnboardingGuard.tsx</td><td><span class="badge b-warn">建议 P1,本次梳理未实施</span></td></tr>
+    </tbody>
+  </table>
+
+  <h2>六、用户旅程验证清单</h2>
+  <p>新方案下完整 onboarding 旅程的端到端验证步骤(供测试用):</p>
+  <ol>
+    <li><strong>下载安装：</strong><code>make build-app</code> 产出安装包 → 安装到测试机</li>
+    <li><strong>首次启动：</strong>应用打开 → 应跳 <code>/login</code>(因未登录,AuthGuard 拦截)</li>
+    <li><strong>注册新账号：</strong>点"注册" → 填邮箱密码 → 收验证码 → 验证 → 跳回 /login</li>
+    <li><strong>登录：</strong>输入邮箱密码 → 跳 <code>/</code>(Jobs) — <strong>此处当前是缺口,理想应跳 /welcome 引导上传简历</strong></li>
+    <li><strong>上传简历：</strong>当前路径:点侧边栏 Resume → 上传 PDF → 等待 parse-resume-file 返回 → 画像入库</li>
+    <li><strong>看推荐岗位：</strong>跳回 Jobs → 看到 job_matcher_adapter 评分后的岗位列表</li>
+    <li><strong>投递追踪：</strong>点岗位"标记投递" → 跳 Applications → KanbanBoard 拖到"已投递"</li>
+    <li><strong>邮件/日程：</strong>Email 页绑定 IMAP → 收到面试邮件 → 转 Schedules 日程</li>
+    <li><strong>飞书总表(只读视图)：</strong>用户可访问 <a href="https://www.feishu.cn/base/J8qtbBvPdatotysARtbc2XcinDJ">https://www.feishu.cn/base/J8qtbBvPdatotysARtbc2XcinDJ</a> 浏览全部岗位(每日 8:00 后更新)</li>
+  </ol>
+
+  <div class="footer">
+    Offer搭子 V4 简化版 Onboarding 旅程设计 · 2026-10-05<br>
+    基于代码静态审查 + 新方案评估 · 已实施 P0 减法,建议项待用户决定
+  </div>
+
+</div>
+</body>
+</html>

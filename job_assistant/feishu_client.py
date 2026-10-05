@@ -519,59 +519,7 @@ class FeishuClient:
                 result[k] = v
         return result
 
-    # ---------- 文档 ----------
-    def create_doc(self, title: str) -> tuple:
-        """创建新版文档,返回 (document_id, url)"""
-        data = self._request("POST", "/open-apis/docx/v1/documents",
-                             json_body={"title": title})
-        doc_id = data["document"]["document_id"]
-        # 飞书 docx API 响应不含 url 字段，需手动拼接
-        domain = os.environ.get("FEISHU_DOMAIN", "www.feishu.cn")
-        url = f"https://{domain}/docx/{doc_id}"
-        return doc_id, url
-
-    def append_doc_blocks(self, document_id: str, blocks: List[Dict]):
-        """向文档追加内容块(blocks)"""
-        # 文档根 block_id = document_id
-        self._request(
-            "POST",
-            f"/open-apis/docx/v1/documents/{document_id}/blocks/{document_id}/children",
-            json_body={"children": blocks},
-        )
-
-    # ---------- 权限:分享 + 转移所有权 ----------
-    def share_with_user(self, token: str, doc_type: str,
-                        open_id: str, perm: str = "full_access"):
-        """将文档/表格分享给用户,perm: view/edit/full_access"""
-        token = self.resolve_app_token(token)
-        self._request(
-            "POST",
-            f"/open-apis/drive/v1/permissions/{token}/members?type={doc_type}",
-            json_body={
-                "member_type": "openid",
-                "member_id": open_id,
-                "perm": perm,
-            },
-        )
-
-    def transfer_owner(self, token: str, doc_type: str, open_id: str):
-        """将文档/表格所有权转移给用户(用户真正拥有数据)"""
-        token = self.resolve_app_token(token)
-        try:
-            self._request(
-                "POST",
-                f"/open-apis/drive/v1/permissions/{token}/members/transfer_owner?type={doc_type}",
-                json_body={
-                    "member_type": "openid",
-                    "member_id": open_id,
-                },
-            )
-            logger.info(f"所有权已转移给用户 {open_id}")
-        except RuntimeError as e:
-            # 转移所有权可能因权限配置失败,降级为只分享
-            logger.warning(f"所有权转移失败,降级为分享: {e}")
-            self.share_with_user(token, doc_type, open_id, "full_access")
-
+    # ---------- 权限:总表公开访问 ----------
     def set_public_share(self, token: str, doc_type: str = "bitable") -> bool:
         """
         设置文档/表格为「互联网获得链接可查看」。
@@ -616,46 +564,6 @@ class FeishuClient:
         elif doc_type == "docx":
             return f"https://{domain}/docx/{token}"
         return f"https://{domain}/{doc_type}/{token}"
-
-    # ---------- 消息推送 ----------
-    def send_message(self, open_id: str, text: str) -> bool:
-        """向用户发送飞书文本消息(用于 onboarding 后通知配置页链接)"""
-        try:
-            self._request(
-                "POST",
-                "/open-apis/im/v1/messages?receive_id_type=open_id",
-                json_body={
-                    "receive_id": open_id,
-                    "msg_type": "text",
-                    "content": json.dumps({"text": text}),
-                },
-            )
-            logger.info(f"飞书消息已发送给用户 {open_id}")
-            return True
-        except Exception as e:
-            logger.warning(f"飞书消息发送失败: {e}")
-            return False
-
-    def send_card_message(self, open_id: str, card: Dict) -> bool:
-        """
-        向用户发送飞书交互卡片消息。
-        card: 飞书卡片 JSON 结构(dict),会被序列化为 content 字符串。
-        """
-        try:
-            self._request(
-                "POST",
-                "/open-apis/im/v1/messages?receive_id_type=open_id",
-                json_body={
-                    "receive_id": open_id,
-                    "msg_type": "interactive",
-                    "content": json.dumps(card, ensure_ascii=False),
-                },
-            )
-            logger.info(f"飞书卡片消息已发送给用户 {open_id}")
-            return True
-        except Exception as e:
-            logger.warning(f"飞书卡片消息发送失败: {e}")
-            return False
 
     # ---------- 多维表格视图 ----------
     def create_view(self, app_token: str, table_id: str, view_name: str,

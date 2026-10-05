@@ -57,7 +57,7 @@ export default function Applications() {
       {/* 主体 */}
       {isLoading ? (
         <div className="flex h-64 items-center justify-center">
-          <div className="h-8 w-8 animate-spin rounded-full border-4 border-white/50 border-t-primary" />
+          <div className="h-8 w-8 animate-spin rounded-full border-4 border-slate-200 border-t-primary" />
         </div>
       ) : isEmpty ? (
         <div className="glass flex h-64 flex-col items-center justify-center rounded-xl shadow-sm">
@@ -144,7 +144,7 @@ function CreateManualModal({
               value={companyName}
               onChange={(e) => setCompanyName(e.target.value)}
               placeholder="如：字节跳动"
-              className="mt-1 w-full rounded-lg border border-white/60 bg-white/40 px-3 py-2 text-sm focus:border-primary-dark focus:outline-none focus:ring-2 focus:ring-primary/30"
+              className="mt-1 w-full rounded-lg border border-line bg-white px-3 py-2 text-sm focus:border-primary-dark focus:outline-none focus:ring-2 focus:ring-primary/30"
             />
           </div>
           <div>
@@ -153,7 +153,7 @@ function CreateManualModal({
               value={jobTitle}
               onChange={(e) => setJobTitle(e.target.value)}
               placeholder="如：后端开发工程师"
-              className="mt-1 w-full rounded-lg border border-white/60 bg-white/40 px-3 py-2 text-sm focus:border-primary-dark focus:outline-none focus:ring-2 focus:ring-primary/30"
+              className="mt-1 w-full rounded-lg border border-line bg-white px-3 py-2 text-sm focus:border-primary-dark focus:outline-none focus:ring-2 focus:ring-primary/30"
             />
           </div>
           <div>
@@ -161,7 +161,7 @@ function CreateManualModal({
             <select
               value={status}
               onChange={(e) => setStatus(e.target.value as AppStatus)}
-              className="mt-1 w-full rounded-lg border border-white/60 bg-white/40 px-3 py-2 text-sm focus:border-primary-dark focus:outline-none focus:ring-2 focus:ring-primary/30"
+              className="mt-1 w-full rounded-lg border border-line bg-white px-3 py-2 text-sm focus:border-primary-dark focus:outline-none focus:ring-2 focus:ring-primary/30"
             >
               <option value="favorite">⭐ 收藏</option>
               <option value="applied">📮 已投递</option>
@@ -177,7 +177,7 @@ function CreateManualModal({
               value={notes}
               onChange={(e) => setNotes(e.target.value)}
               rows={2}
-              className="mt-1 w-full resize-none rounded-lg border border-white/60 bg-white/40 px-3 py-2 text-sm focus:border-primary-dark focus:outline-none focus:ring-2 focus:ring-primary/30"
+              className="mt-1 w-full resize-none rounded-lg border border-line bg-white px-3 py-2 text-sm focus:border-primary-dark focus:outline-none focus:ring-2 focus:ring-primary/30"
             />
           </div>
         </div>

@@ -98,7 +98,7 @@ export default function ResumeUploader() {
             inputRef.current?.click();
           }
         }}
-        className={`flex cursor-pointer flex-col items-center justify-center rounded-2xl border-2 border-dashed bg-white/50 px-6 py-12 text-center shadow-card backdrop-blur-md transition ${
+        className={`flex cursor-pointer flex-col items-center justify-center rounded-2xl border-2 border-dashed bg-white px-6 py-12 text-center shadow-card transition ${
           dragOver
             ? "border-orange-400 bg-orange-50/60 ring-4 ring-orange-100"
             : "border-orange-200 hover:border-orange-300 hover:bg-orange-50/30"

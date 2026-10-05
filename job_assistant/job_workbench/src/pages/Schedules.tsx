@@ -927,7 +927,7 @@ export default function Schedules() {
       </div>
 
       {/* 月份导航 */}
-      <div className="flex items-center justify-between rounded-xl border border-line bg-white/60 p-3 backdrop-blur">
+      <div className="flex items-center justify-between rounded-xl border border-line bg-white p-3">
         <button
           onClick={goPrevMonth}
           className="rounded-lg px-3 py-1.5 text-sm text-text-muted hover:bg-gray-100"
@@ -971,7 +971,7 @@ export default function Schedules() {
       )}
 
       {/* 图例 */}
-      <div className="flex flex-wrap items-center gap-3 rounded-xl border border-line bg-white/60 p-3 text-[11px] text-text-muted backdrop-blur">
+      <div className="flex flex-wrap items-center gap-3 rounded-xl border border-line bg-white p-3 text-[11px] text-text-muted">
         <span className="font-medium text-text">图例：</span>
         <span className="flex items-center gap-1">
           <span className="h-2 w-2 rounded-full bg-success" /> 面试

@@ -79,7 +79,7 @@ export default function ColumnSettings({
       <button
         type="button"
         onClick={() => setOpen((o) => !o)}
-        className="flex h-7 w-7 items-center justify-center rounded border border-line bg-white/60 text-text-muted transition hover:bg-white"
+        className="flex h-7 w-7 items-center justify-center rounded border border-line bg-white text-text-muted transition hover:bg-slate-50"
         title="列设置"
       >
         ⚙

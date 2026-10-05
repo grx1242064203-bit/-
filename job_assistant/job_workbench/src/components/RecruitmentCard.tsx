@@ -213,7 +213,7 @@ export default function RecruitmentCard({ application }: Props) {
         <div className="flex items-start justify-between">
           <div>
             <div className="flex items-center gap-2">
-              <span className="rounded bg-white/60 px-2 py-0.5 text-xs font-medium text-text-muted">
+              <span className="rounded bg-slate-100 px-2 py-0.5 text-xs font-medium text-text">
                 {SOURCE_LABEL[application.source] || application.source}
               </span>
               <span className="rounded bg-primary-soft px-2 py-0.5 text-xs font-medium text-primary-ink">
@@ -248,29 +248,29 @@ export default function RecruitmentCard({ application }: Props) {
 
         {/* 关键时间线 */}
         <div className="mt-4 grid grid-cols-4 gap-2 text-xs">
-          <div className="rounded-lg bg-white/40 p-2">
-            <div className="text-text-faint">收藏日期</div>
+          <div className="rounded-lg bg-slate-50 p-2">
+            <div className="text-text-muted">收藏日期</div>
             <div className="font-medium text-text">{formatDate(application.favorite_at)}</div>
           </div>
-          <div className="rounded-lg bg-white/40 p-2">
-            <div className="text-text-faint">投递日期</div>
+          <div className="rounded-lg bg-slate-50 p-2">
+            <div className="text-text-muted">投递日期</div>
             <div className="font-medium text-text">{formatDate(application.applied_at)}</div>
           </div>
-          <div className="rounded-lg bg-white/40 p-2">
-            <div className="text-text-faint">面试日期</div>
+          <div className="rounded-lg bg-slate-50 p-2">
+            <div className="text-text-muted">面试日期</div>
             <div className="font-medium text-text">{formatDate(application.interview_at)}</div>
           </div>
           <div className={`rounded-lg p-2 ${
-            dBadge ? "bg-amber-100" : "bg-white/40"
+            dBadge ? "bg-amber-100" : "bg-slate-50"
           }`}>
-            <div className="text-text-faint">招聘截止</div>
+            <div className="text-text-muted">招聘截止</div>
             <div className="font-medium text-text">{formatDate(application.deadline)}</div>
           </div>
         </div>
 
         {/* 数据库关联字段详情：公司库 / 岗位库 来源时展示 */}
         {isDbLinked && (fieldPills.length > 0 || timeFields.length > 0 || isDbJob) && (
-          <div className="mt-4 rounded-xl border border-white/60 bg-white/40 p-3">
+          <div className="mt-4 rounded-xl border border-line bg-slate-50 p-3">
             <div className="mb-2 flex items-center gap-2 text-xs font-medium text-text-muted">
               <span className="rounded bg-info-soft px-1.5 py-0.5 text-info">
                 {isDbJob ? "岗位库字段" : "公司库字段"}
@@ -307,7 +307,7 @@ export default function RecruitmentCard({ application }: Props) {
 
             {/* 长文本字段(招聘对象/工作地点/招聘岗位/专业/技能/关键词) */}
             {longFields.length > 0 && (
-              <div className="mt-2 space-y-1 border-t border-white/60 pt-2 text-xs">
+              <div className="mt-2 space-y-1 border-t border-line pt-2 text-xs">
                 {longFields.map((f) => (
                   <div key={f.label} className="flex gap-2">
                     <span className="w-16 shrink-0 text-text-faint">{f.label}:</span>
@@ -358,7 +358,7 @@ export default function RecruitmentCard({ application }: Props) {
             </span>
           )}
           {!isDbLinked && !isEmail && (
-            <span className="rounded-pill bg-white/40 px-3 py-1.5 text-xs text-text-muted">
+            <span className="rounded-pill bg-slate-100 px-3 py-1.5 text-xs text-text">
               用户自建记录
             </span>
           )}
@@ -372,7 +372,7 @@ export default function RecruitmentCard({ application }: Props) {
             onChange={(e) => setNotes(e.target.value)}
             placeholder="HR 联系方式、面试反馈、注意事项…"
             rows={3}
-            className="mt-1 w-full resize-none rounded-lg border border-white/60 bg-white/40 p-2 text-sm text-text placeholder:text-text-faint focus:border-primary-dark focus:outline-none focus:ring-2 focus:ring-primary/30"
+            className="mt-1 w-full resize-none rounded-lg border border-line bg-white p-2 text-sm text-text placeholder:text-text-muted focus:border-primary-dark focus:outline-none focus:ring-2 focus:ring-primary/30"
           />
           <div className="mt-1 flex justify-end">
             <button
@@ -387,11 +387,11 @@ export default function RecruitmentCard({ application }: Props) {
         </div>
 
         {/* 公司尽调卡 */}
-        <div className="mt-5 rounded-xl border border-white/60 bg-white/30 p-4">
+        <div className="mt-5 rounded-xl border border-line bg-slate-50 p-4">
           <h3 className="flex items-center gap-2 text-sm font-semibold text-text">
             🔍 公司尽调
             {dd?.cached && (
-              <span className="rounded bg-white/60 px-1.5 py-0.5 text-[10px] text-text-faint">
+              <span className="rounded bg-slate-200 px-1.5 py-0.5 text-[10px] text-text-muted">
                 已缓存
               </span>
             )}
@@ -448,13 +448,13 @@ export default function RecruitmentCard({ application }: Props) {
                     {dd.why_company_questions.map((q, i) => (
                       <details
                         key={i}
-                        className="rounded-lg bg-white/40 p-2 [&_summary]:cursor-pointer"
+                        className="rounded-lg bg-white p-2 border border-line [&_summary]:cursor-pointer"
                       >
                         <summary className="text-sm font-medium text-text marker:text-text-muted">
                           <span className="text-primary">Q{i + 1}:</span> {q.question}
                         </summary>
                         {q.answer && (
-                          <div className="mt-2 space-y-1.5 border-t border-white/60 pt-2 text-xs leading-relaxed text-text">
+                          <div className="mt-2 space-y-1.5 border-t border-line pt-2 text-xs leading-relaxed text-text">
                             {q.answer.split(/\n+/).filter(Boolean).map((p, idx) => (
                               <p key={idx} className="whitespace-pre-wrap">{p}</p>
                             ))}

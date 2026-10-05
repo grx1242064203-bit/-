@@ -127,7 +127,7 @@ export default function KanbanBoard() {
             >
               {col.label} ▾
             </button>
-            <span className="rounded-pill bg-white/60 px-2 py-0.5 text-xs font-medium text-text-muted">
+            <span className="rounded-pill bg-slate-100 px-2 py-0.5 text-xs font-medium text-text">
               {items.length}
             </span>
           </div>
@@ -287,14 +287,14 @@ function DroppableColumn({
         ) : (
           <span className={`text-sm font-semibold ${accentText}`}>{label}</span>
         )}
-        <span className="rounded-pill bg-white/60 px-2 py-0.5 text-xs font-medium text-text-muted shadow-sm backdrop-blur-sm">
+        <span className="rounded-pill bg-slate-100 px-2 py-0.5 text-xs font-medium text-text shadow-sm">
           {items.length}
         </span>
       </div>
 
       <div className="flex flex-1 flex-col gap-2 overflow-y-auto">
         {items.length === 0 ? (
-          <div className="rounded-xl border border-dashed border-white/50 bg-white/20 p-3 text-center text-xs text-text-faint">
+          <div className="rounded-xl border border-dashed border-line bg-slate-50 p-3 text-center text-xs text-text-muted">
             暂无
           </div>
         ) : (
@@ -337,7 +337,7 @@ function RoundSubColumn({
     <div
       ref={setNodeRef}
       className={`flex min-h-[50vh] flex-col rounded-lg p-1.5 ${
-        dndOver ? "ring-2 ring-warning bg-warning/10" : "bg-white/20"
+        dndOver ? "ring-2 ring-warning bg-warning/10" : "bg-slate-50"
       }`}
     >
       <div className="mb-1 text-center text-xs font-medium text-text-muted">
@@ -346,7 +346,7 @@ function RoundSubColumn({
       </div>
       <div className="flex flex-1 flex-col gap-1.5 overflow-y-auto">
         {items.length === 0 ? (
-          <div className="rounded border border-dashed border-white/50 p-2 text-center text-[10px] text-text-faint">
+          <div className="rounded border border-dashed border-line p-2 text-center text-[10px] text-text-muted">
             拖到此处
           </div>
         ) : (

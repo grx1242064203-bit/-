@@ -498,7 +498,7 @@ export default function ParsedProfileDisplay({ profile }: Props) {
           )}
         </div>
       ) : (
-        <div className="rounded-2xl border border-dashed border-slate-200 bg-white/60 p-6 text-center text-sm text-slate-500">
+        <div className="rounded-2xl border border-dashed border-slate-200 bg-slate-50 p-6 text-center text-sm text-slate-600">
           暂未提取到关键词
         </div>
       )}

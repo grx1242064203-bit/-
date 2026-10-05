@@ -42,7 +42,7 @@ export default function Welcome() {
           <span
             key={i}
             className={`h-1.5 w-8 rounded-full transition ${
-              step >= i ? "bg-primary" : "bg-white/40"
+              step >= i ? "bg-primary" : "bg-slate-200"
             }`}
           />
         ))}
@@ -57,17 +57,17 @@ export default function Welcome() {
           </p>
 
           <div className="mt-6 grid grid-cols-3 gap-3 text-xs">
-            <div className="rounded-xl bg-white/40 p-3">
+            <div className="rounded-xl bg-slate-50 p-3">
               <div className="text-2xl">💼</div>
               <div className="mt-1 font-medium text-text">岗位列表</div>
-              <div className="text-text-faint">每日同步秋招岗位</div>
+              <div className="text-text-muted">每日同步秋招岗位</div>
             </div>
-            <div className="rounded-xl bg-white/40 p-3">
+            <div className="rounded-xl bg-slate-50 p-3">
               <div className="text-2xl">🎯</div>
               <div className="mt-1 font-medium text-text">AI 推荐</div>
-              <div className="text-text-faint">按简历匹配评分</div>
+              <div className="text-text-muted">按简历匹配评分</div>
             </div>
-            <div className="rounded-xl bg-white/40 p-3">
+            <div className="rounded-xl bg-slate-50 p-3">
               <div className="text-2xl">📋</div>
               <div className="mt-1 font-medium text-text">投递看板</div>
               <div className="text-text-faint">拖拽追踪进度</div>

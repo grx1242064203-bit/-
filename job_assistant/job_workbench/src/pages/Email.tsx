@@ -27,11 +27,11 @@ const EXTRACT_BADGE: Record<
 > = {
   pending: {
     label: "AI 提取中",
-    className: "bg-amber-100 text-amber-700 animate-pulse",
+    className: "bg-amber-200 text-amber-900 animate-pulse",
   },
   llm_done: {
     label: "AI 提取",
-    className: "bg-primary-soft text-primary-dark",
+    className: "bg-primary-soft text-primary-ink",
   },
   llm_failed: {
     label: "提取失败",
@@ -63,16 +63,16 @@ function guessImap(email: string): { server: string; port: number } {
 function ImapHelp() {
   const [open, setOpen] = useState(false);
   return (
-    <div className="rounded-lg bg-amber-50 p-3">
+    <div className="rounded-lg bg-amber-100 p-3">
       <button
         type="button"
         onClick={() => setOpen(!open)}
         className="flex w-full items-center justify-between text-left"
       >
-        <span className="text-xs font-medium text-amber-700">
+        <span className="text-xs font-medium text-amber-900">
           如何获取 IMAP 授权码？{open ? "收起" : "展开"}
         </span>
-        <span className="text-amber-600">{open ? "▲" : "▼"}</span>
+        <span className="text-amber-800">{open ? "▲" : "▼"}</span>
       </button>
       {open && (
         <div className="mt-2 space-y-2 text-[11px] leading-relaxed text-text-muted">
@@ -120,7 +120,7 @@ function ImapHelp() {
             </a>
             <p>先开启「两步验证」→ 安全 → 高级安全选项 → 应用密码 → 创建并复制</p>
           </div>
-          <p className="pt-1 text-amber-600">
+          <p className="pt-1 text-amber-800">
             💡 授权码一般是一串字母，粘贴到上方「密码/授权码」框即可。
           </p>
         </div>
@@ -356,13 +356,18 @@ function TaskCard({ task }: { task: EmailTask }) {
   const confirmTask = useEmailStore((s) => s.confirmTask);
   const ignoreTask = useEmailStore((s) => s.ignoreTask);
   const reextractTask = useEmailStore((s) => s.reextractTask);
+  const error = useEmailStore((s) => s.error);
   const [busy, setBusy] = useState(false);
   const [showEmail, setShowEmail] = useState(false);
+  const [localError, setLocalError] = useState<string | null>(null);
 
   const handleConfirm = async () => {
     setBusy(true);
+    setLocalError(null);
     try {
       await confirmTask(task.id);
+    } catch (e) {
+      setLocalError(extractErrorMessage(e));
     } finally {
       setBusy(false);
     }
@@ -455,7 +460,7 @@ function TaskCard({ task }: { task: EmailTask }) {
           </button>
           <button
             onClick={() => setShowEmail(true)}
-            className="rounded-lg bg-primary-soft px-3 py-1.5 text-xs font-medium text-primary-dark hover:bg-primary/20"
+            className="rounded-lg bg-primary-soft px-3 py-1.5 text-xs font-medium text-primary-ink hover:bg-primary/20"
           >
             查看邮件
           </button>
@@ -475,6 +480,11 @@ function TaskCard({ task }: { task: EmailTask }) {
           </button>
         </div>
       </div>
+      {(localError || (error && task.extract_status !== "pending")) && (
+        <div className="mt-2 rounded-lg bg-red-50 px-3 py-1.5 text-[11px] text-red-700">
+          ⚠️ {localError || error}
+        </div>
+      )}
       {showEmail && task.email_id && (
         <EmailDetailModal
           emailId={task.email_id}
@@ -507,7 +517,7 @@ export default function Email() {
       )}
 
       {/* 自动化流程说明 */}
-      <div className="rounded-xl border border-primary/30 bg-primary-soft/50 p-3 text-xs text-primary-dark">
+      <div className="rounded-xl border border-primary/30 bg-primary-soft/50 p-3 text-xs text-primary-ink">
         <div className="font-medium">✨ 邮件→日程全自动流程</div>
         <div className="mt-1 text-text-muted">
           ① 同步邮件 → ② 关键词初筛（测评/笔试/面试/一面/二面/终面） →
@@ -552,7 +562,7 @@ export default function Email() {
                   <button
                     onClick={() => syncAccount(a.id)}
                     disabled={syncing}
-                    className="rounded-lg bg-primary-soft px-3 py-1.5 text-xs font-medium text-primary-dark disabled:opacity-50"
+                    className="rounded-lg bg-primary-soft px-3 py-1.5 text-xs font-medium text-primary-ink disabled:opacity-50"
                   >
                     {syncing ? "同步中..." : "同步邮件"}
                   </button>

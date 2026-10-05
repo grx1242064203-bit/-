@@ -15,8 +15,8 @@ interface CategoryMeta {
 
 const CATEGORY_META: CategoryMeta[] = [
   { key: "hard_skill", label: "硬技能", icon: "⚙️", badge: "bg-orange-50", accent: "text-orange-700" },
-  { key: "soft_skill", label: "软技能", icon: "🤝", badge: "bg-amber-50", accent: "text-amber-700" },
-  { key: "cert", label: "证书", icon: "🎓", badge: "bg-yellow-50", accent: "text-yellow-700" },
+  { key: "soft_skill", label: "软技能", icon: "🤝", badge: "bg-amber-100", accent: "text-amber-900" },
+  { key: "cert", label: "证书", icon: "🎓", badge: "bg-yellow-100", accent: "text-yellow-900" },
   { key: "education", label: "教育", icon: "🏫", badge: "bg-blue-50", accent: "text-blue-700" },
   { key: "city", label: "城市", icon: "📍", badge: "bg-green-50", accent: "text-green-700" },
   { key: "role", label: "方向", icon: "💼", badge: "bg-purple-50", accent: "text-purple-700" },

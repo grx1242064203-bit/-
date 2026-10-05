@@ -363,8 +363,8 @@ function CompanyRow({
             isFavorited
               ? "bg-primary text-ink"
               : inPipeline
-                ? "bg-primary-soft/60 text-primary-dark"
-                : "bg-white/60 text-text-muted hover:bg-primary-soft hover:text-primary-dark"
+                ? "bg-primary-soft/60 text-primary-ink"
+                : "bg-white/60 text-text-muted hover:bg-primary-soft hover:text-primary-ink"
           }`}
           title={isFavorited ? "取消收藏" : "加入收藏"}
         >
@@ -381,7 +381,7 @@ function CompanyRow({
               ? "bg-success text-white"
               : inPipeline
                 ? "bg-success-soft text-success"
-                : "bg-primary-soft px-1.5 py-0.5 font-medium text-primary-dark hover:bg-primary hover:text-ink"
+                : "bg-primary-soft px-1.5 py-0.5 font-medium text-primary-ink hover:bg-primary hover:text-ink"
           }`}
           title={isApplied ? "取消投递" : "标记已投递"}
         >

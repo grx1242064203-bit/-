@@ -105,15 +105,22 @@ export const useEmailStore = create<EmailState>((set, get) => ({
   },
 
   confirmTask: async (id) => {
-    await confirmEmailTask(id);
-    // 从待确认列表移除
+    try {
+      await confirmEmailTask(id);
+    } catch (e) {
+      // 后端校验失败（如 event_time 为空）时把错误抛给前端 UI 显示
+      // 不从列表移除任务，让用户看到错误后选择「重新提取」或「忽略」
+      set({ error: extractErrorMessage(e) });
+      throw e;
+    }
+    // 仅在确认成功后才从列表移除
     set((s) => ({
       tasks: s.tasks.filter((t) => t.id !== id),
+      error: null,
     }));
-    // 触发投递记录刷新（已有）
+    // 触发投递记录刷新
     void useAppStore.getState().loadApplications();
-    // 触发日程列表刷新（修复：之前日程页不刷新）
-    // 用动态 import 避免循环依赖
+    // 触发日程列表刷新（用动态 import 避免循环依赖）
     const { useScheduleStore } = await import("./scheduleStore");
     void useScheduleStore.getState().loadSchedules();
   },

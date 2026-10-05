@@ -10,6 +10,7 @@ export default {
         primary: {
           DEFAULT: "var(--color-primary)",
           dark: "var(--color-primary-dark)",
+          ink: "var(--color-primary-ink)",  // 浅黄底上的深字色（对比度 WCAG AA+）
           light: "var(--color-primary-light)",
           soft: "var(--color-primary-soft)",
         },

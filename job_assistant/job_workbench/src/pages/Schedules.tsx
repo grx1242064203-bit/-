@@ -192,7 +192,7 @@ const SOLAR_TERMS_2026: Record<string, string> = {
 // 节假日颜色映射
 const TAG_COLOR: Record<DayTagKind, string> = {
   holiday: "text-red-600 font-semibold",
-  festival: "text-amber-600",
+  festival: "text-amber-800",
   memo: "text-text-muted",
 };
 
@@ -257,7 +257,7 @@ function DateCell({ cell, onClick }: { cell: Cell; onClick: () => void }) {
   if (isToday) dateColor = "text-white";
   else if (!inMonth) dateColor = "text-text-muted/40";
   else if (tag?.kind === "holiday") dateColor = "text-red-600";
-  else if (isWeekend) dateColor = "text-amber-700";
+  else if (isWeekend) dateColor = "text-amber-800";
 
   // 单元格背景
   let bg = "bg-white";
@@ -348,7 +348,7 @@ function MonthGrid({
           <div
             key={w}
             className={`py-2 ${
-              i === 5 || i === 6 ? "text-amber-700" : ""
+              i === 5 || i === 6 ? "text-amber-800" : ""
             }`}
           >
             {w}
@@ -446,7 +446,7 @@ function ScheduleCard({ schedule }: { schedule: Schedule }) {
   const isFromEmail = Boolean(schedule.email_link);
   const sourceLabel = isFromEmail ? "邮件同步" : "手动创建";
   const sourceColor = isFromEmail
-    ? "bg-primary-soft text-primary-dark"
+    ? "bg-primary-soft text-primary-ink"
     : "bg-gray-100 text-text-muted";
 
   return (
@@ -504,7 +504,7 @@ function ScheduleCard({ schedule }: { schedule: Schedule }) {
                   className={`rounded-full px-2 py-0.5 text-[10px] ${
                     r.fired
                       ? "bg-gray-200 text-gray-500 line-through"
-                      : "bg-primary-soft text-primary-dark"
+                      : "bg-primary-soft text-primary-ink"
                   }`}
                 >
                   ⏰ {formatTime(r.remind_at)}
@@ -514,7 +514,7 @@ function ScheduleCard({ schedule }: { schedule: Schedule }) {
             </div>
           )}
           {!schedule.verified_at && (
-            <span className="mt-1 inline-block text-[10px] text-amber-600">
+            <span className="mt-1 inline-block text-[10px] text-amber-800">
               ⚠️ 未验证
             </span>
           )}
@@ -710,7 +710,7 @@ function ScheduleFormModal({
               className="w-full rounded-lg border border-line px-3 py-2 text-sm"
             />
           </div>
-          <div className="rounded-lg bg-primary-soft px-3 py-2 text-[11px] text-primary-dark">
+          <div className="rounded-lg bg-primary-soft px-3 py-2 text-[11px] text-primary-ink">
             ⏰ 创建后将自动生成 2 条提醒：提前 2 小时 + 30 分钟
           </div>
           {error && <p className="text-xs text-red-500">{error}</p>}
@@ -917,7 +917,7 @@ export default function Schedules() {
       </div>
 
       {/* 自动化提示卡 */}
-      <div className="rounded-xl border border-primary/30 bg-primary-soft/50 p-3 text-xs text-primary-dark">
+      <div className="rounded-xl border border-primary/30 bg-primary-soft/50 p-3 text-xs text-primary-ink">
         <div className="font-medium">💡 三种建日程方式，越往后越自动</div>
         <div className="mt-1 text-text-muted">
           ① 手动新建 — 自己填表；
@@ -943,7 +943,7 @@ export default function Schedules() {
           </span>
           <button
             onClick={goToday}
-            className="rounded-lg bg-primary-soft px-2 py-1 text-xs text-primary-dark hover:bg-primary/20"
+            className="rounded-lg bg-primary-soft px-2 py-1 text-xs text-primary-ink hover:bg-primary/20"
           >
             今天
           </button>
@@ -989,7 +989,7 @@ export default function Schedules() {
           <span className="text-red-600">●</span> 法定节假日
         </span>
         <span className="flex items-center gap-1">
-          <span className="text-amber-600">●</span> 传统节日
+          <span className="text-amber-800">●</span> 传统节日
         </span>
         <span className="flex items-center gap-1">
           <span className="text-emerald-600">●</span> 节气

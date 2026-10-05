@@ -47,7 +47,7 @@ function deadlineBadge(deadline: string | null | undefined): {
   if (d < 0) return { text: "已截止", className: "bg-danger/15 text-danger" };
   if (d === 0) return { text: "今日截止", className: "bg-danger text-white" };
   if (d <= 3) return { text: `${d}天后截止`, className: "bg-amber-500 text-white" };
-  if (d <= 7) return { text: `${d}天后截止`, className: "bg-amber-100 text-amber-900" };
+  if (d <= 7) return { text: `${d}天后截止`, className: "bg-amber-200 text-amber-900" };
   return null;
 }
 
@@ -216,11 +216,11 @@ export default function RecruitmentCard({ application }: Props) {
               <span className="rounded bg-white/60 px-2 py-0.5 text-xs font-medium text-text-muted">
                 {SOURCE_LABEL[application.source] || application.source}
               </span>
-              <span className="rounded bg-primary-soft px-2 py-0.5 text-xs font-medium text-primary-dark">
+              <span className="rounded bg-primary-soft px-2 py-0.5 text-xs font-medium text-primary-ink">
                 {statusLabel}
               </span>
               {application.status === "interview" && application.interview_round > 0 && (
-                <span className="rounded bg-amber-100 px-2 py-0.5 text-xs font-medium text-amber-900">
+                <span className="rounded bg-amber-200 px-2 py-0.5 text-xs font-medium text-amber-900">
                   {application.interview_round}面
                 </span>
               )}
@@ -261,7 +261,7 @@ export default function RecruitmentCard({ application }: Props) {
             <div className="font-medium text-text">{formatDate(application.interview_at)}</div>
           </div>
           <div className={`rounded-lg p-2 ${
-            dBadge ? "bg-amber-50" : "bg-white/40"
+            dBadge ? "bg-amber-100" : "bg-white/40"
           }`}>
             <div className="text-text-faint">招聘截止</div>
             <div className="font-medium text-text">{formatDate(application.deadline)}</div>

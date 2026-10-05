@@ -235,6 +235,24 @@ export default function Jobs() {
             });
             return created ?? undefined;
           }}
+          onCreateApplied={async (job) => {
+            const app = useAppStore.getState();
+            const created = await app.addApplication({
+              job_title: job.title,
+              company_name: job.company,
+              status: "applied",
+              source: "db_job",
+              link_type: "job",
+              link_id: job.job_id,
+              apply_url: job.apply_url || "",
+              announcement_url: job.announcement_url || "",
+            });
+            return created ?? undefined;
+          }}
+          onRemoveApplication={async (appId) => {
+            const app = useAppStore.getState();
+            await app.removeApplication(appId);
+          }}
           filters={{
             industry: recFilterIndustry,
             companyType: recFilterCompanyType,
@@ -747,6 +765,8 @@ function RecommendJobsList({
   appByJob,
   onOpenApply,
   onCreateFavorite,
+  onCreateApplied,
+  onRemoveApplication,
   filterOptions,
   filters,
   onFilterChange,
@@ -758,6 +778,8 @@ function RecommendJobsList({
   appByJob: (jobId: string) => Application | undefined;
   onOpenApply: (url: string) => void;
   onCreateFavorite: (job: RecommendedJob) => Promise<Application | undefined>;
+  onCreateApplied: (job: RecommendedJob) => Promise<Application | undefined>;
+  onRemoveApplication: (appId: number) => Promise<void>;
   filterOptions?: Record<string, string[]>;
   filters: {
     industry: string[];
@@ -1104,26 +1126,50 @@ function RecommendJobsList({
                     <div className="flex shrink-0 flex-col gap-1.5">
                       <button
                         type="button"
-                        onClick={() => void onCreateFavorite(job)}
-                        disabled={isFavorite || isApplied}
+                        onClick={async () => {
+                          const existing = appByJob(job.job_id);
+                          if (existing && existing.status === "favorite") {
+                            // 已收藏 → 取消收藏
+                            await onRemoveApplication(existing.id);
+                          } else if (!existing || existing.status === "rejected") {
+                            // 未收藏 → 创建收藏
+                            await onCreateFavorite(job);
+                          }
+                        }}
                         className={`rounded-lg px-3 py-1.5 text-xs font-medium transition ${
-                          isFavorite || isApplied
-                            ? "bg-amber-100 text-amber-900 cursor-not-allowed"
-                            : "bg-amber-400 text-white hover:bg-amber-500"
+                          isFavorite
+                            ? "bg-amber-400 text-white hover:bg-amber-500"
+                            : "bg-amber-100 text-amber-900 hover:bg-amber-200"
                         }`}
-                        title={isFavorite ? "已收藏" : isApplied ? "已投递,自动收藏" : "收藏岗位"}
+                        title={isFavorite ? "点击取消收藏" : "收藏岗位"}
                       >
-                        {isFavorite ? "⭐ 已收藏" : isApplied ? "⭐ 已收藏" : "⭐ 收藏"}
+                        {isFavorite ? "⭐ 已收藏" : "⭐ 收藏"}
                       </button>
                       {job.apply_url && (
                         <button
                           type="button"
-                          onClick={() => onOpenApply(job.apply_url)}
+                          onClick={async () => {
+                            const existing = appByJob(job.job_id);
+                            if (existing && existing.status === "applied") {
+                              // 已投递 → 取消投递
+                              await onRemoveApplication(existing.id);
+                            } else if (!existing || existing.status === "rejected") {
+                              // 未投递 → 创建投递 + 打开链接
+                              await onCreateApplied(job);
+                              onOpenApply(job.apply_url);
+                            } else if (existing.status === "favorite") {
+                              // 已收藏 → 升级为投递
+                              await onRemoveApplication(existing.id);
+                              await onCreateApplied(job);
+                              onOpenApply(job.apply_url);
+                            }
+                          }}
                           className={`rounded-lg px-3 py-1.5 text-xs font-medium transition ${
                             isApplied
-                              ? "bg-success-soft text-success hover:bg-success/10"
-                              : "bg-success text-white hover:bg-success-dark"
+                              ? "bg-success text-white hover:bg-success-dark"
+                              : "bg-success-soft text-success hover:bg-success/15"
                           }`}
+                          title={isApplied ? "点击取消投递" : "投递岗位"}
                         >
                           {isApplied ? "📮 已投递" : "📮 投递"}
                         </button>

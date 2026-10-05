@@ -45,6 +45,7 @@ export default function Companies() {
   const [error, setError] = useState<string | null>(null);
 
   const [keyword, setKeyword] = useState("");
+  const [debouncedKeyword, setDebouncedKeyword] = useState("");
   const [columnFilters, setColumnFilters] = useState<Record<string, string[]>>({});
   const [stats, setStats] = useState<StatsOverview | null>(null);
   const [visibleKeys, setVisibleKeys] = useState<string[]>(COLUMNS.map((c) => c.key));
@@ -63,10 +64,16 @@ export default function Companies() {
     void loadApplications();
   }, [loadApplications]);
 
+  // keyword 防抖:用户停止输入 300ms 后才同步到 debouncedKeyword,触发请求
+  useEffect(() => {
+    const timer = setTimeout(() => setDebouncedKeyword(keyword), 300);
+    return () => clearTimeout(timer);
+  }, [keyword]);
+
   // 构建请求参数
   const buildParams = (offset: number) => {
     const params: Record<string, string | number> = { limit: PAGE_SIZE, offset };
-    if (keyword.trim()) params.keyword = keyword.trim();
+    if (debouncedKeyword.trim()) params.keyword = debouncedKeyword.trim();
     for (const [k, vals] of Object.entries(columnFilters)) {
       if (vals.length) params[k] = vals.join(",");
     }
@@ -85,7 +92,8 @@ export default function Companies() {
       })
       .catch((e) => setError(extractErrorMessage(e)))
       .finally(() => setLoading(false));
-  }, [keyword, columnFilters]);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [debouncedKeyword, columnFilters]);
 
   // 加载更多
   const loadMore = async () => {

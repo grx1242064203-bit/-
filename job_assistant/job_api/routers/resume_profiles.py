@@ -37,6 +37,33 @@ class ProfileResponse(BaseModel):
     is_active: bool = True
     created_at: str
     updated_at: str
+    # 候选人竞争力(实时计算,不存表;用于简历解析页展示用户层级)
+    candidate_score: float | None = None
+    candidate_tier: str | None = None
+
+
+def _compute_candidate_competitiveness(profile: dict) -> tuple[float, str]:
+    """实时计算候选人竞争力分数和层级标签(0-100)。
+
+    调 competitiveness.candidate_competitiveness(profile) 返回 (score, breakdown, detail)。
+    tier 按 score 分档:>=75 顶 / >=55 中 / >=35 保底 / <35 待提升。
+    失败时返回 (0, "")。
+    """
+    try:
+        from competitiveness import candidate_competitiveness
+
+        score, _brk, _det = candidate_competitiveness(profile)
+        if score >= 75:
+            tier = "顶"
+        elif score >= 55:
+            tier = "中"
+        elif score >= 35:
+            tier = "保底"
+        else:
+            tier = "待提升"
+        return float(score), tier
+    except Exception:  # noqa: BLE001
+        return 0.0, ""
 
 
 @router.post("", response_model=ProfileResponse, status_code=status.HTTP_201_CREATED)
@@ -55,13 +82,21 @@ def create_profile(
         major=req.major,
         target_cities=req.target_cities,
     )
+    score, tier = _compute_candidate_competitiveness(profile)
+    profile["candidate_score"] = score
+    profile["candidate_tier"] = tier
     return profile
 
 
 @router.get("/active", response_model=Optional[ProfileResponse])
 def get_active_profile(user: dict = Depends(get_current_user)):
     uid = str(user["user_id"])
-    return rp_model.get_active_profile(uid)
+    profile = rp_model.get_active_profile(uid)
+    if profile:
+        score, tier = _compute_candidate_competitiveness(profile)
+        profile["candidate_score"] = score
+        profile["candidate_tier"] = tier
+    return profile
 
 
 @router.get("", response_model=list)
@@ -115,4 +150,7 @@ def update_profile(
     )
     if not profile:
         raise HTTPException(status_code=404, detail="画像不存在或无权修改")
+    score, tier = _compute_candidate_competitiveness(profile)
+    profile["candidate_score"] = score
+    profile["candidate_tier"] = tier
     return profile

@@ -1,6 +1,7 @@
 // 岗位列表页面：字段对齐飞书「27届校招汇总表」。
 // 功能：统计卡片、列筛选（多选）、列显隐（默认全显示）、首列固定、长文本截断、彩色标签、链接。
 import { useEffect, useRef, useState, type ReactNode } from "react";
+import { useNavigate } from "react-router-dom";
 import { getStatsOverview, type StatsOverview } from "../api/companies";
 import { jobsRecommendApi, type RecommendedJob } from "../api/jobsRecommend";
 import { extractErrorMessage } from "../api/client";
@@ -49,6 +50,7 @@ const CATEGORY_COLUMNS = new Set([
 ]);
 
 export default function Jobs() {
+  const navigate = useNavigate();
   const {
     jobs,
     isLoading,
@@ -192,8 +194,21 @@ export default function Jobs() {
       </div>
 
       {activeTab === "recommend" && !serverProfile && (
-        <div className="rounded-xl bg-warning-soft/50 p-4 text-sm text-warning-dark">
-          ⚠️ 请先到「简历解析」页上传并解析简历，系统才能为你推荐匹配的岗位。
+        <div className="flex flex-col items-center gap-3 rounded-xl bg-warning-soft/50 p-8 text-center">
+          <div className="text-4xl">📄</div>
+          <div className="text-base font-medium text-warning-dark">
+            还没有简历画像,无法为你推荐岗位
+          </div>
+          <div className="text-sm text-warning-dark/80">
+            上传简历后,AI 会按匹配度为你打分推荐
+          </div>
+          <button
+            type="button"
+            onClick={() => navigate("/resume")}
+            className="rounded-pill bg-primary px-5 py-2 text-sm font-semibold text-ink hover:bg-primary-dark"
+          >
+            去上传简历 →
+          </button>
         </div>
       )}
 

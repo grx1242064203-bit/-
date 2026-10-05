@@ -22,9 +22,32 @@ const SOURCE_LABEL: Record<string, string> = {
   email: "邮件",
 };
 
-function formatDate(iso: string | null): string {
+function formatDate(iso: string | null | undefined): string {
   if (!iso) return "—";
   return iso.slice(0, 10);
+}
+
+// 计算距今天数(d-0=今天,d<=3 视为即将截止)
+function daysUntil(iso: string | null | undefined): number | null {
+  if (!iso) return null;
+  const target = new Date(iso.slice(0, 10) + "T23:59:59");
+  if (Number.isNaN(target.getTime())) return null;
+  const now = new Date();
+  const diff = target.getTime() - now.getTime();
+  return Math.ceil(diff / (24 * 60 * 60 * 1000));
+}
+
+function deadlineBadge(deadline: string | null | undefined): {
+  text: string;
+  className: string;
+} | null {
+  const d = daysUntil(deadline);
+  if (d === null) return null;
+  if (d < 0) return { text: "已截止", className: "bg-danger/15 text-danger" };
+  if (d === 0) return { text: "今日截止", className: "bg-danger text-white" };
+  if (d <= 3) return { text: `${d}天后截止`, className: "bg-warning text-white" };
+  if (d <= 7) return { text: `${d}天后截止`, className: "bg-warning-soft text-warning-dark" };
+  return null;
 }
 
 export default function RecruitmentCard({ application }: Props) {
@@ -38,6 +61,7 @@ export default function RecruitmentCard({ application }: Props) {
   const statusLabel =
     KANBAN_COLUMNS.find((c) => c.status === application.status)?.label ||
     application.status;
+  const dBadge = deadlineBadge(application.deadline);
 
   // 加载公司尽调
   useEffect(() => {
@@ -103,6 +127,11 @@ export default function RecruitmentCard({ application }: Props) {
                   {application.interview_round}面
                 </span>
               )}
+              {dBadge && (
+                <span className={`rounded px-2 py-0.5 text-xs font-semibold ${dBadge.className}`}>
+                  ⏰ {dBadge.text}
+                </span>
+              )}
             </div>
             <h2 className="mt-2 text-xl font-bold text-text">
               {application.company_name || "（未知公司）"}
@@ -121,7 +150,7 @@ export default function RecruitmentCard({ application }: Props) {
         </div>
 
         {/* 关键时间线 */}
-        <div className="mt-4 grid grid-cols-3 gap-2 text-xs">
+        <div className="mt-4 grid grid-cols-4 gap-2 text-xs">
           <div className="rounded-lg bg-white/40 p-2">
             <div className="text-text-faint">收藏日期</div>
             <div className="font-medium text-text">{formatDate(application.favorite_at)}</div>
@@ -133,6 +162,12 @@ export default function RecruitmentCard({ application }: Props) {
           <div className="rounded-lg bg-white/40 p-2">
             <div className="text-text-faint">面试日期</div>
             <div className="font-medium text-text">{formatDate(application.interview_at)}</div>
+          </div>
+          <div className={`rounded-lg p-2 ${
+            dBadge ? "bg-warning-soft/60" : "bg-white/40"
+          }`}>
+            <div className="text-text-faint">招聘截止</div>
+            <div className="font-medium text-text">{formatDate(application.deadline)}</div>
           </div>
         </div>
 

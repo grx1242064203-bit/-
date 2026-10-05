@@ -9,7 +9,9 @@ import Schedules from "./pages/Schedules";
 import AutoFill from "./pages/AutoFill";
 import Login from "./pages/Login";
 import Register from "./pages/Register";
+import Welcome from "./pages/Welcome";
 import AuthGuard from "./components/AuthGuard";
+import OnboardingGuard from "./components/OnboardingGuard";
 import { useAuthStore } from "./stores/authStore";
 import SyncIndicator from "./components/SyncIndicator";
 import ReminderPoller from "./components/ReminderPoller";
@@ -116,6 +118,7 @@ function PageTitle() {
     "/email": "邮件同步",
     "/schedules": "日程与提醒",
     "/resume": "简历解析",
+    "/welcome": "欢迎",
   };
   const title = titleMap[location.pathname] ?? "Offer搭子";
   return (
@@ -146,12 +149,24 @@ export default function App() {
       <Route path="/login" element={<Login />} />
       <Route path="/register" element={<Register />} />
       <Route
-        path="/companies"
+        path="/welcome"
         element={
           <AuthGuard>
             <Layout>
-              <Companies />
+              <Welcome />
             </Layout>
+          </AuthGuard>
+        }
+      />
+      <Route
+        path="/companies"
+        element={
+          <AuthGuard>
+            <OnboardingGuard>
+              <Layout>
+                <Companies />
+              </Layout>
+            </OnboardingGuard>
           </AuthGuard>
         }
       />
@@ -159,9 +174,11 @@ export default function App() {
         path="/"
         element={
           <AuthGuard>
-            <Layout>
-              <Jobs />
-            </Layout>
+            <OnboardingGuard>
+              <Layout>
+                <Jobs />
+              </Layout>
+            </OnboardingGuard>
           </AuthGuard>
         }
       />
@@ -179,9 +196,11 @@ export default function App() {
         path="/applications"
         element={
           <AuthGuard>
-            <Layout>
-              <Applications />
-            </Layout>
+            <OnboardingGuard>
+              <Layout>
+                <Applications />
+              </Layout>
+            </OnboardingGuard>
           </AuthGuard>
         }
       />
@@ -189,9 +208,11 @@ export default function App() {
         path="/autofill"
         element={
           <AuthGuard>
-            <Layout>
-              <AutoFill />
-            </Layout>
+            <OnboardingGuard>
+              <Layout>
+                <AutoFill />
+              </Layout>
+            </OnboardingGuard>
           </AuthGuard>
         }
       />
@@ -199,9 +220,11 @@ export default function App() {
         path="/email"
         element={
           <AuthGuard>
-            <Layout>
-              <Email />
-            </Layout>
+            <OnboardingGuard>
+              <Layout>
+                <Email />
+              </Layout>
+            </OnboardingGuard>
           </AuthGuard>
         }
       />
@@ -209,9 +232,11 @@ export default function App() {
         path="/schedules"
         element={
           <AuthGuard>
-            <Layout>
-              <Schedules />
-            </Layout>
+            <OnboardingGuard>
+              <Layout>
+                <Schedules />
+              </Layout>
+            </OnboardingGuard>
           </AuthGuard>
         }
       />

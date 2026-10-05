@@ -33,6 +33,14 @@ export interface Application {
   offer_at: string | null;
   created_at: string;
   updated_at: string;
+  // 关联岗位库/公司库时由后端 _enrich_linked_data 补充
+  deadline?: string | null;
+  publish_time?: string | null;
+  industry?: string | null;
+  company_type?: string | null;
+  recruit_type?: string | null;
+  recruit_target?: string | null;
+  location?: string | null;
 }
 
 export function createApplication(data: {

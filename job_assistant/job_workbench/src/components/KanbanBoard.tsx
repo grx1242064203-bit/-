@@ -109,11 +109,13 @@ export default function KanbanBoard() {
     if (expandedCol) setExpandedCol(null);
   }
 
-  // 列宽计算: 扩展列占 5/12, 其他列各占 1/12 (图标宽度)
+  // 列宽计算: 用 24 列网格让折叠列更窄
+  // 默认 6 列等宽: 每列 col-span-4 (24/6=4)
+  // 扩展时: 扩展列 col-span-16, 折叠列 col-span-1 (只够放图标)
   function getColSpan(status: AppStatus): string {
-    if (!expandedCol) return "col-span-2"; // 默认 6 列等宽 (12/6=2)
-    if (expandedCol === status) return "col-span-7"; // 扩展列占大
-    return "col-span-1"; // 其他列缩到 1/12 (图标宽)
+    if (!expandedCol) return "col-span-4"; // 默认 6 列等宽
+    if (expandedCol === status) return "col-span-16"; // 扩展列占 2/3
+    return "col-span-1"; // 折叠列缩到 1/24 (极窄)
   }
 
   function renderColumn(col: (typeof KANBAN_COLUMNS)[number]) {
@@ -160,7 +162,7 @@ export default function KanbanBoard() {
       }}
     >
       <div
-        className="grid grid-cols-12 gap-2"
+        className="grid grid-cols-24 gap-2"
         onClick={handleBoardClick}
       >
         {KANBAN_COLUMNS.map(renderColumn)}

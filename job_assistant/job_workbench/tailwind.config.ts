@@ -132,6 +132,13 @@ export default {
           "sans-serif",
         ],
       },
+      // 扩展 grid 列数支持 (投递控制台需要 24 列让折叠列更窄)
+      gridTemplateColumns: {
+        24: "repeat(24, minmax(0, 1fr))",
+      },
+      gridColumn: {
+        24: "span 24 / span 24",
+      },
     },
   },
   plugins: [],

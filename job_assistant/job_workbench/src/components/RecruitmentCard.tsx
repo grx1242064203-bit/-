@@ -33,6 +33,7 @@ export default function RecruitmentCard({ application }: Props) {
   const [saving, setSaving] = useState(false);
   const [dd, setDd] = useState<DueDiligence | null>(null);
   const [ddLoading, setDdLoading] = useState(false);
+  const [ddError, setDdError] = useState<string | null>(null);
 
   const statusLabel =
     KANBAN_COLUMNS.find((c) => c.status === application.status)?.label ||
@@ -42,9 +43,20 @@ export default function RecruitmentCard({ application }: Props) {
   useEffect(() => {
     if (!application.company_name) return;
     setDdLoading(true);
+    setDdError(null);
     getCompanyDueDiligence(application.company_name)
-      .then(setDd)
-      .catch(() => {})
+      .then((data) => {
+        setDd(data);
+        setDdError(null);
+      })
+      .catch((err) => {
+        // 提取具体错误原因（429 配额 / 503 服务不可用 / 其他）
+        const msg =
+          (err as { error?: string })?.error ||
+          (err as Error)?.message ||
+          "尽调生成失败，请稍后重试";
+        setDdError(msg);
+      })
       .finally(() => setDdLoading(false));
   }, [application.company_name]);
 
@@ -195,17 +207,13 @@ export default function RecruitmentCard({ application }: Props) {
             </div>
           ) : dd ? (
             <div className="mt-3 space-y-3">
-              {dd.intro ? (
+              {dd.intro && (
                 <div>
                   <div className="text-xs font-medium text-text-muted">公司简介</div>
                   <p className="mt-1 text-sm leading-relaxed text-text">{dd.intro}</p>
                 </div>
-              ) : (
-                <div className="rounded-lg bg-warning-soft/30 px-3 py-2 text-xs text-warning-dark">
-                  ⚠️ AI 未能生成公司简介，可能是公司名称不明确或联网搜索受限。
-                </div>
               )}
-              {dd.official_website ? (
+              {dd.official_website && (
                 <div>
                   <div className="text-xs font-medium text-text-muted">官网</div>
                   <button
@@ -216,10 +224,8 @@ export default function RecruitmentCard({ application }: Props) {
                     {dd.official_website}
                   </button>
                 </div>
-              ) : (
-                <div className="text-xs text-text-faint">官网：暂未识别到</div>
               )}
-              {dd.news_links.length > 0 ? (
+              {dd.news_links.length > 0 && (
                 <div>
                   <div className="text-xs font-medium text-text-muted">近期新闻</div>
                   <ul className="mt-1 space-y-1">
@@ -236,8 +242,6 @@ export default function RecruitmentCard({ application }: Props) {
                     ))}
                   </ul>
                 </div>
-              ) : (
-                <div className="text-xs text-text-faint">近期新闻：暂未搜索到</div>
               )}
               {dd.why_company_questions.length > 0 && (
                 <div>
@@ -245,31 +249,44 @@ export default function RecruitmentCard({ application }: Props) {
                     面试准备：「为什么选择这家公司」
                   </div>
                   <div className="mt-1 space-y-2">
-                    {dd.why_company_questions.map((q, i) => {
-                      const answer = q.answer || q.hint || "";
-                      return (
-                        <div key={i} className="rounded-lg bg-white/40 p-2">
-                          <div className="text-sm font-medium text-text">Q: {q.question}</div>
-                          {answer && (
-                            <div className="mt-0.5 text-xs leading-relaxed text-text-muted">
-                              💡 {answer}
-                            </div>
-                          )}
-                        </div>
-                      );
-                    })}
+                    {dd.why_company_questions.map((q, i) => (
+                      <div key={i} className="rounded-lg bg-white/40 p-2">
+                        <div className="text-sm font-medium text-text">Q: {q.question}</div>
+                        {q.hint && (
+                          <div className="mt-0.5 text-xs text-text-muted">💡 {q.hint}</div>
+                        )}
+                      </div>
+                    ))}
                   </div>
-                </div>
-              )}
-              {dd.generated_at && (
-                <div className="text-[10px] text-text-faint">
-                  生成时间：{dd.generated_at}
                 </div>
               )}
             </div>
           ) : (
-            <div className="mt-3 text-center text-xs text-text-faint">
-              尽调生成失败，请稍后重试
+            <div className="mt-3 text-center">
+              <p className="text-xs text-warning">{ddError || "尽调生成失败，请稍后重试"}</p>
+              <button
+                type="button"
+                onClick={() => {
+                  setDdError(null);
+                  setDdLoading(true);
+                  getCompanyDueDiligence(application.company_name)
+                    .then((data) => {
+                      setDd(data);
+                      setDdError(null);
+                    })
+                    .catch((err) => {
+                      const msg =
+                        (err as { error?: string })?.error ||
+                        (err as Error)?.message ||
+                        "尽调生成失败，请稍后重试";
+                      setDdError(msg);
+                    })
+                    .finally(() => setDdLoading(false));
+                }}
+                className="mt-2 rounded-lg bg-primary/80 px-3 py-1 text-xs font-medium text-ink hover:bg-primary"
+              >
+                ↻ 重试
+              </button>
             </div>
           )}
         </div>

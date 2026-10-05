@@ -128,7 +128,10 @@ export default function KanbanBoard() {
                     setDragOverRound(r.round);
                   }}
                   onDragLeave={() => setDragOverRound(null)}
-                  onDrop={() => handleDrop("interview", r.round)}
+                  onDrop={(e) => {
+                    e.preventDefault();
+                    handleDrop("interview", r.round);
+                  }}
                   className={`flex min-h-[50vh] flex-col rounded-lg p-1.5 ${
                     roundOver ? "ring-2 ring-warning bg-warning/10" : "bg-white/20"
                   }`}
@@ -176,7 +179,10 @@ export default function KanbanBoard() {
             setDragOverStatus((cur) => (cur === col.status ? null : cur));
           }
         }}
-        onDrop={() => handleDrop(col.status)}
+        onDrop={(e) => {
+          e.preventDefault();
+          handleDrop(col.status);
+        }}
         className={`glass flex min-h-[60vh] flex-col rounded-xl p-3 shadow-sm ${col.columnBg} ${
           isOver ? "ring-2 ring-primary ring-offset-1" : ""
         }`}

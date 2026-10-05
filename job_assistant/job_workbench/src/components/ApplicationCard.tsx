@@ -32,6 +32,9 @@ export default function ApplicationCard({
   const [expanded, setExpanded] = useState(false);
   const [notes, setNotes] = useState(application.notes ?? "");
   const [saving, setSaving] = useState(false);
+  // 标记是否正在/刚刚完成拖拽，用于抑制拖拽后的 click 事件
+  // （浏览器在 dragend 后会同步触发 click，导致误开详情弹窗）
+  const [dragged, setDragged] = useState(false);
   const removeApplication = useAppStore((s) => s.removeApplication);
 
   const updatedAt = application.updated_at
@@ -56,6 +59,7 @@ export default function ApplicationCard({
 
   function handleCardClick() {
     if (expanded) return; // 编辑备注时不触发打开详情
+    if (dragged) return; // 拖拽刚结束，抑制误触发的 click
     onClick?.();
   }
 
@@ -63,11 +67,16 @@ export default function ApplicationCard({
     <div
       draggable
       onDragStart={(e) => {
+        setDragged(true);
         e.dataTransfer.setData("text/plain", String(application.id));
         e.dataTransfer.effectAllowed = "move";
         onDragStart(application);
       }}
-      onDragEnd={onDragEnd}
+      onDragEnd={() => {
+        onDragEnd();
+        // dragend 后浏览器同步触发 click，延迟重置让 click 处理器能看到 dragged=true
+        setTimeout(() => setDragged(false), 0);
+      }}
       onClick={handleCardClick}
       className="glass-soft group cursor-pointer rounded-xl p-3 shadow-sm transition hover:-translate-y-0.5 hover:shadow-md"
     >

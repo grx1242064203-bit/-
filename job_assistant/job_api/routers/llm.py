@@ -46,6 +46,13 @@ class ParseResumeResponse(BaseModel):
     fit_directions: list = []
 
 
+class ParseResumeFileResponse(BaseModel):
+    keywords: list = []
+    fit_directions: list = []
+    raw_text: str = ""
+    file_type: str = ""
+
+
 class SupplementRequest(BaseModel):
     user_edited: dict = Field(..., description="用户编辑后的画像")
     resume_text: str = ""
@@ -106,17 +113,19 @@ def parse_resume(
     }
 
 
-@router.post("/parse-resume-file", response_model=ParseResumeResponse)
+@router.post("/parse-resume-file", response_model=ParseResumeFileResponse)
 async def parse_resume_file(
     file: UploadFile = File(...),
     user: dict = Depends(get_current_user),
 ):
-    """上传简历文件 → 提取文本 → LLM 解析。
+    """上传简历文件 → 提取文本 → LLM 解析 → 返回画像 + 原文。
 
     支持格式：.pdf / .txt / .md / .jpg / .jpeg / .png / .webp / .bmp
     - PDF: PyMuPDF 提取文本层
     - 纯文本(.txt/.md): 直接读取
-    - 图片: rapidocr-onnxruntime OCR 提取中文
+    - 图片: DeepSeek-VL 视觉模型识别文字
+
+    返回: keywords / fit_directions / raw_text / file_type
     """
     user_id = user["user_id"]
     _check_quota(user_id)
@@ -139,7 +148,9 @@ async def parse_resume_file(
 
     # 根据格式提取文本
     resume_text = ""
+    file_type = ""
     if ext == ".pdf":
+        file_type = "pdf"
         from services.pdf_extractor import extract_pdf_text
         resume_text = extract_pdf_text(raw_bytes)
         if not resume_text:
@@ -148,12 +159,14 @@ async def parse_resume_file(
                 detail="PDF 未提取到文本（可能是扫描件或加密）。请转成 .txt 或上传图片。",
             )
     elif ext in (".txt", ".md"):
+        file_type = "text"
         try:
             resume_text = raw_bytes.decode("utf-8")
         except UnicodeDecodeError:
             resume_text = raw_bytes.decode("gbk", errors="ignore")
     else:
-        # 图片 → OCR
+        # 图片 → DeepSeek-VL OCR
+        file_type = "image"
         from services.image_extractor import extract_text_from_image
         # 写入临时文件供 OCR 引擎读取
         with tempfile.NamedTemporaryFile(suffix=ext, delete=False) as tmp:
@@ -183,6 +196,8 @@ async def parse_resume_file(
     return {
         "keywords": result.get("keywords", []),
         "fit_directions": result.get("fit_directions", []),
+        "raw_text": resume_text,
+        "file_type": file_type,
     }
 
 

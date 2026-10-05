@@ -1,58 +1,60 @@
 """图片简历文本提取（OCR）。
 
-支持 .jpg / .jpeg / .png 图片格式，使用 rapidocr-onnxruntime 做中文 OCR。
+支持 .jpg / .jpeg / .png / .webp / .bmp 图片格式。
+使用 DeepSeek-VL 视觉模型识别文字，与公告图片识别链路一致，
+避免引入 RapidOCR 等额外本地依赖和模型下载。
 提取纯文本后交给 LLM 解析简历结构。
 """
 from __future__ import annotations
 
 import logging
+import os
 from pathlib import Path
 from typing import Optional
 
 logger = logging.getLogger(__name__)
 
-# 单例 OCR 引擎（首次调用时加载，避免重复初始化）
-_ocr_engine = None
-_ocr_lock_imported = False
 
+def _get_llm_client():
+    """获取 LLMClient 实例（按需导入，避免循环依赖）。"""
+    import sys
+    parent = str(Path(__file__).resolve().parents[2])
+    if parent not in sys.path:
+        sys.path.insert(0, parent)
+    from llm_client import LLMClient
 
-def _get_ocr_engine():
-    """懒加载 OCR 引擎（rapidocr-onnxruntime）。"""
-    global _ocr_engine
-    if _ocr_engine is not None:
-        return _ocr_engine
-    try:
-        from rapidocr_onnxruntime import RapidOCR
-        _ocr_engine = RapidOCR()
-        return _ocr_engine
-    except ImportError:
-        raise RuntimeError(
-            "未安装 rapidocr-onnxruntime，无法解析图片简历。"
-            "请运行: pip install rapidocr-onnxruntime"
-        )
+    api_key = os.getenv("DEEPSEEK_API_KEY", "")
+    return LLMClient(api_key=api_key or None)
 
 
 def extract_text_from_image(image_path: str | Path) -> str:
-    """从图片中提取文本（OCR）。
+    """从图片中提取文本（DeepSeek-VL 视觉模型）。
 
     Args:
-        image_path: 图片文件路径（.jpg / .jpeg / .png）
+        image_path: 图片文件路径（.jpg / .jpeg / .png / .webp / .bmp）
 
     Returns:
         提取的纯文本。提取失败返回空字符串。
     """
-    engine = _get_ocr_engine()
+    path = Path(image_path)
+    ext = path.suffix.lower().lstrip(".")
     try:
-        result, _ = engine(str(image_path))
-        if not result:
-            return ""
-        # result: [[box, text, confidence], ...]
-        # 按行合并文本（保持阅读顺序）
-        lines = []
-        for item in result:
-            if len(item) >= 2 and item[1]:
-                lines.append(item[1])
-        return "\n".join(lines)
+        content = path.read_bytes()
+    except Exception as e:  # noqa: BLE001
+        logger.warning(f"读取图片失败 {image_path}: {e!r}")
+        return ""
+
+    if not content:
+        return ""
+
+    client = _get_llm_client()
+    if not getattr(client, "api_key", ""):
+        logger.warning("DEEPSEEK_API_KEY 未配置，跳过图片 OCR")
+        return ""
+
+    try:
+        text = client.ocr_image(content, ext=ext or "png")
+        return text or ""
     except Exception as e:  # noqa: BLE001 OCR 失败不阻断流程
         logger.warning(f"图片 OCR 提取失败: {e!r}")
         return ""

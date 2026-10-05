@@ -4,10 +4,9 @@ python-multipart>=0.0.6
 # 简历解析:PDF/DOCX 文本提取
 pypdf>=4.0
 python-docx>=1.0
-pymupdf>=1.23
-# 图片简历 OCR（中文识别）
-rapidocr-onnxruntime>=1.3
+pymupdf>=1.24.0
 # 图片处理:VL OCR 前压缩微信公告图片
+# 图片简历 OCR 改用 DeepSeek-VL 视觉模型（无需本地 OCR 依赖）
 Pillow>=10.0
 # 正文抓取:Playwright(微信公众号等 JS 渲染页面)
 playwright>=1.40

@@ -88,8 +88,12 @@ export const llmApi = {
       .then(normalizeParsedProfile);
   },
 
-  /** 上传简历文件（PDF / .txt / .md）→ 后端提取文本 → LLM 解析。 */
-  async parseResumeFile(file: File): Promise<ParsedProfile> {
+  /** 上传简历文件（PDF / .txt / .md / 图片）→ 后端提取文本 → LLM 解析。
+   * 返回 { profile, rawText, fileType }，rawText 供本地持久化 / 后续补充解析使用。
+   */
+  async parseResumeFile(
+    file: File
+  ): Promise<{ profile: ParsedProfile; rawText: string; fileType: string }> {
     const formData = new FormData();
     formData.append("file", file);
 
@@ -114,7 +118,11 @@ export const llmApi = {
     }
 
     const json = await res.json();
-    return normalizeParsedProfile(json);
+    return {
+      profile: normalizeParsedProfile(json),
+      rawText: json.raw_text ?? "",
+      fileType: json.file_type ?? "",
+    };
   },
 
   /** 用户编辑后请求 LLM 补充画像（合并用户已编辑 + 原文重新解析）。 */

@@ -24,7 +24,9 @@ export interface Resume {
 
 export type ResumePhase = "idle" | "uploading" | "parsing" | "done";
 
-const ACCEPTED_EXT = [".txt", ".md", ".markdown", ".pdf", ".jpg", ".jpeg", ".png", ".webp", ".bmp"];
+const ACCEPTED_TEXT_EXT = [".txt", ".md", ".markdown", ".text"];
+const ACCEPTED_IMAGE_EXT = [".jpg", ".jpeg", ".png", ".webp", ".bmp"];
+const ACCEPTED_PDF_EXT = [".pdf"];
 
 // localStorage 存储键
 const RESUME_STORAGE_KEY = "job_assistant_active_resume";
@@ -78,29 +80,25 @@ export function formatFileSize(bytes: number): string {
   return `${(bytes / (1024 * 1024)).toFixed(2)} MB`;
 }
 
-function isAcceptedFile(file: File): boolean {
-  const name = file.name.toLowerCase();
-  return ACCEPTED_EXT.some((ext) => name.endsWith(ext));
-}
-
 function isPdfFile(file: File): boolean {
+  const name = file.name.toLowerCase();
   return (
     file.type === "application/pdf" ||
-    file.name.toLowerCase().endsWith(".pdf")
+    ACCEPTED_PDF_EXT.some((ext) => name.endsWith(ext))
   );
+}
+
+function isTextFile(file: File): boolean {
+  const name = file.name.toLowerCase();
+  return ACCEPTED_TEXT_EXT.some((ext) => name.endsWith(ext));
 }
 
 function isImageFile(file: File): boolean {
   const name = file.name.toLowerCase();
   return (
     file.type.startsWith("image/") ||
-    [".jpg", ".jpeg", ".png", ".webp", ".bmp"].some((ext) => name.endsWith(ext))
+    ACCEPTED_IMAGE_EXT.some((ext) => name.endsWith(ext))
   );
-}
-
-/** 需要后端提取文本的文件（PDF / 图片），前端不直接读文本。 */
-function needsServerExtraction(file: File): boolean {
-  return isPdfFile(file) || isImageFile(file);
 }
 
 interface ResumeState {
@@ -113,7 +111,7 @@ interface ResumeState {
   lastFileName: string | null;
 
   uploadResume: (file: File) => Promise<Resume>;
-  parseResume: (resumeText?: string, file?: File) => Promise<ParsedProfile>;
+  parseResume: (resumeText?: string) => Promise<ParsedProfile>;
   getActiveResume: () => Promise<void>;
   clearResume: () => void;
   clearError: () => void;
@@ -128,66 +126,104 @@ export const useResumeStore = create<ResumeState>((set, get) => ({
   error: null,
   lastFileName: null,
 
-  // 上传：接受 PDF / .txt / .md，PDF 走后端 parse-resume-file 提取文本
+  // 上传简历：
+  // - 纯文本(.txt/.md)：浏览器 FileReader 直读 → 存本地（后续 parseResume 走 LLM）
+  // - PDF / 图片：直接调后端 /parse-resume-file，后端提取文本 + LLM 解析一次完成
+  // 错误信息包含具体原因，UI 可据此展示。
   uploadResume: async (file) => {
     set({ isLoading: true, phase: "uploading", error: null, lastFileName: file.name });
 
-    if (!isAcceptedFile(file)) {
-      const msg = "暂不支持的文件类型，请上传 .pdf / .txt / .md / 图片";
+    const supported = isTextFile(file) || isPdfFile(file) || isImageFile(file);
+    if (!supported) {
+      const msg = "暂不支持的文件类型，请上传 .txt / .md / .pdf / .jpg / .png 等格式";
       set({ isLoading: false, phase: "idle", error: msg });
       throw new Error(msg);
     }
 
-    if (file.size > 15 * 1024 * 1024) {
-      const msg = "文件超过 15MB，请压缩后再上传";
-      set({ isLoading: false, phase: "idle", error: msg });
-      throw new Error(msg);
+    // 纯文本：本地读取后存简历（解析由用户点"立即解析"触发）
+    if (isTextFile(file)) {
+      try {
+        const rawText = await readFileAsText(file);
+        if (!rawText.trim()) {
+          const msg = "文件内容为空，请确认简历非空";
+          set({ isLoading: false, phase: "idle", error: msg });
+          throw new Error(msg);
+        }
+        const resume: Resume = {
+          resume_id: genResumeId(),
+          file_path: file.name,
+          raw_text: rawText,
+          parsed_profile_json: null,
+          created_at: nowIso(),
+          is_active: 1,
+        };
+        saveResumeToStorage(resume);
+        set({ activeResume: resume, isLoading: false });
+        return resume;
+      } catch (e) {
+        const msg = e instanceof Error ? e.message : String(e);
+        set({ isLoading: false, phase: "idle", error: msg });
+        throw e;
+      }
     }
 
+    // PDF / 图片：后端一次性提取文本 + LLM 解析
     try {
-      // 先创建本地 resume 记录
-      const rawText = needsServerExtraction(file) ? "" : await readFileAsText(file);
+      set({ phase: "parsing" });
+      const { profile, rawText } = await llmApi.parseResumeFile(file);
       const resume: Resume = {
         resume_id: genResumeId(),
         file_path: file.name,
         raw_text: rawText,
-        parsed_profile_json: null,
+        parsed_profile_json: JSON.stringify(profile),
         created_at: nowIso(),
         is_active: 1,
       };
       saveResumeToStorage(resume);
-      set({ activeResume: resume, isLoading: false });
+
+      // 存后端 resume_profiles（用于岗位推荐）
+      let serverProfile: ResumeProfile | null = null;
+      try {
+        serverProfile = await resumeProfilesApi.create({
+          resume_text: rawText,
+          keywords: profile.keywords,
+          fit_directions: profile.fit_directions,
+        });
+      } catch (e) {
+        console.warn("存后端画像失败（不阻塞主流程）:", e);
+      }
+
+      set({
+        activeResume: resume,
+        parsedProfile: profile,
+        serverProfile,
+        isLoading: false,
+        phase: "done",
+      });
       return resume;
     } catch (e) {
+      // 后端 400 错误 detail 含具体原因（如"PDF 未提取到文本"、"图片中未识别到文字"）
       const msg = e instanceof Error ? e.message : String(e);
       set({ isLoading: false, phase: "idle", error: msg });
       throw e;
     }
   },
 
-  // 解析：PDF 走 parseResumeFile（后端提取），文本走 parseResume
-  // 解析成功后自动存后端 resume_profiles 用于岗位推荐
-  parseResume: async (resumeText, file) => {
+  // 解析：调云端 LLM → 把 parsed_profile_json 回写本地 resume。
+  // resumeText 缺省取 activeResume.raw_text；都为空则报错。
+  // 仅用于纯文本简历（PDF / 图片已在 uploadResume 中一步完成）。
+  parseResume: async (resumeText) => {
     const current = get().activeResume;
+    const text = resumeText?.trim() || current?.raw_text?.trim() || "";
+    if (!text) {
+      const msg = "没有可解析的简历文本，请先上传简历";
+      set({ error: msg, isLoading: false, phase: "idle" });
+      throw new Error(msg);
+    }
+
     set({ isLoading: true, phase: "parsing", error: null });
     try {
-      let profile: ParsedProfile;
-      let textForProfile = "";
-
-      if (file && needsServerExtraction(file)) {
-        // PDF / 图片：上传到后端 parse-resume-file（后端提取文本 + LLM 解析）
-        profile = await llmApi.parseResumeFile(file);
-        textForProfile = ""; // 原文不在前端，后端解析时已使用
-      } else {
-        const text = resumeText?.trim() || current?.raw_text?.trim() || "";
-        if (!text) {
-          const msg = "没有可解析的简历文本，请先上传简历";
-          set({ error: msg, isLoading: false, phase: "idle" });
-          throw new Error(msg);
-        }
-        profile = await llmApi.parseResume(text);
-        textForProfile = text;
-      }
+      const profile = await llmApi.parseResume(text);
 
       // 回写本地 resume
       const profileJson = JSON.stringify(profile);
@@ -201,7 +237,7 @@ export const useResumeStore = create<ResumeState>((set, get) => ({
       let serverProfile: ResumeProfile | null = null;
       try {
         serverProfile = await resumeProfilesApi.create({
-          resume_text: textForProfile || (current?.raw_text || ""),
+          resume_text: text,
           keywords: profile.keywords,
           fit_directions: profile.fit_directions,
         });

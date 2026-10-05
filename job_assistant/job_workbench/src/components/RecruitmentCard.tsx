@@ -33,6 +33,7 @@ export default function RecruitmentCard({ application }: Props) {
   const [saving, setSaving] = useState(false);
   const [dd, setDd] = useState<DueDiligence | null>(null);
   const [ddLoading, setDdLoading] = useState(false);
+  const [ddError, setDdError] = useState<string | null>(null);
 
   const statusLabel =
     KANBAN_COLUMNS.find((c) => c.status === application.status)?.label ||
@@ -42,9 +43,20 @@ export default function RecruitmentCard({ application }: Props) {
   useEffect(() => {
     if (!application.company_name) return;
     setDdLoading(true);
+    setDdError(null);
     getCompanyDueDiligence(application.company_name)
-      .then(setDd)
-      .catch(() => {})
+      .then((data) => {
+        setDd(data);
+        setDdError(null);
+      })
+      .catch((err) => {
+        // 提取具体错误原因（429 配额 / 503 服务不可用 / 其他）
+        const msg =
+          (err as { error?: string })?.error ||
+          (err as Error)?.message ||
+          "尽调生成失败，请稍后重试";
+        setDdError(msg);
+      })
       .finally(() => setDdLoading(false));
   }, [application.company_name]);
 
@@ -250,8 +262,31 @@ export default function RecruitmentCard({ application }: Props) {
               )}
             </div>
           ) : (
-            <div className="mt-3 text-center text-xs text-text-faint">
-              尽调生成失败，请稍后重试
+            <div className="mt-3 text-center">
+              <p className="text-xs text-warning">{ddError || "尽调生成失败，请稍后重试"}</p>
+              <button
+                type="button"
+                onClick={() => {
+                  setDdError(null);
+                  setDdLoading(true);
+                  getCompanyDueDiligence(application.company_name)
+                    .then((data) => {
+                      setDd(data);
+                      setDdError(null);
+                    })
+                    .catch((err) => {
+                      const msg =
+                        (err as { error?: string })?.error ||
+                        (err as Error)?.message ||
+                        "尽调生成失败，请稍后重试";
+                      setDdError(msg);
+                    })
+                    .finally(() => setDdLoading(false));
+                }}
+                className="mt-2 rounded-lg bg-primary/80 px-3 py-1 text-xs font-medium text-ink hover:bg-primary"
+              >
+                ↻ 重试
+              </button>
             </div>
           )}
         </div>

@@ -259,3 +259,8 @@ class Settings:
 
 
 settings = Settings()
+
+
+def get_settings() -> Settings:
+    """返回 Settings 单例。供 job_api 子模块统一获取配置。"""
+    return settings

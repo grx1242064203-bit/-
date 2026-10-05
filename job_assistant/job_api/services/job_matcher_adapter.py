@@ -279,6 +279,38 @@ def recommend_jobs(
             apply_url_val = apply_url_val.get("link") or ""
         announcement_url_val = j.get("announcement_url") or j.get("source_url") or ""
 
+        # 补齐岗位总表其余字段,前端推荐页与岗位总表字段对齐
+        recruit_type_val = j.get("recruit_type") or j.get("招聘类型") or ""
+        recruit_target_val = j.get("recruit_target") or j.get("招聘对象") or ""
+        is_mt_val = j.get("is_mt")
+        if is_mt_val is None:
+            is_mt_val = j.get("is_management_trainee") or j.get("管培")
+        major_category_val = j.get("major_category") or j.get("专业大类") or ""
+        major_required_val = j.get("major_required") or j.get("专业要求") or ""
+        jd_summary_val = j.get("jd_summary") or j.get("JD摘要") or ""
+        hard_skills_val = j.get("hard_skills") or j.get("硬技能") or ""
+        keywords_val = j.get("keywords") or j.get("关键词") or ""
+        updated_at_val = (
+            j.get("updated_at")
+            or j.get("发布时间")
+            or j.get("publish_time")
+            or ""
+        )
+
+        # 公司层级 × 用户层级 透明化(competitiveness 信息)
+        # scorer 返回中文键「竞争力信息」,内含 candidate_score/company_score/label
+        comp_info = j.get("竞争力信息") or j.get("competitiveness_info") or {}
+        company_tier_val = j.get("company_tier") or ""
+        # 如果 job 本身没有 company_tier(公司库场景),从 comp_info.company_breakdown 取
+        if not company_tier_val and comp_info:
+            company_tier_val = (
+                comp_info.get("company_breakdown", {}).get("company_position_label", "")
+                or ""
+            )
+        candidate_score_val = comp_info.get("candidate_score", 0) if comp_info else 0
+        company_score_val = comp_info.get("company_score", 0) if comp_info else 0
+        alignment_label_val = comp_info.get("label", "") if comp_info else ""
+
         formatted.append({
             "job_id": j.get("job_id") or j.get("position_id") or "",
             "title": title_val,
@@ -298,6 +330,21 @@ def recommend_jobs(
             "recommend_level": j.get("recommend_level") or "",
             "reasons": reasons_val,
             "dims": dims_val,
+            # 补齐字段(与岗位总表对齐)
+            "recruit_type": recruit_type_val,
+            "recruit_target": recruit_target_val,
+            "is_mt": bool(is_mt_val) if is_mt_val in (1, "1", True, "true", "True", "是") else False,
+            "major_category": major_category_val,
+            "major_required": major_required_val,
+            "jd_summary": jd_summary_val,
+            "hard_skills": hard_skills_val,
+            "keywords": keywords_val,
+            "updated_at": updated_at_val,
+            # 公司层级 × 用户层级 透明化
+            "company_tier": company_tier_val,
+            "candidate_score": round(float(candidate_score_val), 1) if candidate_score_val else 0,
+            "company_score": round(float(company_score_val), 1) if company_score_val else 0,
+            "alignment_label": alignment_label_val,
         })
 
     return {

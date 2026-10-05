@@ -470,6 +470,7 @@ class SyncService:
         keyword: str = "",
         recruit_type: str = "",
         education_req: str = "",
+        company_name: str = "",
         **text_filters: str,
     ) -> dict:
         """分页拉取公司总览（对齐飞书公司表字段）。
@@ -480,7 +481,9 @@ class SyncService:
         offset: 偏移量。
         industry/company_type/recruit_type/education_req:
             分类列筛选（多选，逗号分隔 → IN）。
-        keyword: 公司名关键词搜索。
+        keyword: 公司名关键词搜索(顶部搜索框)。
+        company_name: 公司名称模糊搜索(列头筛选输入)。与 keyword 等价,
+            任一非空即生效,同时非空取交集。
         **text_filters: 其余文本列模糊搜索（LIKE），如 location /
             position_titles / recruit_target / deadline / last_updated。
         """
@@ -522,9 +525,13 @@ class SyncService:
         for field, raw in text_filters.items():
             if raw:
                 _add_like(field, raw)
+        # 公司名搜索:keyword(顶部搜索框) 与 company_name(列头筛选) 都走 company_name LIKE
         if keyword:
             where.append("company_name LIKE ?")
             params.append(f"%{keyword}%")
+        if company_name:
+            where.append("company_name LIKE ?")
+            params.append(f"%{company_name}%")
 
         where_sql = f"WHERE {' AND '.join(where)}" if where else ""
         fields = ", ".join(COMPANY_FIELDS)

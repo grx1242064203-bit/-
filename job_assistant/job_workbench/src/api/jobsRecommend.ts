@@ -21,6 +21,21 @@ export interface RecommendedJob {
   recommend_level: "super_recommend" | "recommend" | "applyable" | "low" | string;
   reasons: string[];
   dims: Record<string, number>;
+  // 补齐字段(与岗位总表对齐)
+  recruit_type?: string;
+  recruit_target?: string;
+  is_mt?: boolean;
+  major_category?: string;
+  major_required?: string;
+  jd_summary?: string;
+  hard_skills?: string;
+  keywords?: string;
+  updated_at?: string;
+  // 公司层级 × 用户层级 透明化
+  company_tier?: string;          // 顶/中/保底
+  candidate_score?: number;       // 候选人竞争力分 0-100
+  company_score?: number;         // 公司/岗位竞争力分 0-100
+  alignment_label?: string;       // 匹配/冲刺/保底/严重错配
 }
 
 export interface RecommendResponse {

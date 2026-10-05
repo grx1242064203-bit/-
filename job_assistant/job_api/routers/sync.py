@@ -115,13 +115,20 @@ def list_companies(
     keyword: str = Query("", description="公司名关键词"),
     recruit_type: str = Query("", description="招聘类型筛选"),
     education_req: str = Query("", description="学历要求筛选"),
+    company_name: str = Query("", description="公司名称模糊搜索(列筛选)"),
     location: str = Query("", description="工作地点模糊搜索"),
     position_titles: str = Query("", description="招聘岗位模糊搜索"),
     recruit_target: str = Query("", description="招聘对象模糊搜索"),
     deadline: str = Query("", description="截止时间模糊搜索"),
     last_updated: str = Query("", description="发布时间模糊搜索"),
 ) -> dict:
-    """分页拉取公司总览（对齐飞书公司表字段）。"""
+    """分页拉取公司总览（对齐飞书公司表字段）。
+
+    company_name: 列头筛选输入(文本模式 LIKE),与 keyword 区别:
+        - keyword 是顶部搜索框,语义=公司名关键词,走 company_name LIKE
+        - company_name 是列头筛选,语义=公司名模糊匹配,也走 company_name LIKE
+        二者效果等价,任一非空即生效,同时非空取交集。
+    """
     return SyncService().get_companies(
         limit=limit,
         offset=offset,
@@ -130,6 +137,7 @@ def list_companies(
         keyword=keyword,
         recruit_type=recruit_type,
         education_req=education_req,
+        company_name=company_name,
         location=location,
         position_titles=position_titles,
         recruit_target=recruit_target,

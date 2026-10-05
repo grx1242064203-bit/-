@@ -244,6 +244,10 @@ export default function Jobs() {
             });
             return created ?? undefined;
           }}
+          onRemoveApplication={async (appId) => {
+            const app = useAppStore.getState();
+            await app.removeApplication(appId);
+          }}
           filters={{
             industry: recFilterIndustry,
             companyType: recFilterCompanyType,
@@ -756,6 +760,7 @@ function RecommendJobsList({
   appByJob,
   onOpenApply,
   onCreateFavorite,
+  onRemoveApplication,
   filterOptions,
   filters,
   onFilterChange,
@@ -767,6 +772,7 @@ function RecommendJobsList({
   appByJob: (jobId: string) => Application | undefined;
   onOpenApply: (url: string) => void;
   onCreateFavorite: (job: RecommendedJob) => Promise<Application | undefined>;
+  onRemoveApplication: (appId: number) => Promise<void>;
   filterOptions?: Record<string, string[]>;
   filters: {
     industry: string[];
@@ -1120,29 +1126,58 @@ function RecommendJobsList({
                       )}
                     </div>
 
-                    {/* 按钮组 */}
+                    {/* 按钮组 - toggle 模式:点一下收藏/投递,再点取消 */}
                     <div className="flex shrink-0 flex-col gap-1.5">
                       <button
                         type="button"
-                        onClick={() => void onCreateFavorite(job)}
-                        disabled={isFavorite || isApplied}
+                        onClick={async () => {
+                          // toggle: 已收藏→取消,未收藏→收藏
+                          if (isFavorite && app) {
+                            await onRemoveApplication(app.id);
+                          } else if (!isApplied) {
+                            // 未投递且未收藏 → 收藏
+                            await onCreateFavorite(job);
+                          }
+                        }}
                         className={`rounded-lg px-3 py-1.5 text-xs font-medium transition ${
-                          isFavorite || isApplied
+                          isFavorite
+                            ? "bg-amber-400 text-white hover:bg-amber-500"
+                            : isApplied
                             ? "bg-amber-100 text-amber-900 cursor-not-allowed"
-                            : "bg-amber-400 text-white hover:bg-amber-500"
+                            : "bg-amber-100 text-amber-900 hover:bg-amber-200"
                         }`}
-                        title={isFavorite ? "已收藏" : isApplied ? "已投递,自动收藏" : "收藏岗位"}
+                        title={isFavorite ? "点击取消收藏" : isApplied ? "已投递,自动收藏" : "点击收藏岗位"}
                       >
                         {isFavorite ? "⭐ 已收藏" : isApplied ? "⭐ 已收藏" : "⭐ 收藏"}
                       </button>
                       {job.apply_url && (
                         <button
                           type="button"
-                          onClick={() => onOpenApply(job.apply_url)}
+                          onClick={async () => {
+                            // toggle: 已投递→取消,未投递→投递并打开链接
+                            if (isApplied && app) {
+                              await onRemoveApplication(app.id);
+                            } else {
+                              // 创建投递记录
+                              const store = useAppStore.getState();
+                              await store.addApplication({
+                                job_title: job.title,
+                                company_name: job.company,
+                                status: "applied",
+                                source: "db_job",
+                                link_type: "job",
+                                link_id: job.job_id,
+                                apply_url: job.apply_url || "",
+                                announcement_url: job.announcement_url || "",
+                              });
+                              // 投递成功后自动打开投递链接
+                              onOpenApply(job.apply_url);
+                            }
+                          }}
                           className={`rounded-lg px-3 py-1.5 text-xs font-medium transition ${
                             isApplied
-                              ? "bg-success-soft text-success hover:bg-success/10"
-                              : "bg-success text-white hover:bg-success-dark"
+                              ? "bg-success text-white hover:bg-success-dark"
+                              : "bg-success-soft text-success hover:bg-success/10"
                           }`}
                         >
                           {isApplied ? "📮 已投递" : "📮 投递"}

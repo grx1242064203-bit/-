@@ -140,7 +140,7 @@ export default function Companies() {
             value={keyword}
             onChange={(e) => setKeyword(e.target.value)}
             placeholder="搜索公司名称..."
-            className="w-full rounded-lg border border-line bg-white/60 px-3 py-2 text-sm outline-none focus:border-primary"
+            className="w-full rounded-lg border border-line bg-white px-3 py-2 text-sm outline-none focus:border-primary"
           />
         </div>
         {hasFilter && (
@@ -150,7 +150,7 @@ export default function Companies() {
               setKeyword("");
               setColumnFilters({});
             }}
-            className="rounded-lg border border-line bg-white/60 px-3 py-2 text-sm text-text-muted hover:bg-white"
+            className="rounded-lg border border-line bg-white px-3 py-2 text-sm text-text-muted hover:bg-slate-50"
           >
             清除筛选
           </button>
@@ -195,11 +195,11 @@ export default function Companies() {
       <div
         ref={scrollRef}
         onScroll={handleScroll}
-        className="flex-1 overflow-auto rounded-xl border border-line bg-white/40 backdrop-blur"
+        className="flex-1 overflow-auto rounded-xl border border-line bg-white"
       >
         <table className="w-full min-w-[900px] border-collapse text-sm">
           <thead className="sticky top-0 z-10">
-            <tr className="bg-white/85 backdrop-blur-md">
+            <tr className="bg-white">
               {COLUMNS.filter((c) => visibleKeys.includes(c.key)).map((col) => {
                 // 三列固定:actions(left-0) + company_name(left-[72px]) + links(left-[272px])
                 // Tailwind JIT 只识别字面量类名,所以 left-[272px] 必须以字面量出现
@@ -207,11 +207,11 @@ export default function Companies() {
                 const isNameSticky = col.key === "company_name";
                 const isLinksSticky = col.key === "links";
                 const stickyClass = isActionsSticky
-                  ? "sticky left-0 z-20 bg-white/85 backdrop-blur w-[72px] min-w-[72px] shadow-[2px_0_4px_-2px_rgba(0,0,0,0.1)]"
+                  ? "sticky left-0 z-20 bg-white w-[72px] min-w-[72px] shadow-[2px_0_4px_-2px_rgba(0,0,0,0.1)]"
                   : isNameSticky
-                  ? "sticky left-[72px] z-20 bg-white/85 backdrop-blur min-w-[200px] shadow-[2px_0_4px_-2px_rgba(0,0,0,0.1)]"
+                  ? "sticky left-[72px] z-20 bg-white min-w-[200px] shadow-[2px_0_4px_-2px_rgba(0,0,0,0.1)]"
                   : isLinksSticky
-                  ? "sticky left-[272px] z-20 bg-white/85 backdrop-blur shadow-[2px_0_4px_-2px_rgba(0,0,0,0.1)]"
+                  ? "sticky left-[272px] z-20 bg-white shadow-[2px_0_4px_-2px_rgba(0,0,0,0.1)]"
                   : "";
                 return (
                   <th
@@ -364,7 +364,7 @@ function CompanyRow({
               ? "bg-primary text-ink"
               : inPipeline
                 ? "bg-primary-soft/60 text-primary-ink"
-                : "bg-white/60 text-text-muted hover:bg-primary-soft hover:text-primary-ink"
+                : "bg-slate-100 text-text hover:bg-primary-soft hover:text-primary-ink"
           }`}
           title={isFavorited ? "取消收藏" : "加入收藏"}
         >
@@ -451,18 +451,18 @@ function CompanyRow({
 
   return (
     <>
-      <tr className="border-b border-line/60 hover:bg-white/40">
+      <tr className="border-b border-line/60 hover:bg-slate-50">
         {COLUMNS.filter((c) => visibleKeys.includes(c.key)).map((col) => {
           // 与表头一致的三列固定:actions + company_name + links
           const isActionsSticky = col.key === "actions";
           const isNameSticky = col.key === "company_name";
           const isLinksSticky = col.key === "links";
           const stickyClass = isActionsSticky
-            ? "sticky left-0 z-[2] bg-white/85 backdrop-blur w-[72px] min-w-[72px]"
+            ? "sticky left-0 z-[2] bg-white w-[72px] min-w-[72px]"
             : isNameSticky
-            ? "sticky left-[72px] z-[2] bg-white/85 backdrop-blur min-w-[200px]"
+            ? "sticky left-[72px] z-[2] bg-white min-w-[200px]"
             : isLinksSticky
-            ? "sticky left-[272px] z-[2] bg-white/85 backdrop-blur"
+            ? "sticky left-[272px] z-[2] bg-white"
             : "";
           return (
             <td
@@ -546,7 +546,7 @@ function CompanyQuickModal({
               value={jobTitle}
               onChange={(e) => setJobTitle(e.target.value)}
               placeholder="如：后端开发工程师"
-              className="mt-1 w-full rounded-lg border border-white/60 bg-white/40 px-3 py-2 text-sm focus:border-primary-dark focus:outline-none focus:ring-2 focus:ring-primary/30"
+              className="mt-1 w-full rounded-lg border border-line bg-white px-3 py-2 text-sm focus:border-primary-dark focus:outline-none focus:ring-2 focus:ring-primary/30"
               autoFocus
               onKeyDown={(e) => {
                 if (e.key === "Enter") void handleSubmit();
@@ -639,7 +639,7 @@ function StatCard({
     danger: "text-danger",
   }[accent];
   return (
-    <div className="rounded-xl border border-line bg-white/50 px-4 py-3 backdrop-blur">
+    <div className="rounded-xl border border-line bg-white px-4 py-3">
       <div className="text-xs text-text-muted">{label}</div>
       <div className={`mt-1 text-2xl font-bold ${color}`}>{value.toLocaleString()}</div>
     </div>
@@ -649,7 +649,7 @@ function StatCard({
 function IndustryBar({ items }: { items: { name: string; count: number }[] }) {
   const max = items[0]?.count ?? 1;
   return (
-    <div className="rounded-xl border border-line bg-white/50 px-4 py-3 backdrop-blur sm:col-span-2 lg:col-span-1">
+    <div className="rounded-xl border border-line bg-white px-4 py-3 sm:col-span-2 lg:col-span-1">
       <div className="mb-2 text-xs text-text-muted">行业 Top5</div>
       <div className="space-y-1">
         {items.map((it) => (

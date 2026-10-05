@@ -46,7 +46,7 @@ function TopNav() {
   };
 
   return (
-    <header className="glass-strong flex h-16 items-center justify-between border-b border-white/40 px-6">
+    <header className="glass-strong flex h-16 items-center justify-between border-b border-line px-6">
       {/* Logo */}
       <div className="flex items-center gap-3">
         <img

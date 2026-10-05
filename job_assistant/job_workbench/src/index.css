@@ -34,11 +34,11 @@
 
   /* 中性色阶（暖灰） */
   --color-text: #1f1f1f;
-  --color-text-muted: #7a7a7a;
-  --color-text-faint: #b0b0b0;
+  --color-text-muted: #6b6b6b;        /* 加深：原 #7a7a7a 在浅底上对比度不足 */
+  --color-text-faint: #8a8a8a;        /* 加深：原 #b0b0b0 太浅看不清 */
   --color-border: rgba(255, 255, 255, 0.6);
   --color-border-strong: rgba(0, 0, 0, 0.08);
-  --color-line: rgba(0, 0, 0, 0.06);
+  --color-line: rgba(0, 0, 0, 0.1);   /* 加深：原 0.06 太浅 */
 
   /* 背景与表面 */
   --color-bg: #f7f5ef;

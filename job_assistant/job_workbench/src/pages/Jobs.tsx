@@ -158,7 +158,7 @@ export default function Jobs() {
           className={`rounded-full px-4 py-1.5 text-sm font-medium transition ${
             activeTab === "all"
               ? "bg-ink text-white shadow-sm"
-              : "bg-white/60 text-text-muted hover:text-text"
+              : "bg-slate-100 text-text hover:bg-slate-200"
           }`}
         >
           📋 全部岗位 <span className="opacity-60">({total})</span>
@@ -169,7 +169,7 @@ export default function Jobs() {
           className={`rounded-full px-4 py-1.5 text-sm font-medium transition ${
             activeTab === "recommend"
               ? "bg-ink text-white shadow-sm"
-              : "bg-white/60 text-text-muted hover:text-text"
+              : "bg-slate-100 text-text hover:bg-slate-200"
           }`}
         >
           🎯 为我推荐
@@ -179,7 +179,7 @@ export default function Jobs() {
           <button
             type="button"
             onClick={() => void loadRecommendJobs(200, true)}
-            className="ml-auto rounded-lg border border-line bg-white/60 px-3 py-1.5 text-xs text-text-muted hover:bg-white"
+            className="ml-auto rounded-lg border border-line bg-slate-100 px-3 py-1.5 text-xs text-text hover:bg-slate-200"
           >
             🔄 刷新推荐
           </button>
@@ -299,7 +299,7 @@ export default function Jobs() {
               if (e.key === "Enter") setKeyword(kwInput);
             }}
             placeholder="搜索岗位 / 公司 / JD（回车确认）..."
-            className="w-full rounded-lg border border-line bg-white/60 px-3 py-2 text-sm outline-none focus:border-primary"
+            className="w-full rounded-lg border border-line bg-white px-3 py-2 text-sm outline-none focus:border-primary"
           />
         </div>
         {hasFilter && (
@@ -309,7 +309,7 @@ export default function Jobs() {
               clearAllFilters();
               setKwInput("");
             }}
-            className="rounded-lg border border-line bg-white/60 px-3 py-2 text-sm text-text-muted hover:bg-white"
+            className="rounded-lg border border-line bg-white px-3 py-2 text-sm text-text-muted hover:bg-slate-50"
           >
             清除筛选
           </button>
@@ -353,20 +353,20 @@ export default function Jobs() {
       <div
         ref={scrollRef}
         onScroll={handleScroll}
-        className="flex-1 overflow-auto rounded-xl border border-line bg-white/40 backdrop-blur"
+        className="flex-1 overflow-auto rounded-xl border border-line bg-white"
       >
         <table className="w-full min-w-[1400px] border-collapse text-sm">
           <thead className="sticky top-0 z-10">
-            <tr className="bg-white/85 backdrop-blur-md">
+            <tr className="bg-white">
               {COLUMNS.filter((c) => visibleKeys.includes(c.key)).map((col) => {
                 // 与行级一致的固定列判断:actions 最左 + links 紧随其后
                 // 注意:Tailwind JIT 只识别静态类名,w-[72px]/left-[72px] 必须字面量
                 const isActionsSticky = col.key === "actions";
                 const isLinksSticky = col.key === "links";
                 const stickyClass = isActionsSticky
-                  ? "sticky left-0 z-20 bg-white/85 backdrop-blur w-[72px] min-w-[72px] shadow-[2px_0_4px_-2px_rgba(0,0,0,0.1)]"
+                  ? "sticky left-0 z-20 bg-white w-[72px] min-w-[72px] shadow-[2px_0_4px_-2px_rgba(0,0,0,0.1)]"
                   : isLinksSticky
-                  ? "sticky left-[72px] z-20 bg-white/85 backdrop-blur shadow-[2px_0_4px_-2px_rgba(0,0,0,0.1)]"
+                  ? "sticky left-[72px] z-20 bg-white shadow-[2px_0_4px_-2px_rgba(0,0,0,0.1)]"
                   : "";
                 return (
                   <th
@@ -544,7 +544,7 @@ function JobRow({
               ? "bg-primary text-ink"
               : inPipeline
                 ? "bg-primary-soft/60 text-primary-ink"
-                : "bg-white/60 text-text-muted hover:bg-primary-soft hover:text-primary-ink"
+                : "bg-slate-100 text-text hover:bg-primary-soft hover:text-primary-ink"
           }`}
           title={isFavorited ? "取消收藏" : "加入收藏"}
         >
@@ -643,16 +643,16 @@ function JobRow({
   };
 
   return (
-    <tr className="border-b border-line/60 hover:bg-white/40">
+    <tr className="border-b border-line/60 hover:bg-slate-50">
       {COLUMNS.filter((c) => visibleKeys.includes(c.key)).map((col) => {
         // 操作列固定最左,链接列紧随其后固定,滚动时常驻可见
         // 注意:Tailwind JIT 只识别静态类名,所以 w-[72px]/left-[72px] 必须以字面量出现
         const isActionsSticky = col.key === "actions";
         const isLinksSticky = col.key === "links";
         const stickyClass = isActionsSticky
-          ? "sticky left-0 z-[2] bg-white/85 backdrop-blur w-[72px] min-w-[72px]"
+          ? "sticky left-0 z-[2] bg-white w-[72px] min-w-[72px]"
           : isLinksSticky
-          ? "sticky left-[72px] z-[2] bg-white/85 backdrop-blur"
+          ? "sticky left-[72px] z-[2] bg-white"
           : "";
         return (
           <td
@@ -704,10 +704,10 @@ function JobsStatsCards({ stats }: { stats: StatsOverview }) {
       <StatCard label="今日新增" value={j.today_new} accent="success" />
       <StatCard label="近7日新增" value={j.week_new} accent="info" />
       <CategoryBar items={j.top_categories} />
-      <div className="rounded-xl border border-line bg-white/50 px-4 py-3 backdrop-blur">
+      <div className="rounded-xl border border-line bg-white px-4 py-3">
         <div className="text-xs text-text-muted">数据更新</div>
         <div className="mt-1 text-sm font-medium text-ink">每日 08:00 同步</div>
-        <div className="mt-1 text-xs text-text-faint">来源：服务器主库</div>
+        <div className="mt-1 text-xs text-text-muted">来源：服务器主库</div>
       </div>
     </div>
   );
@@ -728,7 +728,7 @@ function StatCard({
     info: "text-blue-600",
   }[accent];
   return (
-    <div className="rounded-xl border border-line bg-white/50 px-4 py-3 backdrop-blur">
+    <div className="rounded-xl border border-line bg-white px-4 py-3">
       <div className="text-xs text-text-muted">{label}</div>
       <div className={`mt-1 text-2xl font-bold ${color}`}>{value.toLocaleString()}</div>
     </div>
@@ -738,7 +738,7 @@ function StatCard({
 function CategoryBar({ items }: { items: { name: string; count: number }[] }) {
   const max = items[0]?.count ?? 1;
   return (
-    <div className="rounded-xl border border-line bg-white/50 px-4 py-3 backdrop-blur sm:col-span-2 lg:col-span-2">
+    <div className="rounded-xl border border-line bg-white px-4 py-3 sm:col-span-2 lg:col-span-2">
       <div className="mb-2 text-xs text-text-muted">岗位分类 Top8</div>
       <div className="grid grid-cols-2 gap-x-4 gap-y-1">
         {items.map((it) => (
@@ -822,7 +822,7 @@ function RecommendJobsList({
 
   if (loading) {
     return (
-      <div className="flex flex-1 items-center justify-center rounded-xl border border-line bg-white/40 py-16">
+      <div className="flex flex-1 items-center justify-center rounded-xl border border-line bg-white py-16">
         <div className="h-10 w-10 animate-spin rounded-full border-4 border-primary-soft border-t-primary" />
         <p className="ml-3 text-sm text-text-muted">AI 正在匹配你的简历…</p>
       </div>
@@ -839,7 +839,7 @@ function RecommendJobsList({
 
   if (jobs.length === 0) {
     return (
-      <div className="flex flex-1 items-center justify-center rounded-xl border border-line bg-white/40 py-16 text-text-faint">
+      <div className="flex flex-1 items-center justify-center rounded-xl border border-line bg-white py-16 text-text-muted">
         暂无推荐岗位，请先上传简历解析
       </div>
     );
@@ -865,7 +865,7 @@ function RecommendJobsList({
     filters.minScore > 0;
 
   return (
-    <div className="flex flex-1 flex-col overflow-hidden rounded-xl border border-line bg-white/40">
+    <div className="flex flex-1 flex-col overflow-hidden rounded-xl border border-line bg-white">
       {/* 筛选工具栏 */}
       <div className="border-b border-line/50 p-2">
         <div className="flex flex-wrap items-center gap-2">
@@ -874,12 +874,12 @@ function RecommendJobsList({
             value={filters.keyword}
             onChange={(e) => onFilterChange({ keyword: e.target.value })}
             placeholder="搜索岗位/公司/技能/JD..."
-            className="flex-1 min-w-[200px] rounded-lg border border-line bg-white/70 px-3 py-1.5 text-xs outline-none focus:border-primary"
+            className="flex-1 min-w-[200px] rounded-lg border border-line bg-white px-3 py-1.5 text-xs outline-none focus:border-primary"
           />
           <select
             value={filters.level}
             onChange={(e) => onFilterChange({ level: e.target.value })}
-            className="rounded-lg border border-line bg-white/70 px-2 py-1.5 text-xs"
+            className="rounded-lg border border-line bg-white px-2 py-1.5 text-xs"
           >
             <option value="all">全部等级</option>
             <option value="super_recommend">超级推荐</option>
@@ -904,7 +904,7 @@ function RecommendJobsList({
             <button
               type="button"
               onClick={onClearFilters}
-              className="rounded-lg border border-line bg-white/70 px-2 py-1 text-xs text-text-muted hover:bg-white"
+              className="rounded-lg border border-line bg-white px-2 py-1 text-xs text-text-muted hover:bg-slate-50"
             >
               清除
             </button>
@@ -928,7 +928,7 @@ function RecommendJobsList({
                 const next = Array.from(e.target.selectedOptions).map((o) => o.value);
                 onFilterChange({ [grp.key]: next } as never);
               }}
-              className="rounded-lg border border-line bg-white/70 px-2 py-1 text-[11px] outline-none focus:border-primary"
+              className="rounded-lg border border-line bg-white px-2 py-1 text-[11px] outline-none focus:border-primary"
               size={1}
             >
               <option value="">{grp.label}▼</option>
@@ -958,7 +958,7 @@ function RecommendJobsList({
                     ? "bg-primary text-ink"
                     : groupName === "推荐"
                     ? "bg-success-soft text-success"
-                    : "bg-white/60 text-text-muted"
+                    : "bg-slate-100 text-text"
                 }`}
               >
                 {groupName}
@@ -1031,7 +1031,7 @@ function RecommendJobsList({
               return (
                 <div
                   key={`${job.job_id}-${idx}`}
-                  className={`border-b border-line/50 px-4 py-3 transition hover:bg-white/60 ${
+                  className={`border-b border-line/50 px-4 py-3 transition hover:bg-slate-50 ${
                     isTop ? "bg-primary/5" : ""
                   }`}
                 >

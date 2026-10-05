@@ -527,7 +527,7 @@ export default function Email() {
       </div>
 
       {/* 邮箱账户 */}
-      <section className="rounded-2xl border border-line bg-white/60 p-5 backdrop-blur">
+      <section className="rounded-2xl border border-line bg-white p-5">
         <div className="mb-4 flex items-center justify-between">
           <h2 className="text-base font-semibold">邮箱账户</h2>
           <button
@@ -580,7 +580,7 @@ export default function Email() {
       </section>
 
       {/* 待确认任务 */}
-      <section className="rounded-2xl border border-line bg-white/60 p-5 backdrop-blur">
+      <section className="rounded-2xl border border-line bg-white p-5">
         <div className="mb-4 flex items-center justify-between">
           <h2 className="text-base font-semibold">
             待确认任务 <span className="text-sm text-text-muted">({tasks.length})</span>

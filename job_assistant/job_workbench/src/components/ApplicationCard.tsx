@@ -19,7 +19,7 @@ const SOURCE_LABEL: Record<string, string> = {
 const SOURCE_COLOR: Record<string, string> = {
   db_job: "bg-primary-soft text-primary-ink",
   db_company: "bg-info-soft text-info",
-  manual: "bg-white/60 text-text-muted",
+  manual: "bg-slate-100 text-text",
   email: "bg-success/15 text-success",
 };
 
@@ -55,9 +55,9 @@ export default function ApplicationCard({
     if (!dl || /招满|即止|不限|未知/.test(dl)) return null;
     const s = dl.replace("/", "-").slice(0, 10);
     const m = /^(\d{4})-(\d{1,2})-(\d{1,2})$/.exec(s);
-    if (!m) return { text: dl, color: "bg-white/60 text-text-muted" };
+    if (!m) return { text: dl, color: "bg-slate-100 text-text" };
     const d = new Date(Number(m[1]), Number(m[2]) - 1, Number(m[3]));
-    if (isNaN(d.getTime())) return { text: dl, color: "bg-white/60 text-text-muted" };
+    if (isNaN(d.getTime())) return { text: dl, color: "bg-slate-100 text-text" };
     const today = new Date();
     today.setHours(0, 0, 0, 0);
     const days = Math.floor((d.getTime() - today.getTime()) / 86400000);
@@ -102,7 +102,7 @@ export default function ApplicationCard({
         <div className="min-w-0">
           <div className="flex items-center gap-1.5">
             <span
-              className={`rounded px-1.5 py-0.5 text-[10px] font-medium ${SOURCE_COLOR[application.source] || "bg-white/60 text-text-muted"}`}
+              className={`rounded px-1.5 py-0.5 text-[10px] font-medium ${SOURCE_COLOR[application.source] || "bg-slate-100 text-text"}`}
             >
               {sourceLabel}
             </span>
@@ -158,7 +158,7 @@ export default function ApplicationCard({
             onChange={(e) => setNotes(e.target.value)}
             placeholder="添加备注（如 HR 联系方式、面试反馈）…"
             rows={3}
-            className="w-full resize-none rounded-lg border border-white/60 bg-white/40 p-2 text-xs text-text placeholder:text-text-faint backdrop-blur-sm focus:border-primary-dark focus:outline-none focus:ring-2 focus:ring-primary/30"
+            className="w-full resize-none rounded-lg border border-line bg-white p-2 text-xs text-text placeholder:text-text-muted focus:border-primary-dark focus:outline-none focus:ring-2 focus:ring-primary/30"
           />
           <div className="flex justify-end gap-2">
             <button

@@ -83,7 +83,7 @@ export default function AutoFill() {
             <button
               type="button"
               onClick={() => openExternalUrl(NOWCODER_INTRO_URL)}
-              className="rounded-lg bg-white/60 px-3 py-1.5 text-xs text-text transition hover:bg-white"
+              className="rounded-lg bg-slate-100 px-3 py-1.5 text-xs text-text transition hover:bg-slate-200"
             >
               查看更多安装方式
             </button>

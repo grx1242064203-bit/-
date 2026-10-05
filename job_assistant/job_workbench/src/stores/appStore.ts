@@ -29,9 +29,9 @@ export const KANBAN_COLUMNS: KanbanColumn[] = [
     status: "favorite",
     label: "⭐ 收藏",
     columnBg: "",
-    headerBg: "bg-white/40",
-    dotColor: "bg-text-faint",
-    accentText: "text-text-muted",
+    headerBg: "bg-white border-b border-line",
+    dotColor: "bg-text-muted",
+    accentText: "text-text",
   },
   {
     status: "applied",

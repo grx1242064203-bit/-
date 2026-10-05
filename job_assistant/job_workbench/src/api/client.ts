@@ -63,9 +63,12 @@ export class ApiClient {
 
   private buildHeaders(init?: RequestInit): Record<string, string> {
     const headers: Record<string, string> = {
-      "Content-Type": "application/json",
       ...((init?.headers as Record<string, string>) || {}),
     };
+    // FormData 时不设 Content-Type，让浏览器自动加 multipart boundary
+    if (!(init?.body instanceof FormData)) {
+      headers["Content-Type"] = headers["Content-Type"] || "application/json";
+    }
     const token = this.accessor.get();
     if (token) headers["Authorization"] = `Bearer ${token}`;
     return headers;
@@ -163,6 +166,14 @@ export class ApiClient {
     return this.request<T>(path, {
       method: "POST",
       body: body === undefined ? undefined : JSON.stringify(body),
+    });
+  }
+
+  /** 上传文件（multipart/form-data），body 直接传 FormData，不 JSON 序列化。 */
+  postForm<T>(path: string, form: FormData): Promise<T> {
+    return this.request<T>(path, {
+      method: "POST",
+      body: form,
     });
   }
 

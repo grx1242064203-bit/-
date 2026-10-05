@@ -2,16 +2,17 @@
 
 支持格式：
 - .txt / .md / .markdown：直接读取（UTF-8 / GBK 自动探测）
-- .pdf：PyMuPDF 提取文本层
-- .jpg / .jpeg / .png / .webp / .bmp：RapidOCR 中文 OCR
+- .pdf：PyMuPDF 提取文本层（非 OCR，仅提取可选中文字）
+- .jpg / .jpeg / .png / .webp / .bmp：LLMClient.ocr_image() 用视觉模型识别文字
 
 设计要点：
-- RapidOCR 引擎懒加载（首次调用才初始化，避免启动慢）
-- OCR 结果按行合并，保留段落结构
-- 所有异常向上抛出，由路由层统一处理并返回具体错误信息
+- 图片不走本地 OCR（RapidOCR 等），直接调 DeepSeek-VL 视觉模型，
+  与公告图片识别链路一致，避免引入额外依赖和模型下载。
+- PDF 优先提取文本层；若文本层为空（扫描件），返回空字符串并提示。
+- 所有异常向上抛出，由路由层统一处理并返回具体错误信息。
 """
-import io
 import logging
+import os
 from typing import Tuple
 
 from fastapi import UploadFile
@@ -23,20 +24,6 @@ IMAGE_EXT = {".jpg", ".jpeg", ".png", ".webp", ".bmp"}
 PDF_EXT = {".pdf"}
 TEXT_EXT = {".txt", ".md", ".markdown", ".text"}
 
-# RapidOCR 引擎单例（懒加载）
-_ocr_engine = None
-
-
-def _get_ocr_engine():
-    """懒加载 RapidOCR 引擎，首次调用初始化。"""
-    global _ocr_engine
-    if _ocr_engine is None:
-        from rapidocr_onnxruntime import RapidOCR
-
-        _ocr_engine = RapidOCR()
-        logger.info("RapidOCR 引擎初始化完成")
-    return _ocr_engine
-
 
 def _read_text_file(content: bytes) -> str:
     """读取文本文件，自动探测 UTF-8 / GBK 编码。"""
@@ -45,12 +32,11 @@ def _read_text_file(content: bytes) -> str:
             return content.decode(enc)
         except UnicodeDecodeError:
             continue
-    # 兜底：忽略错误字符
     return content.decode("utf-8", errors="ignore")
 
 
 def _extract_pdf(content: bytes) -> str:
-    """用 PyMuPDF 提取 PDF 文本层。"""
+    """用 PyMuPDF 提取 PDF 文本层（非 OCR）。"""
     import fitz  # pymupdf
 
     doc = fitz.open(stream=content, filetype="pdf")
@@ -65,19 +51,26 @@ def _extract_pdf(content: bytes) -> str:
         doc.close()
 
 
-def _extract_image(content: bytes) -> str:
-    """用 RapidOCR 识别图片中的文字，按行合并。"""
-    engine = _get_ocr_engine()
-    result, _ = engine(content)
-    if not result:
-        return ""
-    # result 格式: [[box, text, score], ...]
-    # 按 y 坐标排序后逐行合并
-    lines = []
-    for item in result:
-        if len(item) >= 2:
-            lines.append(item[1])
-    return "\n".join(lines)
+def _extract_image(content: bytes, ext: str) -> str:
+    """用 DeepSeek-VL 视觉模型识别图片文字（复用 LLMClient.ocr_image）。"""
+    import sys
+    from pathlib import Path
+
+    # 把项目根目录加入 sys.path 以 import llm_client
+    parent = str(Path(__file__).resolve().parents[2])
+    if parent not in sys.path:
+        sys.path.insert(0, parent)
+
+    from llm_client import LLMClient
+
+    api_key = os.getenv("DEEPSEEK_API_KEY", "")
+    client = LLMClient(api_key=api_key or None)
+    if not getattr(client, "api_key", ""):
+        raise ValueError("DEEPSEEK_API_KEY 未配置，无法识别图片简历")
+
+    ext_clean = ext.lstrip(".")
+    text = client.ocr_image(content, ext=ext_clean)
+    return text or ""
 
 
 def get_file_ext(filename: str) -> str:
@@ -94,7 +87,7 @@ async def extract_resume_text(file: UploadFile) -> Tuple[str, str]:
         (text, file_type) — file_type 为 'text' / 'pdf' / 'image'
 
     Raises:
-        ValueError: 不支持的文件类型或提取失败
+        ValueError: 不支持的文件类型或提取失败（含具体原因）
     """
     ext = get_file_ext(file.filename or "")
     content = await file.read()
@@ -104,6 +97,8 @@ async def extract_resume_text(file: UploadFile) -> Tuple[str, str]:
 
     if ext in TEXT_EXT:
         text = _read_text_file(content)
+        if not text.strip():
+            raise ValueError("文件内容为空，请确认简历非空")
         return text, "text"
 
     if ext in PDF_EXT:
@@ -117,9 +112,11 @@ async def extract_resume_text(file: UploadFile) -> Tuple[str, str]:
 
     if ext in IMAGE_EXT:
         try:
-            text = _extract_image(content)
+            text = _extract_image(content, ext)
+        except ValueError:
+            raise
         except Exception as e:
-            raise ValueError(f"图片 OCR 识别失败: {e}") from e
+            raise ValueError(f"图片识别失败: {e}") from e
         if not text.strip():
             raise ValueError("图片中未识别到文字，请确保图片清晰且包含文字内容")
         return text, "image"

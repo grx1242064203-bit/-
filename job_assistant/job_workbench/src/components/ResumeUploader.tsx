@@ -5,12 +5,12 @@ import {
 } from "../stores/resumeStore";
 
 // 简历拖拽 / 点击上传区域：
-// - 接受 .pdf / .txt / .md（PDF 在 store 层以"即将支持"拦截，UI 仅预选）
-// - 选中文件后显示 文件名 + 大小 + "上传并解析"按钮
-// - 进度三阶段：上传中 → 解析中 → 完成（phase 驱动文案 + spinner）
-// - 错误：暖橙 alert + 重试
+// - 支持 .txt / .md / .pdf / .jpg / .png 等
+// - 纯文本：浏览器直读 → 点"立即解析"走 LLM
+// - PDF / 图片：上传即走后端提取文本 + LLM 解析（一步完成）
+// - 错误：暖橙 alert + 具体原因 + "重新上传"按钮
 export default function ResumeUploader() {
-  const { uploadResume, parseResume, phase, error, isLoading } =
+  const { uploadResume, parseResume, phase, error, isLoading, clearError } =
     useResumeStore();
   const [file, setFile] = useState<File | null>(null);
   const [dragOver, setDragOver] = useState(false);
@@ -18,6 +18,7 @@ export default function ResumeUploader() {
 
   function pickFile(f: File | null | undefined) {
     if (!f) return;
+    clearError();
     setFile(f);
   }
 
@@ -37,11 +38,21 @@ export default function ResumeUploader() {
     setDragOver(false);
   }
 
+  function resetUpload() {
+    clearError();
+    setFile(null);
+    inputRef.current?.click();
+  }
+
   async function handleUploadAndParse() {
     if (!file || isLoading) return;
     try {
       await uploadResume(file);
-      await parseResume();
+      // PDF / 图片：uploadResume 已完成解析（phase=done），无需再调 parseResume
+      // 纯文本：uploadResume 只存文本，需手动调 parseResume
+      if (useResumeStore.getState().phase !== "done") {
+        await parseResume();
+      }
     } catch {
       // error 已写入 store，此处无需再处理
     }
@@ -57,14 +68,12 @@ export default function ResumeUploader() {
       ? "完成"
       : "上传并解析";
 
-  // input 放在 dropzone 外作兄弟节点，避免 input.click() 合成事件冒泡回
-  // dropzone 重复触发 onClick（否则会循环打开文件对话框）。
   return (
     <div className="mx-auto w-full max-w-xl">
       <input
         ref={inputRef}
         type="file"
-        accept=".txt,.md,.markdown,.text,.pdf"
+        accept=".txt,.md,.markdown,.text,.pdf,.jpg,.jpeg,.png,.webp,.bmp"
         className="hidden"
         onChange={(e) => pickFile(e.target.files?.[0])}
       />
@@ -96,12 +105,12 @@ export default function ResumeUploader() {
           拖拽简历到此处，或点击选择文件
         </p>
         <p className="mt-1 text-xs text-slate-500">
-          支持 .txt / .md（.pdf 即将支持）
+          支持 .txt / .md / .pdf / .jpg / .png 等格式
         </p>
       </div>
 
       {/* 已选文件卡片 */}
-      {file && (
+      {file && !error && (
         <div className="glass mt-4 flex items-center gap-3 rounded-2xl px-4 py-3 shadow-card">
           <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl bg-orange-50 text-lg">
             📝
@@ -127,16 +136,27 @@ export default function ResumeUploader() {
         </div>
       )}
 
-      {/* 错误提示 */}
+      {/* 错误提示 + 重新上传 */}
       {error && (
-        <div className="mt-4 flex items-start gap-2 rounded-2xl bg-orange-50 px-4 py-3 text-sm text-orange-700">
-          <span className="mt-0.5">⚠️</span>
-          <span className="flex-1">{error}</span>
+        <div className="mt-4 rounded-2xl bg-orange-50 px-4 py-3 text-sm text-orange-700">
+          <div className="flex items-start gap-2">
+            <span className="mt-0.5">⚠️</span>
+            <span className="flex-1">{error}</span>
+          </div>
+          <div className="mt-3 flex justify-end">
+            <button
+              type="button"
+              onClick={resetUpload}
+              className="rounded-xl bg-orange-500 px-4 py-1.5 text-xs font-medium text-white transition hover:bg-orange-600"
+            >
+              重新上传
+            </button>
+          </div>
         </div>
       )}
 
       {/* 操作按钮 */}
-      {file && (
+      {file && !error && (
         <div className="mt-4 flex justify-end">
           <button
             type="button"

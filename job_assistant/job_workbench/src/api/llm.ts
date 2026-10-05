@@ -88,6 +88,22 @@ export const llmApi = {
       .then(normalizeParsedProfile);
   },
 
+  /** 上传简历文件（txt/md/pdf/图片）→ 后端提取文本 + LLM 解析 → 返回画像 + 原文。 */
+  parseResumeFile(file: File): Promise<{ profile: ParsedProfile; rawText: string; fileType: string }> {
+    const form = new FormData();
+    form.append("file", file);
+    return apiClient
+      .postForm<{ keywords?: unknown[]; fit_directions?: unknown[]; raw_text?: string; file_type?: string }>(
+        "/api/v1/llm/parse-resume-file",
+        form
+      )
+      .then((raw) => ({
+        profile: normalizeParsedProfile(raw),
+        rawText: raw.raw_text ?? "",
+        fileType: raw.file_type ?? "",
+      }));
+  },
+
   /** 用户编辑后请求 LLM 补充画像（合并用户已编辑 + 原文重新解析）。 */
   supplementProfile(
     userEdited: ParsedProfile,

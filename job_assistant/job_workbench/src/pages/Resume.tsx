@@ -83,21 +83,33 @@ export default function Resume() {
         )}
       </div>
 
-      {/* 页面级错误（解析失败）：暖橙 alert + 重试 */}
+      {/* 页面级错误（解析失败）：暖橙 alert + 重新解析 / 重新上传 */}
       {showPageError && (
         <div className="flex items-start gap-2 rounded-2xl bg-orange-50 px-4 py-3 text-sm text-orange-700">
           <span className="mt-0.5">⚠️</span>
           <span className="flex-1">{error}</span>
-          <button
-            type="button"
-            onClick={() => {
-              clearError();
-              parseResume();
-            }}
-            className="shrink-0 rounded-lg bg-orange-500 px-3 py-1 text-xs font-medium text-white hover:bg-orange-600"
-          >
-            重新解析
-          </button>
+          <div className="flex shrink-0 gap-2">
+            <button
+              type="button"
+              onClick={() => {
+                clearError();
+                parseResume();
+              }}
+              className="rounded-lg bg-orange-500 px-3 py-1 text-xs font-medium text-white hover:bg-orange-600"
+            >
+              重新解析
+            </button>
+            <button
+              type="button"
+              onClick={() => {
+                clearError();
+                clearResume();
+              }}
+              className="rounded-lg border border-orange-300 bg-white px-3 py-1 text-xs font-medium text-orange-600 hover:bg-orange-50"
+            >
+              重新上传
+            </button>
+          </div>
         </div>
       )}
 

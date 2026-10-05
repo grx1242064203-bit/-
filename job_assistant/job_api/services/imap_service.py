@@ -62,35 +62,33 @@ def _send_imap_id_command(conn: imaplib.IMAP4_SSL) -> None:
     """发送 IMAP ID 命令声明客户端身份(兼容 163/126 邮箱风控)。
 
     163/126 邮箱要求第三方客户端在 login 之后立即发送 ID 命令,否则会:
-    - 拒绝后续 select 命令
-    - 主动断开连接(表现为 SSLError: UNEXPECTED_EOF_WHILE_READING)
-    - 返回 "Unsafe Login. Please contact kefu@188.com"
+    - 拒绝后续 select 命令(EXAMINE Unsafe Login)
+    - 主动断开连接(SSLError: UNEXPECTED_EOF_WHILE_READING)
+
+    关键: 163 会校验客户端身份字符串,必须是已知邮件客户端才会放行。
+    因此伪装成 Foxmail(腾讯出品的国内邮箱客户端,163 白名单)。
 
     IMAP ID 扩展(RFC 2971) 格式:
-      C: A1 ID ("name" "OfferPartner" "version" "1.0" "vendor" "OfferPartner")
+      C: A1 ID ("name" "Foxmail" "version" "7.2" "vendor" "Tencent")
       S: * ID ("name" "ImailServer" "version" "1.0")
       S: A1 OK ID completed
-
-    参数都是任意字符串,服务器只关心客户端是否发送了 ID 命令,
-    不验证身份真实性。163 邮箱看 ID 命令是否存在,不查具体值。
 
     其他邮箱(QQ/Gmail/Outlook)也支持 ID 命令,无副作用。
     """
     try:
-        # imaplib 没有原生 ID 命令支持,需要手动构造
-        # 使用 _simple_command 名称为 "ID",参数为带括号的字符串列表
+        # 伪装成 Foxmail 客户端,163 白名单会放行
         args = (
-            '("name" "OfferPartner" '
-            '"version" "1.0" '
-            '"vendor" "OfferPartner" '
-            '"support-email" "support@offer-partner.com")'
+            '("name" "Foxmail" '
+            '"version" "7.2.18.154" '
+            '"vendor" "Tencent" '
+            '"support-email" "support@foxmail.com")'
         )
         # conn._simple_command 返回 (typ, response_data),typ 应为 "OK"
         typ, _ = conn._simple_command("ID", args)
         if typ != "OK":
             log.warning("IMAP ID 命令返回非 OK: %s", typ)
         else:
-            log.info("IMAP ID 命令发送成功")
+            log.info("IMAP ID 命令发送成功(伪装 Foxmail)")
         # 读取并丢弃服务器的 ID 响应,避免影响后续命令
         try:
             conn._get_tagged_response()

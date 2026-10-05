@@ -1,0 +1,78 @@
+{
+  "manifest_version": "v1",
+  "format": "ndjson",
+  "base_token": "ZmIhbOTlaaGrgpscQyCcT2eunLP",
+  "table_id": "tbl0Rdg9ZANtRY3F",
+  "rev": 5,
+  "timezone": "Asia/Shanghai",
+  "query_context": {
+    "field_scope": "selected_fields",
+    "record_scope": "all_records"
+  },
+  "requested_limit": 2000,
+  "records_count": 35,
+  "page_count": 1,
+  "has_more": false,
+  "record_file": "/workspace/.cache/archive_records.ndjson",
+  "record_file_size_bytes": 12583,
+  "manifest_file": "/workspace/.cache/archive_records.manifest.json",
+  "columns": {
+    "JD链接": {
+      "field_id": "fldC7TWOXM",
+      "field_type": "text",
+      "physical_type": "string|null",
+      "stats": {
+        "null_count": 0,
+        "max_length": 262
+      },
+      "example": "[查看JD](https://m.liepin.com/a/78585855.shtml)"
+    },
+    "record_id": {
+      "physical_type": "string",
+      "stats": {
+        "max_length": 14
+      },
+      "example": "recvrQTfaFjCeD"
+    },
+    "公司": {
+      "field_id": "fldZdbR2QP",
+      "field_type": "text",
+      "physical_type": "string|null",
+      "stats": {
+        "null_count": 0,
+        "max_length": 17
+      },
+      "example": "中泰证券"
+    },
+    "去重hash": {
+      "field_id": "fldZh5cOcu",
+      "field_type": "text",
+      "physical_type": "string|null",
+      "stats": {
+        "null_count": 0,
+        "max_length": 53
+      },
+      "example": "渣打银行ProductOwner广州"
+    },
+    "地点": {
+      "field_id": "fldwDaEoH8",
+      "field_type": "text",
+      "physical_type": "string|null",
+      "stats": {
+        "null_count": 0,
+        "max_length": 14
+      },
+      "example": "上海"
+    },
+    "岗位标题": {
+      "field_id": "fldhSNlRNL",
+      "field_type": "text",
+      "physical_type": "string|null",
+      "stats": {
+        "null_count": 0,
+        "max_length": 66
+      },
+      "example": "FOF基金经理"
+    }
+  }
+}

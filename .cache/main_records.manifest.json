@@ -1,0 +1,104 @@
+{
+  "manifest_version": "v1",
+  "format": "ndjson",
+  "base_token": "ZmIhbOTlaaGrgpscQyCcT2eunLP",
+  "table_id": "tblfvWkJtMDUmJjM",
+  "rev": 40,
+  "timezone": "Asia/Shanghai",
+  "query_context": {
+    "field_scope": "selected_fields",
+    "record_scope": "all_records"
+  },
+  "requested_limit": 2000,
+  "records_count": 403,
+  "page_count": 1,
+  "has_more": false,
+  "record_file": "/workspace/.cache/main_records.ndjson",
+  "record_file_size_bytes": 158258,
+  "manifest_file": "/workspace/.cache/main_records.manifest.json",
+  "columns": {
+    "JD链接": {
+      "field_id": "fldV2WnnFf",
+      "field_type": "text",
+      "physical_type": "string|null",
+      "stats": {
+        "null_count": 1,
+        "max_length": 336
+      },
+      "example": "[查看JD](http://www.swhysc.com)"
+    },
+    "record_id": {
+      "physical_type": "string",
+      "stats": {
+        "max_length": 14
+      },
+      "example": "recvqcanSlsFtQ"
+    },
+    "公司": {
+      "field_id": "fldk9wplF3",
+      "field_type": "text",
+      "physical_type": "string|null",
+      "stats": {
+        "null_count": 1,
+        "max_length": 44
+      },
+      "example": "UBS"
+    },
+    "去重hash": {
+      "field_id": "fldtzmIXiO",
+      "field_type": "text",
+      "physical_type": "string|null",
+      "stats": {
+        "null_count": 1,
+        "max_length": 96
+      },
+      "example": "中睿合银研究员成都"
+    },
+    "地点": {
+      "field_id": "fld2csXirw",
+      "field_type": "text",
+      "physical_type": "string|null",
+      "stats": {
+        "null_count": 1,
+        "max_length": 36
+      },
+      "example": "深圳"
+    },
+    "岗位标题": {
+      "field_id": "flduV4fE8G",
+      "field_type": "text",
+      "physical_type": "string|null",
+      "stats": {
+        "null_count": 1,
+        "max_length": 120
+      },
+      "example": "配置岗"
+    },
+    "是否在招": {
+      "field_id": "fld0fB5nPd",
+      "field_type": "select",
+      "physical_type": "array<string>",
+      "stats": {
+        "empty_count": 235,
+        "max_length": 1,
+        "avg_length": 0.41687344913151364
+      },
+      "example": [
+        "是"
+      ]
+    },
+    "申请状态": {
+      "field_id": "fld9BaLN3g",
+      "field_type": "select",
+      "physical_type": "array<string>",
+      "stats": {
+        "empty_count": 1,
+        "max_length": 1,
+        "avg_length": 0.9975186104218362
+      },
+      "example": [
+        "未投递"
+      ]
+    }
+  }
+}

@@ -696,6 +696,124 @@ function FilterChip({ label, onClose }: { label: string; onClose: () => void }) 
   );
 }
 
+/** 推荐页筛选下拉 — 面板样式与表头 ColumnFilter 一致(可搜索 + 多选复选框)。
+ *  与 ColumnFilter 的区别:触发器是带标签+选中数的按钮,而非表头的小 ▾。
+ *  single=true 时为单选(用于推荐等级)。 */
+function FilterDropdown({
+  label,
+  options,
+  value,
+  onChange,
+  single = false,
+}: {
+  label: string;
+  options: (string | { label: string; value: string })[];
+  value: string[];
+  onChange: (value: string[]) => void;
+  single?: boolean;
+}) {
+  const [open, setOpen] = useState(false);
+  const [search, setSearch] = useState("");
+  const ref = useRef<HTMLDivElement>(null);
+
+  const opts = options.map((o) =>
+    typeof o === "string" ? { label: o, value: o } : o
+  );
+
+  useEffect(() => {
+    if (!open) return;
+    const handler = (e: MouseEvent) => {
+      if (ref.current && !ref.current.contains(e.target as Node)) setOpen(false);
+    };
+    document.addEventListener("mousedown", handler);
+    return () => document.removeEventListener("mousedown", handler);
+  }, [open]);
+
+  const filtered = opts.filter((o) =>
+    o.label.toLowerCase().includes(search.toLowerCase())
+  );
+
+  const toggle = (v: string) => {
+    if (single) {
+      onChange(value.includes(v) ? [] : [v]);
+      setOpen(false);
+    } else {
+      onChange(value.includes(v) ? value.filter((x) => x !== v) : [...value, v]);
+    }
+  };
+
+  const count = value.length;
+
+  return (
+    <div className="relative" ref={ref}>
+      <button
+        type="button"
+        onClick={() => setOpen((o) => !o)}
+        className={`flex items-center gap-1 rounded-lg border px-2 py-1 text-xs transition ${
+          count > 0
+            ? "border-primary bg-primary-soft text-ink"
+            : "border-line bg-white text-text hover:bg-slate-50"
+        }`}
+      >
+        {label}
+        {count > 0 && (
+          <span className="rounded-full bg-primary px-1 text-[10px] font-medium text-white">
+            {count}
+          </span>
+        )}
+        <span className="text-text-faint">▾</span>
+      </button>
+
+      {open && (
+        <div className="absolute left-0 top-7 z-50 w-56 rounded-lg border border-line bg-white/95 p-2 shadow-lg backdrop-blur">
+          <div className="mb-2 text-xs font-medium text-text-muted">{label}</div>
+          <input
+            type="text"
+            value={search}
+            onChange={(e) => setSearch(e.target.value)}
+            placeholder="搜索选项…"
+            className="mb-2 w-full rounded border border-line px-2 py-1 text-xs outline-none focus:border-primary"
+          />
+          <div className="max-h-56 overflow-y-auto">
+            {filtered.map((o) => {
+              const checked = value.includes(o.value);
+              return (
+                <label
+                  key={o.value}
+                  className="flex cursor-pointer items-center gap-2 rounded px-1 py-1 text-xs hover:bg-surface-soft"
+                >
+                  <input
+                    type={single ? "radio" : "checkbox"}
+                    checked={checked}
+                    onChange={() => toggle(o.value)}
+                    className="h-3 w-3 accent-primary"
+                  />
+                  <span className="flex-1 truncate">{o.label}</span>
+                </label>
+              );
+            })}
+            {filtered.length === 0 && (
+              <div className="py-2 text-center text-xs text-text-faint">无匹配项</div>
+            )}
+          </div>
+          {count > 0 && (
+            <button
+              type="button"
+              onClick={() => {
+                onChange([]);
+                setSearch("");
+              }}
+              className="mt-2 w-full rounded bg-surface-soft py-1 text-xs text-text-muted hover:bg-gray-100"
+            >
+              清除筛选
+            </button>
+          )}
+        </div>
+      )}
+    </div>
+  );
+}
+
 function JobsStatsCards({ stats }: { stats: StatsOverview }) {
   const j = stats.jobs;
   return (
@@ -866,27 +984,63 @@ function RecommendJobsList({
 
   return (
     <div className="flex flex-1 flex-col overflow-hidden rounded-xl border border-line bg-white">
-      {/* 筛选工具栏 */}
+      {/* 筛选工具栏 — 与公司/岗位表同款:搜索框 + 可搜索多选下拉面板 */}
       <div className="border-b border-line/50 p-2">
         <div className="flex flex-wrap items-center gap-2">
           <input
             type="text"
             value={filters.keyword}
             onChange={(e) => onFilterChange({ keyword: e.target.value })}
-            placeholder="搜索岗位/公司/技能/JD..."
+            placeholder="搜索岗位 / 公司 / 技能 / JD…"
             className="flex-1 min-w-[200px] rounded-lg border border-line bg-white px-3 py-1.5 text-xs outline-none focus:border-primary"
           />
-          <select
-            value={filters.level}
-            onChange={(e) => onFilterChange({ level: e.target.value })}
-            className="rounded-lg border border-line bg-white px-2 py-1.5 text-xs"
-          >
-            <option value="all">全部等级</option>
-            <option value="super_recommend">超级推荐</option>
-            <option value="recommend">推荐</option>
-            <option value="applyable">可申请</option>
-            <option value="low">不建议</option>
-          </select>
+
+          {/* 分类筛选下拉(可搜索多选,与表头 ColumnFilter 同款面板) */}
+          <FilterDropdown
+            label="行业"
+            options={opts.industry ?? []}
+            value={filters.industry}
+            onChange={(v) => onFilterChange({ industry: v })}
+          />
+          <FilterDropdown
+            label="公司类型"
+            options={opts.company_type ?? []}
+            value={filters.companyType}
+            onChange={(v) => onFilterChange({ companyType: v })}
+          />
+          <FilterDropdown
+            label="招聘类型"
+            options={opts.recruit_type ?? []}
+            value={filters.recruitType}
+            onChange={(v) => onFilterChange({ recruitType: v })}
+          />
+          <FilterDropdown
+            label="学历"
+            options={opts.education_req ?? []}
+            value={filters.minEducation}
+            onChange={(v) => onFilterChange({ minEducation: v })}
+          />
+          <FilterDropdown
+            label="难度"
+            options={opts.difficulty ?? []}
+            value={filters.difficulty}
+            onChange={(v) => onFilterChange({ difficulty: v })}
+          />
+
+          {/* 推荐等级:单选下拉(4档) */}
+          <FilterDropdown
+            label="推荐等级"
+            options={[
+              { label: "超级推荐", value: "super_recommend" },
+              { label: "推荐", value: "recommend" },
+              { label: "可申请", value: "applyable" },
+              { label: "不建议", value: "low" },
+            ]}
+            value={filters.level === "all" ? [] : [filters.level]}
+            onChange={(v) => onFilterChange({ level: v[0] ?? "all" })}
+            single
+          />
+
           <label className="flex items-center gap-1 text-xs text-text-muted">
             最低分
             <input
@@ -900,6 +1054,7 @@ function RecommendJobsList({
             />
             <span className="w-8 tabular-nums">{filters.minScore}</span>
           </label>
+
           {hasFilter && (
             <button
               type="button"
@@ -909,34 +1064,6 @@ function RecommendJobsList({
               清除
             </button>
           )}
-        </div>
-
-        {/* 分类下拉框筛选 */}
-        <div className="mt-2 flex flex-wrap items-center gap-2 text-[11px]">
-          {[
-            { key: "industry" as const, label: "行业", options: opts.industry ?? [], cur: filters.industry },
-            { key: "companyType" as const, label: "公司类型", options: opts.company_type ?? [], cur: filters.companyType },
-            { key: "recruitType" as const, label: "招聘类型", options: opts.recruit_type ?? [], cur: filters.recruitType },
-            { key: "minEducation" as const, label: "学历", options: opts.education_req ?? [], cur: filters.minEducation },
-            { key: "difficulty" as const, label: "难度", options: opts.difficulty ?? [], cur: filters.difficulty },
-          ].map((grp) => (
-            <select
-              key={grp.key}
-              multiple
-              value={grp.cur}
-              onChange={(e) => {
-                const next = Array.from(e.target.selectedOptions).map((o) => o.value);
-                onFilterChange({ [grp.key]: next } as never);
-              }}
-              className="rounded-lg border border-line bg-white px-2 py-1 text-[11px] outline-none focus:border-primary"
-              size={1}
-            >
-              <option value="">{grp.label}▼</option>
-              {grp.options.map((v) => (
-                <option key={v} value={v}>{v}</option>
-              ))}
-            </select>
-          ))}
         </div>
       </div>
 
@@ -1039,8 +1166,14 @@ function RecommendJobsList({
                     <div className="min-w-0 flex-1.5">
                       <div className="flex flex-wrap items-center gap-2">
                         <span className="text-sm font-semibold text-text">
-                          {job.title}
+                          {job.company ? `${job.title} - ${job.company}` : job.title}
                         </span>
+                        {/* 推荐等级彩色胶囊 */}
+                        {job.recommend && (
+                          <span className={pillClass(colorMap.recommend(job.recommend_level))}>
+                            {job.recommend}
+                          </span>
+                        )}
                         {isApplied && (
                           <span className="rounded-full bg-success-soft px-1.5 py-0.5 text-[10px] font-medium text-success">
                             📮 已投递
@@ -1051,9 +1184,6 @@ function RecommendJobsList({
                             ⭐ 已收藏
                           </span>
                         )}
-                      </div>
-                      <div className="mt-0.5 text-xs text-text-muted">
-                        {job.company}
                       </div>
 
                       {/* 彩色胶囊字段 */}
@@ -1090,7 +1220,7 @@ function RecommendJobsList({
                         </p>
                       )}
 
-                      {/* 匹配度条 */}
+                      {/* 匹配度条 + 竞争力对比(候选人分 vs 公司分) */}
                       <div className="mt-2 flex items-center gap-2">
                         <div className="h-1.5 w-28 overflow-hidden rounded bg-gray-200">
                           <div
@@ -1101,9 +1231,15 @@ function RecommendJobsList({
                         <span className="text-xs font-medium text-text">
                           {job.score.toFixed(0)}%
                         </span>
-                        <span className="text-xs text-text-faint">
-                          {job.recommend || ""}
-                        </span>
+                        {/* 用户层级 vs 公司层级:分数透明化,让「冲刺/保底」有据可查 */}
+                        {job.candidate_score !== undefined && job.company_score !== undefined && (
+                          <span
+                            className="rounded bg-slate-100 px-1.5 py-0.5 text-[10px] tabular-nums text-text-muted"
+                            title={`候选人竞争力 ${job.candidate_score?.toFixed(0)} vs 公司竞争力 ${job.company_score?.toFixed(0)}`}
+                          >
+                            你 {job.candidate_score?.toFixed(0)} · 企 {job.company_score?.toFixed(0)}
+                          </span>
+                        )}
                       </div>
 
                       {/* 前 2 条推荐理由 */}

@@ -148,6 +148,25 @@ export const colorMap = {
     v === 1 || v === "1"
       ? { bg: "bg-emerald-100", text: "text-emerald-700" }
       : { bg: "bg-gray-100", text: "text-gray-600" },
+  /** 推荐等级 → 颜色：强烈推荐=红、推荐=橙、可申请=蓝、不建议=灰 */
+  recommend: (level: string | null | undefined): ColorPair => {
+    switch (level) {
+      case "super_recommend":
+      case "强烈推荐":
+        return { bg: "bg-rose-100", text: "text-rose-700" };
+      case "recommend":
+      case "推荐":
+        return { bg: "bg-orange-100", text: "text-orange-700" };
+      case "applyable":
+      case "可申请":
+        return { bg: "bg-blue-100", text: "text-blue-700" };
+      case "low":
+      case "不建议":
+        return { bg: "bg-gray-100", text: "text-gray-500" };
+      default:
+        return { bg: "bg-gray-100", text: "text-gray-600" };
+    }
+  },
 };
 
 /** 通用彩色标签组件用的 className 生成 */

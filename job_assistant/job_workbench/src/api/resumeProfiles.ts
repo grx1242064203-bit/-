@@ -4,7 +4,8 @@ import { apiClient } from "./client";
 
 export interface ResumeProfile {
   profile_id: string;
-  user_id: number;
+  user_id: string;
+  resume_text?: string;
   keywords: any[];
   fit_directions: any[];
   degree: string;

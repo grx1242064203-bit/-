@@ -16,7 +16,7 @@ from config import get_settings
 _SCHEMA_SQL = """
 CREATE TABLE IF NOT EXISTS resume_profiles (
     profile_id TEXT PRIMARY KEY,
-    user_id INTEGER NOT NULL,
+    user_id TEXT NOT NULL,
     resume_text TEXT NOT NULL,
     keywords_json TEXT NOT NULL,
     fit_directions_json TEXT NOT NULL,
@@ -62,7 +62,7 @@ def _now() -> str:
 
 
 def create_profile(
-    user_id: int,
+    user_id: str,
     resume_text: str,
     keywords: list,
     fit_directions: list,
@@ -116,7 +116,7 @@ def get_profile(profile_id: str) -> Optional[dict]:
         conn.close()
 
 
-def get_active_profile(user_id: int) -> Optional[dict]:
+def get_active_profile(user_id: str) -> Optional[dict]:
     """获取用户当前 active 的画像。"""
     conn = _conn()
     try:
@@ -129,7 +129,7 @@ def get_active_profile(user_id: int) -> Optional[dict]:
         conn.close()
 
 
-def list_profiles(user_id: int) -> list:
+def list_profiles(user_id: str) -> list:
     conn = _conn()
     try:
         rows = conn.execute(
@@ -141,7 +141,7 @@ def list_profiles(user_id: int) -> list:
         conn.close()
 
 
-def delete_profile(profile_id: str, user_id: int) -> bool:
+def delete_profile(profile_id: str, user_id: str) -> bool:
     conn = _conn()
     try:
         cur = conn.execute(

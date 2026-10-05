@@ -42,6 +42,26 @@ export default function ApplicationCard({
     : null;
   const sourceLabel = SOURCE_LABEL[application.source] || application.source;
 
+  // 截止日期徽标:解析 deadline,3天内红/7天内橙/其他普通。
+  // 招满即止/不限 等无法解析的字符串不显示徽标。
+  const deadlineInfo = (() => {
+    const dl = application.deadline;
+    if (!dl || /招满|即止|不限|未知/.test(dl)) return null;
+    const s = dl.replace("/", "-").slice(0, 10);
+    const m = /^(\d{4})-(\d{1,2})-(\d{1,2})$/.exec(s);
+    if (!m) return { text: dl, color: "bg-white/60 text-text-muted" };
+    const d = new Date(Number(m[1]), Number(m[2]) - 1, Number(m[3]));
+    if (isNaN(d.getTime())) return { text: dl, color: "bg-white/60 text-text-muted" };
+    const today = new Date();
+    today.setHours(0, 0, 0, 0);
+    const days = Math.floor((d.getTime() - today.getTime()) / 86400000);
+    if (days < 0) return { text: `已截止 ${dl}`, color: "bg-gray-200 text-gray-600" };
+    if (days === 0) return { text: "今日截止", color: "bg-red-100 text-red-700" };
+    if (days <= 3) return { text: `${days}天后截止`, color: "bg-orange-100 text-orange-700" };
+    if (days <= 7) return { text: `${days}天后截止`, color: "bg-amber-100 text-amber-700" };
+    return { text: `截止 ${dl}`, color: "bg-info-soft text-info" };
+  })();
+
   function handleSaveNotes() {
     setSaving(true);
     updateApplication(application.id, { notes: notes.trim() || null })
@@ -113,6 +133,14 @@ export default function ApplicationCard({
           ✕
         </button>
       </div>
+
+      {deadlineInfo && (
+        <div
+          className={`mt-1 inline-block rounded px-1.5 py-0.5 text-[10px] font-medium ${deadlineInfo.color}`}
+        >
+          ⏰ {deadlineInfo.text}
+        </div>
+      )}
 
       {updatedAt && (
         <div className="mt-1 text-xs text-text-faint">更新：{updatedAt}</div>

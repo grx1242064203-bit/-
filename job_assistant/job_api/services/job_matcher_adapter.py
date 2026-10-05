@@ -21,47 +21,66 @@ def build_user_profile(profile_dict: dict) -> "UserProfile":
     Returns:
         填充好的 UserProfile 实例
     """
-    from models import UserProfile
+    # 优先用 job_api/main.py 预加载的 jobseeker_models 别名(根目录 models.py),
+    # 避免被 job_api/models/ 包遮蔽。直接运行测试时回退到 from models import。
+    try:
+        from jobseeker_models import UserProfile
+    except ImportError:
+        from models import UserProfile
 
     keywords = profile_dict.get("keywords") or []
     fit_dirs = profile_dict.get("fit_directions") or []
 
     # fit_directions 里权重最高的 direction 作为 role
+    # 容错:fit_dirs 可能是 ["后端","全栈"] 字符串数组,也可能是 [{"direction":"后端","weight":3}] dict 数组
     role = ""
     if fit_dirs:
-        sorted_dirs = sorted(fit_dirs, key=lambda x: -(x.get("weight") or 0))
-        role = sorted_dirs[0].get("direction") or ""
+        dict_dirs = [d for d in fit_dirs if isinstance(d, dict)]
+        if dict_dirs:
+            sorted_dirs = sorted(dict_dirs, key=lambda x: -(x.get("weight") or 0))
+            role = sorted_dirs[0].get("direction") or ""
+        else:
+            # 字符串数组:取第一个作为 role
+            role = str(fit_dirs[0]) if fit_dirs[0] else ""
 
     # structured_keywords：直接透传（scorer 依赖）
     structured_keywords = keywords
 
-    # core_skills：hard_skill/tool/framework 类关键词的 standard/kw
-    core_skills_set = set()
-    for tag in keywords:
-        if not isinstance(tag, dict):
-            continue
-        cat = tag.get("category", "")
-        if cat in ("hard_skill", "tool", "framework", "skill"):
-            std = tag.get("standard") or tag.get("kw") or ""
-            if std:
-                core_skills_set.add(std)
+    # 容错:keywords 可能是 ["Python","React"] 字符串数组,而非 [{"category":"skill","standard":"Python"}] dict 数组
+    # 字符串场景下,全部归入 skill 类
+    has_dict_kw = any(isinstance(k, dict) for k in keywords)
+    if not has_dict_kw and keywords:
+        str_keywords = [str(k) for k in keywords if k]
+        core_skills_set = set(str_keywords)
+        direction_keywords = {"skill": str_keywords}
+    else:
+        # core_skills：hard_skill/tool/framework 类关键词的 standard/kw
+        core_skills_set = set()
+        for tag in keywords:
+            if not isinstance(tag, dict):
+                continue
+            cat = tag.get("category", "")
+            if cat in ("hard_skill", "tool", "framework", "skill"):
+                std = tag.get("standard") or tag.get("kw") or ""
+                if std:
+                    core_skills_set.add(std)
 
-    # direction_keywords：按 category 分组
-    direction_keywords: dict[str, list[str]] = {}
-    for tag in keywords:
-        if not isinstance(tag, dict):
-            continue
-        cat = tag.get("category", "")
-        std = tag.get("standard") or tag.get("kw") or ""
-        if not std:
-            continue
-        # scorer 用 role / domain / skill 三个 key
-        if cat == "role":
-            direction_keywords.setdefault("role", []).append(std)
-        elif cat == "domain":
-            direction_keywords.setdefault("domain", []).append(std)
-        elif cat in ("hard_skill", "tool", "framework", "skill"):
-            direction_keywords.setdefault("skill", []).append(std)
+        # direction_keywords：按 category 分组
+        direction_keywords: dict[str, list[str]] = {}
+        for tag in keywords:
+            if not isinstance(tag, dict):
+                continue
+            cat = tag.get("category", "")
+            std = tag.get("standard") or tag.get("kw") or ""
+            if not std:
+                continue
+            # scorer 用 role / domain / skill 三个 key
+            if cat == "role":
+                direction_keywords.setdefault("role", []).append(std)
+            elif cat == "domain":
+                direction_keywords.setdefault("domain", []).append(std)
+            elif cat in ("hard_skill", "tool", "framework", "skill"):
+                direction_keywords.setdefault("skill", []).append(std)
 
     target_cities = profile_dict.get("target_cities") or []
 

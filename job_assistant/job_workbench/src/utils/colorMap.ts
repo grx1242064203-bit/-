@@ -100,23 +100,24 @@ const DIFFICULTY_COLORS: Record<string, ColorPair> = {
   "⭐⭐⭐⭐": { bg: "bg-red-100", text: "text-red-700" },
 };
 
-/** 难度归一化:取值映射到三档(简单/中等/困难)。
- * 支持中文(简单/中等/困难)、英文(Easy/Medium/Hard)、星级(★/⭐)、数字(1-4)。 */
+/** 难度归一化:把后端实际取值映射到三档(简单/中等/困难)。
+ * 实际数据样例:"中等难度" / "较为激烈" / "较低难度" / "最激烈" / "简单" / "中等" / "困难"。
+ * 策略:用 includes 模糊匹配,而非严格相等,兼容"中等难度""较为激烈"等组合词。
+ * 也支持英文(Easy/Medium/Hard)、星级(★/⭐)、数字(1-4)。 */
 function normalizeDifficulty(v: string): string {
   const s = v.trim().toLowerCase();
   if (!s) return "";
-  // 直接命中
+  // 直接命中(已归一化或与 key 完全相等)
   if (DIFFICULTY_COLORS[s]) return s;
-  // 中文/英文直接匹配原值(大小写不敏感)
-  if (/简单|easy|低|^1星?$|^[★⭐]$/.test(s)) return "简单";
-  if (/中等|medium|中|^2星?$|^[★⭐]{2}$/.test(s)) return "中等";
-  if (/困难|hard|高|^3星?$|^[★⭐]{3}$/.test(s)) return "困难";
-  if (/非常困难|expert|^4星?$|^[★⭐]{4}$/.test(s)) return "困难";
-  // 数字 1-4 → 简单/中等/困难/困难
-  if (s === "1") return "简单";
-  if (s === "2") return "中等";
-  if (s === "3" || s === "4") return "困难";
-  // 数字带"星"/"级"后缀
+  // 简单/低档:简单 / 容易 / easy / 低 / 较低 / 1星 / ★
+  if (/简单|容易|easy|较低|低难度|^低$|^1星?$|^[★⭐]$/.test(s)) return "简单";
+  // 中等/中档:中等 / medium / 中 / 一般 / 2星 / ★★
+  if (/中等|medium|一般|^中$|^2星?$|^[★⭐]{2}$/.test(s)) return "中等";
+  // 困难/高档:困难 / hard / 高 / 激烈 / 3星 / ★★★
+  if (/困难|hard|较高|激烈|^高$|^3星?$|^[★⭐]{3}$/.test(s)) return "困难";
+  // 非常困难:非常困难 / expert / 4星 / ★★★★
+  if (/非常|expert|最激烈|^4星?$|^[★⭐]{4}$/.test(s)) return "困难";
+  // 数字 1-4
   const m = s.match(/^(\d)/);
   if (m) {
     const n = parseInt(m[1], 10);

@@ -27,7 +27,8 @@ class CreateProfileRequest(BaseModel):
 
 class ProfileResponse(BaseModel):
     profile_id: str
-    user_id: int
+    user_id: str
+    resume_text: str = ""
     keywords: list
     fit_directions: list
     degree: str = ""
@@ -44,7 +45,7 @@ def create_profile(
     user: dict = Depends(get_current_user),
 ):
     """新建画像（自动把同用户旧 active 设为 inactive）。"""
-    uid = int(user["user_id"])
+    uid = str(user["user_id"])
     profile = rp_model.create_profile(
         user_id=uid,
         resume_text=req.resume_text,
@@ -59,13 +60,13 @@ def create_profile(
 
 @router.get("/active", response_model=Optional[ProfileResponse])
 def get_active_profile(user: dict = Depends(get_current_user)):
-    uid = int(user["user_id"])
+    uid = str(user["user_id"])
     return rp_model.get_active_profile(uid)
 
 
 @router.get("", response_model=list)
 def list_profiles(user: dict = Depends(get_current_user)):
-    uid = int(user["user_id"])
+    uid = str(user["user_id"])
     return rp_model.list_profiles(uid)
 
 
@@ -74,7 +75,7 @@ def delete_profile(
     profile_id: str,
     user: dict = Depends(get_current_user),
 ):
-    uid = int(user["user_id"])
+    uid = str(user["user_id"])
     ok = rp_model.delete_profile(profile_id, uid)
     if not ok:
         raise HTTPException(status_code=404, detail="画像不存在或无权删除")

@@ -1,11 +1,11 @@
 import { useState } from "react";
+import { useDraggable } from "@dnd-kit/core";
+import { CSS } from "@dnd-kit/utilities";
 import { useAppStore, type Application } from "../stores/appStore";
 import { updateApplication } from "../api/applications";
 
 interface Props {
   application: Application;
-  onDragStart: (app: Application) => void;
-  onDragEnd: () => void;
   onClick?: () => void;
 }
 
@@ -25,25 +25,31 @@ const SOURCE_COLOR: Record<string, string> = {
 
 export default function ApplicationCard({
   application,
-  onDragStart,
-  onDragEnd,
   onClick,
 }: Props) {
   const [expanded, setExpanded] = useState(false);
   const [notes, setNotes] = useState(application.notes ?? "");
   const [saving, setSaving] = useState(false);
-  // 标记是否正在/刚刚完成拖拽，用于抑制拖拽后的 click 事件
-  // （浏览器在 dragend 后会同步触发 click，导致误开详情弹窗）
-  const [dragged, setDragged] = useState(false);
   const removeApplication = useAppStore((s) => s.removeApplication);
+
+  // dnd-kit: 把卡片变成可拖拽元素,id 用 application.id(唯一)
+  const { attributes, listeners, setNodeRef, transform, isDragging } =
+    useDraggable({
+      id: `app-${application.id}`,
+      data: { application },
+    });
+
+  const style = {
+    transform: CSS.Translate.toString(transform),
+    opacity: isDragging ? 0.4 : 1,
+  };
 
   const updatedAt = application.updated_at
     ? application.updated_at.slice(0, 10)
     : null;
   const sourceLabel = SOURCE_LABEL[application.source] || application.source;
 
-  // 截止日期徽标:解析 deadline,3天内红/7天内橙/其他普通。
-  // 招满即止/不限 等无法解析的字符串不显示徽标。
+  // 截止日期徽标
   const deadlineInfo = (() => {
     const dl = application.deadline;
     if (!dl || /招满|即止|不限|未知/.test(dl)) return null;
@@ -78,27 +84,19 @@ export default function ApplicationCard({
   }
 
   function handleCardClick() {
-    if (expanded) return; // 编辑备注时不触发打开详情
-    if (dragged) return; // 拖拽刚结束，抑制误触发的 click
+    if (expanded) return;
+    if (isDragging) return; // 拖拽中不触发 click
     onClick?.();
   }
 
   return (
     <div
-      draggable
-      onDragStart={(e) => {
-        setDragged(true);
-        e.dataTransfer.setData("text/plain", String(application.id));
-        e.dataTransfer.effectAllowed = "move";
-        onDragStart(application);
-      }}
-      onDragEnd={() => {
-        onDragEnd();
-        // dragend 后浏览器同步触发 click，延迟重置让 click 处理器能看到 dragged=true
-        setTimeout(() => setDragged(false), 0);
-      }}
+      ref={setNodeRef}
+      style={style}
+      {...listeners}
+      {...attributes}
       onClick={handleCardClick}
-      className="glass-soft group cursor-pointer rounded-xl p-3 shadow-sm transition hover:-translate-y-0.5 hover:shadow-md"
+      className="glass-soft group cursor-pointer rounded-xl p-3 shadow-sm transition hover:-translate-y-0.5 hover:shadow-md touch-none"
     >
       <div className="flex items-start justify-between gap-2">
         <div className="min-w-0">
@@ -109,7 +107,7 @@ export default function ApplicationCard({
               {sourceLabel}
             </span>
             {application.status === "interview" && application.interview_round > 0 && (
-              <span className="rounded bg-warning/20 px-1.5 py-0.5 text-[10px] font-medium text-ink">
+              <span className="rounded bg-amber-100 px-1.5 py-0.5 text-[10px] font-medium text-amber-900">
                 {application.interview_round}面
               </span>
             )}
@@ -123,6 +121,7 @@ export default function ApplicationCard({
         </div>
         <button
           type="button"
+          onPointerDown={(e) => e.stopPropagation()}
           onClick={(e) => {
             e.stopPropagation();
             void removeApplication(application.id);
@@ -184,6 +183,7 @@ export default function ApplicationCard({
       {!expanded && (
         <button
           type="button"
+          onPointerDown={(e) => e.stopPropagation()}
           onClick={(e) => {
             e.stopPropagation();
             setExpanded(true);

@@ -78,6 +78,15 @@ export default function Jobs() {
   const [recommendJobs, setRecommendJobs] = useState<RecommendedJob[]>([]);
   const [recommendLoading, setRecommendLoading] = useState(false);
   const [recommendError, setRecommendError] = useState<string | null>(null);
+  // 推荐筛选: 行业/公司类型/招聘类型/学历/难度 多选 + 关键词 + 推荐等级 + 分数下限
+  const [recFilterIndustry, setRecFilterIndustry] = useState<string[]>([]);
+  const [recFilterCompanyType, setRecFilterCompanyType] = useState<string[]>([]);
+  const [recFilterRecruitType, setRecFilterRecruitType] = useState<string[]>([]);
+  const [recFilterEdu, setRecFilterEdu] = useState<string[]>([]);
+  const [recFilterDifficulty, setRecFilterDifficulty] = useState<string[]>([]);
+  const [recFilterKeyword, setRecFilterKeyword] = useState("");
+  const [recFilterLevel, setRecFilterLevel] = useState<string>("all");
+  const [recFilterMinScore, setRecFilterMinScore] = useState(0);
   const serverProfile = useResumeStore((s) => s.serverProfile);
 
   // 切到推荐 tab 时自动拉取
@@ -220,6 +229,37 @@ export default function Jobs() {
           error={recommendError}
           appByJob={appByJob}
           onOpenApply={(url) => url && openExternalUrl(url)}
+          filterOptions={stats?.companies.filter_options}
+          filters={{
+            industry: recFilterIndustry,
+            companyType: recFilterCompanyType,
+            recruitType: recFilterRecruitType,
+            minEducation: recFilterEdu,
+            difficulty: recFilterDifficulty,
+            keyword: recFilterKeyword,
+            level: recFilterLevel,
+            minScore: recFilterMinScore,
+          }}
+          onFilterChange={(patch) => {
+            if (patch.industry !== undefined) setRecFilterIndustry(patch.industry);
+            if (patch.companyType !== undefined) setRecFilterCompanyType(patch.companyType);
+            if (patch.recruitType !== undefined) setRecFilterRecruitType(patch.recruitType);
+            if (patch.minEducation !== undefined) setRecFilterEdu(patch.minEducation);
+            if (patch.difficulty !== undefined) setRecFilterDifficulty(patch.difficulty);
+            if (patch.keyword !== undefined) setRecFilterKeyword(patch.keyword);
+            if (patch.level !== undefined) setRecFilterLevel(patch.level);
+            if (patch.minScore !== undefined) setRecFilterMinScore(patch.minScore);
+          }}
+          onClearFilters={() => {
+            setRecFilterIndustry([]);
+            setRecFilterCompanyType([]);
+            setRecFilterRecruitType([]);
+            setRecFilterEdu([]);
+            setRecFilterDifficulty([]);
+            setRecFilterKeyword("");
+            setRecFilterLevel("all");
+            setRecFilterMinScore(0);
+          }}
         />
       )}
 
@@ -701,13 +741,56 @@ function RecommendJobsList({
   error,
   appByJob,
   onOpenApply,
+  filterOptions,
+  filters,
+  onFilterChange,
+  onClearFilters,
 }: {
   jobs: RecommendedJob[];
   loading: boolean;
   error: string | null;
   appByJob: (jobId: string) => Application | undefined;
   onOpenApply: (url: string) => void;
+  filterOptions?: Record<string, string[]>;
+  filters: {
+    industry: string[];
+    companyType: string[];
+    recruitType: string[];
+    minEducation: string[];
+    difficulty: string[];
+    keyword: string;
+    level: string;
+    minScore: number;
+  };
+  onFilterChange: (patch: Partial<{
+    industry: string[];
+    companyType: string[];
+    recruitType: string[];
+    minEducation: string[];
+    difficulty: string[];
+    keyword: string;
+    level: string;
+    minScore: number;
+  }>) => void;
+  onClearFilters: () => void;
 }) {
+  // 应用筛选
+  const filteredJobs = jobs.filter((j) => {
+    if (filters.industry.length && !filters.industry.includes(j.industry)) return false;
+    if (filters.companyType.length && !filters.companyType.includes(j.company_type)) return false;
+    if (filters.recruitType.length && !(j.recruit_type && filters.recruitType.includes(j.recruit_type))) return false;
+    if (filters.minEducation.length && !filters.minEducation.includes(j.min_education)) return false;
+    if (filters.difficulty.length && !filters.difficulty.includes(j.difficulty)) return false;
+    if (filters.level !== "all" && j.recommend_level !== filters.level) return false;
+    if (filters.minScore > 0 && j.score < filters.minScore) return false;
+    if (filters.keyword.trim()) {
+      const kw = filters.keyword.trim().toLowerCase();
+      const haystack = `${j.title} ${j.company} ${j.city} ${j.industry} ${j.keywords || ""} ${j.jd_summary || ""}`.toLowerCase();
+      if (!haystack.includes(kw)) return false;
+    }
+    return true;
+  });
+
   if (loading) {
     return (
       <div className="flex flex-1 items-center justify-center rounded-xl border border-line bg-white/40 py-16">
@@ -735,16 +818,118 @@ function RecommendJobsList({
 
   // 按 recommend_level 分组：超级推荐 / 推荐 / 其他
   const groups: Record<string, RecommendedJob[]> = {
-    超级推荐: jobs.filter((j) => j.recommend_level === "super_recommend"),
-    推荐: jobs.filter((j) => j.recommend_level === "recommend"),
-    其他: jobs.filter((j) => j.recommend_level !== "super_recommend" && j.recommend_level !== "recommend"),
+    超级推荐: filteredJobs.filter((j) => j.recommend_level === "super_recommend"),
+    推荐: filteredJobs.filter((j) => j.recommend_level === "recommend"),
+    其他: filteredJobs.filter((j) => j.recommend_level !== "super_recommend" && j.recommend_level !== "recommend"),
+  };
+
+  // 筛选选项
+  const opts = filterOptions ?? {};
+  const hasFilter =
+    filters.industry.length ||
+    filters.companyType.length ||
+    filters.recruitType.length ||
+    filters.minEducation.length ||
+    filters.difficulty.length ||
+    filters.keyword.trim() ||
+    filters.level !== "all" ||
+    filters.minScore > 0;
+
+  // 通用多选切换函数
+  const toggleFilter = (
+    key: "industry" | "companyType" | "recruitType" | "minEducation" | "difficulty",
+    val: string
+  ) => {
+    const cur = filters[key] as string[];
+    const next = cur.includes(val) ? cur.filter((x) => x !== val) : [...cur, val];
+    onFilterChange({ [key]: next } as never);
   };
 
   return (
-    <div className="flex-1 overflow-auto rounded-xl border border-line bg-white/40">
-      <div className="p-3 text-xs text-text-muted">
-        共 {jobs.length} 个岗位：超级推荐 {groups["超级推荐"].length} · 推荐 {groups["推荐"].length}
+    <div className="flex flex-1 flex-col overflow-hidden rounded-xl border border-line bg-white/40">
+      {/* 筛选工具栏 */}
+      <div className="border-b border-line/50 p-2">
+        <div className="flex flex-wrap items-center gap-2">
+          <input
+            type="text"
+            value={filters.keyword}
+            onChange={(e) => onFilterChange({ keyword: e.target.value })}
+            placeholder="搜索岗位/公司/技能/JD..."
+            className="flex-1 min-w-[200px] rounded-lg border border-line bg-white/70 px-3 py-1.5 text-xs outline-none focus:border-primary"
+          />
+          <select
+            value={filters.level}
+            onChange={(e) => onFilterChange({ level: e.target.value })}
+            className="rounded-lg border border-line bg-white/70 px-2 py-1.5 text-xs"
+          >
+            <option value="all">全部等级</option>
+            <option value="super_recommend">超级推荐</option>
+            <option value="recommend">推荐</option>
+            <option value="applyable">可申请</option>
+            <option value="low">不建议</option>
+          </select>
+          <label className="flex items-center gap-1 text-xs text-text-muted">
+            最低分
+            <input
+              type="range"
+              min={0}
+              max={100}
+              step={10}
+              value={filters.minScore}
+              onChange={(e) => onFilterChange({ minScore: Number(e.target.value) })}
+              className="h-1.5 w-24"
+            />
+            <span className="w-8 tabular-nums">{filters.minScore}</span>
+          </label>
+          {hasFilter && (
+            <button
+              type="button"
+              onClick={onClearFilters}
+              className="rounded-lg border border-line bg-white/70 px-2 py-1 text-xs text-text-muted hover:bg-white"
+            >
+              清除
+            </button>
+          )}
+        </div>
+
+        {/* 分类多选胶囊 */}
+        <div className="mt-2 flex flex-wrap gap-1.5">
+          {[
+            { key: "industry" as const, label: "行业", options: opts.industry ?? [], cur: filters.industry },
+            { key: "companyType" as const, label: "公司类型", options: opts.company_type ?? [], cur: filters.companyType },
+            { key: "recruitType" as const, label: "招聘类型", options: opts.recruit_type ?? [], cur: filters.recruitType },
+            { key: "minEducation" as const, label: "学历", options: opts.education_req ?? [], cur: filters.minEducation },
+            { key: "difficulty" as const, label: "难度", options: opts.difficulty ?? [], cur: filters.difficulty },
+          ].map((grp) => (
+            <div key={grp.key} className="flex items-center gap-1 text-[11px]">
+              <span className="text-text-faint">{grp.label}:</span>
+              {grp.options.slice(0, 6).map((v) => {
+                const active = grp.cur.includes(v);
+                return (
+                  <button
+                    key={v}
+                    type="button"
+                    onClick={() => toggleFilter(grp.key, v)}
+                    className={`rounded-full px-2 py-0.5 transition ${
+                      active
+                        ? "bg-primary text-ink"
+                        : "bg-white/60 text-text-muted hover:bg-white"
+                    }`}
+                  >
+                    {v}
+                  </button>
+                );
+              })}
+            </div>
+          ))}
+        </div>
       </div>
+
+      <div className="px-3 py-2 text-xs text-text-muted">
+        筛选后 {filteredJobs.length} / 共 {jobs.length} 个岗位：超级推荐 {groups["超级推荐"].length} · 推荐 {groups["推荐"].length}
+      </div>
+
+      <div className="flex-1 overflow-auto">
 
       {Object.entries(groups).map(([groupName, groupJobs]) => {
         if (groupJobs.length === 0) return null;
@@ -769,40 +954,126 @@ function RecommendJobsList({
             {groupJobs.map((job, idx) => {
               const app = appByJob(job.job_id);
               const isApplied = app?.status === "applied";
+              const isFavorite = app?.status === "favorite";
               const scoreColor =
                 job.score >= 80
                   ? "bg-success"
                   : job.score >= 60
                   ? "bg-primary"
                   : job.score >= 40
-                  ? "bg-warning"
+                  ? "bg-amber-400"
                   : "bg-slate-400";
+
+              // 字段胶囊(行业/公司类型/招聘类型/岗位分类/学历/管培/难度/公司层级/对齐)
+              const pills: { label: string; value: string; pair?: { bg: string; text: string } }[] = [];
+              if (job.industry) pills.push({ label: "行业", value: job.industry, pair: colorMap.industry(job.industry) });
+              if (job.company_type) pills.push({ label: "公司类型", value: job.company_type, pair: colorMap.companyType(job.company_type) });
+              if (job.recruit_type) pills.push({ label: "招聘类型", value: job.recruit_type, pair: colorMap.recruitType(job.recruit_type) });
+              if (job.category) pills.push({ label: "岗位分类", value: job.category, pair: colorMap.category(job.category) });
+              if (job.min_education) pills.push({ label: "学历", value: job.min_education, pair: colorMap.education(job.min_education) });
+              if (job.is_mt) pills.push({ label: "管培", value: "是", pair: colorMap.isMt(1) });
+              if (job.difficulty) pills.push({ label: "难度", value: job.difficulty, pair: colorMap.difficulty(job.difficulty) });
+              // 公司层级(顶/中/保底)
+              if (job.company_tier) {
+                const tierPair: Record<string, { bg: string; text: string }> = {
+                  "顶": { bg: "bg-rose-100", text: "text-rose-700" },
+                  "中": { bg: "bg-blue-100", text: "text-blue-700" },
+                  "保底": { bg: "bg-emerald-100", text: "text-emerald-700" },
+                };
+                pills.push({
+                  label: "公司层级",
+                  value: job.company_tier,
+                  pair: tierPair[job.company_tier] || { bg: "bg-gray-100", text: "text-gray-600" },
+                });
+              }
+              // 对齐标签(匹配/冲刺/保底/严重错配)- 候选人 vs 公司层级
+              if (job.alignment_label) {
+                const alignPair: Record<string, { bg: string; text: string }> = {
+                  "匹配": { bg: "bg-emerald-500", text: "text-white" },
+                  "冲刺": { bg: "bg-amber-500", text: "text-white" },
+                  "保底": { bg: "bg-blue-500", text: "text-white" },
+                  "严重错配": { bg: "bg-rose-500", text: "text-white" },
+                };
+                pills.push({
+                  label: "对齐",
+                  value: job.alignment_label,
+                  pair: alignPair[job.alignment_label] || { bg: "bg-gray-100", text: "text-gray-600" },
+                });
+              }
+
+              // 长文本字段
+              const longFields: { label: string; value: string }[] = [];
+              if (job.recruit_target) longFields.push({ label: "招聘对象", value: job.recruit_target });
+              if (job.city) longFields.push({ label: "城市", value: job.city });
+              if (job.subcategory) longFields.push({ label: "岗位子类", value: job.subcategory });
+              if (job.major_category) longFields.push({ label: "专业大类", value: job.major_category });
+              if (job.major_required) longFields.push({ label: "专业要求", value: job.major_required });
+              if (job.hard_skills) longFields.push({ label: "硬技能", value: job.hard_skills });
+              if (job.keywords) longFields.push({ label: "关键词", value: job.keywords });
+              if (job.deadline) longFields.push({ label: "截止", value: String(job.deadline).slice(0, 10) });
+              if (job.updated_at) longFields.push({ label: "发布", value: String(job.updated_at).slice(0, 10) });
 
               return (
                 <div
-                  key={job.job_id}
+                  key={`${job.job_id}-${idx}`}
                   className={`border-b border-line/50 px-4 py-3 transition hover:bg-white/60 ${
-                    isTop && idx === 0 ? "" : ""
+                    isTop ? "bg-primary/5" : ""
                   }`}
                 >
                   <div className="flex items-start justify-between gap-3">
-                    <div className="min-w-0 flex-1">
-                      <div className="flex items-center gap-2">
+                    <div className="min-w-0 flex-1.5">
+                      <div className="flex flex-wrap items-center gap-2">
                         <span className="text-sm font-semibold text-text">
                           {job.title}
                         </span>
-                        {app && (
-                          <span className="rounded-full bg-success-soft px-1.5 py-0.5 text-[10px] text-success">
-                            已投递
+                        {isApplied && (
+                          <span className="rounded-full bg-success-soft px-1.5 py-0.5 text-[10px] font-medium text-success">
+                            📮 已投递
+                          </span>
+                        )}
+                        {isFavorite && !isApplied && (
+                          <span className="rounded-full bg-amber-100 px-1.5 py-0.5 text-[10px] font-medium text-amber-900">
+                            ⭐ 已收藏
                           </span>
                         )}
                       </div>
                       <div className="mt-0.5 text-xs text-text-muted">
                         {job.company}
-                        {job.city && ` · ${job.city}`}
-                        {job.min_education && ` · ${job.min_education}`}
-                        {job.industry && ` · ${job.industry}`}
                       </div>
+
+                      {/* 彩色胶囊字段 */}
+                      {pills.length > 0 && (
+                        <div className="mt-1.5 flex flex-wrap gap-1">
+                          {pills.map((p) => (
+                            <span
+                              key={p.label}
+                              className={pillClass(p.pair || { bg: "bg-gray-100", text: "text-gray-600" })}
+                              title={`${p.label}: ${p.value}`}
+                            >
+                              {p.value}
+                            </span>
+                          ))}
+                        </div>
+                      )}
+
+                      {/* 长文本字段 */}
+                      {longFields.length > 0 && (
+                        <div className="mt-1.5 grid grid-cols-2 gap-x-3 gap-y-0.5 text-[11px] text-text-muted">
+                          {longFields.map((f) => (
+                            <span key={f.label} className="truncate" title={f.value}>
+                              <span className="text-text-faint">{f.label}:</span>
+                              <span className="ml-1 text-text">{f.value}</span>
+                            </span>
+                          ))}
+                        </div>
+                      )}
+
+                      {/* JD 摘要 */}
+                      {job.jd_summary && (
+                        <p className="mt-1.5 line-clamp-2 text-[11px] leading-relaxed text-text-muted">
+                          {job.jd_summary}
+                        </p>
+                      )}
 
                       {/* 匹配度条 */}
                       <div className="mt-2 flex items-center gap-2">
@@ -824,7 +1095,6 @@ function RecommendJobsList({
                       {job.reasons && job.reasons.length > 0 && (
                         <div className="mt-1.5 space-y-0.5 text-[11px] text-text-muted">
                           {job.reasons.slice(0, 2).map((r, i) => {
-                            // 去掉 [skill] [hard_skill] 这种前缀标签的括号
                             const clean = r.replace(/^\[([^\]]+)\]\s*/, "");
                             return (
                               <div key={i} className="truncate" title={r}>
@@ -837,20 +1107,31 @@ function RecommendJobsList({
                       )}
                     </div>
 
-                    {/* 投递按钮 */}
-                    {job.apply_url && (
-                      <button
-                        type="button"
-                        onClick={() => onOpenApply(job.apply_url)}
-                        className={`shrink-0 rounded-lg px-3 py-1.5 text-xs font-medium transition ${
-                          isApplied
-                            ? "bg-success-soft text-success hover:bg-success/10"
-                            : "bg-primary text-ink hover:bg-primary-light"
-                        }`}
-                      >
-                        {isApplied ? "📮 已投递" : "📮 投递"}
-                      </button>
-                    )}
+                    {/* 按钮组 */}
+                    <div className="flex shrink-0 flex-col gap-1.5">
+                      {job.apply_url && (
+                        <button
+                          type="button"
+                          onClick={() => onOpenApply(job.apply_url)}
+                          className={`rounded-lg px-3 py-1.5 text-xs font-medium transition ${
+                            isApplied
+                              ? "bg-success-soft text-success hover:bg-success/10"
+                              : "bg-success text-white hover:bg-success-dark"
+                          }`}
+                        >
+                          {isApplied ? "📮 已投递" : "📮 投递"}
+                        </button>
+                      )}
+                      {job.announcement_url && (
+                        <button
+                          type="button"
+                          onClick={() => onOpenApply(job.announcement_url)}
+                          className="rounded-lg bg-info px-3 py-1.5 text-xs font-medium text-white hover:bg-info-dark"
+                        >
+                          📢 公告
+                        </button>
+                      )}
+                    </div>
                   </div>
                 </div>
               );
@@ -858,6 +1139,7 @@ function RecommendJobsList({
           </div>
         );
       })}
+      </div>
     </div>
   );
 }

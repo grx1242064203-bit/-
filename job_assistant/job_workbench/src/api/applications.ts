@@ -41,15 +41,23 @@ export interface Application {
   recruit_type?: string | null;
   recruit_target?: string | null;
   location?: string | null;
+  // 公司库(db_company)额外字段
+  positions_count?: number | null;
+  position_titles?: string | null;
   // 岗位库(db_job)额外字段(后端 _enrich_linked_data 已返回)
   job_category?: string | null;
   job_subcategory?: string | null;
   min_education?: string | null;
   is_management_trainee?: string | null; // 简写: is_mt
   is_mt?: string | null;
+  major_category?: string | null;
+  major_required?: string | null;
   jd_summary?: string | null;
   difficulty?: string | null;
   hard_skills?: string[] | string | null;
+  keywords?: string[] | string | null;
+  // 公司层级(顶/中/保底)- 公司库场景从 positions 聚合,岗位库场景直接取
+  company_tier?: string | null;
 }
 
 export function createApplication(data: {

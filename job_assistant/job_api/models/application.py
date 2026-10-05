@@ -367,7 +367,9 @@ def _enrich_linked_data(app: dict) -> dict:
                     """SELECT c.industry, c.company_type,
                               a.publish_time, a.deadline,
                               a.recruit_type, a.recruit_target,
-                              a.location AS location
+                              a.location AS location,
+                              a.positions_count, a.position_titles,
+                              a.apply_url, a.announcement_url
                        FROM companies c
                        LEFT JOIN announcements a
                          ON a.company_id = c.id
@@ -375,6 +377,17 @@ def _enrich_linked_data(app: dict) -> dict:
                             SELECT MAX(last_modified) FROM announcements WHERE company_id = c.id
                         )
                        WHERE c.id = ?""",
+                    (int(link_id),),
+                ).fetchone()
+                # 公司层级:companies 表无 company_tier 字段,
+                # 从 positions 表取该公司所有岗位里最常见的 tier
+                tier_row = jobs_conn.execute(
+                    """SELECT company_tier, COUNT(*) AS cnt
+                       FROM positions
+                       WHERE company_id = ? AND company_tier != ''
+                       GROUP BY company_tier
+                       ORDER BY cnt DESC
+                       LIMIT 1""",
                     (int(link_id),),
                 ).fetchone()
                 if row:
@@ -386,14 +399,22 @@ def _enrich_linked_data(app: dict) -> dict:
                         "recruit_type": row["recruit_type"] or "",
                         "recruit_target": row["recruit_target"] or "",
                         "location": row["location"] or "",
+                        "positions_count": row["positions_count"] or 0,
+                        "position_titles": row["position_titles"] or "",
+                        "apply_url": app.get("apply_url") or (row["apply_url"] or ""),
+                        "announcement_url": app.get("announcement_url") or (row["announcement_url"] or ""),
+                        "company_tier": tier_row["company_tier"] if tier_row else "",
                     })
             elif link_type == "job":
                 row = jobs_conn.execute(
-                    """SELECT p.position_title, p.job_category, p.min_education,
-                              p.is_management_trainee, p.jd_summary, p.difficulty,
-                              p.city,
+                    """SELECT p.position_title, p.job_category, p.job_subcategory,
+                              p.min_education, p.is_management_trainee,
+                              p.jd_summary, p.difficulty,
+                              p.city, p.major_category, p.major_required,
+                              p.hard_skills, p.keywords,
                               c.industry, c.company_type,
-                              a.publish_time, a.deadline
+                              a.publish_time, a.deadline,
+                              a.recruit_type, a.recruit_target, a.location
                        FROM positions p
                        LEFT JOIN companies c ON c.id = p.company_id
                        LEFT JOIN announcements a ON a.id = p.announcement_id
@@ -404,15 +425,23 @@ def _enrich_linked_data(app: dict) -> dict:
                     app.update({
                         "position_title": row["position_title"] or "",
                         "job_category": row["job_category"] or "",
+                        "job_subcategory": row["job_subcategory"] or "",
                         "min_education": row["min_education"] or "",
                         "is_mt": bool(row["is_management_trainee"]),
                         "jd_summary": row["jd_summary"] or "",
                         "difficulty": row["difficulty"] or "",
                         "city": row["city"] or "",
+                        "major_category": row["major_category"] or "",
+                        "major_required": row["major_required"] or "",
+                        "hard_skills": row["hard_skills"] or "",
+                        "keywords": row["keywords"] or "",
                         "industry": row["industry"] or "",
                         "company_type": row["company_type"] or "",
                         "publish_time": row["publish_time"] or "",
                         "deadline": row["deadline"] or "",
+                        "recruit_type": row["recruit_type"] or "",
+                        "recruit_target": row["recruit_target"] or "",
+                        "location": row["location"] or (row["city"] or ""),
                     })
         finally:
             jobs_conn.close()

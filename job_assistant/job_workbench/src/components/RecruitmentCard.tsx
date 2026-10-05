@@ -46,8 +46,8 @@ function deadlineBadge(deadline: string | null | undefined): {
   if (d === null) return null;
   if (d < 0) return { text: "已截止", className: "bg-danger/15 text-danger" };
   if (d === 0) return { text: "今日截止", className: "bg-danger text-white" };
-  if (d <= 3) return { text: `${d}天后截止`, className: "bg-warning text-white" };
-  if (d <= 7) return { text: `${d}天后截止`, className: "bg-warning-soft text-warning-dark" };
+  if (d <= 3) return { text: `${d}天后截止`, className: "bg-amber-500 text-white" };
+  if (d <= 7) return { text: `${d}天后截止`, className: "bg-amber-100 text-amber-900" };
   return null;
 }
 
@@ -115,10 +115,30 @@ export default function RecruitmentCard({ application }: Props) {
     if (application.company_type) {
       fieldPills.push({ label: "公司类型", value: application.company_type, pair: colorMap.companyType(application.company_type) });
     }
+    if (application.recruit_type) {
+      fieldPills.push({ label: "招聘类型", value: application.recruit_type, pair: colorMap.recruitType(application.recruit_type) });
+    }
+    // 公司层级(顶/中/保底) - 来自 positions 表 company_tier 字段或公司聚合
+    const tier = application.company_tier;
+    if (tier) {
+      const tierPair: Record<string, { bg: string; text: string }> = {
+        "顶": { bg: "bg-rose-100", text: "text-rose-700" },
+        "中": { bg: "bg-blue-100", text: "text-blue-700" },
+        "保底": { bg: "bg-emerald-100", text: "text-emerald-700" },
+      };
+      fieldPills.push({
+        label: "公司层级",
+        value: tier,
+        pair: tierPair[tier] || { bg: "bg-gray-100", text: "text-gray-600" },
+      });
+    }
     if (isDbJob) {
       // 岗位库专属字段
       if (application.job_category) {
         fieldPills.push({ label: "岗位分类", value: application.job_category, pair: colorMap.category(application.job_category) });
+      }
+      if (application.job_subcategory) {
+        fieldPills.push({ label: "岗位子类", value: application.job_subcategory });
       }
       if (application.min_education) {
         fieldPills.push({ label: "最低学历", value: application.min_education, pair: colorMap.education(application.min_education) });
@@ -145,6 +165,41 @@ export default function RecruitmentCard({ application }: Props) {
     }
   }
 
+  // 长文本/列表字段(独立展示区)
+  const longFields: { label: string; value: string | null | undefined }[] = [];
+  if (isDbLinked) {
+    if (application.recruit_target) {
+      longFields.push({ label: "招聘对象", value: application.recruit_target });
+    }
+    if (application.location) {
+      longFields.push({ label: "工作地点", value: application.location });
+    }
+    if (!isDbJob && application.positions_count != null) {
+      longFields.push({ label: "招聘人数", value: String(application.positions_count) });
+    }
+    if (!isDbJob && application.position_titles) {
+      longFields.push({ label: "招聘岗位", value: application.position_titles });
+    }
+    if (isDbJob) {
+      if (application.major_category) {
+        longFields.push({ label: "专业大类", value: application.major_category });
+      }
+      if (application.major_required) {
+        longFields.push({ label: "专业要求", value: application.major_required });
+      }
+      const hs = application.hard_skills;
+      if (hs) {
+        const hsText = Array.isArray(hs) ? hs.join("、") : String(hs);
+        if (hsText) longFields.push({ label: "硬技能", value: hsText });
+      }
+      const kw = application.keywords;
+      if (kw) {
+        const kwText = Array.isArray(kw) ? kw.join("、") : String(kw);
+        if (kwText) longFields.push({ label: "关键词", value: kwText });
+      }
+    }
+  }
+
   return (
     <div
       className="fixed inset-0 z-50 flex items-start justify-center overflow-y-auto bg-black/40 p-6 backdrop-blur-sm"
@@ -165,7 +220,7 @@ export default function RecruitmentCard({ application }: Props) {
                 {statusLabel}
               </span>
               {application.status === "interview" && application.interview_round > 0 && (
-                <span className="rounded bg-warning/20 px-2 py-0.5 text-xs font-medium text-ink">
+                <span className="rounded bg-amber-100 px-2 py-0.5 text-xs font-medium text-amber-900">
                   {application.interview_round}面
                 </span>
               )}
@@ -206,7 +261,7 @@ export default function RecruitmentCard({ application }: Props) {
             <div className="font-medium text-text">{formatDate(application.interview_at)}</div>
           </div>
           <div className={`rounded-lg p-2 ${
-            dBadge ? "bg-warning-soft/60" : "bg-white/40"
+            dBadge ? "bg-amber-50" : "bg-white/40"
           }`}>
             <div className="text-text-faint">招聘截止</div>
             <div className="font-medium text-text">{formatDate(application.deadline)}</div>
@@ -246,6 +301,20 @@ export default function RecruitmentCard({ application }: Props) {
                     <span className="text-text-faint">{t.label}:</span>
                     <span className="ml-1 font-medium text-text">{formatDate(t.value)}</span>
                   </span>
+                ))}
+              </div>
+            )}
+
+            {/* 长文本字段(招聘对象/工作地点/招聘岗位/专业/技能/关键词) */}
+            {longFields.length > 0 && (
+              <div className="mt-2 space-y-1 border-t border-white/60 pt-2 text-xs">
+                {longFields.map((f) => (
+                  <div key={f.label} className="flex gap-2">
+                    <span className="w-16 shrink-0 text-text-faint">{f.label}:</span>
+                    <span className="flex-1 break-words leading-relaxed text-text">
+                      {f.value}
+                    </span>
+                  </div>
                 ))}
               </div>
             )}
@@ -373,16 +442,30 @@ export default function RecruitmentCard({ application }: Props) {
               {dd.why_company_questions.length > 0 && (
                 <div>
                   <div className="text-xs font-medium text-text-muted">
-                    面试准备：「为什么选择这家公司」
+                    面试准备：「为什么选择这家公司」(点击问题展开专业回答)
                   </div>
                   <div className="mt-1 space-y-2">
                     {dd.why_company_questions.map((q, i) => (
-                      <div key={i} className="rounded-lg bg-white/40 p-2">
-                        <div className="text-sm font-medium text-text">Q: {q.question}</div>
-                        {q.hint && (
-                          <div className="mt-0.5 text-xs text-text-muted">💡 {q.hint}</div>
+                      <details
+                        key={i}
+                        className="rounded-lg bg-white/40 p-2 [&_summary]:cursor-pointer"
+                      >
+                        <summary className="text-sm font-medium text-text marker:text-text-muted">
+                          <span className="text-primary">Q{i + 1}:</span> {q.question}
+                        </summary>
+                        {q.answer && (
+                          <div className="mt-2 space-y-1.5 border-t border-white/60 pt-2 text-xs leading-relaxed text-text">
+                            {q.answer.split(/\n+/).filter(Boolean).map((p, idx) => (
+                              <p key={idx} className="whitespace-pre-wrap">{p}</p>
+                            ))}
+                          </div>
                         )}
-                      </div>
+                        {!q.answer && q.hint && (
+                          <div className="mt-2 text-xs italic text-text-muted">
+                            💡 {q.hint}
+                          </div>
+                        )}
+                      </details>
                     ))}
                   </div>
                 </div>

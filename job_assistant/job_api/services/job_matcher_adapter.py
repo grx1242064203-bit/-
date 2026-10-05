@@ -83,14 +83,28 @@ def build_user_profile(profile_dict: dict) -> "UserProfile":
                 direction_keywords.setdefault("skill", []).append(std)
 
     target_cities = profile_dict.get("target_cities") or []
+    target_companies = profile_dict.get("target_companies") or []
+
+    # degree 兜底:profile_dict.degree 为空时,从教育类关键词提取最高学历
+    degree = profile_dict.get("degree") or ""
+    if not degree and has_dict_kw:
+        edu_words = [
+            (t.get("standard") or t.get("kw") or "")
+            for t in keywords if isinstance(t, dict) and t.get("category") == "education"
+        ]
+        for lv in ("博士", "硕士", "本科", "大专"):
+            if any(lv in w for w in edu_words):
+                degree = lv
+                break
 
     return UserProfile(
         role=role,
-        degree=profile_dict.get("degree") or "",
+        degree=degree,
         major=profile_dict.get("major") or "",
         graduation_year="2027",  # 校招默认 27 届；可后续从 resume_text 提取
         graduation_date="2027-07",
         target_cities=target_cities,
+        target_companies=target_companies,
         resume_text=profile_dict.get("resume_text") or "",
         structured_keywords=structured_keywords,
         fit_directions=fit_dirs,

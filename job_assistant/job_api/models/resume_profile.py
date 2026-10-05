@@ -23,6 +23,7 @@ CREATE TABLE IF NOT EXISTS resume_profiles (
     degree TEXT DEFAULT '',
     major TEXT DEFAULT '',
     target_cities_json TEXT DEFAULT '[]',
+    target_companies_json TEXT DEFAULT '[]',
     is_active INTEGER DEFAULT 1,
     created_at TEXT NOT NULL,
     updated_at TEXT NOT NULL
@@ -30,6 +31,11 @@ CREATE TABLE IF NOT EXISTS resume_profiles (
 
 -- 每用户只允许一个 active 画像：新画像插入时自动把旧的设为 inactive
 -- 应用层控制，不需要 DB 约束
+"""
+
+# 旧表升级:target_companies_json 列可能不存在(老库),用 ALTER TABLE 补列
+_UPGRADE_SQL = """
+ALTER TABLE resume_profiles ADD COLUMN target_companies_json TEXT DEFAULT '[]';
 """
 
 
@@ -44,6 +50,11 @@ def _ensure_schema():
     conn = _conn()
     try:
         conn.executescript(_SCHEMA_SQL)
+        # 旧库升级:补 target_companies_json 列(已存在则跳过)
+        try:
+            conn.executescript(_UPGRADE_SQL)
+        except sqlite3.OperationalError:
+            pass  # 列已存在
         conn.commit()
     finally:
         conn.close()
@@ -69,6 +80,7 @@ def create_profile(
     degree: str = "",
     major: str = "",
     target_cities: Optional[list] = None,
+    target_companies: Optional[list] = None,
 ) -> dict:
     """新建画像（自动把同用户旧 active 设为 inactive）。"""
     conn = _conn()
@@ -84,8 +96,9 @@ def create_profile(
         conn.execute(
             """INSERT INTO resume_profiles
                (profile_id, user_id, resume_text, keywords_json, fit_directions_json,
-                degree, major, target_cities_json, is_active, created_at, updated_at)
-               VALUES (?, ?, ?, ?, ?, ?, ?, ?, 1, ?, ?)""",
+                degree, major, target_cities_json, target_companies_json,
+                is_active, created_at, updated_at)
+               VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, 1, ?, ?)""",
             (
                 profile_id,
                 user_id,
@@ -95,6 +108,7 @@ def create_profile(
                 degree,
                 major,
                 json.dumps(target_cities or [], ensure_ascii=False),
+                json.dumps(target_companies or [], ensure_ascii=False),
                 now,
                 now,
             ),
@@ -162,6 +176,7 @@ def update_profile(
     degree: Optional[str] = None,
     major: Optional[str] = None,
     target_cities: Optional[list] = None,
+    target_companies: Optional[list] = None,
 ) -> Optional[dict]:
     """部分更新画像字段。传入 None 表示不更新该字段。
 
@@ -183,7 +198,11 @@ def update_profile(
     new_degree = degree if degree is not None else existing["degree"]
     new_major = major if major is not None else existing["major"]
     new_cities = json.dumps(
-        target_cities if target_cities is not None else existing["target_cities"],
+        target_cities if target_cities is not None else existing.get("target_cities", []),
+        ensure_ascii=False,
+    )
+    new_companies = json.dumps(
+        target_companies if target_companies is not None else existing.get("target_companies", []),
         ensure_ascii=False,
     )
     now = _now()
@@ -192,12 +211,12 @@ def update_profile(
         conn.execute(
             """UPDATE resume_profiles SET
                keywords_json = ?, fit_directions_json = ?,
-               degree = ?, major = ?, target_cities_json = ?,
+               degree = ?, major = ?, target_cities_json = ?, target_companies_json = ?,
                updated_at = ?
                WHERE profile_id = ? AND user_id = ?""",
             (
                 new_keywords, new_fit_dirs,
-                new_degree, new_major, new_cities,
+                new_degree, new_major, new_cities, new_companies,
                 now,
                 profile_id, user_id,
             ),
@@ -213,5 +232,6 @@ def _row_to_dict(row: sqlite3.Row) -> dict:
     d["keywords"] = json.loads(d.pop("keywords_json", "[]"))
     d["fit_directions"] = json.loads(d.pop("fit_directions_json", "[]"))
     d["target_cities"] = json.loads(d.pop("target_cities_json", "[]"))
+    d["target_companies"] = json.loads(d.pop("target_companies_json", "[]"))
     d["is_active"] = bool(d["is_active"])
     return d

@@ -114,6 +114,25 @@ def to_feishu_job_record(pos: Dict, score_result: Dict) -> Dict:
         "去重hash": pos.get("dedup_hash", "") or "",
         "是否在招": "是",
         "管培项目": mt_name,
+        # 透传 scorer 完整结果(供 adapter 提取 candidate_score/company_score/alignment_label)。
+        # 飞书写入时这些非 schema 字段会被忽略,不影响飞书表结构。
+        "维度分": score_result.get("维度分", {}),
+        "竞争力信息": score_result.get("竞争力信息", {}),
+        "匹配理由": score_result.get("匹配理由", []),
+        "硬门槛通过": score_result.get("硬门槛通过", True),
+        "方向门槛触发": score_result.get("方向门槛触发", False),
+        # 透传岗位原始字段(供 adapter 构造推荐页完整字段,飞书写入时忽略)
+        "company_tier": pos.get("company_tier", "") or "",
+        "job_subcategory": pos.get("job_subcategory", "") or "",
+        "major_category": pos.get("major_category", "") or "",
+        "major_required": pos.get("major_required", "") or "",
+        "hard_skills": pos.get("hard_skills", "") or "",
+        "keywords": pos.get("keywords", "") or "",
+        "recruit_type": pos.get("recruit_type", "") or "",
+        "recruit_target": pos.get("recruit_target", "") or "",
+        "is_management_trainee": is_mt,
+        "deadline": pos.get("deadline", "") or "",
+        "announcement_url": pos.get("announcement_url", "") or pos.get("source_url", "") or "",
     }
 
     # 部门字段可选:仅当岗位有部门信息时才写入(避免大量空字段)

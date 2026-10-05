@@ -80,6 +80,17 @@ export function formatFileSize(bytes: number): string {
   return `${(bytes / (1024 * 1024)).toFixed(2)} MB`;
 }
 
+/** 从结构化关键词中提取最高学历(博士>硕士>本科>大专),用于存入后端 degree 字段。 */
+function extractDegreeFromKeywords(keywords: any[]): string {
+  const eduWords = keywords
+    .filter((k) => k && k.category === "education")
+    .map((k) => k.standard || k.kw || "");
+  for (const lv of ["博士", "硕士", "本科", "大专"]) {
+    if (eduWords.some((w) => w.includes(lv))) return lv;
+  }
+  return "";
+}
+
 function isPdfFile(file: File): boolean {
   const name = file.name.toLowerCase();
   return (
@@ -117,6 +128,8 @@ interface ResumeState {
    * 后端画像存在 → PATCH 后端 + 同步本地;不存在 → 仅同步本地。
    * 推荐接口下次读取 active 画像时用新值。 */
   saveProfileEdits: (edited: ParsedProfile) => Promise<void>;
+  /** 保存用户目标公司(公司意向),用于 company_preference 维度加分 */
+  saveTargetCompanies: (companies: string[]) => Promise<void>;
   clearResume: () => void;
   clearError: () => void;
 }
@@ -192,6 +205,7 @@ export const useResumeStore = create<ResumeState>((set, get) => ({
           resume_text: rawText,
           keywords: profile.keywords,
           fit_directions: profile.fit_directions,
+          degree: extractDegreeFromKeywords(profile.keywords),
         });
       } catch (e) {
         console.warn("存后端画像失败（不阻塞主流程）:", e);
@@ -244,6 +258,7 @@ export const useResumeStore = create<ResumeState>((set, get) => ({
           resume_text: text,
           keywords: profile.keywords,
           fit_directions: profile.fit_directions,
+          degree: extractDegreeFromKeywords(profile.keywords),
         });
       } catch (e) {
         console.warn("存后端画像失败（不阻塞主流程）:", e);
@@ -387,19 +402,37 @@ export const useResumeStore = create<ResumeState>((set, get) => ({
       set({ parsedProfile: edited });
     }
 
-    // 2) 后端画像存在则 PATCH
+    // 2) 后端画像存在则 PATCH(同时传 degree,保持后端 degree 字段与关键词一致)
     const sp = get().serverProfile;
     if (sp) {
       try {
         const updated = await resumeProfilesApi.update(sp.profile_id, {
           keywords: edited.keywords,
           fit_directions: edited.fit_directions,
+          degree: extractDegreeFromKeywords(edited.keywords),
         });
         set({ serverProfile: updated });
       } catch (e) {
         // 后端保存失败时不阻塞 UI(本地已保存),控制台告警
         console.warn("后端画像保存失败(本地已保存):", e);
       }
+    }
+  },
+
+  /** 保存用户目标公司(公司意向),用于 company_preference 维度加分。 */
+  saveTargetCompanies: async (companies: string[]) => {
+    const sp = get().serverProfile;
+    if (!sp) {
+      console.warn("无后端画像,无法保存目标公司");
+      return;
+    }
+    try {
+      const updated = await resumeProfilesApi.update(sp.profile_id, {
+        target_companies: companies,
+      });
+      set({ serverProfile: updated });
+    } catch (e) {
+      console.warn("保存目标公司失败:", e);
     }
   },
 

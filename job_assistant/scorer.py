@@ -23,19 +23,18 @@ logger = logging.getLogger(__name__)
 # - hard_skill 0.15:真实硬技能命中
 # - skill 0.10:综合技能覆盖
 # - education 0.15 / major 0.10:硬门槛
-# - competitiveness 0.10:候选人档位 vs 岗位档位对齐
+# - competitiveness 0.20:候选人档位 vs 岗位档位对齐(原0.10,吸收移除的soft_skill+cert各0.05)
 # - company_preference 0.10:用户目标公司及同行业/同类型/同地位公司优先
-# - cert 0.05 / city 0.05 / soft_skill 0.05:辅助
+# - city 0.05:地域偏好(辅助)
+# 已移除:soft_skill(主观难量化,LLM提取不稳定)、cert(与硬技能重叠且门槛属性弱)
 DIMENSION_WEIGHTS = {
     "skill": 0.10,
     "hard_skill": 0.15,
-    "cert": 0.05,
     "education": 0.15,
     "major": 0.10,
     "city": 0.05,
     "role": 0.15,
-    "soft_skill": 0.05,
-    "competitiveness": 0.10,
+    "competitiveness": 0.20,
     "company_preference": 0.10,
 }
 
@@ -327,16 +326,24 @@ def _match_role(profile, job: Dict, u: Dict) -> Tuple[float, List[str]]:
         dir_with_key = 0
         dir_resolved = 0
         for fd in fit_dirs:
-            # fit_direction 存了 sub_key,直接构造 fit_entry
-            cat_key = fd.get("cat_key")
-            sub_key = fd.get("sub_key")
+            # 兼容两种格式:dict(含 cat_key/sub_key/weight) 或 字符串(方向名)
+            if isinstance(fd, str):
+                direction_name = fd
+                cat_key = None
+                sub_key = None
+                weight = 1.0  # 字符串方向默认权重 1.0
+            else:
+                direction_name = fd.get("direction", "")
+                cat_key = fd.get("cat_key")
+                sub_key = fd.get("sub_key")
+                weight = float(fd.get("weight") or 0.0)
             if cat_key:
                 dir_with_key += 1
             # 防御性反查:历史画像可能缺方向键(前端旧版本丢弃了 cat_key/sub_key),
             # 用 direction 名称调 job_tree.resolve 反查得到 cat_key/sub_key。
             # 第一性原理:方向名是用户最核心偏好,不能因为数据缺失就让 role_score 恒为 0。
             if not cat_key:
-                resolved = job_tree.resolve(fd.get("direction", ""), allow_category=True)
+                resolved = job_tree.resolve(direction_name, allow_category=True)
                 if resolved:
                     cat_key = resolved.get("cat_key")
                     sub_key = resolved.get("sub_key")
@@ -348,8 +355,7 @@ def _match_role(profile, job: Dict, u: Dict) -> Tuple[float, List[str]]:
                 "sub_key": sub_key,
             }
             factor = job_tree.score_fit(fit_entry, job_entry)
-            w = float(fd.get("weight") or 0.0)
-            contribution = w * factor
+            contribution = weight * factor
             if contribution > best_factor:
                 best_factor = contribution
                 best_fit = fd
@@ -361,16 +367,26 @@ def _match_role(profile, job: Dict, u: Dict) -> Tuple[float, List[str]]:
             job_entry.get("sub_name") or job_entry.get("category_name"), score,
         )
         if best_fit:
+            # 兼容字符串方向名
+            if isinstance(best_fit, str):
+                fit_dir_name = best_fit
+                fit_weight = 1.0
+                fit_cat_key = None
+                fit_sub_key = None
+            else:
+                fit_dir_name = best_fit.get("direction", "")
+                fit_weight = best_fit.get("weight")
+                fit_cat_key = best_fit.get("cat_key")
+                fit_sub_key = best_fit.get("sub_key")
             factor_label = {1.0: "精确子类命中", 0.6: "同大类匹配", 0.0: "跨大类"}.get(
                 job_tree.score_fit(
-                    {"type": "subcategory", "cat_key": best_fit.get("cat_key"),
-                     "sub_key": best_fit.get("sub_key")}, job_entry
+                    {"type": "subcategory", "cat_key": fit_cat_key,
+                     "sub_key": fit_sub_key}, job_entry
                 ), "跨大类"
             )
             reasons.append(
                 f"[role] 方向 {factor_label}:岗位「{job_entry.get('sub_name') or job_entry.get('category_name')}」"
-                f"↔ 候选人适配「{best_fit.get('direction')}」(权重{best_fit.get('weight')})"
-                f" — {best_fit.get('evidence', '')}"
+                f"↔ 候选人适配「{fit_dir_name}」(权重{fit_weight})"
             )
         else:
             reasons.append("[role] 候选人适配方向与岗位跨大类")
@@ -623,12 +639,10 @@ def score_job(job: Dict, profile, llm_client=None) -> Dict:
     for dim_name, result in [
         ("skill", _match_skill(job, u)),
         ("hard_skill", _match_hard_skill(job, u)),
-        ("cert", _match_cert(profile, job, u)),
         ("education", _match_education(profile, job)),
         ("major", _match_major(profile, job, u)),
         ("city", _match_city(profile, job)),
         ("role", _match_role(profile, job, u)),
-        ("soft_skill", _match_soft_skill(job, u)),
         ("competitiveness", _match_competitiveness(profile, job)),
         ("company_preference", _match_company_preference(profile, job)),
     ]:

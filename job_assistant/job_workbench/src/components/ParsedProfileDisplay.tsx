@@ -1,4 +1,4 @@
-import { useMemo, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import type { ParsedProfile, KeywordTag, FitDirection } from "../api/llm";
 import { useResumeStore } from "../stores/resumeStore";
 
@@ -318,6 +318,46 @@ export default function ParsedProfileDisplay({ profile }: Props) {
   const [draft, setDraft] = useState<ParsedProfile>(profile);
   const [saving, setSaving] = useState(false);
   const saveProfileEdits = useResumeStore((s) => s.saveProfileEdits);
+  const serverProfile = useResumeStore((s) => s.serverProfile);
+  const saveTargetCompanies = useResumeStore((s) => s.saveTargetCompanies);
+
+  // 目标公司(公司意向):从 serverProfile 读取,本地编辑后保存到后端
+  const [targetCompanies, setTargetCompanies] = useState<string[]>(
+    serverProfile?.target_companies ?? []
+  );
+  const [companyInput, setCompanyInput] = useState("");
+  const [savingCompanies, setSavingCompanies] = useState(false);
+
+  // serverProfile 异步加载后同步目标公司到本地 state
+  useEffect(() => {
+    if (serverProfile?.target_companies) {
+      setTargetCompanies(serverProfile.target_companies);
+    }
+  }, [serverProfile?.target_companies]);
+
+  const addTargetCompany = () => {
+    const name = companyInput.trim();
+    if (!name) return;
+    if (targetCompanies.includes(name)) {
+      setCompanyInput("");
+      return;
+    }
+    setTargetCompanies((prev) => [...prev, name]);
+    setCompanyInput("");
+  };
+
+  const removeTargetCompany = (name: string) => {
+    setTargetCompanies((prev) => prev.filter((c) => c !== name));
+  };
+
+  const handleSaveCompanies = async () => {
+    setSavingCompanies(true);
+    try {
+      await saveTargetCompanies(targetCompanies);
+    } finally {
+      setSavingCompanies(false);
+    }
+  };
 
   // 进入编辑模式时把 profile 复制到 draft
   const enterEdit = () => {
@@ -561,14 +601,81 @@ export default function ParsedProfileDisplay({ profile }: Props) {
         </div>
       )}
 
-      {/* 计算与匹配逻辑说明(粗略,保持神秘) */}
+      {/* 目标公司(公司意向):影响 company_preference 维度,同行业/同类型/同地位公司加分 */}
+      <div className="glass rounded-2xl p-4 shadow-card">
+        <div className="mb-3 flex items-center gap-2">
+          <span className="flex h-7 w-7 items-center justify-center rounded-lg bg-emerald-50 text-sm">
+            🎯
+          </span>
+          <span className="text-sm font-semibold text-slate-deep">目标公司</span>
+          <span className="ml-auto text-xs text-slate-400">
+            {targetCompanies.length} 家
+          </span>
+        </div>
+        <p className="mb-3 text-xs leading-relaxed text-slate-500">
+          填写你心仪的公司,推荐时会优先展示同行业、同类型、同地位的公司(直接命中加满分)。留空则不影响排序。
+        </p>
+        {/* 已添加的目标公司标签 */}
+        {targetCompanies.length > 0 && (
+          <div className="mb-3 flex flex-wrap gap-2">
+            {targetCompanies.map((c) => (
+              <span
+                key={c}
+                className="inline-flex items-center gap-1 rounded-full bg-emerald-50 px-3 py-1 text-xs text-emerald-700"
+              >
+                {c}
+                <button
+                  type="button"
+                  onClick={() => removeTargetCompany(c)}
+                  className="ml-0.5 flex h-4 w-4 items-center justify-center rounded-full text-emerald-400 transition hover:bg-emerald-100 hover:text-emerald-600"
+                  title="移除"
+                >
+                  ✕
+                </button>
+              </span>
+            ))}
+          </div>
+        )}
+        {/* 输入框 + 添加按钮 */}
+        <div className="flex items-center gap-2">
+          <input
+            value={companyInput}
+            onChange={(e) => setCompanyInput(e.target.value)}
+            onKeyDown={(e) => {
+              if (e.key === "Enter") {
+                e.preventDefault();
+                addTargetCompany();
+              }
+            }}
+            placeholder="输入公司名(如 字节跳动、腾讯、Google),回车添加"
+            className="min-w-0 flex-1 rounded-lg border border-slate-200 bg-white px-3 py-2 text-sm outline-none focus:border-emerald-300"
+          />
+          <button
+            type="button"
+            onClick={addTargetCompany}
+            className="shrink-0 rounded-lg bg-slate-100 px-3 py-2 text-sm text-slate-600 transition hover:bg-slate-200"
+          >
+            添加
+          </button>
+          <button
+            type="button"
+            onClick={handleSaveCompanies}
+            disabled={savingCompanies}
+            className="shrink-0 rounded-lg bg-emerald-500 px-3 py-2 text-sm font-medium text-white transition hover:bg-emerald-600 disabled:opacity-50"
+          >
+            {savingCompanies ? "保存中…" : "保存"}
+          </button>
+        </div>
+      </div>
+
+      {/* 计算与匹配逻辑说明 */}
       <div className="rounded-2xl bg-slate-50/80 px-4 py-3 text-xs text-slate-500">
         <div className="font-medium text-slate-600">匹配逻辑说明</div>
         <p className="mt-1.5 leading-relaxed">
           权重 0.1-5,反映该关键词在简历中的强度(项目经历 3-5 / 技能列表 2-3 / 其他 1-2)。
-          推荐时按 10 个维度加权打分:方向对齐(15%) · 硬技能命中(15%) · 综合技能覆盖(10%) ·
-          学历门槛(15%) · 专业匹配(10%) · 竞争力对齐(10%) · 公司意向(10%) ·
-          证书(5%) · 城市(5%) · 软技能(5%)。方向硬门槛:方向维度过低时总分受限,避免靠泛技能刷分挤进推荐。
+          推荐时按 8 个维度加权打分:方向对齐(15%) · 硬技能命中(15%) · 竞争力对齐(20%) ·
+          学历门槛(15%) · 综合技能覆盖(10%) · 专业匹配(10%) · 公司意向(10%) · 城市(5%)。
+          方向硬门槛:方向维度过低时总分受限,避免靠泛技能刷分挤进推荐。
         </p>
       </div>
     </div>

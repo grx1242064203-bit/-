@@ -193,17 +193,78 @@ def _detect_paper(keywords: List[Dict]) -> str:
     return "none"
 
 
+def _extract_degree_from_keywords(keywords) -> str:
+    """从教育类关键词中提取最高学历。"""
+    edu_words = [(_tag_get(t, "standard") or _tag_get(t, "kw", "")) for t in keywords
+                 if _tag_get(t, "category") == "education"]
+    if not edu_words:
+        return ""
+    # 取最高学历:博士 > 硕士 > 本科 > 大专
+    for lv in ("博士", "硕士", "本科", "大专"):
+        if any(lv in w for w in edu_words):
+            return lv
+    return ""
+
+
+def _build_resume_text(profile, keywords) -> str:
+    """拼接简历原文 + 所有关键词文本,作为兜底检测数据源。"""
+    parts = []
+    rt = getattr(profile, "resume_text", "") or ""
+    if rt:
+        parts.append(rt)
+    for t in keywords:
+        w = _tag_get(t, "standard") or _tag_get(t, "kw", "")
+        if w:
+            parts.append(w)
+    return " ".join(parts)
+
+
+def _detect_school_from_text(text: str) -> str:
+    """从简历全文中扫描学校 tier 表,返回最高 tier 的学校名(未命中返回空)。"""
+    best = ""
+    best_score = -1
+    for name_list, tier in [
+        (C9_SCHOOLS, "c9"), (OVERSEAS_TOP, "overseas_top"),
+        (_985_SCHOOLS, "985"), (_211_SCHOOLS, "211"),
+    ]:
+        for name in name_list:
+            if name in text and SCHOOL_TIER_SCORE[tier] > best_score:
+                best = name
+                best_score = SCHOOL_TIER_SCORE[tier]
+    return best
+
+
 def candidate_competitiveness(profile) -> Tuple[float, Dict[str, float], Dict]:
     """计算候选人竞争力得分(0-100)。
 
     Returns: (score, breakdown_dict, detail_dict)
     breakdown: {school, degree, internship, competition, paper}
+
+    对抗性审查:画像数据可能残缺(旧版只有字符串关键词、degree 未存等),
+    本函数多层兜底:结构化关键词 → 简历全文扫描,确保不因字段缺失把人打 0 分。
     """
     keywords = getattr(profile, "structured_keywords", []) or []
     degree = getattr(profile, "degree", "") or ""
+
+    # degree 兜底:profile.degree 为空时,先从教育关键词提取,再从简历全文扫
+    if not degree:
+        degree = _extract_degree_from_keywords(keywords)
+    if not degree:
+        text = _build_resume_text(profile, keywords)
+        for lv in ("博士", "硕士", "本科", "大专"):
+            if lv in text:
+                degree = lv
+                break
+
+    # 学校:优先从结构化 education 关键词取,兜底从全文扫描
     schools = [_tag_get(t, "standard") or _tag_get(t, "kw", "") for t in keywords
                if _tag_get(t, "category") == "education"
                and not any(lv in (_tag_get(t, "standard") or "") for lv in ("学士", "硕士", "博士", "大专", "本科"))]
+    if not schools:
+        fallback_text = _build_resume_text(profile, keywords)
+        sch = _detect_school_from_text(fallback_text)
+        if sch:
+            schools = [sch]
 
     # 1. 学校(取最高 tier)
     best_tier = "unknown"
@@ -221,24 +282,44 @@ def candidate_competitiveness(profile) -> Tuple[float, Dict[str, float], Dict]:
     degree_score = DEGREE_SCORE.get(degree, 0)
 
     # 3. 实习(大厂 +20, 有实习+8, 无+0)
-    has_internship = any(
+    # 结构化检测 + 全文兜底(大厂关键词)
+    has_structured_internship = any(
         _tag_get(t, "resume_section") in ("experience", "project")
         and _tag_get(t, "category") in ("hard_skill", "tool", "framework", "skill", "domain")
         for t in keywords
     )
-    if _detect_big_internship(keywords):
+    big_intern = _detect_big_internship(keywords)
+    # 结构化没检测到大厂时,从全文扫大厂关键词
+    if not big_intern:
+        text = _build_resume_text(profile, keywords)
+        big_intern = any(kw in text for kw in BIG_COMPANY_KEYWORDS)
+    if big_intern:
         internship_score = 20
-    elif has_internship:
+    elif has_structured_internship:
         internship_score = 8
     else:
-        internship_score = 0
+        # 全文兜底:有"实习"字样算有实习
+        text = _build_resume_text(profile, keywords)
+        internship_score = 8 if "实习" in text else 0
 
-    # 4. 竞赛
+    # 4. 竞赛(结构化 + 全文兜底)
     comp_level = _detect_competition(keywords)
+    if comp_level == "none":
+        text = _build_resume_text(profile, keywords)
+        for level, kws in COMPETITION_KEYWORDS.items():
+            if any(kw in text for kw in kws):
+                comp_level = level
+                break
     comp_score = {"国际级": 15, "国家级": 10, "省级": 6, "none": 0}.get(comp_level, 0)
 
-    # 5. 论文
+    # 5. 论文(结构化 + 全文兜底)
     paper_level = _detect_paper(keywords)
+    if paper_level == "none":
+        text = _build_resume_text(profile, keywords)
+        for level, kws in PAPER_KEYWORDS.items():
+            if any(kw in text for kw in kws):
+                paper_level = level
+                break
     paper_score = {"top_conf": 10, "sci": 7, "none": 0}.get(paper_level, 0)
 
     total = school_score + degree_score + internship_score + comp_score + paper_score
@@ -253,7 +334,7 @@ def candidate_competitiveness(profile) -> Tuple[float, Dict[str, float], Dict]:
     }
     detail = {
         "school_tier": best_tier,
-        "degree": degree,
+        "degree": degree or "未识别",
         "internship_level": "大厂" if internship_score == 20 else ("有" if internship_score > 0 else "无"),
         "competition_level": comp_level,
         "paper_level": paper_level,

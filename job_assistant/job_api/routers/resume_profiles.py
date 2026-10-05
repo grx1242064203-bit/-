@@ -23,6 +23,7 @@ class CreateProfileRequest(BaseModel):
     degree: str = ""
     major: str = ""
     target_cities: list = []
+    target_companies: list = []
 
 
 class ProfileResponse(BaseModel):
@@ -34,6 +35,7 @@ class ProfileResponse(BaseModel):
     degree: str = ""
     major: str = ""
     target_cities: list = []
+    target_companies: list = []
     is_active: bool = True
     created_at: str
     updated_at: str
@@ -81,6 +83,7 @@ def create_profile(
         degree=req.degree,
         major=req.major,
         target_cities=req.target_cities,
+        target_companies=req.target_companies,
     )
     score, tier = _compute_candidate_competitiveness(profile)
     profile["candidate_score"] = score
@@ -124,6 +127,7 @@ class UpdateProfileRequest(BaseModel):
     degree: Optional[str] = None
     major: Optional[str] = None
     target_cities: Optional[list] = None
+    target_companies: Optional[list] = None
 
 
 @router.patch("/{profile_id}", response_model=ProfileResponse)
@@ -147,6 +151,7 @@ def update_profile(
         degree=req.degree,
         major=req.major,
         target_cities=req.target_cities,
+        target_companies=req.target_companies,
     )
     if not profile:
         raise HTTPException(status_code=404, detail="画像不存在或无权修改")

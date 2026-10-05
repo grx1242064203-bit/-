@@ -11,6 +11,7 @@ export interface ResumeProfile {
   degree: string;
   major: string;
   target_cities: string[];
+  target_companies: string[];
   is_active: boolean;
   created_at: string;
   updated_at: string;
@@ -28,6 +29,7 @@ export const resumeProfilesApi = {
     degree?: string;
     major?: string;
     target_cities?: string[];
+    target_companies?: string[];
   }): Promise<ResumeProfile> {
     return apiClient.post<ResumeProfile>("/api/v1/resume-profiles", data);
   },
@@ -56,6 +58,7 @@ export const resumeProfilesApi = {
       degree?: string;
       major?: string;
       target_cities?: string[];
+      target_companies?: string[];
     }
   ): Promise<ResumeProfile> {
     return apiClient.patch<ResumeProfile>(

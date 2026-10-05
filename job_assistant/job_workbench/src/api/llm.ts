@@ -24,11 +24,17 @@ export interface KeywordTag {
 }
 
 // 适配方向：LLM 推断的候选职业方向 + 权重 + 证据。
+// cat_key / sub_key / category_name 由后端 resume_parser._validate_fit_directions 注入，
+// scorer._match_role 依赖这两个字段做岗位树层级匹配；前端必须透传，不能丢弃，
+// 否则 role 维度恒为 0 → 方向门槛触发 → 总分被封顶 45 → 全部"可申请"。
 export interface FitDirection {
   direction: string;
   weight: number;
   evidence?: string;
   description?: string;
+  cat_key?: string;
+  sub_key?: string | null;
+  category_name?: string;
 }
 
 // 简历画像：解析结果根结构，存入 resumes.parsed_profile_json。
@@ -70,6 +76,11 @@ export function normalizeParsedProfile(raw: unknown): ParsedProfile {
       weight: numOr(d.weight, 0),
       evidence: d.evidence != null ? String(d.evidence) : d.reason != null ? String(d.reason) : undefined,
       description: d.description != null ? String(d.description) : undefined,
+      // 关键：透传岗位树归属字段，scorer._match_role 依赖它们做层级匹配。
+      // 不能丢弃，否则 role 维度恒为 0。
+      cat_key: d.cat_key != null ? String(d.cat_key) : undefined,
+      sub_key: d.sub_key != null ? (d.sub_key === null ? null : String(d.sub_key)) : undefined,
+      category_name: d.category_name != null ? String(d.category_name) : undefined,
     };
   });
 

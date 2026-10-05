@@ -250,6 +250,17 @@ export const useResumeStore = create<ResumeState>((set, get) => ({
       }
 
       set({ parsedProfile: profile, serverProfile, isLoading: false, phase: "done" });
+
+      // 解析完成后立即触发岗位推荐匹配（不阻塞主流程，失败仅告警）
+      // 之前需要用户切到「为我推荐」tab 才开始匹配，现改为自动后台预热
+      try {
+        const { useAppStore } = await import("./appStore");
+        // force=true 强制重新跑评分，避免命中旧缓存
+        void useAppStore.getState().loadRecommendJobs(200, true);
+      } catch (e) {
+        console.warn("触发岗位推荐匹配失败（不阻塞主流程）:", e);
+      }
+
       return profile;
     } catch (e) {
       const msg = e instanceof Error ? e.message : String(e);

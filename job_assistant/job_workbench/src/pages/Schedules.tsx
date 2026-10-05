@@ -886,7 +886,13 @@ export default function Schedules() {
   );
 
   const handleSubmit = async (req: CreateScheduleRequest) => {
-    await addSchedule(req);
+    const created = await addSchedule(req);
+    // 自动跳到新日程所在月份，避免用户在当前月看不到新建
+    const d = new Date(created.event_time);
+    if (!isNaN(d.getTime())) {
+      setViewYear(d.getFullYear());
+      setViewMonth(d.getMonth());
+    }
   };
 
   return (

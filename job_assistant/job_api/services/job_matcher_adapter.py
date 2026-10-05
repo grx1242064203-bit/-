@@ -142,11 +142,10 @@ def recommend_jobs(
     # 先跑 matcher（DB 预筛 + 规则预筛 + AI 评分）
     matcher = UserMatcher(user_profile)
     try:
-        top_jobs = matcher.match_jobs_for_user(
-            user_profile,
-            top_n=top_n,
-            max_per_company=3,
-        )
+        # UserMatcher.match 签名: (max_per_company, min_score)
+        # 返回按评分降序的所有匹配岗位,这里按 top_n 切片
+        all_matched = matcher.match(max_per_company=3)
+        top_jobs = all_matched[:top_n] if all_matched else []
     except Exception as e:
         logger.error(f"matcher 失败: {e}", exc_info=True)
         top_jobs = []

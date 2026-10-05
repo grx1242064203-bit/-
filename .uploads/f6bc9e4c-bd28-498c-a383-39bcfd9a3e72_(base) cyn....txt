@@ -1,0 +1,602 @@
+(base) cynthia@cynthiadeMacBook-Air-734 job_workbench % cd ~/job_assistant/job_assistant/job_api
+(base) cynthia@cynthiadeMacBook-Air-734 job_api % python3 -m uvicorn main:app --port 8000 --reload
+INFO:     Will watch for changes in these directories: ['/Users/cynthia/job_assistant/job_assistant/job_api']
+INFO:     Uvicorn running on http://127.0.0.1:8000 (Press CTRL+C to quit)
+INFO:     Started reloader process [76730] using WatchFiles
+INFO:     Started server process [76765]
+INFO:     Waiting for application startup.
+[job_api] 启动配置摘要: {"DEEPSEEK_BASE_URL": "https://api.deepseek.com", "JWT_ALG": "HS256", "JWT_EXPIRE_HOURS": 168, "DATA_DIR": "../data", "JOBS_DB_PATH": "../data/jobs.db", "CORS_ORIGINS": ["*"], "DEEPSEEK_API_KEY_SET": true, "JWT_SECRET_SET": true, "RESEND_API_KEY_SET": false}
+INFO:     Application startup complete.
+INFO:     127.0.0.1:49873 - "GET /api/v1/applications HTTP/1.1" 200 OK
+INFO:     127.0.0.1:49875 - "GET /api/v1/schedules/reminders/due HTTP/1.1" 200 OK
+INFO:     127.0.0.1:49880 - "GET /api/v1/applications HTTP/1.1" 200 OK
+INFO:     127.0.0.1:49874 - "GET /api/v1/sync/jobs/page?limit=50&offset=0 HTTP/1.1" 200 OK
+INFO:     127.0.0.1:49882 - "GET /api/v1/sync/jobs/page?limit=50&offset=0 HTTP/1.1" 200 OK
+INFO:     127.0.0.1:49900 - "GET /api/v1/schedules/reminders/due HTTP/1.1" 200 OK
+INFO:     127.0.0.1:49899 - "GET /api/v1/schedules/reminders/due HTTP/1.1" 200 OK
+INFO:     127.0.0.1:49902 - "GET /api/v1/schedules/reminders/due HTTP/1.1" 200 OK
+INFO:     127.0.0.1:49878 - "GET /api/v1/sync/stats-overview HTTP/1.1" 200 OK
+INFO:     127.0.0.1:49871 - "GET /api/v1/sync/stats-overview HTTP/1.1" 200 OK
+INFO:     127.0.0.1:49876 - "GET /api/v1/sync/stats HTTP/1.1" 200 OK
+INFO:     127.0.0.1:49872 - "GET /api/v1/sync/stats HTTP/1.1" 200 OK
+INFO:     127.0.0.1:49908 - "GET /api/v1/schedules HTTP/1.1" 200 OK
+INFO:     127.0.0.1:49907 - "GET /api/v1/schedules HTTP/1.1" 200 OK
+INFO:     127.0.0.1:49922 - "GET /api/v1/schedules/reminders/due HTTP/1.1" 200 OK
+INFO:     127.0.0.1:49919 - "GET /api/v1/schedules/reminders/due HTTP/1.1" 200 OK
+INFO:     127.0.0.1:49921 - "GET /api/v1/resume-profiles/active HTTP/1.1" 200 OK
+INFO:     127.0.0.1:49918 - "GET /api/v1/resume-profiles/active HTTP/1.1" 200 OK
+INFO:     127.0.0.1:49934 - "GET /api/v1/schedules/reminders/due HTTP/1.1" 200 OK
+INFO:     127.0.0.1:49933 - "GET /api/v1/email/tasks?status=pending HTTP/1.1" 200 OK
+INFO:     127.0.0.1:49932 - "GET /api/v1/email/accounts HTTP/1.1" 200 OK
+INFO:     127.0.0.1:49940 - "GET /api/v1/email/tasks?status=pending HTTP/1.1" 200 OK
+INFO:     127.0.0.1:49939 - "GET /api/v1/email/accounts HTTP/1.1" 200 OK
+INFO:     127.0.0.1:49942 - "GET /api/v1/schedules/reminders/due HTTP/1.1" 200 OK
+INFO:     127.0.0.1:49917 - "GET /api/v1/sync/stats HTTP/1.1" 200 OK
+INFO:     127.0.0.1:49938 - "GET /api/v1/sync/stats HTTP/1.1" 200 OK
+INFO:     127.0.0.1:49931 - "GET /api/v1/sync/stats HTTP/1.1" 200 OK
+INFO:     127.0.0.1:49920 - "GET /api/v1/sync/stats HTTP/1.1" 200 OK
+IMAP 连接失败: SSLEOFError: [SSL: UNEXPECTED_EOF_WHILE_READING] EOF occurred in violation of protocol (_ssl.c:1000) server=imap.163.com user=cynthiaguo2001@163.com
+INFO:     127.0.0.1:50041 - "POST /api/v1/email/accounts HTTP/1.1" 400 Bad Request
+(trapped) error reading bcrypt version
+Traceback (most recent call last):
+  File "/opt/anaconda3/lib/python3.12/site-packages/passlib/handlers/bcrypt.py", line 620, in _load_backend_mixin
+    version = _bcrypt.__about__.__version__
+              ^^^^^^^^^^^^^^^^^
+AttributeError: module 'bcrypt' has no attribute '__about__'
+INFO:     127.0.0.1:50102 - "POST /api/v1/auth/login HTTP/1.1" 200 OK
+INFO:     127.0.0.1:50111 - "GET /api/v1/applications HTTP/1.1" 200 OK
+INFO:     127.0.0.1:50113 - "GET /api/v1/schedules/reminders/due HTTP/1.1" 200 OK
+INFO:     127.0.0.1:50118 - "GET /api/v1/applications HTTP/1.1" 200 OK
+INFO:     127.0.0.1:50112 - "GET /api/v1/sync/jobs/page?limit=50&offset=0 HTTP/1.1" 200 OK
+INFO:     127.0.0.1:50120 - "GET /api/v1/sync/jobs/page?limit=50&offset=0 HTTP/1.1" 200 OK
+INFO:     127.0.0.1:50128 - "GET /api/v1/schedules/reminders/due HTTP/1.1" 200 OK
+INFO:     127.0.0.1:50130 - "GET /api/v1/schedules/reminders/due HTTP/1.1" 200 OK
+INFO:     127.0.0.1:50132 - "GET /api/v1/schedules/reminders/due HTTP/1.1" 200 OK
+INFO:     127.0.0.1:50108 - "GET /api/v1/sync/stats-overview HTTP/1.1" 200 OK
+INFO:     127.0.0.1:50116 - "GET /api/v1/sync/stats-overview HTTP/1.1" 200 OK
+INFO:     127.0.0.1:50148 - "GET /api/v1/email/tasks?status=pending HTTP/1.1" 200 OK
+INFO:     127.0.0.1:50150 - "GET /api/v1/email/tasks?status=pending HTTP/1.1" 200 OK
+INFO:     127.0.0.1:50149 - "GET /api/v1/email/accounts HTTP/1.1" 200 OK
+INFO:     127.0.0.1:50147 - "GET /api/v1/email/accounts HTTP/1.1" 200 OK
+INFO:     127.0.0.1:50105 - "GET /api/v1/sync/stats HTTP/1.1" 200 OK
+INFO:     127.0.0.1:50114 - "GET /api/v1/sync/stats HTTP/1.1" 200 OK
+IMAP 连接失败: SSLEOFError: [SSL: UNEXPECTED_EOF_WHILE_READING] EOF occurred in violation of protocol (_ssl.c:1000) server=imap.163.com user=cynthiaguo2001@163.com
+INFO:     127.0.0.1:50231 - "POST /api/v1/email/accounts HTTP/1.1" 400 Bad Request
+INFO:     127.0.0.1:50332 - "GET /api/v1/schedules/reminders/due HTTP/1.1" 200 OK
+INFO:     127.0.0.1:50524 - "GET /api/v1/schedules/reminders/due HTTP/1.1" 200 OK
+INFO:     127.0.0.1:50583 - "GET /api/v1/schedules HTTP/1.1" 200 OK
+INFO:     127.0.0.1:50584 - "GET /api/v1/schedules HTTP/1.1" 200 OK
+INFO:     127.0.0.1:50591 - "GET /api/v1/schedules/reminders/due HTTP/1.1" 200 OK
+INFO:     127.0.0.1:50593 - "GET /api/v1/resume-profiles/active HTTP/1.1" 200 OK
+INFO:     127.0.0.1:50594 - "GET /api/v1/schedules/reminders/due HTTP/1.1" 200 OK
+INFO:     127.0.0.1:50595 - "GET /api/v1/resume-profiles/active HTTP/1.1" 200 OK
+INFO:     127.0.0.1:50587 - "GET /api/v1/sync/stats HTTP/1.1" 200 OK
+INFO:     127.0.0.1:50596 - "GET /api/v1/sync/stats HTTP/1.1" 200 OK
+INFO:     127.0.0.1:50634 - "GET /api/v1/applications HTTP/1.1" 200 OK
+INFO:     127.0.0.1:50636 - "GET /api/v1/schedules/reminders/due HTTP/1.1" 200 OK
+INFO:     127.0.0.1:50643 - "GET /api/v1/applications HTTP/1.1" 200 OK
+INFO:     127.0.0.1:50645 - "GET /api/v1/sync/jobs/page?limit=50&offset=0 HTTP/1.1" 200 OK
+INFO:     127.0.0.1:50635 - "GET /api/v1/sync/jobs/page?limit=50&offset=0 HTTP/1.1" 200 OK
+INFO:     127.0.0.1:50657 - "GET /api/v1/schedules/reminders/due HTTP/1.1" 200 OK
+INFO:     127.0.0.1:50658 - "GET /api/v1/schedules/reminders/due HTTP/1.1" 200 OK
+INFO:     127.0.0.1:50660 - "GET /api/v1/schedules/reminders/due HTTP/1.1" 200 OK
+INFO:     127.0.0.1:50641 - "GET /api/v1/sync/stats-overview HTTP/1.1" 200 OK
+INFO:     127.0.0.1:50630 - "GET /api/v1/sync/stats-overview HTTP/1.1" 200 OK
+INFO:     127.0.0.1:50666 - "GET /api/v1/applications HTTP/1.1" 200 OK
+INFO:     127.0.0.1:50667 - "GET /api/v1/sync/companies?limit=100&offset=0 HTTP/1.1" 503 Service Unavailable
+INFO:     127.0.0.1:50671 - "GET /api/v1/applications HTTP/1.1" 200 OK
+INFO:     127.0.0.1:50674 - "GET /api/v1/schedules/reminders/due HTTP/1.1" 200 OK
+INFO:     127.0.0.1:50676 - "GET /api/v1/schedules/reminders/due HTTP/1.1" 200 OK
+INFO:     127.0.0.1:50672 - "GET /api/v1/sync/companies?limit=100&offset=0 HTTP/1.1" 200 OK
+INFO:     127.0.0.1:50628 - "GET /api/v1/sync/stats HTTP/1.1" 200 OK
+INFO:     127.0.0.1:50638 - "GET /api/v1/sync/stats HTTP/1.1" 200 OK
+INFO:     127.0.0.1:50684 - "GET /api/v1/applications HTTP/1.1" 200 OK
+INFO:     127.0.0.1:50688 - "GET /api/v1/applications HTTP/1.1" 200 OK
+INFO:     127.0.0.1:50685 - "GET /api/v1/sync/jobs/page?limit=50&offset=0 HTTP/1.1" 200 OK
+INFO:     127.0.0.1:50692 - "GET /api/v1/schedules/reminders/due HTTP/1.1" 200 OK
+INFO:     127.0.0.1:50694 - "GET /api/v1/schedules/reminders/due HTTP/1.1" 200 OK
+INFO:     127.0.0.1:50690 - "GET /api/v1/sync/jobs/page?limit=50&offset=0 HTTP/1.1" 200 OK
+INFO:     127.0.0.1:50665 - "GET /api/v1/sync/stats-overview HTTP/1.1" 200 OK
+INFO:     127.0.0.1:50668 - "GET /api/v1/sync/stats-overview HTTP/1.1" 200 OK
+matcher 失败: 'UserMatcher' object has no attribute 'match_jobs_for_user'
+Traceback (most recent call last):
+  File "/Users/cynthia/job_assistant/job_assistant/job_api/services/job_matcher_adapter.py", line 145, in recommend_jobs
+    top_jobs = matcher.match_jobs_for_user(
+               ^^^^^^^^^^^^^^^^^^^^^^^^^^^
+AttributeError: 'UserMatcher' object has no attribute 'match_jobs_for_user'
+INFO:     127.0.0.1:50683 - "GET /api/v1/sync/stats-overview HTTP/1.1" 200 OK
+INFO:     127.0.0.1:50686 - "GET /api/v1/sync/stats-overview HTTP/1.1" 200 OK
+INFO:     127.0.0.1:50718 - "GET /api/v1/applications HTTP/1.1" 200 OK
+INFO:     127.0.0.1:50709 - "POST /api/v1/jobs/recommend HTTP/1.1" 200 OK
+INFO:     127.0.0.1:50721 - "GET /api/v1/applications HTTP/1.1" 200 OK
+INFO:     127.0.0.1:50717 - "GET /api/v1/sync/stats-overview HTTP/1.1" 503 Service Unavailable
+INFO:     127.0.0.1:50726 - "GET /api/v1/schedules/reminders/due HTTP/1.1" 200 OK
+INFO:     127.0.0.1:50728 - "GET /api/v1/schedules/reminders/due HTTP/1.1" 200 OK
+INFO:     127.0.0.1:50720 - "GET /api/v1/sync/companies?limit=100&offset=0 HTTP/1.1" 200 OK
+INFO:     127.0.0.1:50725 - "GET /api/v1/sync/companies?limit=100&offset=0 HTTP/1.1" 200 OK
+INFO:     127.0.0.1:50719 - "GET /api/v1/sync/stats-overview HTTP/1.1" 200 OK
+INFO:     127.0.0.1:50739 - "GET /api/v1/sync/companies?limit=100&offset=100 HTTP/1.1" 200 OK
+INFO:     127.0.0.1:50741 - "GET /api/v1/sync/companies?limit=100&offset=200 HTTP/1.1" 200 OK
+INFO:     127.0.0.1:50799 - "GET /api/v1/sync/companies?limit=100&offset=300 HTTP/1.1" 200 OK
+INFO:     127.0.0.1:50933 - "GET /api/v1/schedules/reminders/due HTTP/1.1" 200 OK
+INFO:     127.0.0.1:51094 - "GET /api/v1/applications HTTP/1.1" 200 OK
+INFO:     127.0.0.1:51097 - "GET /api/v1/applications HTTP/1.1" 200 OK
+INFO:     127.0.0.1:51103 - "GET /api/v1/schedules/reminders/due HTTP/1.1" 200 OK
+INFO:     127.0.0.1:51105 - "GET /api/v1/schedules/reminders/due HTTP/1.1" 200 OK
+INFO:     127.0.0.1:51098 - "GET /api/v1/sync/jobs/page?limit=50&offset=0 HTTP/1.1" 200 OK
+INFO:     127.0.0.1:51095 - "GET /api/v1/sync/jobs/page?limit=50&offset=0 HTTP/1.1" 200 OK
+INFO:     127.0.0.1:51093 - "GET /api/v1/sync/stats-overview HTTP/1.1" 200 OK
+INFO:     127.0.0.1:51096 - "GET /api/v1/sync/stats-overview HTTP/1.1" 200 OK
+matcher 失败: 'UserMatcher' object has no attribute 'match_jobs_for_user'
+Traceback (most recent call last):
+  File "/Users/cynthia/job_assistant/job_assistant/job_api/services/job_matcher_adapter.py", line 145, in recommend_jobs
+    top_jobs = matcher.match_jobs_for_user(
+               ^^^^^^^^^^^^^^^^^^^^^^^^^^^
+AttributeError: 'UserMatcher' object has no attribute 'match_jobs_for_user'
+INFO:     127.0.0.1:51111 - "POST /api/v1/jobs/recommend HTTP/1.1" 200 OK
+INFO:     127.0.0.1:51145 - "POST /api/v1/applications HTTP/1.1" 500 Internal Server Error
+ERROR:    Exception in ASGI application
+Traceback (most recent call last):
+  File "/opt/anaconda3/lib/python3.12/site-packages/uvicorn/protocols/http/httptools_impl.py", line 416, in run_asgi
+    result = await app(  # type: ignore[func-returns-value]
+             ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/opt/anaconda3/lib/python3.12/site-packages/uvicorn/middleware/proxy_headers.py", line 60, in __call__
+    return await self.app(scope, receive, send)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/opt/anaconda3/lib/python3.12/site-packages/fastapi/applications.py", line 1159, in __call__
+    await super().__call__(scope, receive, send)
+  File "/opt/anaconda3/lib/python3.12/site-packages/starlette/applications.py", line 90, in __call__
+    await self.middleware_stack(scope, receive, send)
+  File "/opt/anaconda3/lib/python3.12/site-packages/starlette/middleware/errors.py", line 186, in __call__
+    raise exc
+  File "/opt/anaconda3/lib/python3.12/site-packages/starlette/middleware/errors.py", line 164, in __call__
+    await self.app(scope, receive, _send)
+  File "/opt/anaconda3/lib/python3.12/site-packages/starlette/middleware/cors.py", line 96, in __call__
+    await self.simple_response(scope, receive, send, request_headers=headers)
+  File "/opt/anaconda3/lib/python3.12/site-packages/starlette/middleware/cors.py", line 154, in simple_response
+    await self.app(scope, receive, send)
+  File "/opt/anaconda3/lib/python3.12/site-packages/starlette/middleware/base.py", line 191, in __call__
+    with recv_stream, send_stream, collapse_excgroups():
+  File "/opt/anaconda3/lib/python3.12/contextlib.py", line 158, in __exit__
+    self.gen.throw(value)
+  File "/opt/anaconda3/lib/python3.12/site-packages/starlette/_utils.py", line 87, in collapse_excgroups
+    raise exc
+  File "/opt/anaconda3/lib/python3.12/site-packages/starlette/middleware/base.py", line 193, in __call__
+    response = await self.dispatch_func(request, call_next)
+               ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/opt/anaconda3/lib/python3.12/site-packages/slowapi/middleware.py", line 136, in dispatch
+    response = await call_next(request)
+               ^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/opt/anaconda3/lib/python3.12/site-packages/starlette/middleware/base.py", line 168, in call_next
+    raise app_exc from app_exc.__cause__ or app_exc.__context__
+  File "/opt/anaconda3/lib/python3.12/site-packages/starlette/middleware/base.py", line 144, in coro
+    await self.app(scope, receive_or_disconnect, send_no_error)
+  File "/opt/anaconda3/lib/python3.12/site-packages/starlette/middleware/exceptions.py", line 63, in __call__
+    await wrap_app_handling_exceptions(self.app, conn)(scope, receive, send)
+  File "/opt/anaconda3/lib/python3.12/site-packages/starlette/_exception_handler.py", line 53, in wrapped_app
+    raise exc
+  File "/opt/anaconda3/lib/python3.12/site-packages/starlette/_exception_handler.py", line 42, in wrapped_app
+    await app(scope, receive, sender)
+  File "/opt/anaconda3/lib/python3.12/site-packages/fastapi/middleware/asyncexitstack.py", line 18, in __call__
+    await self.app(scope, receive, send)
+  File "/opt/anaconda3/lib/python3.12/site-packages/starlette/routing.py", line 660, in __call__
+    await self.middleware_stack(scope, receive, send)
+  File "/opt/anaconda3/lib/python3.12/site-packages/starlette/routing.py", line 680, in app
+    await route.handle(scope, receive, send)
+  File "/opt/anaconda3/lib/python3.12/site-packages/starlette/routing.py", line 276, in handle
+    await self.app(scope, receive, send)
+  File "/opt/anaconda3/lib/python3.12/site-packages/fastapi/routing.py", line 134, in app
+    await wrap_app_handling_exceptions(app, request)(scope, receive, send)
+  File "/opt/anaconda3/lib/python3.12/site-packages/starlette/_exception_handler.py", line 53, in wrapped_app
+    raise exc
+  File "/opt/anaconda3/lib/python3.12/site-packages/starlette/_exception_handler.py", line 42, in wrapped_app
+    await app(scope, receive, sender)
+  File "/opt/anaconda3/lib/python3.12/site-packages/fastapi/routing.py", line 120, in app
+    response = await f(request)
+               ^^^^^^^^^^^^^^^^
+  File "/opt/anaconda3/lib/python3.12/site-packages/fastapi/routing.py", line 674, in app
+    raw_response = await run_endpoint_function(
+                   ^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/opt/anaconda3/lib/python3.12/site-packages/fastapi/routing.py", line 328, in run_endpoint_function
+    return await dependant.call(**values)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/Users/cynthia/job_assistant/job_assistant/job_api/routers/applications.py", line 49, in create_app
+    app = await app_model.create_application(
+          ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/Users/cynthia/job_assistant/job_assistant/job_api/models/application.py", line 209, in create_application
+    conn.execute(
+sqlite3.IntegrityError: UNIQUE constraint failed: applications.user_id, applications.job_id
+INFO:     127.0.0.1:51148 - "POST /api/v1/applications HTTP/1.1" 500 Internal Server Error
+ERROR:    Exception in ASGI application
+Traceback (most recent call last):
+  File "/opt/anaconda3/lib/python3.12/site-packages/uvicorn/protocols/http/httptools_impl.py", line 416, in run_asgi
+    result = await app(  # type: ignore[func-returns-value]
+             ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/opt/anaconda3/lib/python3.12/site-packages/uvicorn/middleware/proxy_headers.py", line 60, in __call__
+    return await self.app(scope, receive, send)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/opt/anaconda3/lib/python3.12/site-packages/fastapi/applications.py", line 1159, in __call__
+    await super().__call__(scope, receive, send)
+  File "/opt/anaconda3/lib/python3.12/site-packages/starlette/applications.py", line 90, in __call__
+    await self.middleware_stack(scope, receive, send)
+  File "/opt/anaconda3/lib/python3.12/site-packages/starlette/middleware/errors.py", line 186, in __call__
+    raise exc
+  File "/opt/anaconda3/lib/python3.12/site-packages/starlette/middleware/errors.py", line 164, in __call__
+    await self.app(scope, receive, _send)
+  File "/opt/anaconda3/lib/python3.12/site-packages/starlette/middleware/cors.py", line 96, in __call__
+    await self.simple_response(scope, receive, send, request_headers=headers)
+  File "/opt/anaconda3/lib/python3.12/site-packages/starlette/middleware/cors.py", line 154, in simple_response
+    await self.app(scope, receive, send)
+  File "/opt/anaconda3/lib/python3.12/site-packages/starlette/middleware/base.py", line 191, in __call__
+    with recv_stream, send_stream, collapse_excgroups():
+  File "/opt/anaconda3/lib/python3.12/contextlib.py", line 158, in __exit__
+    self.gen.throw(value)
+  File "/opt/anaconda3/lib/python3.12/site-packages/starlette/_utils.py", line 87, in collapse_excgroups
+    raise exc
+  File "/opt/anaconda3/lib/python3.12/site-packages/starlette/middleware/base.py", line 193, in __call__
+    response = await self.dispatch_func(request, call_next)
+               ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/opt/anaconda3/lib/python3.12/site-packages/slowapi/middleware.py", line 136, in dispatch
+    response = await call_next(request)
+               ^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/opt/anaconda3/lib/python3.12/site-packages/starlette/middleware/base.py", line 168, in call_next
+    raise app_exc from app_exc.__cause__ or app_exc.__context__
+  File "/opt/anaconda3/lib/python3.12/site-packages/starlette/middleware/base.py", line 144, in coro
+    await self.app(scope, receive_or_disconnect, send_no_error)
+  File "/opt/anaconda3/lib/python3.12/site-packages/starlette/middleware/exceptions.py", line 63, in __call__
+    await wrap_app_handling_exceptions(self.app, conn)(scope, receive, send)
+  File "/opt/anaconda3/lib/python3.12/site-packages/starlette/_exception_handler.py", line 53, in wrapped_app
+    raise exc
+  File "/opt/anaconda3/lib/python3.12/site-packages/starlette/_exception_handler.py", line 42, in wrapped_app
+    await app(scope, receive, sender)
+  File "/opt/anaconda3/lib/python3.12/site-packages/fastapi/middleware/asyncexitstack.py", line 18, in __call__
+    await self.app(scope, receive, send)
+  File "/opt/anaconda3/lib/python3.12/site-packages/starlette/routing.py", line 660, in __call__
+    await self.middleware_stack(scope, receive, send)
+  File "/opt/anaconda3/lib/python3.12/site-packages/starlette/routing.py", line 680, in app
+    await route.handle(scope, receive, send)
+  File "/opt/anaconda3/lib/python3.12/site-packages/starlette/routing.py", line 276, in handle
+    await self.app(scope, receive, send)
+  File "/opt/anaconda3/lib/python3.12/site-packages/fastapi/routing.py", line 134, in app
+    await wrap_app_handling_exceptions(app, request)(scope, receive, send)
+  File "/opt/anaconda3/lib/python3.12/site-packages/starlette/_exception_handler.py", line 53, in wrapped_app
+    raise exc
+  File "/opt/anaconda3/lib/python3.12/site-packages/starlette/_exception_handler.py", line 42, in wrapped_app
+    await app(scope, receive, sender)
+  File "/opt/anaconda3/lib/python3.12/site-packages/fastapi/routing.py", line 120, in app
+    response = await f(request)
+               ^^^^^^^^^^^^^^^^
+  File "/opt/anaconda3/lib/python3.12/site-packages/fastapi/routing.py", line 674, in app
+    raw_response = await run_endpoint_function(
+                   ^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/opt/anaconda3/lib/python3.12/site-packages/fastapi/routing.py", line 328, in run_endpoint_function
+    return await dependant.call(**values)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/Users/cynthia/job_assistant/job_assistant/job_api/routers/applications.py", line 49, in create_app
+    app = await app_model.create_application(
+          ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/Users/cynthia/job_assistant/job_assistant/job_api/models/application.py", line 209, in create_application
+    conn.execute(
+sqlite3.IntegrityError: UNIQUE constraint failed: applications.user_id, applications.job_id
+INFO:     127.0.0.1:51163 - "GET /api/v1/applications HTTP/1.1" 200 OK
+INFO:     127.0.0.1:51164 - "GET /api/v1/applications HTTP/1.1" 200 OK
+INFO:     127.0.0.1:51166 - "GET /api/v1/schedules/reminders/due HTTP/1.1" 200 OK
+INFO:     127.0.0.1:51168 - "GET /api/v1/schedules/reminders/due HTTP/1.1" 200 OK
+INFO:     127.0.0.1:51292 - "GET /api/v1/applications HTTP/1.1" 200 OK
+INFO:     127.0.0.1:51295 - "GET /api/v1/applications HTTP/1.1" 200 OK
+INFO:     127.0.0.1:51298 - "GET /api/v1/schedules/reminders/due HTTP/1.1" 200 OK
+INFO:     127.0.0.1:51300 - "GET /api/v1/schedules/reminders/due HTTP/1.1" 200 OK
+INFO:     127.0.0.1:51293 - "GET /api/v1/sync/jobs/page?limit=50&offset=0 HTTP/1.1" 503 Service Unavailable
+INFO:     127.0.0.1:51296 - "GET /api/v1/sync/jobs/page?limit=50&offset=0 HTTP/1.1" 200 OK
+INFO:     127.0.0.1:51291 - "GET /api/v1/sync/stats-overview HTTP/1.1" 200 OK
+INFO:     127.0.0.1:51294 - "GET /api/v1/sync/stats-overview HTTP/1.1" 200 OK
+matcher 失败: 'UserMatcher' object has no attribute 'match_jobs_for_user'
+Traceback (most recent call last):
+  File "/Users/cynthia/job_assistant/job_assistant/job_api/services/job_matcher_adapter.py", line 145, in recommend_jobs
+    top_jobs = matcher.match_jobs_for_user(
+               ^^^^^^^^^^^^^^^^^^^^^^^^^^^
+AttributeError: 'UserMatcher' object has no attribute 'match_jobs_for_user'
+INFO:     127.0.0.1:51307 - "POST /api/v1/jobs/recommend HTTP/1.1" 200 OK
+INFO:     127.0.0.1:51323 - "POST /api/v1/applications HTTP/1.1" 500 Internal Server Error
+ERROR:    Exception in ASGI application
+Traceback (most recent call last):
+  File "/opt/anaconda3/lib/python3.12/site-packages/uvicorn/protocols/http/httptools_impl.py", line 416, in run_asgi
+    result = await app(  # type: ignore[func-returns-value]
+             ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/opt/anaconda3/lib/python3.12/site-packages/uvicorn/middleware/proxy_headers.py", line 60, in __call__
+    return await self.app(scope, receive, send)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/opt/anaconda3/lib/python3.12/site-packages/fastapi/applications.py", line 1159, in __call__
+    await super().__call__(scope, receive, send)
+  File "/opt/anaconda3/lib/python3.12/site-packages/starlette/applications.py", line 90, in __call__
+    await self.middleware_stack(scope, receive, send)
+  File "/opt/anaconda3/lib/python3.12/site-packages/starlette/middleware/errors.py", line 186, in __call__
+    raise exc
+  File "/opt/anaconda3/lib/python3.12/site-packages/starlette/middleware/errors.py", line 164, in __call__
+    await self.app(scope, receive, _send)
+  File "/opt/anaconda3/lib/python3.12/site-packages/starlette/middleware/cors.py", line 96, in __call__
+    await self.simple_response(scope, receive, send, request_headers=headers)
+  File "/opt/anaconda3/lib/python3.12/site-packages/starlette/middleware/cors.py", line 154, in simple_response
+    await self.app(scope, receive, send)
+  File "/opt/anaconda3/lib/python3.12/site-packages/starlette/middleware/base.py", line 191, in __call__
+    with recv_stream, send_stream, collapse_excgroups():
+  File "/opt/anaconda3/lib/python3.12/contextlib.py", line 158, in __exit__
+    self.gen.throw(value)
+  File "/opt/anaconda3/lib/python3.12/site-packages/starlette/_utils.py", line 87, in collapse_excgroups
+    raise exc
+  File "/opt/anaconda3/lib/python3.12/site-packages/starlette/middleware/base.py", line 193, in __call__
+    response = await self.dispatch_func(request, call_next)
+               ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/opt/anaconda3/lib/python3.12/site-packages/slowapi/middleware.py", line 136, in dispatch
+    response = await call_next(request)
+               ^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/opt/anaconda3/lib/python3.12/site-packages/starlette/middleware/base.py", line 168, in call_next
+    raise app_exc from app_exc.__cause__ or app_exc.__context__
+  File "/opt/anaconda3/lib/python3.12/site-packages/starlette/middleware/base.py", line 144, in coro
+    await self.app(scope, receive_or_disconnect, send_no_error)
+  File "/opt/anaconda3/lib/python3.12/site-packages/starlette/middleware/exceptions.py", line 63, in __call__
+    await wrap_app_handling_exceptions(self.app, conn)(scope, receive, send)
+  File "/opt/anaconda3/lib/python3.12/site-packages/starlette/_exception_handler.py", line 53, in wrapped_app
+    raise exc
+  File "/opt/anaconda3/lib/python3.12/site-packages/starlette/_exception_handler.py", line 42, in wrapped_app
+    await app(scope, receive, sender)
+  File "/opt/anaconda3/lib/python3.12/site-packages/fastapi/middleware/asyncexitstack.py", line 18, in __call__
+    await self.app(scope, receive, send)
+  File "/opt/anaconda3/lib/python3.12/site-packages/starlette/routing.py", line 660, in __call__
+    await self.middleware_stack(scope, receive, send)
+  File "/opt/anaconda3/lib/python3.12/site-packages/starlette/routing.py", line 680, in app
+    await route.handle(scope, receive, send)
+  File "/opt/anaconda3/lib/python3.12/site-packages/starlette/routing.py", line 276, in handle
+    await self.app(scope, receive, send)
+  File "/opt/anaconda3/lib/python3.12/site-packages/fastapi/routing.py", line 134, in app
+    await wrap_app_handling_exceptions(app, request)(scope, receive, send)
+  File "/opt/anaconda3/lib/python3.12/site-packages/starlette/_exception_handler.py", line 53, in wrapped_app
+    raise exc
+  File "/opt/anaconda3/lib/python3.12/site-packages/starlette/_exception_handler.py", line 42, in wrapped_app
+    await app(scope, receive, sender)
+  File "/opt/anaconda3/lib/python3.12/site-packages/fastapi/routing.py", line 120, in app
+    response = await f(request)
+               ^^^^^^^^^^^^^^^^
+  File "/opt/anaconda3/lib/python3.12/site-packages/fastapi/routing.py", line 674, in app
+    raw_response = await run_endpoint_function(
+                   ^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/opt/anaconda3/lib/python3.12/site-packages/fastapi/routing.py", line 328, in run_endpoint_function
+    return await dependant.call(**values)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/Users/cynthia/job_assistant/job_assistant/job_api/routers/applications.py", line 49, in create_app
+    app = await app_model.create_application(
+          ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/Users/cynthia/job_assistant/job_assistant/job_api/models/application.py", line 209, in create_application
+    conn.execute(
+sqlite3.IntegrityError: UNIQUE constraint failed: applications.user_id, applications.job_id
+INFO:     127.0.0.1:51329 - "GET /api/v1/applications HTTP/1.1" 200 OK
+INFO:     127.0.0.1:51328 - "GET /api/v1/applications HTTP/1.1" 200 OK
+INFO:     127.0.0.1:51331 - "GET /api/v1/schedules/reminders/due HTTP/1.1" 200 OK
+INFO:     127.0.0.1:51333 - "GET /api/v1/schedules/reminders/due HTTP/1.1" 200 OK
+INFO:     127.0.0.1:51336 - "POST /api/v1/llm/company-due-diligence HTTP/1.1" 200 OK
+INFO:     127.0.0.1:51337 - "POST /api/v1/llm/company-due-diligence HTTP/1.1" 200 OK
+INFO:     127.0.0.1:51343 - "POST /api/v1/llm/company-due-diligence HTTP/1.1" 200 OK
+INFO:     127.0.0.1:51342 - "POST /api/v1/llm/company-due-diligence HTTP/1.1" 200 OK
+INFO:     127.0.0.1:51352 - "POST /api/v1/llm/company-due-diligence HTTP/1.1" 200 OK
+INFO:     127.0.0.1:51353 - "POST /api/v1/llm/company-due-diligence HTTP/1.1" 200 OK
+INFO:     127.0.0.1:51360 - "POST /api/v1/llm/company-due-diligence HTTP/1.1" 200 OK
+INFO:     127.0.0.1:51361 - "POST /api/v1/llm/company-due-diligence HTTP/1.1" 200 OK
+INFO:     127.0.0.1:51411 - "GET /api/v1/applications HTTP/1.1" 200 OK
+INFO:     127.0.0.1:51408 - "GET /api/v1/applications HTTP/1.1" 200 OK
+INFO:     127.0.0.1:51414 - "GET /api/v1/schedules/reminders/due HTTP/1.1" 200 OK
+INFO:     127.0.0.1:51416 - "GET /api/v1/schedules/reminders/due HTTP/1.1" 200 OK
+INFO:     127.0.0.1:51409 - "GET /api/v1/sync/jobs/page?limit=50&offset=0 HTTP/1.1" 200 OK
+INFO:     127.0.0.1:51412 - "GET /api/v1/sync/jobs/page?limit=50&offset=0 HTTP/1.1" 200 OK
+INFO:     127.0.0.1:51407 - "GET /api/v1/sync/stats-overview HTTP/1.1" 200 OK
+INFO:     127.0.0.1:51410 - "GET /api/v1/sync/stats-overview HTTP/1.1" 200 OK
+matcher 失败: 'UserMatcher' object has no attribute 'match_jobs_for_user'
+Traceback (most recent call last):
+  File "/Users/cynthia/job_assistant/job_assistant/job_api/services/job_matcher_adapter.py", line 145, in recommend_jobs
+    top_jobs = matcher.match_jobs_for_user(
+               ^^^^^^^^^^^^^^^^^^^^^^^^^^^
+AttributeError: 'UserMatcher' object has no attribute 'match_jobs_for_user'
+INFO:     127.0.0.1:51434 - "POST /api/v1/jobs/recommend HTTP/1.1" 200 OK
+INFO:     127.0.0.1:51448 - "POST /api/v1/applications HTTP/1.1" 500 Internal Server Error
+ERROR:    Exception in ASGI application
+Traceback (most recent call last):
+  File "/opt/anaconda3/lib/python3.12/site-packages/uvicorn/protocols/http/httptools_impl.py", line 416, in run_asgi
+    result = await app(  # type: ignore[func-returns-value]
+             ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/opt/anaconda3/lib/python3.12/site-packages/uvicorn/middleware/proxy_headers.py", line 60, in __call__
+    return await self.app(scope, receive, send)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/opt/anaconda3/lib/python3.12/site-packages/fastapi/applications.py", line 1159, in __call__
+    await super().__call__(scope, receive, send)
+  File "/opt/anaconda3/lib/python3.12/site-packages/starlette/applications.py", line 90, in __call__
+    await self.middleware_stack(scope, receive, send)
+  File "/opt/anaconda3/lib/python3.12/site-packages/starlette/middleware/errors.py", line 186, in __call__
+    raise exc
+  File "/opt/anaconda3/lib/python3.12/site-packages/starlette/middleware/errors.py", line 164, in __call__
+    await self.app(scope, receive, _send)
+  File "/opt/anaconda3/lib/python3.12/site-packages/starlette/middleware/cors.py", line 96, in __call__
+    await self.simple_response(scope, receive, send, request_headers=headers)
+  File "/opt/anaconda3/lib/python3.12/site-packages/starlette/middleware/cors.py", line 154, in simple_response
+    await self.app(scope, receive, send)
+  File "/opt/anaconda3/lib/python3.12/site-packages/starlette/middleware/base.py", line 191, in __call__
+    with recv_stream, send_stream, collapse_excgroups():
+  File "/opt/anaconda3/lib/python3.12/contextlib.py", line 158, in __exit__
+    self.gen.throw(value)
+  File "/opt/anaconda3/lib/python3.12/site-packages/starlette/_utils.py", line 87, in collapse_excgroups
+    raise exc
+  File "/opt/anaconda3/lib/python3.12/site-packages/starlette/middleware/base.py", line 193, in __call__
+    response = await self.dispatch_func(request, call_next)
+               ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/opt/anaconda3/lib/python3.12/site-packages/slowapi/middleware.py", line 136, in dispatch
+    response = await call_next(request)
+               ^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/opt/anaconda3/lib/python3.12/site-packages/starlette/middleware/base.py", line 168, in call_next
+    raise app_exc from app_exc.__cause__ or app_exc.__context__
+  File "/opt/anaconda3/lib/python3.12/site-packages/starlette/middleware/base.py", line 144, in coro
+    await self.app(scope, receive_or_disconnect, send_no_error)
+  File "/opt/anaconda3/lib/python3.12/site-packages/starlette/middleware/exceptions.py", line 63, in __call__
+    await wrap_app_handling_exceptions(self.app, conn)(scope, receive, send)
+  File "/opt/anaconda3/lib/python3.12/site-packages/starlette/_exception_handler.py", line 53, in wrapped_app
+    raise exc
+  File "/opt/anaconda3/lib/python3.12/site-packages/starlette/_exception_handler.py", line 42, in wrapped_app
+    await app(scope, receive, sender)
+  File "/opt/anaconda3/lib/python3.12/site-packages/fastapi/middleware/asyncexitstack.py", line 18, in __call__
+    await self.app(scope, receive, send)
+  File "/opt/anaconda3/lib/python3.12/site-packages/starlette/routing.py", line 660, in __call__
+    await self.middleware_stack(scope, receive, send)
+  File "/opt/anaconda3/lib/python3.12/site-packages/starlette/routing.py", line 680, in app
+    await route.handle(scope, receive, send)
+  File "/opt/anaconda3/lib/python3.12/site-packages/starlette/routing.py", line 276, in handle
+    await self.app(scope, receive, send)
+  File "/opt/anaconda3/lib/python3.12/site-packages/fastapi/routing.py", line 134, in app
+    await wrap_app_handling_exceptions(app, request)(scope, receive, send)
+  File "/opt/anaconda3/lib/python3.12/site-packages/starlette/_exception_handler.py", line 53, in wrapped_app
+    raise exc
+  File "/opt/anaconda3/lib/python3.12/site-packages/starlette/_exception_handler.py", line 42, in wrapped_app
+    await app(scope, receive, sender)
+  File "/opt/anaconda3/lib/python3.12/site-packages/fastapi/routing.py", line 120, in app
+    response = await f(request)
+               ^^^^^^^^^^^^^^^^
+  File "/opt/anaconda3/lib/python3.12/site-packages/fastapi/routing.py", line 674, in app
+    raw_response = await run_endpoint_function(
+                   ^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/opt/anaconda3/lib/python3.12/site-packages/fastapi/routing.py", line 328, in run_endpoint_function
+    return await dependant.call(**values)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/Users/cynthia/job_assistant/job_assistant/job_api/routers/applications.py", line 49, in create_app
+    app = await app_model.create_application(
+          ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/Users/cynthia/job_assistant/job_assistant/job_api/models/application.py", line 209, in create_application
+    conn.execute(
+sqlite3.IntegrityError: UNIQUE constraint failed: applications.user_id, applications.job_id
+INFO:     127.0.0.1:51456 - "GET /api/v1/applications HTTP/1.1" 200 OK
+INFO:     127.0.0.1:51457 - "GET /api/v1/applications HTTP/1.1" 200 OK
+INFO:     127.0.0.1:51459 - "GET /api/v1/schedules/reminders/due HTTP/1.1" 200 OK
+INFO:     127.0.0.1:51461 - "GET /api/v1/schedules/reminders/due HTTP/1.1" 200 OK
+INFO:     127.0.0.1:51475 - "GET /api/v1/applications HTTP/1.1" 200 OK
+INFO:     127.0.0.1:51472 - "GET /api/v1/applications HTTP/1.1" 200 OK
+INFO:     127.0.0.1:51480 - "GET /api/v1/schedules/reminders/due HTTP/1.1" 200 OK
+INFO:     127.0.0.1:51482 - "GET /api/v1/schedules/reminders/due HTTP/1.1" 200 OK
+INFO:     127.0.0.1:51473 - "GET /api/v1/sync/jobs/page?limit=50&offset=0 HTTP/1.1" 200 OK
+INFO:     127.0.0.1:51476 - "GET /api/v1/sync/jobs/page?limit=50&offset=0 HTTP/1.1" 200 OK
+INFO:     127.0.0.1:51471 - "GET /api/v1/sync/stats-overview HTTP/1.1" 200 OK
+INFO:     127.0.0.1:51474 - "GET /api/v1/sync/stats-overview HTTP/1.1" 200 OK
+matcher 失败: 'UserMatcher' object has no attribute 'match_jobs_for_user'
+Traceback (most recent call last):
+  File "/Users/cynthia/job_assistant/job_assistant/job_api/services/job_matcher_adapter.py", line 145, in recommend_jobs
+    top_jobs = matcher.match_jobs_for_user(
+               ^^^^^^^^^^^^^^^^^^^^^^^^^^^
+AttributeError: 'UserMatcher' object has no attribute 'match_jobs_for_user'
+INFO:     127.0.0.1:51491 - "POST /api/v1/jobs/recommend HTTP/1.1" 200 OK
+INFO:     127.0.0.1:51566 - "POST /api/v1/applications HTTP/1.1" 500 Internal Server Error
+ERROR:    Exception in ASGI application
+Traceback (most recent call last):
+  File "/opt/anaconda3/lib/python3.12/site-packages/uvicorn/protocols/http/httptools_impl.py", line 416, in run_asgi
+    result = await app(  # type: ignore[func-returns-value]
+             ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/opt/anaconda3/lib/python3.12/site-packages/uvicorn/middleware/proxy_headers.py", line 60, in __call__
+    return await self.app(scope, receive, send)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/opt/anaconda3/lib/python3.12/site-packages/fastapi/applications.py", line 1159, in __call__
+    await super().__call__(scope, receive, send)
+  File "/opt/anaconda3/lib/python3.12/site-packages/starlette/applications.py", line 90, in __call__
+    await self.middleware_stack(scope, receive, send)
+  File "/opt/anaconda3/lib/python3.12/site-packages/starlette/middleware/errors.py", line 186, in __call__
+    raise exc
+  File "/opt/anaconda3/lib/python3.12/site-packages/starlette/middleware/errors.py", line 164, in __call__
+    await self.app(scope, receive, _send)
+  File "/opt/anaconda3/lib/python3.12/site-packages/starlette/middleware/cors.py", line 96, in __call__
+    await self.simple_response(scope, receive, send, request_headers=headers)
+  File "/opt/anaconda3/lib/python3.12/site-packages/starlette/middleware/cors.py", line 154, in simple_response
+    await self.app(scope, receive, send)
+  File "/opt/anaconda3/lib/python3.12/site-packages/starlette/middleware/base.py", line 191, in __call__
+    with recv_stream, send_stream, collapse_excgroups():
+  File "/opt/anaconda3/lib/python3.12/contextlib.py", line 158, in __exit__
+    self.gen.throw(value)
+  File "/opt/anaconda3/lib/python3.12/site-packages/starlette/_utils.py", line 87, in collapse_excgroups
+    raise exc
+  File "/opt/anaconda3/lib/python3.12/site-packages/starlette/middleware/base.py", line 193, in __call__
+    response = await self.dispatch_func(request, call_next)
+               ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/opt/anaconda3/lib/python3.12/site-packages/slowapi/middleware.py", line 136, in dispatch
+    response = await call_next(request)
+               ^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/opt/anaconda3/lib/python3.12/site-packages/starlette/middleware/base.py", line 168, in call_next
+    raise app_exc from app_exc.__cause__ or app_exc.__context__
+  File "/opt/anaconda3/lib/python3.12/site-packages/starlette/middleware/base.py", line 144, in coro
+    await self.app(scope, receive_or_disconnect, send_no_error)
+  File "/opt/anaconda3/lib/python3.12/site-packages/starlette/middleware/exceptions.py", line 63, in __call__
+    await wrap_app_handling_exceptions(self.app, conn)(scope, receive, send)
+  File "/opt/anaconda3/lib/python3.12/site-packages/starlette/_exception_handler.py", line 53, in wrapped_app
+    raise exc
+  File "/opt/anaconda3/lib/python3.12/site-packages/starlette/_exception_handler.py", line 42, in wrapped_app
+    await app(scope, receive, sender)
+  File "/opt/anaconda3/lib/python3.12/site-packages/fastapi/middleware/asyncexitstack.py", line 18, in __call__
+    await self.app(scope, receive, send)
+  File "/opt/anaconda3/lib/python3.12/site-packages/starlette/routing.py", line 660, in __call__
+    await self.middleware_stack(scope, receive, send)
+  File "/opt/anaconda3/lib/python3.12/site-packages/starlette/routing.py", line 680, in app
+    await route.handle(scope, receive, send)
+  File "/opt/anaconda3/lib/python3.12/site-packages/starlette/routing.py", line 276, in handle
+    await self.app(scope, receive, send)
+  File "/opt/anaconda3/lib/python3.12/site-packages/fastapi/routing.py", line 134, in app
+    await wrap_app_handling_exceptions(app, request)(scope, receive, send)
+  File "/opt/anaconda3/lib/python3.12/site-packages/starlette/_exception_handler.py", line 53, in wrapped_app
+    raise exc
+  File "/opt/anaconda3/lib/python3.12/site-packages/starlette/_exception_handler.py", line 42, in wrapped_app
+    await app(scope, receive, sender)
+  File "/opt/anaconda3/lib/python3.12/site-packages/fastapi/routing.py", line 120, in app
+    response = await f(request)
+               ^^^^^^^^^^^^^^^^
+  File "/opt/anaconda3/lib/python3.12/site-packages/fastapi/routing.py", line 674, in app
+    raw_response = await run_endpoint_function(
+                   ^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/opt/anaconda3/lib/python3.12/site-packages/fastapi/routing.py", line 328, in run_endpoint_function
+    return await dependant.call(**values)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/Users/cynthia/job_assistant/job_assistant/job_api/routers/applications.py", line 49, in create_app
+    app = await app_model.create_application(
+          ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/Users/cynthia/job_assistant/job_assistant/job_api/models/application.py", line 209, in create_application
+    conn.execute(
+sqlite3.IntegrityError: UNIQUE constraint failed: applications.user_id, applications.job_id
+INFO:     127.0.0.1:51608 - "GET /api/v1/applications HTTP/1.1" 200 OK
+INFO:     127.0.0.1:51609 - "GET /api/v1/applications HTTP/1.1" 200 OK
+INFO:     127.0.0.1:51611 - "GET /api/v1/schedules/reminders/due HTTP/1.1" 200 OK
+INFO:     127.0.0.1:51613 - "GET /api/v1/schedules/reminders/due HTTP/1.1" 200 OK
+INFO:     127.0.0.1:51633 - "GET /api/v1/applications HTTP/1.1" 200 OK
+INFO:     127.0.0.1:51636 - "GET /api/v1/applications HTTP/1.1" 200 OK
+INFO:     127.0.0.1:51634 - "GET /api/v1/sync/jobs/page?limit=50&offset=0 HTTP/1.1" 503 Service Unavailable
+INFO:     127.0.0.1:51635 - "GET /api/v1/sync/stats-overview HTTP/1.1" 503 Service Unavailable
+INFO:     127.0.0.1:51641 - "GET /api/v1/schedules/reminders/due HTTP/1.1" 200 OK
+INFO:     127.0.0.1:51643 - "GET /api/v1/schedules/reminders/due HTTP/1.1" 200 OK
+INFO:     127.0.0.1:51637 - "GET /api/v1/sync/jobs/page?limit=50&offset=0 HTTP/1.1" 200 OK
+INFO:     127.0.0.1:51674 - "GET /api/v1/applications HTTP/1.1" 200 OK
+INFO:     127.0.0.1:51675 - "GET /api/v1/applications HTTP/1.1" 200 OK
+INFO:     127.0.0.1:51677 - "GET /api/v1/schedules/reminders/due HTTP/1.1" 200 OK
+INFO:     127.0.0.1:51679 - "GET /api/v1/schedules/reminders/due HTTP/1.1" 200 OK
+INFO:     127.0.0.1:51732 - "GET /api/v1/applications HTTP/1.1" 200 OK
+INFO:     127.0.0.1:51729 - "GET /api/v1/applications HTTP/1.1" 200 OK
+INFO:     127.0.0.1:51730 - "GET /api/v1/sync/companies?limit=100&offset=0 HTTP/1.1" 503 Service Unavailable
+INFO:     127.0.0.1:51736 - "GET /api/v1/schedules/reminders/due HTTP/1.1" 200 OK
+INFO:     127.0.0.1:51740 - "GET /api/v1/schedules/reminders/due HTTP/1.1" 200 OK
+INFO:     127.0.0.1:51632 - "GET /api/v1/sync/stats-overview HTTP/1.1" 200 OK
+INFO:     127.0.0.1:51734 - "GET /api/v1/sync/companies?limit=100&offset=0 HTTP/1.1" 200 OK
+INFO:     127.0.0.1:51728 - "GET /api/v1/sync/stats-overview HTTP/1.1" 200 OK
+INFO:     127.0.0.1:51731 - "GET /api/v1/sync/stats-overview HTTP/1.1" 200 OK
+INFO:     127.0.0.1:51771 - "GET /api/v1/applications HTTP/1.1" 200 OK
+INFO:     127.0.0.1:51768 - "GET /api/v1/applications HTTP/1.1" 200 OK
+INFO:     127.0.0.1:51774 - "GET /api/v1/schedules/reminders/due HTTP/1.1" 200 OK
+INFO:     127.0.0.1:51776 - "GET /api/v1/schedules/reminders/due HTTP/1.1" 200 OK
+INFO:     127.0.0.1:51769 - "GET /api/v1/sync/jobs/page?limit=50&offset=0 HTTP/1.1" 200 OK
+INFO:     127.0.0.1:51772 - "GET /api/v1/sync/jobs/page?limit=50&offset=0 HTTP/1.1" 200 OK
+INFO:     127.0.0.1:51767 - "GET /api/v1/sync/stats-overview HTTP/1.1" 200 OK
+INFO:     127.0.0.1:51770 - "GET /api/v1/sync/stats-overview HTTP/1.1" 200 OK
+INFO:     127.0.0.1:51792 - "GET /api/v1/applications HTTP/1.1" 200 OK
+INFO:     127.0.0.1:51791 - "GET /api/v1/applications HTTP/1.1" 200 OK
+INFO:     127.0.0.1:51794 - "GET /api/v1/schedules/reminders/due HTTP/1.1" 200 OK
+INFO:     127.0.0.1:51796 - "GET /api/v1/schedules/reminders/due HTTP/1.1" 200 OK
+INFO:     127.0.0.1:51977 - "GET /api/v1/schedules/reminders/due HTTP/1.1" 200 OK
+INFO:     127.0.0.1:52138 - "GET /api/v1/schedules/reminders/due HTTP/1.1" 200 OK
+INFO:     127.0.0.1:52340 - "GET /api/v1/schedules/reminders/due HTTP/1.1" 200 OK
+INFO:     127.0.0.1:52525 - "GET /api/v1/schedules/reminders/due HTTP/1.1" 200 OK
+

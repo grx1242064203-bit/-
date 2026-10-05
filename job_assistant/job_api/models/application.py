@@ -206,25 +206,51 @@ async def create_application(
         else:
             ts_value = now if ts_field else None
             interview_round = 1 if status == "interview" else 0
-            conn.execute(
-                """INSERT INTO applications
-                   (user_id, job_id, job_title, company_name, status, source, link_type, link_id,
-                    interview_round, apply_url, announcement_url, notes, email_id,
-                    favorite_at, applied_at, assessment_at, interview_at, offer_at,
-                    created_at, updated_at)
-                   VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)""",
-                (
-                    user_id, job_id or link_id or "", job_title, company_name, status, source,
-                    link_type, link_id, interview_round, apply_url, announcement_url, notes, email_id,
-                    now if status == "favorite" else None,
-                    now if status == "applied" else None,
-                    now if status == "assessment" else None,
-                    now if status == "interview" else None,
-                    now if status == "offer" else None,
-                    now, now,
-                ),
-            )
-            app_id = conn.execute("SELECT last_insert_rowid()").fetchone()[0]
+            try:
+                conn.execute(
+                    """INSERT INTO applications
+                       (user_id, job_id, job_title, company_name, status, source, link_type, link_id,
+                        interview_round, apply_url, announcement_url, notes, email_id,
+                        favorite_at, applied_at, assessment_at, interview_at, offer_at,
+                        created_at, updated_at)
+                       VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)""",
+                    (
+                        user_id, job_id or link_id or "", job_title, company_name, status, source,
+                        link_type, link_id, interview_round, apply_url, announcement_url, notes, email_id,
+                        now if status == "favorite" else None,
+                        now if status == "applied" else None,
+                        now if status == "assessment" else None,
+                        now if status == "interview" else None,
+                        now if status == "offer" else None,
+                        now, now,
+                    ),
+                )
+                app_id = conn.execute("SELECT last_insert_rowid()").fetchone()[0]
+            except sqlite3.IntegrityError as ie:
+                # 兜底:旧 schema 残留 UNIQUE(user_id, job_id) 约束
+                # 按 job_id 查找已有记录,改成 UPDATE
+                if "UNIQUE constraint failed" in str(ie):
+                    final_job_id = job_id or link_id or ""
+                    row = conn.execute(
+                        "SELECT id FROM applications WHERE user_id=? AND job_id=?",
+                        (user_id, final_job_id),
+                    ).fetchone()
+                    if row:
+                        sets = ["status=?", "updated_at=?", "job_title=?", "company_name=?"]
+                        params: list = [status, now, job_title, company_name]
+                        if ts_field:
+                            sets.append(f"{ts_field}=?")
+                            params.append(now)
+                        params.append(row["id"])
+                        conn.execute(
+                            f"UPDATE applications SET {', '.join(sets)} WHERE id=?",
+                            params,
+                        )
+                        app_id = row["id"]
+                    else:
+                        raise
+                else:
+                    raise
         conn.commit()
 
         row = conn.execute(

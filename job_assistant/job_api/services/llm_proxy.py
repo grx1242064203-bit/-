@@ -119,9 +119,17 @@ class LLMProxyService:
         # 截断超长正文，控制 token 成本
         body_truncated = body[:4000]
 
+        # 注入当前日期，避免 LLM 模仿 prompt 例子里的年份(2025)导致日程存到过去
+        # 邮件正文里如果没显式写年份，LLM 应该用当前年份(2026)而不是例子年份(2025)
+        today_iso = datetime.now(timezone.utc).astimezone().strftime("%Y-%m-%d")
+        today_year = today_iso[:4]
+
         prompt = (
             "你是招聘流程信息抽取助手。从用户提供的邮件主题和正文中，"
             "提取招聘相关的日程信息。严格输出 JSON，不要输出 JSON 以外的任何文字。\n\n"
+            f"【重要：当前日期】今天是 {today_iso}。如果邮件正文没有显式指定年份，"
+            f"请用当前年份 {today_year}。招聘日程通常在未来，"
+            f"请勿把日程时间设置在过去（早于今天）。\n\n"
             "【字段说明】\n"
             "1. task_type: 事件类型，取值 interview(面试) / written(笔试) / "
             "assessment(测评/性格测试) / other(宣讲会等其他招聘相关事件)。"
@@ -131,8 +139,8 @@ class LLMProxyService:
             "3. job_title: 岗位名称。如「后端开发工程师」「产品经理」。"
             "找不到时返回空字符串。\n"
             "4. event_time: 事件开始时间，ISO 8601 格式（如 "
-            '"2025-01-15T14:30:00+08:00"）。'
-            "正文中的时间可能是「2025年1月15日 14:30」「1月15日下午2点半」"
+            f'"{today_year}-01-15T14:30:00+08:00"）。'
+            "正文中的时间可能是「1月15日 14:30」「1月15日下午2点半」"
             "等中文表达，请规范化为 ISO。如果时间不明确或缺失，返回 null。\n"
             "5. duration_minutes: 预估时长（分钟）。面试一般 60，笔试 120，"
             "测评 30。无法判断给 60。\n"
@@ -148,7 +156,7 @@ class LLMProxyService:
             '  "task_type": "interview",\n'
             '  "company": "示例科技有限公司",\n'
             '  "job_title": "后端开发工程师",\n'
-            '  "event_time": "2025-01-15T14:30:00+08:00",\n'
+            f'  "event_time": "{today_year}-01-15T14:30:00+08:00",\n'
             '  "duration_minutes": 60,\n'
             '  "meeting_link": "https://meeting.tencent.com/xxx",\n'
             '  "notes": "腾讯会议 二面",\n'

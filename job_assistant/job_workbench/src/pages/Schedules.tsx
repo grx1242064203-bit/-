@@ -233,9 +233,13 @@ function buildMonthCells(year: number, month: number, schedules: Schedule[]): Ce
     // 6 行 × 7 列，覆盖任意月份
     const d = new Date(gridStart);
     d.setDate(gridStart.getDate() + i);
-    const daySchedules = schedules.filter((s) =>
-      isSameDay(new Date(s.event_time), d)
-    );
+    // 防御性：跳过 event_time 缺失或解析失败的 schedule，避免 new Date(null) Invalid Date 影响 filter
+    const daySchedules = schedules.filter((s) => {
+      if (!s || !s.event_time) return false;
+      const sd = new Date(s.event_time);
+      if (isNaN(sd.getTime())) return false;
+      return isSameDay(sd, d);
+    });
     cells.push({
       date: d,
       inMonth: d.getMonth() === month,
@@ -886,13 +890,7 @@ export default function Schedules() {
   );
 
   const handleSubmit = async (req: CreateScheduleRequest) => {
-    const created = await addSchedule(req);
-    // 自动跳到新日程所在月份，避免用户在当前月看不到新建
-    const d = new Date(created.event_time);
-    if (!isNaN(d.getTime())) {
-      setViewYear(d.getFullYear());
-      setViewMonth(d.getMonth());
-    }
+    await addSchedule(req);
   };
 
   return (

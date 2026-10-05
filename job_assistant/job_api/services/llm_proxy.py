@@ -89,6 +89,140 @@ class LLMProxyService:
             label="supplement",
         )
 
+    def extract_schedule_from_text(self, subject: str, body: str) -> Dict[str, Any]:
+        """从邮件主题+正文提取日程结构化信息（零 LLM 成本的规则匹配的 AI 补强）。
+
+        用于"AI 智能建日程"：用户粘贴邮件正文，AI 提取关键字段，自动填表。
+        不直接创建日程——返回结构化数据，前端预填表单，用户确认后再提交。
+        失败抛异常，由路由层映射为 503。
+
+        返回：
+            {
+                "task_type": "interview"|"written"|"assessment"|"other",
+                "company": str,            # 公司名
+                "job_title": str,          # 岗位名
+                "event_time": str|None,     # ISO 8601 datetime（解析失败为 None）
+                "duration_minutes": int,    # 预估时长（分钟）
+                "meeting_link": str|None,   # 会议/笔试/测评链接
+                "notes": str,               # 备注（含邮件主题）
+                "confidence": "high"|"medium"|"low"  # AI 自评置信度
+            }
+        """
+        import json
+        import re
+        from datetime import datetime, timezone
+
+        client = self._make_client()
+
+        subject = (subject or "").strip()
+        body = (body or "").strip()
+        # 截断超长正文，控制 token 成本
+        body_truncated = body[:4000]
+
+        prompt = (
+            "你是招聘流程信息抽取助手。从用户提供的邮件主题和正文中，"
+            "提取招聘相关的日程信息。严格输出 JSON，不要输出 JSON 以外的任何文字。\n\n"
+            "【字段说明】\n"
+            "1. task_type: 事件类型，取值 interview(面试) / written(笔试) / "
+            "assessment(测评/性格测试) / other(宣讲会等其他招聘相关事件)。"
+            "无法判断时给 other。\n"
+            "2. company: 公司全称。从发件人域名、落款、正文中提取。"
+            "找不到时返回空字符串。\n"
+            "3. job_title: 岗位名称。如「后端开发工程师」「产品经理」。"
+            "找不到时返回空字符串。\n"
+            "4. event_time: 事件开始时间，ISO 8601 格式（如 "
+            '"2025-01-15T14:30:00+08:00"）。'
+            "正文中的时间可能是「2025年1月15日 14:30」「1月15日下午2点半」"
+            "等中文表达，请规范化为 ISO。如果时间不明确或缺失，返回 null。\n"
+            "5. duration_minutes: 预估时长（分钟）。面试一般 60，笔试 120，"
+            "测评 30。无法判断给 60。\n"
+            "6. meeting_link: 会议链接/笔试链接/测评链接。优先取腾讯会议、"
+            "Zoom、飞书、Teams、会议链接等。没有则返回 null。\n"
+            "7. notes: 备注，简短一句话说明事件（如「腾讯会议 二面」）。\n"
+            "8. confidence: 你对这次提取结果的整体置信度，取值 "
+            "high / medium / low。时间缺失或公司不明时降级。\n\n"
+            f"【邮件主题】\n{subject or '（无主题）'}\n\n"
+            f"【邮件正文】\n{body_truncated or '（无正文）'}\n\n"
+            "【输出 JSON 模板】\n"
+            "{\n"
+            '  "task_type": "interview",\n'
+            '  "company": "示例科技有限公司",\n'
+            '  "job_title": "后端开发工程师",\n'
+            '  "event_time": "2025-01-15T14:30:00+08:00",\n'
+            '  "duration_minutes": 60,\n'
+            '  "meeting_link": "https://meeting.tencent.com/xxx",\n'
+            '  "notes": "腾讯会议 二面",\n'
+            '  "confidence": "high"\n'
+            "}\n"
+        )
+        content = client._chat(
+            [{"role": "user", "content": prompt}],
+            temperature=0.1,
+            max_tokens=800,
+            json_mode=True,
+        )
+        if content is None:
+            raise RuntimeError(
+                "邮件日程提取 LLM 调用失败: API 返回空"
+                "(可能 API Key 无效或服务不可用)"
+            )
+
+        # 解析 JSON（容错：模型偶发返回非纯 JSON 时用正则兜底）
+        data: Dict[str, Any] = {}
+        try:
+            data = json.loads(content)
+        except json.JSONDecodeError:
+            m = re.search(r"\{.*\}", content, re.S)
+            if m:
+                try:
+                    data = json.loads(m.group(0))
+                except json.JSONDecodeError:
+                    data = {}
+            else:
+                data = {}
+
+        # 校验 + 归一化 task_type
+        valid_types = {"interview", "written", "assessment", "other"}
+        task_type = data.get("task_type", "other")
+        if task_type not in valid_types:
+            task_type = "other"
+
+        # 校验 event_time（必须是可解析的 ISO）
+        event_time = data.get("event_time")
+        if event_time:
+            try:
+                # 兼容模型偶发返回 "2025-01-15 14:30:00" 这种带空格的伪 ISO
+                normalized = str(event_time).replace(" ", "T")
+                datetime.fromisoformat(normalized)
+                event_time = normalized
+            except (ValueError, TypeError):
+                event_time = None
+        else:
+            event_time = None
+
+        # duration_minutes 必须是正整数
+        try:
+            duration = int(data.get("duration_minutes", 60))
+            if duration <= 0:
+                duration = 60
+        except (ValueError, TypeError):
+            duration = 60
+
+        confidence = data.get("confidence", "low")
+        if confidence not in {"high", "medium", "low"}:
+            confidence = "low"
+
+        return {
+            "task_type": task_type,
+            "company": str(data.get("company", "") or "").strip(),
+            "job_title": str(data.get("job_title", "") or "").strip(),
+            "event_time": event_time,
+            "duration_minutes": duration,
+            "meeting_link": data.get("meeting_link") or None,
+            "notes": str(data.get("notes", "") or "").strip(),
+            "confidence": confidence,
+        }
+
     def company_due_diligence(self, company_name: str, resume_text: str = "") -> Dict[str, Any]:
         """公司尽调：联网搜索 + LLM 生成简介/官网/新闻/个性化面试答案。
 

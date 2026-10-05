@@ -14,6 +14,13 @@ export interface EmailAccount {
 export type TaskType = "assessment" | "written" | "interview";
 export type TaskStatus = "pending" | "confirmed" | "ignored";
 
+// AI 提取状态枚举（与后端 email_model.EXTRACT_STATUS_* 对齐）
+export type ExtractStatus =
+  | "pending" // 初筛命中后任务已创建，字段为空，等待 LLM 异步提取
+  | "llm_done" // LLM 提取成功，字段已回填
+  | "llm_failed" // LLM 调用失败（超时/配额/Key 无效）
+  | "rule_fallback"; // LLM 失败后回退到规则提取
+
 export interface EmailTask {
   id: string;
   email_id: string;
@@ -29,6 +36,25 @@ export interface EmailTask {
   confirmed_at: string | null;
   application_id: string | null;
   schedule_id: string | null;
+  extract_status: ExtractStatus;
+  // 由 list_tasks 接口 join emails 表后回填的冗余字段（仅列表场景有值）
+  email_subject?: string;
+  email_sender?: string;
+  email_received_at?: string;
+}
+
+// 邮件原文（GET /emails/{id} 返回）
+export interface EmailDetail {
+  id: string;
+  message_id: string;
+  subject: string | null;
+  sender: string | null;
+  from_addr: string | null;
+  received_at: string | null;
+  body_text: string | null;
+  body_html: string | null;
+  raw_headers: string | null;
+  created_at: string;
 }
 
 export interface SyncResult {
@@ -66,7 +92,9 @@ export async function deleteEmailAccount(id: string): Promise<void> {
   await apiClient.delete(`${PREFIX}/accounts/${id}`);
 }
 
-export async function testEmailAccount(id: string): Promise<{ ok: boolean; error: string }> {
+export async function testEmailAccount(
+  id: string
+): Promise<{ ok: boolean; error: string }> {
   return apiClient.post(`${PREFIX}/accounts/${id}/test`);
 }
 
@@ -82,10 +110,21 @@ export async function listEmailTasks(status?: TaskStatus): Promise<EmailTask[]> 
   return res.tasks;
 }
 
+export async function getEmailDetail(emailId: string): Promise<EmailDetail> {
+  const res = await apiClient.get<{ email: EmailDetail }>(
+    `${PREFIX}/emails/${emailId}`
+  );
+  return res.email;
+}
+
 export async function confirmEmailTask(id: string): Promise<ConfirmResult> {
   return apiClient.post(`${PREFIX}/tasks/${id}/confirm`);
 }
 
 export async function ignoreEmailTask(id: string): Promise<void> {
   await apiClient.post(`${PREFIX}/tasks/${id}/ignore`);
+}
+
+export async function reextractEmailTask(id: string): Promise<void> {
+  await apiClient.post(`${PREFIX}/tasks/${id}/reextract`);
 }

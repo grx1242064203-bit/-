@@ -6,8 +6,12 @@ import {
   deleteSchedule,
   getDueReminders,
   markReminderFired,
+  createSchedule,
+  aiExtractSchedule,
   type Schedule,
   type DueReminder,
+  type CreateScheduleRequest,
+  type ExtractedSchedule,
 } from "../api/schedules";
 
 interface ScheduleState {
@@ -19,9 +23,11 @@ interface ScheduleState {
   removeSchedule: (id: string) => Promise<void>;
   pollDueReminders: () => Promise<DueReminder[]>;
   fireReminder: (id: string) => Promise<void>;
+  addSchedule: (req: CreateScheduleRequest) => Promise<Schedule>;
+  extractFromEmail: (subject: string, body: string) => Promise<ExtractedSchedule>;
 }
 
-export const useScheduleStore = create<ScheduleState>((set) => ({
+export const useScheduleStore = create<ScheduleState>((set, get) => ({
   schedules: [],
   loading: false,
   error: null,
@@ -59,5 +65,20 @@ export const useScheduleStore = create<ScheduleState>((set) => ({
     set((s) => ({
       dueReminders: s.dueReminders.filter((r) => r.id !== id),
     }));
+  },
+
+  addSchedule: async (req) => {
+    const created = await createSchedule(req);
+    // 按时间升序插入新日程（保持列表有序，无需重新拉取整张表）
+    const next = [...get().schedules, created].sort(
+      (a, b) =>
+        new Date(a.event_time).getTime() - new Date(b.event_time).getTime()
+    );
+    set({ schedules: next });
+    return created;
+  },
+
+  extractFromEmail: async (subject, body) => {
+    return await aiExtractSchedule(subject, body);
   },
 }));

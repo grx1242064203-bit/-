@@ -440,10 +440,19 @@ function DaySchedulesModal({
 
 function ScheduleCard({ schedule }: { schedule: Schedule }) {
   const removeSchedule = useScheduleStore((s) => s.removeSchedule);
+  const [deleting, setDeleting] = useState(false);
+  const [deleteError, setDeleteError] = useState<string | null>(null);
 
-  const handleDelete = () => {
-    if (confirm("确定删除此日程？删除后关联提醒也会清除。")) {
-      void removeSchedule(schedule.id);
+  const handleDelete = async () => {
+    if (!confirm("确定删除此日程？删除后关联提醒也会清除。")) return;
+    setDeleting(true);
+    setDeleteError(null);
+    try {
+      await removeSchedule(schedule.id);
+    } catch (e) {
+      setDeleteError(extractErrorMessage(e));
+    } finally {
+      setDeleting(false);
     }
   };
 
@@ -525,11 +534,17 @@ function ScheduleCard({ schedule }: { schedule: Schedule }) {
         </div>
         <button
           onClick={handleDelete}
-          className="rounded-lg bg-red-50 px-2 py-1 text-xs text-red-500 hover:bg-red-100"
+          disabled={deleting}
+          className="rounded-lg bg-red-50 px-2 py-1 text-xs text-red-600 hover:bg-red-100 disabled:opacity-50"
         >
-          删除
+          {deleting ? "删除中..." : "删除"}
         </button>
       </div>
+      {deleteError && (
+        <div className="mt-2 rounded-lg bg-red-50 border border-red-200 px-2 py-1 text-[11px] text-red-700">
+          删除失败：{deleteError}
+        </div>
+      )}
     </div>
   );
 }

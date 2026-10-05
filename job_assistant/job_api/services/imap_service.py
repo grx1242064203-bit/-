@@ -241,13 +241,16 @@ async def test_connection(
         return {"ok": False, "error": err}
 
 
-async def sync_account(account_id: str, user_id: str, limit: int = 50) -> dict:
-    """同步指定邮箱账户的未读邮件。
-    返回 {fetched: int, tasks_created: int, skipped: int, error: str}。
+async def sync_account(account_id: str, user_id: str, limit: int = 200) -> dict:
+    """同步指定邮箱账户的邮件（包括已读）。
+    返回 {fetched: int, tasks_created: int, skipped: int, fetch_errors: int, error: str}。
+
+    limit=200: 覆盖大多数用户最近 1-2 个月的邮件,避免漏招。
+    搜索 ALL 而非 UNSEEN:用户可能读过招聘邮件后才来同步,不能漏。
     """
     account = await account_model.get_account(account_id, user_id)
     if not account:
-        return {"fetched": 0, "tasks_created": 0, "skipped": 0, "error": "邮箱账户不存在"}
+        return {"fetched": 0, "tasks_created": 0, "skipped": 0, "fetch_errors": 0, "error": "邮箱账户不存在"}
 
     try:
         # 复用禁用 TLS 1.3 的 SSLContext(兼容国内邮箱)
@@ -259,25 +262,38 @@ async def sync_account(account_id: str, user_id: str, limit: int = 50) -> dict:
         _send_imap_id_command(conn)
         conn.select("INBOX", readonly=True)
     except Exception as e:
-        return {"fetched": 0, "tasks_created": 0, "skipped": 0, "error": f"IMAP 连接失败: {type(e).__name__}: {e}"}
+        return {"fetched": 0, "tasks_created": 0, "skipped": 0, "fetch_errors": 0, "error": f"IMAP 连接失败: {type(e).__name__}: {e}"}
 
     fetched = 0
     tasks_created = 0
     skipped = 0
+    fetch_errors = 0
 
     try:
-        # 搜索最近的邮件（按序号倒序，取最新 limit 封）
+        # 搜索所有邮件（包括已读）——用户可能先读过邮件才来同步
         status, data = conn.search(None, "ALL")
         if status != "OK":
-            return {"fetched": 0, "tasks_created": 0, "skipped": 0, "error": "搜索邮件失败"}
+            return {"fetched": 0, "tasks_created": 0, "skipped": 0, "fetch_errors": 0, "error": "搜索邮件失败"}
 
         msg_ids = data[0].split()
-        # 取最新的 limit 封
+        total_count = len(msg_ids)
+        # 取最新的 limit 封（倒序取,确保最新的优先）
         msg_ids = msg_ids[-limit:] if msg_ids else []
+        log.info(
+            "IMAP 同步: 账户=%s 总邮件数=%d 取最新 %d 封",
+            account["email"], total_count, len(msg_ids)
+        )
 
         for msg_id in msg_ids:
-            status, msg_data = conn.fetch(msg_id, "(RFC822)")
-            if status != "OK" or not msg_data[0]:
+            try:
+                status, msg_data = conn.fetch(msg_id, "(RFC822)")
+                if status != "OK" or not msg_data[0]:
+                    fetch_errors += 1
+                    log.warning("fetch 邮件失败 msg_id=%s status=%s", msg_id, status)
+                    continue
+            except Exception as e:
+                fetch_errors += 1
+                log.warning("fetch 邮件异常 msg_id=%s: %s: %s", msg_id, type(e).__name__, e)
                 continue
 
             raw_email = msg_data[0][1]
@@ -302,21 +318,26 @@ async def sync_account(account_id: str, user_id: str, limit: int = 50) -> dict:
             raw_headers = str(msg.items())
 
             # 存入 emails 表（message_id 去重）
-            email_record = await email_model.insert_email(
-                user_id=user_id,
-                account_id=account_id,
-                message_id=message_id,
-                subject=subject,
-                sender=sender,
-                from_addr=from_addr,
-                received_at=received_at or "",
-                body_text=body_text,
-                body_html=body_html,
-                raw_headers=raw_headers,
-            )
+            try:
+                email_record = await email_model.insert_email(
+                    user_id=user_id,
+                    account_id=account_id,
+                    message_id=message_id,
+                    subject=subject,
+                    sender=sender,
+                    from_addr=from_addr,
+                    received_at=received_at or "",
+                    body_text=body_text,
+                    body_html=body_html,
+                    raw_headers=raw_headers,
+                )
+            except Exception as e:
+                fetch_errors += 1
+                log.warning("insert_email 失败 msg_id=%s subject=%s: %s", msg_id, subject[:50], e)
+                continue
 
             if email_record is None:
-                # 已存在，跳过
+                # 已存在，跳过（但仍计入 skipped）
                 skipped += 1
                 continue
 
@@ -358,10 +379,15 @@ async def sync_account(account_id: str, user_id: str, limit: int = 50) -> dict:
             )
 
         await account_model.update_last_sync(account_id)
+        log.info(
+            "IMAP 同步完成: 账户=%s fetched=%d tasks_created=%d skipped=%d fetch_errors=%d",
+            account["email"], fetched, tasks_created, skipped, fetch_errors
+        )
         return {
             "fetched": fetched,
             "tasks_created": tasks_created,
             "skipped": skipped,
+            "fetch_errors": fetch_errors,
             "error": "",
         }
     finally:

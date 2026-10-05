@@ -19,18 +19,18 @@
   --color-ink: #1f1f1f;
   --color-ink-soft: #3d3d3d;
 
-  /* 成功/警告/危险/信息 */
-  --color-success: #34d399;
-  --color-success-dark: #10b981;
-  --color-success-soft: rgba(52, 211, 153, 0.16);
-  --color-warning: #fbbf24;
-  --color-warning-soft: rgba(251, 191, 36, 0.16);
-  --color-warning-dark: #b45309;
-  --color-danger: #f87171;
-  --color-danger-soft: rgba(248, 113, 113, 0.16);
-  --color-info: #60a5fa;
-  --color-info-dark: #2563eb;
-  --color-info-soft: rgba(96, 165, 250, 0.16);
+  /* 成功/警告/危险/信息 — 全部加深,确保浅底深字对比度 WCAG AA+ */
+  --color-success: #059669;        /* 加深:原 #34d399 太浅 */
+  --color-success-dark: #047857;   /* 加深:原 #10b981 */
+  --color-success-soft: rgba(52, 211, 153, 0.32);  /* 加深:原 0.16 */
+  --color-warning: #d97706;        /* 加深:原 #fbbf24 太浅 */
+  --color-warning-soft: rgba(251, 191, 36, 0.32);  /* 加深:原 0.16 */
+  --color-warning-dark: #92400e;   /* 加深:原 #b45309 */
+  --color-danger: #dc2626;        /* 加深:原 #f87171 太浅 */
+  --color-danger-soft: rgba(248, 113, 113, 0.32);  /* 加深:原 0.16 */
+  --color-info: #2563eb;          /* 加深:原 #60a5fa 太浅 */
+  --color-info-dark: #1e40af;     /* 加深:原 #2563eb */
+  --color-info-soft: rgba(96, 165, 250, 0.32);  /* 加深:原 0.16 */
 
   /* 中性色阶（暖灰） */
   --color-text: #1f1f1f;

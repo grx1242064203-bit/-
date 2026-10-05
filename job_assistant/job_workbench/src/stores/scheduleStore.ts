@@ -46,8 +46,18 @@ export const useScheduleStore = create<ScheduleState>((set, get) => ({
   },
 
   removeSchedule: async (id) => {
-    await deleteSchedule(id);
+    // 乐观删除:先从前端列表移除,再调后端
+    // 这样即使后端报错(404/网络),前端也不会留僵尸记录
+    // 真正的数据库状态由下次 loadSchedules 修正
     set((s) => ({ schedules: s.schedules.filter((x) => x.id !== id) }));
+    try {
+      await deleteSchedule(id);
+    } catch (e) {
+      // 后端删除失败时重新拉取,保证 UI 反映真实数据库状态
+      console.warn("removeSchedule 后端删除失败,触发全量重拉:", e);
+      await get().loadSchedules();
+      throw e;
+    }
   },
 
   pollDueReminders: async () => {

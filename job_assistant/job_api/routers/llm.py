@@ -106,7 +106,7 @@ def parse_resume(
     user: dict = Depends(get_current_user),
 ):
     """解析简历文本 → 结构化关键词 + 适配岗位方向。"""
-    user_id = user["user_id"]
+    user_id = str(user["user_id"])
     _check_quota(user_id)
 
     try:
@@ -118,8 +118,12 @@ def parse_resume(
         _handle_llm_error(e, "parse_resume")
         return
 
-    # 调用成功后增加用量计数；即使并发竞争导致 False 也返回结果，避免吞掉已成功的调用
-    increment_usage(user_id)
+    # 调用成功后增加用量计数；即使并发竞争导致 False 也返回结果，避免吞掉已成功的调用。
+    # 包入 try/except:DB 写入失败不阻塞已成功的 LLM 结果返回。
+    try:
+        increment_usage(user_id)
+    except Exception as e:
+        logger.warning(f"increment_usage 写入失败(parse_resume, user_id={user_id}): {e!r}")
     return {
         "keywords": result.get("keywords", []),
         "fit_directions": result.get("fit_directions", []),
@@ -205,7 +209,11 @@ async def parse_resume_file(
         _handle_llm_error(e, "parse_resume")
         return
 
-    increment_usage(user_id)
+    # 包入 try/except:DB 写入失败不阻塞已成功的 LLM 结果返回。
+    try:
+        increment_usage(user_id)
+    except Exception as e:
+        logger.warning(f"increment_usage 写入失败(parse_resume_file, user_id={user_id}): {e!r}")
     return {
         "keywords": result.get("keywords", []),
         "fit_directions": result.get("fit_directions", []),
@@ -220,7 +228,7 @@ def supplement(
     user: dict = Depends(get_current_user),
 ):
     """补充分析 → 基于用户编辑后的画像推荐适配方向 + 硬技能。"""
-    user_id = user["user_id"]
+    user_id = str(user["user_id"])
     _check_quota(user_id)
 
     try:
@@ -232,7 +240,11 @@ def supplement(
         _handle_llm_error(e, "supplement")
         return
 
-    increment_usage(user_id)
+    # 包入 try/except:DB 写入失败不阻塞已成功的 LLM 结果返回。
+    try:
+        increment_usage(user_id)
+    except Exception as e:
+        logger.warning(f"increment_usage 写入失败(supplement, user_id={user_id}): {e!r}")
     # supplement_profile 返回 {fit_directions, structured_keywords, new_directions, new_skills}
     # API 仅暴露 {fit_directions, hard_skills}（hard_skills = LLM 新补的硬技能 tag）
     return {
@@ -267,7 +279,7 @@ def company_due_diligence(
     自动读取用户的 active 简历画像，把简历文本喂给 LLM，生成结合用户经历的
     专业面试回答。结果按 (user_id, company_name) 缓存。
     """
-    user_id = user["user_id"]
+    user_id = str(user["user_id"])  # 统一 str 类型,与 resume_profiles 对齐
     company_name = req.company_name.strip()
 
     # 1) 命中缓存直接返回
@@ -296,15 +308,29 @@ def company_due_diligence(
         _handle_llm_error(e, "company_due_diligence")
         return
 
-    increment_usage(user_id)
+    # 4) 写入用量计数 + 缓存。
+    # 包入 try/except:LLM 已成功,这两步 DB 写入失败不能阻塞返回结果(避免 500)。
+    try:
+        increment_usage(user_id)
+    except Exception as e:
+        logger.warning(f"increment_usage 写入失败(company_due_diligence, user_id={user_id}): {e!r}")
 
-    # 4) 写入缓存（按 user_id + company_name）
-    saved = dd_model.upsert_due_diligence_sync(
-        user_id=user_id,
-        company_name=company_name,
-        intro=result.get("intro", ""),
-        official_website=result.get("official_website", ""),
-        news_links=result.get("news_links", []),
-        why_company_questions=result.get("why_company_questions", []),
-    )
+    saved: dict = {**result, "company_name": company_name}
+    try:
+        saved = dd_model.upsert_due_diligence_sync(
+            user_id=user_id,
+            company_name=company_name,
+            intro=result.get("intro", ""),
+            official_website=result.get("official_website", ""),
+            news_links=result.get("news_links", []),
+            why_company_questions=result.get("why_company_questions", []),
+        )
+    except Exception as e:
+        # 缓存写入失败:只记日志,返回 LLM 生成结果(不写 cached 标记)
+        logger.warning(
+            f"upsert_due_diligence_sync 写入失败(user_id={user_id}, "
+            f"company={company_name}): {e!r}",
+            exc_info=True,
+        )
+        return {**result, "company_name": company_name, "cached": False}
     return {**saved, "cached": False}

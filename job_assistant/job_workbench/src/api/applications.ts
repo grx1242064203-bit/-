@@ -41,6 +41,15 @@ export interface Application {
   recruit_type?: string | null;
   recruit_target?: string | null;
   location?: string | null;
+  // 岗位库(db_job)额外字段(后端 _enrich_linked_data 已返回)
+  job_category?: string | null;
+  job_subcategory?: string | null;
+  min_education?: string | null;
+  is_management_trainee?: string | null; // 简写: is_mt
+  is_mt?: string | null;
+  jd_summary?: string | null;
+  difficulty?: string | null;
+  hard_skills?: string[] | string | null;
 }
 
 export function createApplication(data: {

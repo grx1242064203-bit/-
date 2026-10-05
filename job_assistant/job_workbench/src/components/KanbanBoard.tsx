@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useRef, useState } from "react";
 import {
   useAppStore,
   KANBAN_COLUMNS,
@@ -21,7 +21,6 @@ const STATUS_ORDER: Record<AppStatus, number> = {
 export default function KanbanBoard() {
   const {
     applications,
-    dragSource,
     interviewExpanded,
     updateApplicationStatus,
     updateInterviewRound,
@@ -30,12 +29,21 @@ export default function KanbanBoard() {
     setSelectedAppId,
   } = useAppStore();
 
+  // 拖拽源用 useRef 同步保存,避免 React state 异步更新导致 drop 时拿不到 source
+  // (HTML5 drag 事件 dragstart → dragover → drop 之间可能没时间让 React 完成 state 更新)
+  const dragSourceRef = useRef<Application | null>(null);
   const [dragOverStatus, setDragOverStatus] = useState<AppStatus | null>(null);
   const [dragOverRound, setDragOverRound] = useState<number | null>(null);
   const [pendingReverse, setPendingReverse] = useState<{
     app: Application;
     target: AppStatus;
   } | null>(null);
+
+  // 包装 setDragSource:同步更新 ref + state(ref 给 handleDrop 用,state 给 UI 重渲染用)
+  function setDragSourceSync(app: Application | null) {
+    dragSourceRef.current = app;
+    setDragSource(app);
+  }
 
   function isReverse(from: AppStatus, to: AppStatus): boolean {
     // rejected 不参与逆向判断；offer→任何非终态算逆向
@@ -44,22 +52,24 @@ export default function KanbanBoard() {
   }
 
   function handleDrop(targetStatus: AppStatus, targetRound?: number) {
-    if (!dragSource) return;
-    const from = dragSource.status;
+    // 用 ref 同步读取,避免 state 异步导致的"快速拖拽失效"
+    const src = dragSourceRef.current;
+    if (!src) return;
+    const from = src.status;
 
     // 同列内：面试轮次调整
     if (from === targetStatus && targetStatus === "interview" && targetRound != null) {
-      if (dragSource.interview_round !== targetRound) {
-        void updateInterviewRound(dragSource, targetRound);
+      if (src.interview_round !== targetRound) {
+        void updateInterviewRound(src, targetRound);
       }
-      setDragSource(null);
+      setDragSourceSync(null);
       setDragOverStatus(null);
       setDragOverRound(null);
       return;
     }
 
     if (from === targetStatus) {
-      setDragSource(null);
+      setDragSourceSync(null);
       setDragOverStatus(null);
       setDragOverRound(null);
       return;
@@ -67,15 +77,15 @@ export default function KanbanBoard() {
 
     // 逆向拖拽：弹确认框
     if (isReverse(from, targetStatus)) {
-      setPendingReverse({ app: dragSource, target: targetStatus });
-      setDragSource(null);
+      setPendingReverse({ app: src, target: targetStatus });
+      setDragSourceSync(null);
       setDragOverStatus(null);
       setDragOverRound(null);
       return;
     }
 
-    void updateApplicationStatus(dragSource, targetStatus).catch(() => {});
-    setDragSource(null);
+    void updateApplicationStatus(src, targetStatus).catch(() => {});
+    setDragSourceSync(null);
     setDragOverStatus(null);
     setDragOverRound(null);
   }
@@ -150,8 +160,8 @@ export default function KanbanBoard() {
                         <ApplicationCard
                           key={app.id}
                           application={app}
-                          onDragStart={(a) => setDragSource(a)}
-                          onDragEnd={() => setDragSource(null)}
+                          onDragStart={(a) => setDragSourceSync(a)}
+                          onDragEnd={() => setDragSourceSync(null)}
                           onClick={() => setSelectedAppId(app.id)}
                         />
                       ))
@@ -218,8 +228,8 @@ export default function KanbanBoard() {
               <ApplicationCard
                 key={app.id}
                 application={app}
-                onDragStart={(a) => setDragSource(a)}
-                onDragEnd={() => setDragSource(null)}
+                onDragStart={(a) => setDragSourceSync(a)}
+                onDragEnd={() => setDragSourceSync(null)}
                 onClick={() => setSelectedAppId(app.id)}
               />
             ))

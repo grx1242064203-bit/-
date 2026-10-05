@@ -10,6 +10,7 @@ import {
   type DueDiligence,
 } from "../api/applications";
 import { openExternalUrl } from "../utils/link";
+import { colorMap, pillClass } from "../utils/colorMap";
 
 interface Props {
   application: Application;
@@ -102,6 +103,47 @@ export default function RecruitmentCard({ application }: Props) {
 
   const isDbLinked = application.source === "db_job" || application.source === "db_company";
   const isEmail = application.source === "email";
+  const isDbJob = application.source === "db_job";
+
+  // 字段详情：公司库 / 岗位库 来源时展示数据库内的关联字段。
+  // 用 colorMap 渲染彩色胶囊标签，便于快速识别行业/类型/学历/难度等。
+  const fieldPills: { label: string; value: string | null | undefined; pair?: { bg: string; text: string } }[] = [];
+  if (isDbLinked) {
+    if (application.industry) {
+      fieldPills.push({ label: "行业", value: application.industry, pair: colorMap.industry(application.industry) });
+    }
+    if (application.company_type) {
+      fieldPills.push({ label: "公司类型", value: application.company_type, pair: colorMap.companyType(application.company_type) });
+    }
+    if (isDbJob) {
+      // 岗位库专属字段
+      if (application.job_category) {
+        fieldPills.push({ label: "岗位分类", value: application.job_category, pair: colorMap.category(application.job_category) });
+      }
+      if (application.min_education) {
+        fieldPills.push({ label: "最低学历", value: application.min_education, pair: colorMap.education(application.min_education) });
+      }
+      if (application.is_management_trainee || application.is_mt) {
+        const v = String(application.is_management_trainee || application.is_mt || "");
+        const isYes = v === "1" || v === "true" || v === "True" || v === "是";
+        fieldPills.push({ label: "管培", value: isYes ? "是" : "否", pair: colorMap.isMt(isYes ? 1 : 0) });
+      }
+      if (application.difficulty) {
+        fieldPills.push({ label: "难度", value: application.difficulty, pair: colorMap.difficulty(application.difficulty) });
+      }
+    }
+  }
+
+  // 时间字段
+  const timeFields: { label: string; value: string | null | undefined }[] = [];
+  if (isDbLinked) {
+    if (application.publish_time) {
+      timeFields.push({ label: "发布时间", value: application.publish_time });
+    }
+    if (application.deadline) {
+      timeFields.push({ label: "截止时间", value: application.deadline });
+    }
+  }
 
   return (
     <div
@@ -171,13 +213,63 @@ export default function RecruitmentCard({ application }: Props) {
           </div>
         </div>
 
-        {/* 链接区：DB 关联显示公告/投递；邮件显示邮件链接 */}
+        {/* 数据库关联字段详情：公司库 / 岗位库 来源时展示 */}
+        {isDbLinked && (fieldPills.length > 0 || timeFields.length > 0 || isDbJob) && (
+          <div className="mt-4 rounded-xl border border-white/60 bg-white/40 p-3">
+            <div className="mb-2 flex items-center gap-2 text-xs font-medium text-text-muted">
+              <span className="rounded bg-info-soft px-1.5 py-0.5 text-info">
+                {isDbJob ? "岗位库字段" : "公司库字段"}
+              </span>
+              <span className="text-text-faint">来自数据库关联</span>
+            </div>
+
+            {/* 彩色胶囊字段 */}
+            {fieldPills.length > 0 && (
+              <div className="flex flex-wrap gap-1.5">
+                {fieldPills.map((f) => (
+                  <span
+                    key={f.label}
+                    className={pillClass(f.pair || { bg: "bg-gray-100", text: "text-gray-600" })}
+                    title={`${f.label}: ${f.value}`}
+                  >
+                    {f.label} · {f.value}
+                  </span>
+                ))}
+              </div>
+            )}
+
+            {/* 时间字段 */}
+            {timeFields.length > 0 && (
+              <div className="mt-2 flex flex-wrap gap-x-4 gap-y-1 text-xs text-text-muted">
+                {timeFields.map((t) => (
+                  <span key={t.label}>
+                    <span className="text-text-faint">{t.label}:</span>
+                    <span className="ml-1 font-medium text-text">{formatDate(t.value)}</span>
+                  </span>
+                ))}
+              </div>
+            )}
+
+            {/* JD 摘要(岗位库专属) */}
+            {isDbJob && application.jd_summary && (
+              <div className="mt-2">
+                <div className="text-xs font-medium text-text-muted">JD 摘要</div>
+                <p className="mt-0.5 text-xs leading-relaxed text-text line-clamp-4">
+                  {application.jd_summary}
+                </p>
+              </div>
+            )}
+          </div>
+        )}
+
+        {/* 链接区：DB 关联显示公告/投递；邮件显示邮件链接。
+            颜色区分:招聘公告=info(蓝)/投递链接=success(绿)/邮件=info-soft(浅蓝)。 */}
         <div className="mt-4 flex flex-wrap gap-2">
           {isDbLinked && application.announcement_url && (
             <button
               type="button"
               onClick={() => void openExternalUrl(application.announcement_url)}
-              className="rounded-pill bg-primary-soft px-3 py-1.5 text-xs font-medium text-primary-dark hover:bg-primary-light"
+              className="rounded-pill bg-info px-3 py-1.5 text-xs font-semibold text-white shadow-sm transition hover:bg-info-dark"
             >
               📢 招聘公告
             </button>
@@ -186,7 +278,7 @@ export default function RecruitmentCard({ application }: Props) {
             <button
               type="button"
               onClick={() => void openExternalUrl(application.apply_url)}
-              className="rounded-pill bg-success/15 px-3 py-1.5 text-xs font-medium text-success hover:bg-success/25"
+              className="rounded-pill bg-success px-3 py-1.5 text-xs font-semibold text-white shadow-sm transition hover:bg-success-dark"
             >
               📮 投递链接
             </button>

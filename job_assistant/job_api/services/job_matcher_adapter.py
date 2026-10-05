@@ -113,7 +113,7 @@ def recommend_jobs(
 
     Returns:
         {"jobs": [...], "total_matched": int, "profile_snapshot": {...}}
-        每个 job 含 score / recommend / dims / reasons
+        每个 job 含 score / recommend / reasons / dims (前端契约字段)
     """
     from user_matcher import UserMatcher
     import job_db
@@ -173,20 +173,40 @@ def recommend_jobs(
                         "education_req": pos.get("education_req", ""),
                     }
                     result = score_job(job_for_score, user_profile)
-                    scored_remaining.append({**pos, **result})
+                    # scorer 返回中文键名,合并时统一规整成英文契约键
+                    scored_remaining.append({
+                        **pos,
+                        "score": result.get("相关性评分", 0),
+                        "recommend": result.get("综合推荐度", ""),
+                        "reasons": result.get("匹配理由", []),
+                        "dims": result.get("维度分", {}),
+                    })
                 except Exception:
                     continue
 
-            scored_remaining.sort(key=lambda x: -(x.get("score") or x.get("综合匹配度", 0) or 0))
+            # 兼容中英文键名排序
+            scored_remaining.sort(
+                key=lambda x: -(
+                    x.get("score")
+                    or x.get("相关性评分")
+                    or x.get("综合匹配度", 0)
+                    or 0
+                )
+            )
             top_jobs.extend(scored_remaining[:need])
         except Exception as e:
             logger.error(f"补齐失败: {e}", exc_info=True)
 
     # 标记推荐等级
+    # 兼容 scorer 中文「综合推荐度」与英文「recommend」两种键名
     for j in top_jobs:
-        score = j.get("score") or j.get("综合匹配度", 0) or 0
-        # recommend 字段已由 scorer 生成（强烈推荐/推荐/可申请/不建议）
-        rec = j.get("recommend") or ""
+        score = (
+            j.get("score")
+            or j.get("相关性评分")
+            or j.get("综合匹配度", 0)
+            or 0
+        )
+        rec = j.get("recommend") or j.get("综合推荐度") or ""
         if rec == "强烈推荐":
             j["recommend_level"] = "super_recommend"  # 超级推荐
         elif rec == "推荐":
@@ -197,27 +217,87 @@ def recommend_jobs(
             j["recommend_level"] = "low"              # 不建议
 
     # 统一返回字段，前端用中文（和飞书 schema 对齐）
+    # 修复:scorer 返回中文键名(相关性评分/综合推荐度/匹配理由/维度分),
+    # adapter 必须同时兼容中英文键名读取,否则 score=0 / recommend="" / reasons=[] / dims={},
+    # 前端按 recommend_level 分组时所有岗位都落到「其他」组,看不到推荐徽章。
     formatted = []
     for j in top_jobs:
+        # 从飞书 schema 中文记录里读中文键,从未映射的 raw pos 里读英文键,二选一
+        score_val = (
+            j.get("score")
+            or j.get("相关性评分")
+            or j.get("综合匹配度", 0)
+            or 0
+        )
+        recommend_val = j.get("recommend") or j.get("综合推荐度") or ""
+        reasons_val = (
+            j.get("reasons")
+            or j.get("匹配理由")
+            or (j.get("简评") and [j.get("简评")])
+            or []
+        )
+        dims_val = j.get("dims") or j.get("维度分") or {}
+
+        # 飞书 schema 把岗位库英文列名映射成了中文字段名,这里反向取值
+        title_val = (
+            j.get("title")
+            or j.get("岗位标题")
+            or j.get("position_title")
+            or ""
+        )
+        company_val = (
+            j.get("company")
+            or j.get("公司")
+            or j.get("company_name")
+            or ""
+        )
+        industry_val = j.get("industry") or j.get("行业") or ""
+        company_type_val = j.get("company_type") or j.get("公司类型") or ""
+        difficulty_val = j.get("difficulty") or j.get("难度") or ""
+        city_val = j.get("city") or j.get("地点") or j.get("location") or ""
+        min_edu_val = (
+            j.get("min_education")
+            or j.get("学历要求")
+            or j.get("education_req")
+            or ""
+        )
+        category_val = j.get("category") or j.get("岗位类别") or j.get("job_category") or ""
+        subcategory_val = (
+            j.get("subcategory")
+            or j.get("job_subcategory")
+            or ""
+        )
+        deadline_val = j.get("deadline") or j.get("投递截止日期") or j.get("deadline_ms")
+        apply_url_val = (
+            j.get("apply_url")
+            or j.get("JD链接")
+            or j.get("ann_apply_url")
+            or ""
+        )
+        # 飞书 URL 字段是 {"link":..., "text":...} 对象,需要解包
+        if isinstance(apply_url_val, dict):
+            apply_url_val = apply_url_val.get("link") or ""
+        announcement_url_val = j.get("announcement_url") or j.get("source_url") or ""
+
         formatted.append({
             "job_id": j.get("job_id") or j.get("position_id") or "",
-            "title": j.get("position_title") or j.get("title") or "",
-            "company": j.get("company_name") or j.get("company") or "",
-            "industry": j.get("industry") or "",
-            "company_type": j.get("company_type") or "",
-            "difficulty": j.get("difficulty") or "",
-            "city": j.get("city") or j.get("location") or "",
-            "min_education": j.get("min_education") or j.get("education_req") or "",
-            "category": j.get("job_category") or "",
-            "subcategory": j.get("job_subcategory") or "",
-            "deadline": j.get("deadline"),
-            "apply_url": j.get("apply_url") or j.get("ann_apply_url") or "",
-            "announcement_url": j.get("source_url") or "",
-            "score": round(float(j.get("score") or j.get("综合匹配度", 0) or 0), 1),
-            "recommend": j.get("recommend") or "",
+            "title": title_val,
+            "company": company_val,
+            "industry": industry_val,
+            "company_type": company_type_val,
+            "difficulty": difficulty_val,
+            "city": city_val,
+            "min_education": min_edu_val,
+            "category": category_val,
+            "subcategory": subcategory_val,
+            "deadline": deadline_val,
+            "apply_url": apply_url_val,
+            "announcement_url": announcement_url_val,
+            "score": round(float(score_val), 1),
+            "recommend": recommend_val,
             "recommend_level": j.get("recommend_level") or "",
-            "reasons": j.get("reasons") or j.get("匹配理由") or [],
-            "dims": j.get("dims") or {},
+            "reasons": reasons_val,
+            "dims": dims_val,
         })
 
     return {

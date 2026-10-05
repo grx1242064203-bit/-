@@ -80,3 +80,39 @@ def delete_profile(
     if not ok:
         raise HTTPException(status_code=404, detail="画像不存在或无权删除")
     return {"ok": True}
+
+
+class UpdateProfileRequest(BaseModel):
+    """部分更新画像字段;None 字段保持原值。Phase 1 纯人工编辑,不调 LLM。"""
+    keywords: Optional[list] = None
+    fit_directions: Optional[list] = None
+    degree: Optional[str] = None
+    major: Optional[str] = None
+    target_cities: Optional[list] = None
+
+
+@router.patch("/{profile_id}", response_model=ProfileResponse)
+def update_profile(
+    profile_id: str,
+    req: UpdateProfileRequest,
+    user: dict = Depends(get_current_user),
+):
+    """更新画像字段(用户在简历解析页手动编辑后保存)。
+
+    - 仅更新传入字段;未传字段保持原值
+    - 不调用 LLM,纯人工编辑
+    - 保存后立即生效:推荐接口下次读取 active 画像时用新值
+    """
+    uid = str(user["user_id"])
+    profile = rp_model.update_profile(
+        profile_id=profile_id,
+        user_id=uid,
+        keywords=req.keywords,
+        fit_directions=req.fit_directions,
+        degree=req.degree,
+        major=req.major,
+        target_cities=req.target_cities,
+    )
+    if not profile:
+        raise HTTPException(status_code=404, detail="画像不存在或无权修改")
+    return profile

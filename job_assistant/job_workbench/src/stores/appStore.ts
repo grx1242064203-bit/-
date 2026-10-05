@@ -238,7 +238,8 @@ export const useAppStore = create<AppState>((set) => ({
     set({ recommendLoading: true, recommendError: null });
     try {
       const { jobsRecommendApi } = await import("../api/jobsRecommend");
-      const res = await jobsRecommendApi.recommend(topN);
+      // force=true 跳过后端缓存,全量重算
+      const res = await jobsRecommendApi.recommend(topN, force);
       set({
         recommendJobs: res.jobs,
         recommendLoading: false,

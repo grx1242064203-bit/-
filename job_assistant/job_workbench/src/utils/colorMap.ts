@@ -8,7 +8,7 @@ type ColorPair = { bg: string; text: string };
 const INDUSTRY_COLORS: Record<string, ColorPair> = {
   "互联网/科技": { bg: "bg-blue-100", text: "text-blue-700" },
   金融: { bg: "bg-amber-100", text: "text-amber-900" },
-  "制造/工业": { bg: "bg-orange-100", text: "text-orange-700" },
+  "制造/工业": { bg: "bg-orange-100", text: "text-orange-900" },
   "咨询/专业服务": { bg: "bg-violet-100", text: "text-violet-700" },
   房地产: { bg: "bg-rose-100", text: "text-rose-700" },
   "房地产/建筑": { bg: "bg-rose-100", text: "text-rose-700" },
@@ -61,7 +61,7 @@ const CATEGORY_COLORS: Record<string, ColorPair> = {
   "运营与供应链": { bg: "bg-cyan-100", text: "text-cyan-700" },
   "商业(销售与市场)": { bg: "bg-rose-100", text: "text-rose-700" },
   职能: { bg: "bg-slate-100", text: "text-slate-700" },
-  "制造与质量": { bg: "bg-orange-100", text: "text-orange-700" },
+  "制造与质量": { bg: "bg-orange-100", text: "text-orange-900" },
   "硬件电子": { bg: "bg-yellow-100", text: "text-yellow-900" },
   管培生: { bg: "bg-emerald-100", text: "text-emerald-700" },
   数据: { bg: "bg-indigo-100", text: "text-indigo-700" },

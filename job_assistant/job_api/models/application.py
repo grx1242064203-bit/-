@@ -368,7 +368,11 @@ def _enrich_linked_data(app: dict) -> dict:
                               a.publish_time, a.deadline,
                               a.recruit_type, a.recruit_target,
                               a.location AS location,
-                              a.positions_count, a.position_titles,
+                              a.positions_count,
+                              (SELECT GROUP_CONCAT(position_title, '、')
+                                 FROM (SELECT position_title FROM positions
+                                        WHERE company_id = c.id ORDER BY id LIMIT 15)
+                              ) AS position_titles,
                               a.apply_url, a.announcement_url
                        FROM companies c
                        LEFT JOIN announcements a

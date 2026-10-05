@@ -19,6 +19,7 @@ router = APIRouter(prefix="/jobs", tags=["jobs"])
 class RecommendRequest(BaseModel):
     profile_id: str | None = None
     top_n: int = Field(default=200, ge=10, le=500, description="返回岗位数量上限")
+    force: bool = Field(default=False, description="强制刷新缓存(简历修改后调用)")
 
 
 @router.post("/recommend")
@@ -31,6 +32,7 @@ def recommend(
     - 没传 profile_id → 用用户当前 active 画像
     - 画像不存在 → 400
     - 推荐不足 top_n 时自动从全量岗位按分数补齐
+    - force=True 时跳过缓存,全量重新计算
     """
     uid = str(user["user_id"])
 
@@ -47,9 +49,9 @@ def recommend(
                 detail="尚未创建简历画像，请先上传并解析简历",
             )
 
-    # 2) 调推荐
+    # 2) 调推荐(force=True 跳过缓存,全量重算)
     try:
-        result = recommend_jobs(profile, top_n=req.top_n)
+        result = recommend_jobs(profile, top_n=req.top_n, use_cache=not req.force)
     except Exception as e:
         logger.error(f"recommend 失败: {e}", exc_info=True)
         raise HTTPException(

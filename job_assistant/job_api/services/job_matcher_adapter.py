@@ -102,6 +102,7 @@ def build_user_profile(profile_dict: dict) -> "UserProfile":
 def recommend_jobs(
     profile_dict: dict,
     top_n: int = 200,
+    use_cache: bool = True,
 ) -> dict[str, Any]:
     """基于画像推荐 top_n 岗位。
 
@@ -110,6 +111,11 @@ def recommend_jobs(
     2. user_matcher.UserMatcher.match_jobs_for_user → 已排序的 top 岗位
     3. 补齐不足 top_n 的部分（scorer 全量排序取前 top_n）
     4. 标记 recommend_level（超级推荐/推荐/可申请）
+    5. 写入 job_scores 缓存表(简历修改后清空,下次重新计算)
+
+    缓存策略：
+    - use_cache=True 且 job_scores 表有该 profile 的缓存 → 直接读缓存返回
+    - use_cache=False (强制刷新) 或无缓存 → 全量计算并写缓存
 
     Returns:
         {"jobs": [...], "total_matched": int, "profile_snapshot": {...}}
@@ -117,6 +123,19 @@ def recommend_jobs(
     """
     from user_matcher import UserMatcher
     import job_db
+    from job_api.models import job_score as score_cache
+
+    profile_id = profile_dict.get("profile_id") or ""
+
+    # 1. 缓存命中:直接读 job_scores 表
+    if use_cache and profile_id:
+        cached = score_cache.get_cached_scores(profile_id, top_n)
+        if cached:
+            logger.info(
+                f"推荐缓存命中: profile={profile_id}, {len(cached)} 条 (从 job_scores 表)"
+            )
+            # 把缓存里的评分结果合并到岗位原始数据上
+            return _merge_cache_with_jobs(cached, top_n)
 
     user_profile = build_user_profile(profile_dict)
 
@@ -347,9 +366,117 @@ def recommend_jobs(
             "alignment_label": alignment_label_val,
         })
 
+    # 5. 写入 job_scores 缓存表(下次切页直接读缓存,毫秒级返回)
+    if profile_id and formatted:
+        try:
+            # 把 formatted 里已规整的字段转回缓存格式
+            cache_jobs = []
+            for j in formatted:
+                comp_info = j.get("competitiveness_info") or {}
+                if not comp_info and j.get("alignment_label"):
+                    comp_info = {
+                        "label": j.get("alignment_label", ""),
+                        "candidate_score": j.get("candidate_score", 0),
+                        "company_score": j.get("company_score", 0),
+                    }
+                cache_jobs.append({
+                    "job_id": j.get("job_id", ""),
+                    "score": j.get("score", 0),
+                    "recommend_level": j.get("recommend_level", ""),
+                    "recommend": j.get("recommend", ""),
+                    "reasons": j.get("reasons", []),
+                    "dims": j.get("dims", {}),
+                    "company_tier": j.get("company_tier", ""),
+                    "competitiveness_info": comp_info,
+                })
+            saved = score_cache.save_scores(profile_id, cache_jobs)
+            logger.info(f"推荐结果已缓存: profile={profile_id}, {saved} 条")
+        except Exception as e:
+            logger.warning(f"写 job_scores 缓存失败(不阻塞主流程): {e}")
+
     return {
         "jobs": formatted,
         "total_matched": total_matched,
+        "total_returned": len(formatted),
+        "top_n_requested": top_n,
+    }
+
+
+def _merge_cache_with_jobs(cached_scores: list[dict], top_n: int) -> dict:
+    """把 job_scores 缓存里的评分结果合并到岗位原始数据上。
+
+    缓存只存评分字段(score/recommend_level/alignment_label/...),
+    岗位原始字段(title/company/industry/...)需要从 jobs 表实时查。
+    """
+    import job_db
+
+    if not cached_scores:
+        return {
+            "jobs": [],
+            "total_matched": 0,
+            "total_returned": 0,
+            "top_n_requested": top_n,
+        }
+
+    # 批量查岗位原始数据
+    job_ids = [c["job_id"] for c in cached_scores if c.get("job_id")]
+    raw_jobs_map: dict[str, dict] = {}
+    try:
+        all_positions = job_db.get_active_positions()
+        for p in all_positions:
+            jid = str(p.get("job_id") or p.get("position_id") or "")
+            if jid in job_ids:
+                raw_jobs_map[jid] = p
+    except Exception as e:
+        logger.warning(f"读取岗位原始数据失败: {e}")
+
+    # 合并
+    formatted = []
+    for c in cached_scores:
+        jid = c.get("job_id", "")
+        raw = raw_jobs_map.get(jid, {})
+        comp_info = c.get("competitiveness_info") or {}
+
+        # 从 raw(英文键) + cache 评分字段 构造 formatted 项
+        formatted.append({
+            "job_id": jid,
+            "title": raw.get("position_title") or raw.get("title") or "",
+            "company": raw.get("company_name") or raw.get("company") or "",
+            "industry": raw.get("industry") or "",
+            "company_type": raw.get("company_type") or "",
+            "difficulty": raw.get("difficulty") or "",
+            "city": raw.get("city") or raw.get("location") or "",
+            "min_education": raw.get("min_education") or raw.get("education_req") or "",
+            "category": raw.get("job_category") or "",
+            "subcategory": raw.get("job_subcategory") or "",
+            "deadline": raw.get("deadline") or "",
+            "apply_url": raw.get("apply_url") or "",
+            "announcement_url": raw.get("announcement_url") or "",
+            "score": c.get("score", 0),
+            "recommend": c.get("recommend", ""),
+            "recommend_level": c.get("recommend_level", ""),
+            "reasons": c.get("reasons", []),
+            "dims": c.get("dims", {}),
+            # 补齐字段
+            "recruit_type": raw.get("recruit_type") or "",
+            "recruit_target": raw.get("recruit_target") or "",
+            "is_mt": bool(raw.get("is_management_trainee") in (1, "1", True, "是")),
+            "major_category": raw.get("major_category") or "",
+            "major_required": raw.get("major_required") or "",
+            "jd_summary": raw.get("jd_summary") or "",
+            "hard_skills": raw.get("hard_skills") or "",
+            "keywords": raw.get("keywords") or "",
+            "updated_at": raw.get("publish_time") or raw.get("updated_at") or "",
+            # 公司层级 × 用户层级 透明化
+            "company_tier": c.get("company_tier") or comp_info.get("company_tier") or "",
+            "candidate_score": c.get("candidate_score", 0),
+            "company_score": c.get("company_score", 0),
+            "alignment_label": c.get("alignment_label") or comp_info.get("label", ""),
+        })
+
+    return {
+        "jobs": formatted,
+        "total_matched": len(formatted),
         "total_returned": len(formatted),
         "top_n_requested": top_n,
     }

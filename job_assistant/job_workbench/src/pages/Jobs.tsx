@@ -91,15 +91,24 @@ export default function Jobs() {
   const [recFilterMinScore, setRecFilterMinScore] = useState(0);
   const serverProfile = useResumeStore((s) => s.serverProfile);
 
-  // 切到推荐 tab 时自动拉取(有缓存就直接复用,不重新跑评分)
+  // 切到推荐 tab 时自动拉取
+  // - 首次/画像变化时:force=true 全量重算(后端会清缓存)
+  // - 切页再切回:force=false 直接读后端 job_scores 缓存表(毫秒级)
+  const profileUpdatedAt = serverProfile?.updated_at ?? "";
+  const profileId = serverProfile?.profile_id ?? "";
+  const [lastLoadedProfileUpdatedAt, setLastLoadedProfileUpdatedAt] = useState("");
   useEffect(() => {
     if (activeTab !== "recommend") return;
     if (!serverProfile) {
       clearRecommendJobs();
       return;
     }
-    void loadRecommendJobs(200, false);
-  }, [activeTab, serverProfile, loadRecommendJobs, clearRecommendJobs]);
+    // 画像 updated_at 变化(简历修改)→ force=true 清缓存重算
+    const force = profileUpdatedAt !== lastLoadedProfileUpdatedAt;
+    void loadRecommendJobs(200, force).then(() => {
+      setLastLoadedProfileUpdatedAt(profileUpdatedAt);
+    });
+  }, [activeTab, profileUpdatedAt, profileId, loadRecommendJobs, clearRecommendJobs]);
 
   const applications = useAppStore((s) => s.applications);
   const loadApplications = useAppStore((s) => s.loadApplications);
@@ -889,32 +898,43 @@ function RecommendJobsList({
           )}
         </div>
 
-        {/* 分类下拉框筛选 */}
-        <div className="mt-2 flex flex-wrap items-center gap-2 text-[11px]">
+        {/* 分类胶囊筛选 - 与公司/岗位表样式一致 */}
+        <div className="mt-2 flex flex-wrap gap-1.5">
           {[
             { key: "industry" as const, label: "行业", options: opts.industry ?? [], cur: filters.industry },
             { key: "companyType" as const, label: "公司类型", options: opts.company_type ?? [], cur: filters.companyType },
             { key: "recruitType" as const, label: "招聘类型", options: opts.recruit_type ?? [], cur: filters.recruitType },
             { key: "minEducation" as const, label: "学历", options: opts.education_req ?? [], cur: filters.minEducation },
             { key: "difficulty" as const, label: "难度", options: opts.difficulty ?? [], cur: filters.difficulty },
-          ].map((grp) => (
-            <select
-              key={grp.key}
-              multiple
-              value={grp.cur}
-              onChange={(e) => {
-                const next = Array.from(e.target.selectedOptions).map((o) => o.value);
-                onFilterChange({ [grp.key]: next } as never);
-              }}
-              className="rounded-lg border border-line bg-white/70 px-2 py-1 text-[11px] outline-none focus:border-primary"
-              size={1}
-            >
-              <option value="">{grp.label}▼</option>
-              {grp.options.map((v) => (
-                <option key={v} value={v}>{v}</option>
-              ))}
-            </select>
-          ))}
+          ].map((grp) => {
+            const opts4 = grp.options.slice(0, 8);
+            if (opts4.length === 0) return null;
+            return (
+              <div key={grp.key} className="flex items-center gap-1 text-[11px]">
+                <span className="text-text-faint">{grp.label}:</span>
+                {opts4.map((v) => {
+                  const active = grp.cur.includes(v);
+                  return (
+                    <button
+                      key={v}
+                      type="button"
+                      onClick={() => {
+                        const next = active ? grp.cur.filter((x) => x !== v) : [...grp.cur, v];
+                        onFilterChange({ [grp.key]: next } as never);
+                      }}
+                      className={`rounded-full px-2 py-0.5 transition ${
+                        active
+                          ? "bg-primary text-ink"
+                          : "bg-white/60 text-text-muted hover:bg-white"
+                      }`}
+                    >
+                      {v}
+                    </button>
+                  );
+                })}
+              </div>
+            );
+          })}
         </div>
       </div>
 

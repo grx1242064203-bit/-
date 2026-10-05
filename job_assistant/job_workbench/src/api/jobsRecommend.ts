@@ -46,16 +46,17 @@ export interface RecommendResponse {
 }
 
 export const jobsRecommendApi = {
-  /** 基于当前 active 简历画像推荐岗位 */
-  recommend(top_n: number = 200): Promise<RecommendResponse> {
-    return apiClient.post<RecommendResponse>("/api/v1/jobs/recommend", { top_n });
+  /** 基于当前 active 简历画像推荐岗位(use_cache=true 走缓存,force=true 强制刷新) */
+  recommend(top_n: number = 200, force: boolean = false): Promise<RecommendResponse> {
+    return apiClient.post<RecommendResponse>("/api/v1/jobs/recommend", { top_n, force });
   },
 
   /** 指定 profile_id 推荐 */
-  recommendFor(profileId: string, top_n: number = 200): Promise<RecommendResponse> {
+  recommendFor(profileId: string, top_n: number = 200, force: boolean = false): Promise<RecommendResponse> {
     return apiClient.post<RecommendResponse>("/api/v1/jobs/recommend", {
       profile_id: profileId,
       top_n,
+      force,
     });
   },
 };

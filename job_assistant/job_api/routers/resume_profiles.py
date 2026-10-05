@@ -150,6 +150,14 @@ def update_profile(
     )
     if not profile:
         raise HTTPException(status_code=404, detail="画像不存在或无权修改")
+    # 简历修改:清空该 profile 的推荐评分缓存,下次推荐重新计算
+    try:
+        from job_api.models import job_score as score_cache
+
+        cleared = score_cache.clear_profile_cache(profile_id)
+        logger.info(f"简历修改,清空推荐缓存: profile={profile_id}, 删除 {cleared} 条")
+    except Exception as e:
+        logger.warning(f"清空推荐缓存失败(不阻塞): {e}")
     score, tier = _compute_candidate_competitiveness(profile)
     profile["candidate_score"] = score
     profile["candidate_tier"] = tier

@@ -63,8 +63,8 @@ export default function ApplicationCard({
     const days = Math.floor((d.getTime() - today.getTime()) / 86400000);
     if (days < 0) return { text: `已截止 ${dl}`, color: "bg-gray-200 text-gray-600" };
     if (days === 0) return { text: "今日截止", color: "bg-red-100 text-red-700" };
-    if (days <= 3) return { text: `${days}天后截止`, color: "bg-orange-100 text-orange-700" };
-    if (days <= 7) return { text: `${days}天后截止`, color: "bg-amber-100 text-amber-700" };
+    if (days <= 3) return { text: `${days}天后截止`, color: "bg-orange-100 text-orange-900" };
+    if (days <= 7) return { text: `${days}天后截止`, color: "bg-amber-100 text-amber-900" };
     return { text: `截止 ${dl}`, color: "bg-info-soft text-info" };
   })();
 

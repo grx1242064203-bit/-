@@ -189,6 +189,9 @@ async def confirm_email_task(task_id: str, user_id: str) -> dict:
     """确认邮件任务：匹配/创建 application + 创建日程 + 设置提醒 + 标记任务已确认。
 
     返回 {application_id, schedule_id, application_status}。
+
+    稳定性规则：所有校验前置到函数开头，校验通过后才允许写入数据库。
+    避免出现「application 已创建但 schedule 因 event_time 为空失败」的脏数据。
     """
     task = await email_model.get_task(task_id, user_id)
     if not task:
@@ -196,18 +199,31 @@ async def confirm_email_task(task_id: str, user_id: str) -> dict:
     if task["status"] != email_model.TASK_STATUS_PENDING:
         raise ValueError(f"任务状态非待确认：{task['status']}")
 
+    # ↓↓↓ 全部校验前置：在写入 application/schedule 之前完成所有字段检查
+    # 1. task_type 必须可映射
     schedule_type = TASK_TYPE_MAP.get(task["task_type"])
     if not schedule_type:
         raise ValueError(f"未知任务类型：{task['task_type']}")
 
+    # 2. company 和 job_title 至少有一个非空
+    company = task.get("company") or ""
+    job_title = task.get("job_title") or ""
+    if not company.strip() and not job_title.strip():
+        raise ValueError(
+            "无法确认：公司和岗位均为空，请等待 AI 提取完成或手动补充后再确认"
+        )
+
+    # 3. event_time 必须存在（否则日程无法创建）
+    event_time = task.get("event_time")
+    if not event_time:
+        raise ValueError(
+            "无法创建日程：邮件未提取到事件时间，请等待 AI 提取完成或手动补充时间后再确认"
+        )
+    # ↑↑↑ 校验结束，下面才允许写入
+
     app_status = TASK_TO_STATUS.get(schedule_type, "applied")
 
     # 1. 匹配/创建 application（复用现有去重逻辑）
-    company = task.get("company") or ""
-    job_title = task.get("job_title") or ""
-    if not company and not job_title:
-        raise ValueError("无法确认：公司和岗位均为空")
-
     application = await application_model.create_application(
         user_id=user_id,
         company_name=company,
@@ -220,13 +236,10 @@ async def confirm_email_task(task_id: str, user_id: str) -> dict:
     )
 
     # 2. 创建日程（带回读验证）
-    if not task.get("event_time"):
-        raise ValueError("无法创建日程：邮件未提取到事件时间，请手动设置")
-
     schedule = await create_schedule_with_verify(
         user_id=user_id,
         schedule_type=schedule_type,
-        event_time=task["event_time"],
+        event_time=event_time,
         application_id=application["id"],
         company=company,
         job_title=job_title,

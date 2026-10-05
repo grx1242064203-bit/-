@@ -543,8 +543,8 @@ function JobRow({
             isFavorited
               ? "bg-primary text-ink"
               : inPipeline
-                ? "bg-primary-soft/60 text-primary-dark"
-                : "bg-white/60 text-text-muted hover:bg-primary-soft hover:text-primary-dark"
+                ? "bg-primary-soft/60 text-primary-ink"
+                : "bg-white/60 text-text-muted hover:bg-primary-soft hover:text-primary-ink"
           }`}
           title={isFavorited ? "取消收藏" : "加入收藏"}
         >
@@ -562,7 +562,7 @@ function JobRow({
               ? "bg-success text-white"
               : inPipeline
                 ? "bg-success-soft text-success"
-                : "bg-primary-soft font-medium text-primary-dark hover:bg-primary hover:text-ink"
+                : "bg-primary-soft font-medium text-primary-ink hover:bg-primary hover:text-ink"
           }`}
           title={isApplied ? "取消投递" : "标记已投递"}
         >
@@ -976,7 +976,7 @@ function RecommendJobsList({
                   : job.score >= 60
                   ? "bg-primary"
                   : job.score >= 40
-                  ? "bg-amber-400"
+                  ? "bg-amber-500"
                   : "bg-slate-400";
 
               // 字段胶囊(行业/公司类型/招聘类型/岗位分类/学历/管培/难度/公司层级/对齐)
@@ -1047,7 +1047,7 @@ function RecommendJobsList({
                           </span>
                         )}
                         {isFavorite && !isApplied && (
-                          <span className="rounded-full bg-amber-100 px-1.5 py-0.5 text-[10px] font-medium text-amber-900">
+                          <span className="rounded-full bg-amber-200 px-1.5 py-0.5 text-[10px] font-medium text-amber-900">
                             ⭐ 已收藏
                           </span>
                         )}
@@ -1138,8 +1138,8 @@ function RecommendJobsList({
                         }}
                         className={`rounded-lg px-3 py-1.5 text-xs font-medium transition ${
                           isFavorite
-                            ? "bg-amber-400 text-white hover:bg-amber-500"
-                            : "bg-amber-100 text-amber-900 hover:bg-amber-200"
+                            ? "bg-amber-500 text-white hover:bg-amber-600"
+                            : "bg-amber-200 text-amber-900 hover:bg-amber-300"
                         }`}
                         title={isFavorite ? "点击取消收藏" : "收藏岗位"}
                       >

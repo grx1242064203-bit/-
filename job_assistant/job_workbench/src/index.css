@@ -10,9 +10,10 @@
 :root {
   /* 主色：暖奶油黄（行动、高亮、选中态） */
   --color-primary: #ffd23f;
-  --color-primary-dark: #f5b800;
+  --color-primary-dark: #b88a00;      /* 加深：原 #f5b800 在浅黄底上对比度不足 */
   --color-primary-light: #fff4c2;
-  --color-primary-soft: rgba(255, 210, 63, 0.18);
+  --color-primary-soft: rgba(255, 210, 63, 0.32);  /* 加深：原 0.18 太浅看不清 */
+  --color-primary-ink: #6b4f00;      /* 新增：浅黄底上的深字色，对比度 WCAG AA+ */
 
   /* 深色（导航激活、深色卡片） */
   --color-ink: #1f1f1f;

@@ -17,7 +17,7 @@ const SOURCE_LABEL: Record<string, string> = {
 };
 
 const SOURCE_COLOR: Record<string, string> = {
-  db_job: "bg-primary-soft text-primary-dark",
+  db_job: "bg-primary-soft text-primary-ink",
   db_company: "bg-info-soft text-info",
   manual: "bg-white/60 text-text-muted",
   email: "bg-success/15 text-success",
@@ -64,7 +64,7 @@ export default function ApplicationCard({
     if (days < 0) return { text: `已截止 ${dl}`, color: "bg-gray-200 text-gray-600" };
     if (days === 0) return { text: "今日截止", color: "bg-red-100 text-red-700" };
     if (days <= 3) return { text: `${days}天后截止`, color: "bg-orange-100 text-orange-700" };
-    if (days <= 7) return { text: `${days}天后截止`, color: "bg-amber-100 text-amber-700" };
+    if (days <= 7) return { text: `${days}天后截止`, color: "bg-amber-200 text-amber-900" };
     return { text: `截止 ${dl}`, color: "bg-info-soft text-info" };
   })();
 
@@ -107,7 +107,7 @@ export default function ApplicationCard({
               {sourceLabel}
             </span>
             {application.status === "interview" && application.interview_round > 0 && (
-              <span className="rounded bg-amber-100 px-1.5 py-0.5 text-[10px] font-medium text-amber-900">
+              <span className="rounded bg-amber-200 px-1.5 py-0.5 text-[10px] font-medium text-amber-900">
                 {application.interview_round}面
               </span>
             )}

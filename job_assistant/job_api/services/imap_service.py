@@ -58,6 +58,49 @@ def _create_imap_ssl_connection(
     )
 
 
+def _send_imap_id_command(conn: imaplib.IMAP4_SSL) -> None:
+    """发送 IMAP ID 命令声明客户端身份(兼容 163/126 邮箱风控)。
+
+    163/126 邮箱要求第三方客户端在 login 之后立即发送 ID 命令,否则会:
+    - 拒绝后续 select 命令
+    - 主动断开连接(表现为 SSLError: UNEXPECTED_EOF_WHILE_READING)
+    - 返回 "Unsafe Login. Please contact kefu@188.com"
+
+    IMAP ID 扩展(RFC 2971) 格式:
+      C: A1 ID ("name" "OfferPartner" "version" "1.0" "vendor" "OfferPartner")
+      S: * ID ("name" "ImailServer" "version" "1.0")
+      S: A1 OK ID completed
+
+    参数都是任意字符串,服务器只关心客户端是否发送了 ID 命令,
+    不验证身份真实性。163 邮箱看 ID 命令是否存在,不查具体值。
+
+    其他邮箱(QQ/Gmail/Outlook)也支持 ID 命令,无副作用。
+    """
+    try:
+        # imaplib 没有原生 ID 命令支持,需要手动构造
+        # 使用 _simple_command 名称为 "ID",参数为带括号的字符串列表
+        args = (
+            '("name" "OfferPartner" '
+            '"version" "1.0" '
+            '"vendor" "OfferPartner" '
+            '"support-email" "support@offer-partner.com")'
+        )
+        # conn._simple_command 返回 (typ, response_data),typ 应为 "OK"
+        typ, _ = conn._simple_command("ID", args)
+        if typ != "OK":
+            log.warning("IMAP ID 命令返回非 OK: %s", typ)
+        else:
+            log.info("IMAP ID 命令发送成功")
+        # 读取并丢弃服务器的 ID 响应,避免影响后续命令
+        try:
+            conn._get_tagged_response()
+        except Exception:
+            pass
+    except Exception as e:
+        # ID 命令失败不阻塞主流程(部分服务器可能不支持 ID 扩展)
+        log.warning("IMAP ID 命令发送失败(不阻塞): %s: %s", type(e).__name__, e)
+
+
 def _decode_str(value: Optional[str]) -> str:
     """解码邮件头字段（可能是 MIME 编码）。"""
     if not value:
@@ -119,8 +162,12 @@ async def test_connection(
 ) -> dict:
     """测试 IMAP 连接。返回 {ok: bool, error: str}。
 
-    使用自定义 SSLContext(禁用 TLS 1.3)兼容国内邮箱。
-    readonly=True 选邮箱后直接 logout(),不调 close() 避免部分服务器抛异常。
+    流程:
+    1. SSL 连接(禁用 TLS 1.3)
+    2. login 登录
+    3. 发送 ID 命令(兼容 163 邮箱风控)
+    4. select INBOX 验证权限
+    5. logout
     """
     try:
         log.info(
@@ -128,6 +175,8 @@ async def test_connection(
         )
         conn = _create_imap_ssl_connection(imap_server, imap_port, timeout=15)
         conn.login(username, password)
+        # 关键: 登录后立即发送 ID 命令,否则 163 服务器会断开连接
+        _send_imap_id_command(conn)
         typ, data = conn.select("INBOX", readonly=True)
         if typ != "OK":
             err = f"select INBOX 失败: {data!r}"
@@ -157,6 +206,8 @@ async def sync_account(account_id: str, user_id: str, limit: int = 50) -> dict:
             account["imap_server"], account["imap_port"], timeout=30
         )
         conn.login(account["username"], account["password"])
+        # 关键: 登录后立即发送 ID 命令,否则 163 服务器会断开连接
+        _send_imap_id_command(conn)
         conn.select("INBOX", readonly=True)
     except Exception as e:
         return {"fetched": 0, "tasks_created": 0, "skipped": 0, "error": f"IMAP 连接失败: {type(e).__name__}: {e}"}

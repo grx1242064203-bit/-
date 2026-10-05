@@ -233,9 +233,13 @@ function buildMonthCells(year: number, month: number, schedules: Schedule[]): Ce
     // 6 行 × 7 列，覆盖任意月份
     const d = new Date(gridStart);
     d.setDate(gridStart.getDate() + i);
-    const daySchedules = schedules.filter((s) =>
-      isSameDay(new Date(s.event_time), d)
-    );
+    // 防御性：跳过 event_time 缺失或解析失败的 schedule，避免 new Date(null) Invalid Date 影响 filter
+    const daySchedules = schedules.filter((s) => {
+      if (!s || !s.event_time) return false;
+      const sd = new Date(s.event_time);
+      if (isNaN(sd.getTime())) return false;
+      return isSameDay(sd, d);
+    });
     cells.push({
       date: d,
       inMonth: d.getMonth() === month,

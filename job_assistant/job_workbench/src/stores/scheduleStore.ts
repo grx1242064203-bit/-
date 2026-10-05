@@ -69,6 +69,14 @@ export const useScheduleStore = create<ScheduleState>((set, get) => ({
 
   addSchedule: async (req) => {
     const created = await createSchedule(req);
+    // 防御性：后端可能因 list_schedules_with_reminders 时序问题返回 null schedule
+    // 此时不能直接 push null（会让 sort 拿 null.event_time 报 TypeError 静默失败）
+    if (!created || !created.event_time) {
+      console.warn("addSchedule: 后端返回 schedule 为空或 event_time 缺失，触发全量重拉", created);
+      // 全量重拉一次，保证 UI 反映真实数据库状态
+      await get().loadSchedules();
+      return created;
+    }
     // 按时间升序插入新日程（保持列表有序，无需重新拉取整张表）
     const next = [...get().schedules, created].sort(
       (a, b) =>

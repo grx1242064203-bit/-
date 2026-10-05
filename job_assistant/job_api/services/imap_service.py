@@ -5,6 +5,9 @@
 """
 import email
 import imaplib
+import logging
+import socket
+import ssl
 from email.header import decode_header
 from email.utils import parsedate_to_datetime
 from typing import Optional
@@ -12,6 +15,47 @@ from typing import Optional
 from models import email as email_model
 from models import email_account as account_model
 from services import email_classifier
+
+log = logging.getLogger(__name__)
+
+
+def _build_ssl_context() -> ssl.SSLContext:
+    """构建兼容国内邮箱(163/QQ)的 SSLContext。
+
+    国内邮箱 IMAP 服务器对 TLS 1.3 握手兼容性较差,常见错误:
+    - SSLError: [SSL: UNEXPECTED_EOF_WHILE_READING] EOF occurred in violation of protocol
+    - 原因: Python 3.14 默认 ssl.PROTOCOL_TLS_CLIENT 协商到 TLS 1.3,
+      但 163 服务器在 TLS 1.3 握手时意外关闭连接(可能是中间件/风控)
+
+    修复: 强制最高版本 TLS 1.2,禁用 TLS 1.3,保留 TLS 1.2 兼容性。
+    """
+    ctx = ssl.SSLContext(ssl.PROTOCOL_TLS_CLIENT)
+    # 设置最低版本 TLS 1.0(兼容旧服务器),最高版本 TLS 1.2(禁用 TLS 1.3)
+    ctx.minimum_version = ssl.TLSVersion.TLSv1
+    ctx.maximum_version = ssl.TLSVersion.TLSv1_2
+    # 验证证书(默认行为)
+    ctx.check_hostname = True
+    ctx.verify_mode = ssl.CERT_REQUIRED
+    # 加载系统 CA 证书
+    ctx.load_default_certs()
+    return ctx
+
+
+def _create_imap_ssl_connection(
+    imap_server: str, imap_port: int, timeout: int = 15
+) -> imaplib.IMAP4_SSL:
+    """创建 IMAP4_SSL 连接,使用自定义 SSLContext(禁用 TLS 1.3)。
+
+    兼容 Python 3.9+ 的 timeout 参数。
+    """
+    ctx = _build_ssl_context()
+    # imaplib.IMAP4_SSL 支持传入 ssl_context 参数
+    return imaplib.IMAP4_SSL(
+        host=imap_server,
+        port=imap_port,
+        ssl_context=ctx,
+        timeout=timeout,
+    )
 
 
 def _decode_str(value: Optional[str]) -> str:
@@ -73,16 +117,30 @@ def _get_body(msg: email.message.Message) -> tuple[str, str]:
 async def test_connection(
     imap_server: str, imap_port: int, username: str, password: str
 ) -> dict:
-    """测试 IMAP 连接。返回 {ok: bool, error: str}。"""
+    """测试 IMAP 连接。返回 {ok: bool, error: str}。
+
+    使用自定义 SSLContext(禁用 TLS 1.3)兼容国内邮箱。
+    readonly=True 选邮箱后直接 logout(),不调 close() 避免部分服务器抛异常。
+    """
     try:
-        conn = imaplib.IMAP4_SSL(imap_server, imap_port, timeout=15)
+        log.info(
+            "IMAP 连接测试: server=%s port=%s user=%s", imap_server, imap_port, username
+        )
+        conn = _create_imap_ssl_connection(imap_server, imap_port, timeout=15)
         conn.login(username, password)
-        conn.select("INBOX", readonly=True)
-        conn.close()
+        typ, data = conn.select("INBOX", readonly=True)
+        if typ != "OK":
+            err = f"select INBOX 失败: {data!r}"
+            log.warning(err)
+            return {"ok": False, "error": err}
+        # readonly 模式不调 close(),直接 logout
         conn.logout()
+        log.info("IMAP 连接成功: %s@%s", username, imap_server)
         return {"ok": True, "error": ""}
     except Exception as e:
-        return {"ok": False, "error": str(e)}
+        err = f"{type(e).__name__}: {e}"
+        log.warning("IMAP 连接失败: %s server=%s user=%s", err, imap_server, username)
+        return {"ok": False, "error": err}
 
 
 async def sync_account(account_id: str, user_id: str, limit: int = 50) -> dict:
@@ -94,13 +152,14 @@ async def sync_account(account_id: str, user_id: str, limit: int = 50) -> dict:
         return {"fetched": 0, "tasks_created": 0, "skipped": 0, "error": "邮箱账户不存在"}
 
     try:
-        conn = imaplib.IMAP4_SSL(
+        # 复用禁用 TLS 1.3 的 SSLContext(兼容国内邮箱)
+        conn = _create_imap_ssl_connection(
             account["imap_server"], account["imap_port"], timeout=30
         )
         conn.login(account["username"], account["password"])
         conn.select("INBOX", readonly=True)
     except Exception as e:
-        return {"fetched": 0, "tasks_created": 0, "skipped": 0, "error": f"IMAP 连接失败: {e}"}
+        return {"fetched": 0, "tasks_created": 0, "skipped": 0, "error": f"IMAP 连接失败: {type(e).__name__}: {e}"}
 
     fetched = 0
     tasks_created = 0

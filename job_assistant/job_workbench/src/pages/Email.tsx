@@ -1,6 +1,7 @@
 // 邮箱同步页：账户管理 + 邮件分类任务确认
 import { useEffect, useState } from "react";
 import { useEmailStore } from "../stores/emailStore";
+import { extractErrorMessage } from "../api/client";
 import type { EmailTask, TaskType } from "../api/emails";
 
 const TYPE_LABEL: Record<TaskType, string> = {
@@ -131,7 +132,8 @@ function AddAccountModal({ onClose }: { onClose: () => void }) {
       await addAccount({ email, imap_server: imapServer, imap_port: imapPort, username, password });
       onClose();
     } catch (e) {
-      setError(e instanceof Error ? e.message : "添加失败");
+      // ApiError 不是 Error 实例,必须用 extractErrorMessage 提取真实错误
+      setError(extractErrorMessage(e));
     } finally {
       setBusy(false);
     }

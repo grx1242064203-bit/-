@@ -2,7 +2,11 @@
 
 存储：SQLite（与 auth.db 同库，新建 llm_usage 表）。
 每日 0 点重置：按日期判断（usage_date 字段，YYYY-MM-DD）。
-默认每日 5 次（简历解析 1 次 + 补充分析 4 次）。
+
+配额上限通过环境变量 LLM_DAILY_LIMIT 配置(由 config.Settings 注入,见 routers/llm.py):
+- 默认 5(开发期兜底,生产必须通过环境变量覆盖)
+- 设为 0 表示禁用(不允许任何调用)
+- 设为负数(如 -1)表示不限制
 
 设计要点：
 - 模块级单例连接 + threading.Lock 保证线程安全（FastAPI 同进程多线程场景）。
@@ -19,7 +23,21 @@ from typing import Dict
 
 logger = logging.getLogger(__name__)
 
+# 兜底默认值(开发期);生产部署应通过环境变量 LLM_DAILY_LIMIT 覆盖。
+# 设为 0 = 禁用;负数 = 不限制。
 DEFAULT_DAILY_LIMIT = 5
+
+
+def _resolve_limit(default: int = DEFAULT_DAILY_LIMIT) -> int:
+    """从环境变量 LLM_DAILY_LIMIT 读取上限,缺失时回退到 default。"""
+    raw = os.getenv("LLM_DAILY_LIMIT")
+    if raw is None or raw.strip() == "":
+        return default
+    try:
+        return int(raw.strip())
+    except ValueError:
+        logger.warning(f"LLM_DAILY_LIMIT 非法值 '{raw}',回退默认 {default}")
+        return default
 
 _db_lock = threading.Lock()
 _conn: "sqlite3.Connection | None" = None
@@ -63,8 +81,15 @@ def _init_schema(conn: sqlite3.Connection) -> None:
     conn.commit()
 
 
-def get_user_quota(user_id: str, limit: int = DEFAULT_DAILY_LIMIT) -> Dict:
-    """返回 {limit, used, remaining}。按当日日期判断重置（跨天自动归零）。"""
+def get_user_quota(user_id: str, limit: int | None = None) -> Dict:
+    """返回 {limit, used, remaining}。按当日日期判断重置（跨天自动归零）。
+
+    limit 传入优先;否则从环境变量 LLM_DAILY_LIMIT 读取。
+    limit <= 0 且 < 0 时视为不限制(remaining 返回大数);
+    limit == 0 时禁用(remaining 永远 0)。
+    """
+    if limit is None:
+        limit = _resolve_limit()
     today = date.today().isoformat()
     with _db_lock:
         conn = _get_conn()
@@ -73,12 +98,45 @@ def get_user_quota(user_id: str, limit: int = DEFAULT_DAILY_LIMIT) -> Dict:
             (user_id, today),
         ).fetchone()
         used = int(row["used_count"]) if row else 0
+        if limit < 0:
+            # 不限制:返回 used 和一个足够大的 remaining
+            return {"limit": limit, "used": used, "remaining": 10**9}
         remaining = max(0, limit - used)
         return {"limit": limit, "used": used, "remaining": remaining}
 
 
-def increment_usage(user_id: str, limit: int = DEFAULT_DAILY_LIMIT) -> bool:
-    """增加 1 次用量计数；返回 False 表示已超额（不写入）。"""
+def increment_usage(user_id: str, limit: int | None = None) -> bool:
+    """增加 1 次用量计数；返回 False 表示已超额（不写入）。
+
+    limit 传入优先;否则从环境变量 LLM_DAILY_LIMIT 读取。
+    limit < 0 时不限制,总是返回 True;
+    limit == 0 时禁用,总是返回 False;
+    limit > 0 时正常计数。
+    """
+    if limit is None:
+        limit = _resolve_limit()
+    if limit < 0:
+        # 不限制,仍然记录用量但永不到顶
+        today = date.today().isoformat()
+        with _db_lock:
+            conn = _get_conn()
+            row = conn.execute(
+                "SELECT used_count FROM llm_usage WHERE user_id=? AND usage_date=?",
+                (user_id, today),
+            ).fetchone()
+            if row:
+                conn.execute(
+                    "UPDATE llm_usage SET used_count=? WHERE user_id=? AND usage_date=?",
+                    (int(row["used_count"]) + 1, user_id, today),
+                )
+            else:
+                conn.execute(
+                    "INSERT INTO llm_usage (user_id, usage_date, used_count) "
+                    "VALUES (?, ?, ?)",
+                    (user_id, today, 1),
+                )
+            conn.commit()
+        return True
     today = date.today().isoformat()
     with _db_lock:
         conn = _get_conn()

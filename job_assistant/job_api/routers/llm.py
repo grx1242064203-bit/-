@@ -64,15 +64,28 @@ class SupplementResponse(BaseModel):
 
 
 def _check_quota(user_id: str):
-    """检查配额，超额抛 429。"""
+    """检查配额，超额抛 429。
+
+    limit < 0 视为不限制,直接放行;
+    limit == 0 视为禁用,永远 429;
+    limit > 0 正常比较 remaining。
+    """
     quota = get_user_quota(user_id)
+    # 不限制(limit < 0):直接放行
+    if quota["limit"] < 0:
+        return quota
+    # 禁用(limit == 0)或已用尽(remaining == 0):抛 429
     if quota["remaining"] <= 0:
-        raise HTTPException(
-            status_code=status.HTTP_429_TOO_MANY_REQUESTS,
-            detail=(
+        if quota["limit"] == 0:
+            detail = "LLM 调用已被禁用,请联系管理员"
+        else:
+            detail = (
                 f"已达每日 LLM 调用配额上限（{quota['limit']} 次/天），"
                 f"明日 0 点重置"
-            ),
+            )
+        raise HTTPException(
+            status_code=status.HTTP_429_TOO_MANY_REQUESTS,
+            detail=detail,
             headers={"Retry-After": "86400"},
         )
     return quota

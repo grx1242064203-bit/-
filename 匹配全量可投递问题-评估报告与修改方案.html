@@ -1,0 +1,186 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<title>简历匹配「全量可投递」问题 — 评估报告与修改方案</title>
+<style>
+  body{font-family:-apple-system,"PingFang SC","Microsoft YaHei",sans-serif;max-width:960px;margin:32px auto;padding:0 24px;color:#1f2937;line-height:1.7;}
+  h1{font-size:24px;border-bottom:3px solid #2563eb;padding-bottom:10px;}
+  h2{font-size:19px;margin-top:36px;color:#1e40af;border-left:4px solid #2563eb;padding-left:10px;}
+  h3{font-size:16px;margin-top:24px;color:#374151;}
+  code{background:#f3f4f6;padding:1px 6px;border-radius:4px;font-size:13px;color:#be185d;}
+  pre{background:#0f172a;color:#e2e8f0;padding:14px;border-radius:8px;overflow-x:auto;font-size:13px;line-height:1.5;}
+  table{border-collapse:collapse;width:100%;margin:12px 0;font-size:14px;}
+  th,td{border:1px solid #d1d5db;padding:8px 12px;text-align:left;}
+  th{background:#eff6ff;color:#1e3a8a;}
+  .severity-critical{background:#fef2f2;color:#991b1b;padding:2px 8px;border-radius:12px;font-weight:600;}
+  .severity-high{background:#fff7ed;color:#9a3412;padding:2px 8px;border-radius:12px;font-weight:600;}
+  .severity-medium{background:#fefce8;color:#854d0e;padding:2px 8px;border-radius:12px;font-weight:600;}
+  .severity-low{background:#f0fdf4;color:#166534;padding:2px 8px;border-radius:12px;font-weight:600;}
+  .flow{background:#f8fafc;border:1px solid #e2e8f0;border-radius:8px;padding:16px;margin:12px 0;}
+  .flow-item{display:flex;align-items:center;gap:8px;margin:6px 0;}
+  .arrow{color:#94a3b8;font-weight:bold;}
+  .chain-bad{background:#fee2e2;color:#991b1b;}
+  .chain-good{background:#dcfce7;color:#166534;}
+  .fix-box{background:#eff6ff;border:1px solid #bfdbfe;border-radius:8px;padding:14px;margin:10px 0;}
+  .fix-box h4{margin:0 0 6px 0;color:#1e40af;}
+  ul{padding-left:22px;}
+  li{margin:4px 0;}
+  .footer{margin-top:48px;padding-top:16px;border-top:1px solid #e5e7eb;color:#6b7280;font-size:12px;}
+</style>
+</head>
+<body>
+
+<h1>简历匹配「全量可投递」问题 — 评估报告与修改方案</h1>
+<p><strong>项目：</strong>offer搭子（job_assistant）<br>
+<strong>现象：</strong>所有推荐岗位都被标记为「可投递」，无「推荐」或「强烈推荐」。<br>
+<strong>测试用例：</strong>西安交大硕士 + 华为/中兴实习 + IEEE 论文简历。<br>
+<strong>约束：</strong>本报告仅评估与方案设计，不修改任何代码。</p>
+
+<h2>一、结论速览</h2>
+<p>这是一个<strong>系统性缺陷</strong>，由「前端数据丢失 → 后端评分关键参数缺失 → 方向硬门槛误触发 → 全量分数被封顶」四个环节串联造成。核心不是评分算法本身算错，而是<strong>岗位方向键（cat_key / sub_key）在前端归一化时被剥离</strong>，导致 scorer 的 role 维度恒为 0，触发方向硬门槛把所有岗位总分压到 45 分（落在「可申请」区间）。</p>
+
+<table>
+<tr><th>序号</th><th>问题</th><th>严重度</th><th>定位文件</th></tr>
+<tr><td>1</td><td>前端 FitDirection 类型缺失 cat_key/sub_key，normalize 时剥离方向键</td><td><span class="severity-critical">致命</span></td><td>job_workbench/src/api/llm.ts</td></tr>
+<tr><td>2</td><td>推荐接口调用不存在的方法 match_jobs_for_user，异常后降级走 score_job</td><td><span class="severity-critical">致命</span></td><td>job_api/services/job_matcher_adapter.py</td></tr>
+<tr><td>3</td><td>fit_directions 缺方向键时 _match_role 无防御性反查，role 分恒为 0</td><td><span class="severity-high">高</span></td><td>scorer.py</td></tr>
+<tr><td>4</td><td>ROLE_GATE_THRESHOLD=40 偏高，边缘匹配易被误封顶</td><td><span class="severity-medium">中</span></td><td>scorer.py</td></tr>
+<tr><td>5</td><td>缺少 fit_directions 结构与 role 分的生产日志，问题难发现</td><td><span class="severity-low">低</span></td><td>scorer.py / adapter</td></tr>
+</table>
+
+<h2>二、根因链还原</h2>
+
+<div class="flow">
+<div class="flow-item"><span>① LLM 解析简历</span><span class="arrow">→</span><span>resume_parser 产出 fit_directions，<strong>含 cat_key/sub_key/category_name</strong></span></div>
+<div class="flow-item"><span>② 前端接收</span><span class="arrow">→</span><span class="chain-bad">normalizeParsedProfile 只保留 direction/weight/evidence，<strong>剥离 cat_key/sub_key</strong></span></div>
+<div class="flow-item"><span>③ 保存画像</span><span class="arrow">→</span><span class="chain-bad">fit_directions_json 入库时已<strong>无方向键</strong></span></div>
+<div class="flow-item"><span>④ 构建 UserProfile</span><span class="arrow">→</span><span class="chain-bad">fit_directions 传给 scorer 时 cat_key=None / sub_key=None</span></div>
+<div class="flow-item"><span>⑤ _match_role 评分</span><span class="arrow">→</span><span class="chain-bad">job_tree.score_fit 返回 0 → role_score = 0</span></div>
+<div class="flow-item"><span>⑥ 方向硬门槛</span><span class="arrow">→</span><span class="chain-bad">role_score(0) &lt; 40 → 总分被封顶为 45</span></div>
+<div class="flow-item"><span>⑦ 推荐等级</span><span class="arrow">→</span><span class="chain-bad">45 分落在 [35,55) →「可申请」→ 前端展示「可投递」</span></div>
+</div>
+
+<p>所有岗位无一例外走通这条链，因此<strong>全量</strong>都是「可投递」。</p>
+
+<h3>关键代码证据</h3>
+
+<p><strong>证据 1：</strong>后端解析器确实产出了方向键，但前端类型不接收。</p>
+<p>resume_parser.py <code>_validate_fit_directions</code> 在 L193-L223 把每个 direction 解析为树节点并写入 <code>cat_key</code>、<code>sub_key</code>、<code>category_name</code>：</p>
+<pre>"direction": entry.get("sub_name") or entry.get("category_name") or direction,
+"cat_key": entry["cat_key"],
+"sub_key": entry.get("sub_key"),      # 大类时为 None
+"category_name": entry.get("category_name", ""),</pre>
+
+<p>但前端 <code>FitDirection</code> 接口（llm.ts L27-L32）只声明了 4 个字段：</p>
+<pre>export interface FitDirection {
+  direction: string;
+  weight: number;
+  evidence?: string;
+  description?: string;   // ← 无 cat_key / sub_key / category_name
+}</pre>
+
+<p>且 <code>normalizeParsedProfile</code>（llm.ts L66-L74）显式只取这 4 个字段，<strong>方向键被丢弃</strong>。</p>
+
+<p><strong>证据 2：</strong><code>_match_role</code> 依赖 cat_key/sub_key 构造 fit_entry（scorer.py L325-L332）：</p>
+<pre>fit_entry = {
+    "type": "subcategory",
+    "cat_key": fd.get("cat_key"),      # None
+    "sub_key": fd.get("sub_key"),      # None
+}
+factor = job_tree.score_fit(fit_entry, job_entry)   # → 0.0</pre>
+
+<p><code>job_tree.score_fit</code>（job_tree.py L157-L163）在 cat_key/sub_key 为 None 时返回 0.0，因此 role_score = 0。</p>
+
+<p><strong>证据 3：</strong>方向硬门槛封顶（scorer.py L630-L639）：</p>
+<pre>role_score = dim_scores.get("role", 0.0)        # 0
+if role_score < ROLE_GATE_THRESHOLD:             # 0 < 40 → True
+    if score > ROLE_GATE_CAP:                    # 45
+        score = ROLE_GATE_CAP                    # 总分封顶 45</pre>
+
+<p><strong>证据 4：</strong>分数到推荐等级的映射（scorer.py L645-L652）：</p>
+<pre>score >= 75 → 强烈推荐
+score >= 55 → 推荐
+score >= 35 → 可申请     ← 45 落在此区间
+else       → 不建议</pre>
+
+<p>adapter 把「可申请」映射为 <code>recommend_level = "applyable"</code>，前端展示为「可投递」。</p>
+
+<p><strong>证据 5：</strong>matcher 方法名错误（job_matcher_adapter.py L145）：</p>
+<pre>top_jobs = matcher.match_jobs_for_user(user_profile, top_n=top_n, max_per_company=3)</pre>
+<p>而 <code>UserMatcher</code> 类只有 <code>match(self, max_per_company, min_score)</code>（user_matcher.py L255），<code>match_jobs_for_user</code> 是模块级函数（L307），不是方法。调用抛 <code>AttributeError</code>，被 L150-L152 捕获后 <code>top_jobs = []</code>，随后走 <code>score_job</code> 补齐逻辑——而 <code>score_job</code> 正是带方向门槛封顶的评分函数，于是全部岗位被压到 45。</p>
+
+<h2>三、修改方案（按优先级）</h2>
+
+<div class="fix-box">
+<h4>修复 1【致命 · 必须】前端保留 fit_directions 方向键</h4>
+<p><strong>文件：</strong><code>job_workbench/src/api/llm.ts</code></p>
+<ul>
+<li>在 <code>FitDirection</code> 接口中增加 <code>cat_key?: string</code>、<code>sub_key?: string | null</code>、<code>category_name?: string</code>。</li>
+<li>在 <code>normalizeParsedProfile</code> 的 dirs 映射中透传这三个字段（原样保留，不做归一化裁剪）。</li>
+</ul>
+<p><strong>效果：</strong>方向键从 LLM → 前端 → 入库全程不丢失，_match_role 能正确计算 role 分。</p>
+</div>
+
+<div class="fix-box">
+<h4>修复 2【致命 · 必须】修正 matcher 方法调用</h4>
+<p><strong>文件：</strong><code>job_api/services/job_matcher_adapter.py</code> L145</p>
+<ul>
+<li>把 <code>matcher.match_jobs_for_user(user_profile, top_n=top_n, max_per_company=3)</code> 改为调用类方法 <code>matcher.match(max_per_company=3)</code>，或改为模块函数 <code>match_jobs_for_user(user_profile, ...)</code>。</li>
+<li>需核对 <code>match()</code> 与 <code>match_jobs_for_user()</code> 的返回结构是否与下游「补齐逻辑」的契约一致（含 score/recommend/reasons/dims）。</li>
+</ul>
+<p><strong>效果：</strong>推荐主路径不再抛异常降级，由 matcher 的预筛 + 评分产出有序结果，而非全量走封顶的 score_job。</p>
+</div>
+
+<div class="fix-box">
+<h4>修复 3【高 · 建议】scorer 增加防御性反查</h4>
+<p><strong>文件：</strong><code>scorer.py</code> <code>_match_role</code>（L320 附近）</p>
+<ul>
+<li>当 <code>fit_dirs</code> 中某项缺少 <code>cat_key</code>/<code>sub_key</code> 时，用 <code>direction</code> 名称调用 <code>job_tree.resolve(direction_name)</code> 反查得到 cat_key/sub_key，再参与 <code>score_fit</code>。</li>
+<li>反查失败（direction 不在树中）时，降级到旧的 role 关键词交集逻辑，而非直接得 0 分。</li>
+</ul>
+<p><strong>效果：</strong>即使前端或历史数据缺方向键，scorer 也能从方向名自救，避免 role 分恒为 0。这是对修复 1 的纵深防御。</p>
+</div>
+
+<div class="fix-box">
+<h4>修复 4【中 · 建议】调整方向门槛阈值</h4>
+<p><strong>文件：</strong><code>scorer.py</code> L44</p>
+<ul>
+<li>把 <code>ROLE_GATE_THRESHOLD</code> 从 40 下调到 30~35。当前 40 对「同大类匹配（系数 0.6）且权重偏低」的方向过于严苛，容易把边缘匹配压到可投递。</li>
+<li>可选：把 <code>ROLE_GATE_CAP</code> 从 45 上调到 50，避免一封顶就直接落到「可申请」下沿。</li>
+<li>需用真实简历样本做 A/B 校准，不要拍脑袋定阈值。</li>
+</ul>
+<p><strong>效果：</strong>降低方向门槛误触发率，让真正方向相近但非精确子类命中的岗位有机会进入「推荐」。</p>
+</div>
+
+<div class="fix-box">
+<h4>修复 5【低 · 可选】增加运行时监控日志</h4>
+<ul>
+<li>在 <code>_match_role</code> 记录 fit_directions 的方向键完整率（多少项有 cat_key/sub_key）与最终 role_score，按 profile 采样打 INFO/WARN。</li>
+<li>在 adapter 记录 matcher 主路径是否走了异常降级（catch 块里加 logger）。</li>
+<li>上线后观察 role_score 分布与 recommend_level 分布，确认「强烈推荐/推荐」占比回到合理区间（建议 ≥30%）。</li>
+</ul>
+</div>
+
+<h2>四、修复顺序与依赖</h2>
+<ol>
+<li><strong>先做修复 1 + 修复 2</strong>（并行）：这两个是主因，修完后全量可投递现象应消失。</li>
+<li><strong>再做修复 3</strong>：对历史已入库、缺方向键的 resume_profiles 做兜底，避免老用户仍得 0 分。</li>
+<li><strong>最后做修复 4</strong>：用真实样本校准阈值，不要在没数据时拍脑袋改。</li>
+<li><strong>修复 5</strong> 可随修复 1-3 一起加，用于上线后验证。</li>
+</ol>
+
+<h2>五、验证方案</h2>
+<ul>
+<li><strong>单元验证：</strong>用含 cat_key/sub_key 的 fit_directions 对一个后端岗位跑 <code>score_job</code>，确认 role_score &gt; 0 且总分不被封顶。</li>
+<li><strong>回归验证：</strong>用测试账号 <code>test@test.com / 123456</code> 走完整网页流程（解析简历 → 保存 → 推荐），确认结果中出现「强烈推荐」和「推荐」。</li>
+<li><strong>边界验证：</strong>故意构造缺 cat_key 的画像，验证修复 3 的反查降级是否生效（role_score 不再为 0）。</li>
+<li><strong>分布验证：</strong>统计 top_n 结果中各 recommend_level 占比，「强烈推荐+推荐」应 ≥ 30%，「可投递」≤ 50%。</li>
+</ul>
+
+<div class="footer">
+本报告基于 job_assistant 仓库当前代码静态分析生成，未执行任何代码修改。关键引用：scorer.py L42-45、L297-366、L626-652；job_tree.py L149-163；job_matcher_adapter.py L140-152；user_matcher.py L255、L307；job_workbench/src/api/llm.ts L27-74；resume_parser.py L193-223。
+</div>
+
+</body>
+</html>

@@ -41,12 +41,7 @@ DIMENSION_WEIGHTS = {
 
 # 方向硬门槛:role 维度 < ROLE_GATE_THRESHOLD 时,总分上限 = ROLE_GATE_CAP
 # 解决"方向错配但靠技能假命中/泛技能刷分"挤进 Top 的问题
-#
-# 阈值校准:同大类匹配系数 0.6,role_score = weight × 0.6 × 100。
-# - 阈值 40 → 需 weight ≥ 0.67 才不触发,会误杀大量同大类弱匹配(weight 0.5-0.6)
-# - 阈值 30 → 需 weight ≥ 0.5 才不触发,同大类次要方向(0.5-0.6)不再被误封,
-#   跨大类(0分)仍被正确封顶。
-ROLE_GATE_THRESHOLD = 30.0
+ROLE_GATE_THRESHOLD = 40.0
 ROLE_GATE_CAP = 45.0
 
 
@@ -315,9 +310,6 @@ def _match_role(profile, job: Dict, u: Dict) -> Tuple[float, List[str]]:
     1. 有 fit_directions 且岗位能解析归属 → 新逻辑
     2. 无 fit_directions 但有旧 role 关键词 → 旧关键词交集逻辑
     3. 啥都没有 → 中性 50
-
-    防御性:fit_direction 缺 cat_key/sub_key 时(前端手动添加方向或旧数据),
-    用 direction 名反查 job_tree.resolve 恢复归属,避免 role 恒为 0 触发方向门槛。
     """
     reasons: List[str] = []
 
@@ -331,28 +323,11 @@ def _match_role(profile, job: Dict, u: Dict) -> Tuple[float, List[str]]:
         best_factor = 0.0
         best_fit = None
         for fd in fit_dirs:
-            # 防御性:cat_key/sub_key 缺失时用 direction 名反查树恢复归属
-            cat_key = fd.get("cat_key")
-            sub_key = fd.get("sub_key")
-            direction = (fd.get("direction") or "").strip()
-            if (cat_key is None or sub_key is None) and direction:
-                resolved = job_tree.resolve(direction, allow_category=True)
-                if resolved:
-                    cat_key = resolved.get("cat_key")
-                    sub_key = resolved.get("sub_key")
-                    # 回填到 fd(避免后续岗位重复解析)
-                    try:
-                        fd["cat_key"] = cat_key
-                        fd["sub_key"] = sub_key
-                        if "category_name" not in fd or not fd.get("category_name"):
-                            fd["category_name"] = resolved.get("category_name", "")
-                    except (TypeError, KeyError):
-                        pass  # fd 可能不是可变 dict
-
+            # fit_direction 存了 sub_key,直接构造 fit_entry
             fit_entry = {
-                "type": "subcategory" if sub_key else "category",
-                "cat_key": cat_key,
-                "sub_key": sub_key,
+                "type": "subcategory",
+                "cat_key": fd.get("cat_key"),
+                "sub_key": fd.get("sub_key"),
             }
             factor = job_tree.score_fit(fit_entry, job_entry)
             w = float(fd.get("weight") or 0.0)

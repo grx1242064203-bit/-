@@ -140,12 +140,13 @@ def recommend_jobs(
     user_profile = build_user_profile(profile_dict)
 
     # 先跑 matcher（DB 预筛 + 规则预筛 + AI 评分）
-    # 注意:UserMatcher 的入口方法是 match(),不是 match_jobs_for_user()
-    # (后者是 user_matcher 模块级便捷函数)。调错方法会 AttributeError 被吞掉,
-    # top_jobs 变空,只能靠兜底补齐路径,且补齐路径缺 company_tier 等字段。
     matcher = UserMatcher(user_profile)
     try:
-        top_jobs = matcher.match(max_per_company=3)
+        top_jobs = matcher.match_jobs_for_user(
+            user_profile,
+            top_n=top_n,
+            max_per_company=3,
+        )
     except Exception as e:
         logger.error(f"matcher 失败: {e}", exc_info=True)
         top_jobs = []

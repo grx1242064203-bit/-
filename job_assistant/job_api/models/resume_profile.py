@@ -74,8 +74,6 @@ def create_profile(
     conn = _conn()
     try:
         now = _now()
-        # 回填 fit_directions 的岗位树归属字段
-        fit_directions = _backfill_fit_direction_keys(fit_directions)
         # 1) 旧画像设 inactive
         conn.execute(
             "UPDATE resume_profiles SET is_active = 0, updated_at = ? WHERE user_id = ? AND is_active = 1",
@@ -156,39 +154,6 @@ def delete_profile(profile_id: str, user_id: str) -> bool:
         conn.close()
 
 
-def _backfill_fit_direction_keys(fit_directions: list) -> list:
-    """回填 fit_directions 的 cat_key/sub_key/category_name。
-
-    用户在前端手动新增方向时只填 direction/weight/evidence,缺少岗位树归属字段。
-    scorer._match_role 虽有防御性重解析,但存储时就补齐可避免每次评分重复查树,
-    也保证数据一致性。
-    """
-    if not isinstance(fit_directions, list):
-        return fit_directions
-    try:
-        import job_tree
-    except ImportError:
-        return fit_directions
-    out = []
-    for d in fit_directions:
-        if not isinstance(d, dict):
-            out.append(d)
-            continue
-        item = dict(d)
-        cat_key = item.get("cat_key")
-        sub_key = item.get("sub_key")
-        direction = (item.get("direction") or "").strip()
-        if (cat_key is None or sub_key is None) and direction:
-            resolved = job_tree.resolve(direction, allow_category=True)
-            if resolved:
-                item["cat_key"] = resolved.get("cat_key")
-                item["sub_key"] = resolved.get("sub_key")
-                if not item.get("category_name"):
-                    item["category_name"] = resolved.get("category_name", "")
-        out.append(item)
-    return out
-
-
 def update_profile(
     profile_id: str,
     user_id: str,
@@ -206,10 +171,6 @@ def update_profile(
     existing = get_profile(profile_id)
     if not existing or existing["user_id"] != user_id:
         return None
-
-    # 回填 fit_directions 的岗位树归属字段(用户手动新增方向时可能缺失)
-    if fit_directions is not None:
-        fit_directions = _backfill_fit_direction_keys(fit_directions)
 
     new_keywords = json.dumps(
         keywords if keywords is not None else existing["keywords"],

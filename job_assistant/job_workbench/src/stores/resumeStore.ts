@@ -255,6 +255,9 @@ export const useResumeStore = create<ResumeState>((set, get) => ({
   },
 
   // 从 localStorage 拉 active resume + 同步后端画像
+  // 修复:localStorage 在新浏览器/换设备时为空,即使后端 serverProfile 存在也显示"未上传"。
+  // 当 localStorage 空 但 serverProfile 存在时,从 serverProfile 重建 activeResume,
+  // 并把 keywords/fit_directions 转成 ParsedProfile 让 Resume 页正确展示画像内容。
   getActiveResume: async () => {
     set({ isLoading: true, error: null });
     try {
@@ -282,6 +285,35 @@ export const useResumeStore = create<ResumeState>((set, get) => ({
           isLoading: false,
           phase: profile ? "done" : "idle",
           lastFileName: resume.file_path,
+        });
+      } else if (serverProfile) {
+        // localStorage 空但后端有画像:从 serverProfile 重建本地 resume
+        const keywords = Array.isArray(serverProfile.keywords)
+          ? serverProfile.keywords
+          : [];
+        const fitDirs = Array.isArray(serverProfile.fit_directions)
+          ? serverProfile.fit_directions
+          : [];
+        const profile: ParsedProfile = {
+          keywords: keywords as any,
+          fit_directions: fitDirs as any,
+        };
+        const rebuilt: Resume = {
+          resume_id: `server-${serverProfile.profile_id}`,
+          file_path: "(已上传简历)",
+          raw_text: serverProfile.resume_text || null,
+          parsed_profile_json: JSON.stringify(profile),
+          created_at: serverProfile.created_at,
+          is_active: 1,
+        };
+        saveResumeToStorage(rebuilt);
+        set({
+          activeResume: rebuilt,
+          parsedProfile: profile,
+          serverProfile,
+          isLoading: false,
+          phase: "done",
+          lastFileName: rebuilt.file_path,
         });
       } else {
         set({

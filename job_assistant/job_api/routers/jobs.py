@@ -32,7 +32,7 @@ def recommend(
     - 画像不存在 → 400
     - 推荐不足 top_n 时自动从全量岗位按分数补齐
     """
-    uid = int(user["user_id"])
+    uid = str(user["user_id"])
 
     # 1) 取画像
     if req.profile_id:

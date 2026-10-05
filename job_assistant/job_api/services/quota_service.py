@@ -24,7 +24,7 @@ from typing import Dict
 logger = logging.getLogger(__name__)
 
 # 兜底默认值(开发期);生产部署应通过环境变量 LLM_DAILY_LIMIT 覆盖。
-# 设为 0 = 禁用;负数 = 不限制。
+# 设为 0 = 禁用;负数 = 不限制。当前默认 -1 = 不限制。
 DEFAULT_DAILY_LIMIT = -1
 
 

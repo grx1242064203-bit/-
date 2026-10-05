@@ -14,7 +14,12 @@ import time
 from typing import List, Dict, Optional
 from collections import defaultdict
 
-from models import UserProfile
+# job_api/main.py 启动时把根目录 models.py 注册为 jobseeker_models 别名
+# (避免与 job_api/models/ 包同名遮蔽)。直接运行本文件时回退到 from models import。
+try:
+    from jobseeker_models import UserProfile
+except ImportError:
+    from models import UserProfile
 from scorer import score_job
 import job_db
 

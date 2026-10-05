@@ -2,8 +2,28 @@
 
 提供 /health 健康检查、CORS 中间件、配置加载、/api/v1 业务路由（auth）。
 """
+import importlib.util
 import json
+import os
+import sys
 from contextlib import asynccontextmanager
+
+# 项目根目录的 user_matcher.py / scorer.py / job_db.py / models.py 提供
+# 岗位推荐核心算法。但根目录 models.py 与 job_api/models/ 包同名,直接把根目录
+# 加 sys.path 会遮蔽 job_api/models 包(导致 `from models import init_all_db` 失败)。
+# 解决方案:把根目录 models.py 单独加载为别名 `jobseeker_models`,user_matcher.py
+# 和 scorer.py 用 `from jobseeker_models import UserProfile` 引用。
+_PROJECT_ROOT = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
+if _PROJECT_ROOT not in sys.path:
+    sys.path.append(_PROJECT_ROOT)  # append 末尾,不抢占 job_api/models/ 包
+
+# 把根目录 models.py 显式加载为 jobseeker_models 别名,避免与 job_api/models/ 包冲突
+_root_models_path = os.path.join(_PROJECT_ROOT, "models.py")
+if os.path.exists(_root_models_path) and "jobseeker_models" not in sys.modules:
+    _spec = importlib.util.spec_from_file_location("jobseeker_models", _root_models_path)
+    _mod = importlib.util.module_from_spec(_spec)
+    _spec.loader.exec_module(_mod)
+    sys.modules["jobseeker_models"] = _mod
 
 from fastapi import FastAPI, Request
 from fastapi.middleware.cors import CORSMiddleware

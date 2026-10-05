@@ -141,11 +141,13 @@ def recommend_jobs(
 
     # 先跑 matcher（DB 预筛 + 规则预筛 + AI 评分）
     matcher = UserMatcher(user_profile)
+    matcher_path_count = 0  # 监控:主 matcher 路径产出的岗位数
     try:
         # UserMatcher.match 签名: (max_per_company, min_score)
         # 返回按评分降序的所有匹配岗位,这里按 top_n 切片
         all_matched = matcher.match(max_per_company=3)
         top_jobs = all_matched[:top_n] if all_matched else []
+        matcher_path_count = len(top_jobs)
     except Exception as e:
         logger.error(f"matcher 失败: {e}", exc_info=True)
         top_jobs = []
@@ -153,6 +155,7 @@ def recommend_jobs(
     total_matched = len(top_jobs)
 
     # 如果 matcher 返回不足 top_n，从全量岗位补齐（按分数从高到低）
+    scorer_path_count = 0  # 监控:补齐 scorer 路径产出的岗位数
     if len(top_jobs) < top_n:
         try:
             all_positions = job_db.get_active_positions()
@@ -211,9 +214,18 @@ def recommend_jobs(
                     or 0
                 )
             )
+            scorer_path_count = min(need, len(scored_remaining))
             top_jobs.extend(scored_remaining[:need])
         except Exception as e:
             logger.error(f"补齐失败: {e}", exc_info=True)
+
+    # 监控日志:matcher 路径 vs 补齐 scorer 路径的产出占比
+    # 第一性原理:若 scorer_path_count 远大于 matcher_path_count,
+    # 说明 DB/规则预筛过严,大量岗位绕过预筛直接全量评分,需排查预筛条件。
+    logger.info(
+        "[matcher-path] 主matcher=%d 补齐scorer=%d 总计=%d (top_n=%d)",
+        matcher_path_count, scorer_path_count, len(top_jobs), top_n,
+    )
 
     # 标记推荐等级
     # 兼容 scorer 中文「综合推荐度」与英文「recommend」两种键名

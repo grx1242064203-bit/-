@@ -322,12 +322,30 @@ def _match_role(profile, job: Dict, u: Dict) -> Tuple[float, List[str]]:
     if fit_dirs and job_entry:
         best_factor = 0.0
         best_fit = None
+        # 统计方向键完整率(监控用)
+        dir_count = len(fit_dirs)
+        dir_with_key = 0
+        dir_resolved = 0
         for fd in fit_dirs:
             # fit_direction 存了 sub_key,直接构造 fit_entry
+            cat_key = fd.get("cat_key")
+            sub_key = fd.get("sub_key")
+            if cat_key:
+                dir_with_key += 1
+            # 防御性反查:历史画像可能缺方向键(前端旧版本丢弃了 cat_key/sub_key),
+            # 用 direction 名称调 job_tree.resolve 反查得到 cat_key/sub_key。
+            # 第一性原理:方向名是用户最核心偏好,不能因为数据缺失就让 role_score 恒为 0。
+            if not cat_key:
+                resolved = job_tree.resolve(fd.get("direction", ""), allow_category=True)
+                if resolved:
+                    cat_key = resolved.get("cat_key")
+                    sub_key = resolved.get("sub_key")
+                    if cat_key:
+                        dir_resolved += 1
             fit_entry = {
-                "type": "subcategory",
-                "cat_key": fd.get("cat_key"),
-                "sub_key": fd.get("sub_key"),
+                "type": "subcategory" if sub_key else "category",
+                "cat_key": cat_key,
+                "sub_key": sub_key,
             }
             factor = job_tree.score_fit(fit_entry, job_entry)
             w = float(fd.get("weight") or 0.0)
@@ -336,6 +354,12 @@ def _match_role(profile, job: Dict, u: Dict) -> Tuple[float, List[str]]:
                 best_factor = contribution
                 best_fit = fd
         score = round(best_factor * 100.0, 1)
+        # 监控日志:方向键完整率 + 反查命中 + role_score
+        logger.info(
+            "[role] fit_directions=%d 有方向键=%d 反查命中=%d job=%s role_score=%.1f",
+            dir_count, dir_with_key, dir_resolved,
+            job_entry.get("sub_name") or job_entry.get("category_name"), score,
+        )
         if best_fit:
             factor_label = {1.0: "精确子类命中", 0.6: "同大类匹配", 0.0: "跨大类"}.get(
                 job_tree.score_fit(

@@ -1,0 +1,355 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Offer搭子 新方案评估 — 飞书侧只保留总表回写</title>
+<style>
+  :root {
+    --primary: #F97316;
+    --ink: #0F172A;
+    --text: #1F2937;
+    --text-muted: #6B7280;
+    --bg: #FAFAF9;
+    --card: #FFFFFF;
+    --border: #E5E7EB;
+    --success: #16A34A;
+    --success-soft: #DCFCE7;
+    --warning: #D97706;
+    --warning-soft: #FEF3C7;
+    --danger: #DC2626;
+    --danger-soft: #FEE2E2;
+    --code-bg: #F3F4F6;
+  }
+  * { box-sizing: border-box; }
+  body {
+    font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", "PingFang SC", "Hiragino Sans GB", "Microsoft YaHei", sans-serif;
+    background: var(--bg); color: var(--text); margin: 0; line-height: 1.65; font-size: 15px;
+  }
+  .container { max-width: 1080px; margin: 0 auto; padding: 32px 24px 80px; }
+  header { border-bottom: 3px solid var(--primary); padding-bottom: 20px; margin-bottom: 28px; }
+  h1 { font-size: 26px; font-weight: 800; color: var(--ink); margin: 0 0 8px; letter-spacing: -0.5px; }
+  .subtitle { color: var(--text-muted); font-size: 14px; }
+  .meta { display: flex; flex-wrap: wrap; gap: 12px; margin-top: 12px; font-size: 13px; color: var(--text-muted); }
+  .meta span { background: var(--card); border: 1px solid var(--border); padding: 4px 10px; border-radius: 999px; }
+
+  .score-banner {
+    background: linear-gradient(135deg, #F0FDF4 0%, #DCFCE7 100%);
+    border: 1px solid var(--success);
+    border-radius: 16px;
+    padding: 20px 24px;
+    margin: 24px 0;
+    display: flex; align-items: center; gap: 20px; flex-wrap: wrap;
+  }
+  .score-num { font-size: 44px; font-weight: 800; color: var(--success); line-height: 1; }
+  .score-label { font-size: 13px; color: var(--text-muted); }
+  .score-grade { background: var(--success); color: white; padding: 6px 14px; border-radius: 8px; font-weight: 700; font-size: 14px; }
+
+  h2 { font-size: 21px; font-weight: 700; color: var(--ink); margin: 40px 0 16px; padding-left: 12px; border-left: 4px solid var(--primary); }
+  h3 { font-size: 17px; font-weight: 700; color: var(--ink); margin: 24px 0 10px; }
+  h4 { font-size: 15px; font-weight: 700; color: var(--text); margin: 16px 0 8px; }
+  p { margin: 8px 0; }
+  code { background: var(--code-bg); padding: 2px 6px; border-radius: 4px; font-family: "SF Mono", Menlo, Consolas, monospace; font-size: 13px; color: var(--ink); }
+  .file-ref { color: var(--primary); text-decoration: none; font-family: "SF Mono", Menlo, Consolas, monospace; font-size: 13px; word-break: break-all; }
+  .file-ref:hover { text-decoration: underline; }
+
+  .flow { background: var(--card); border: 1px solid var(--border); border-radius: 16px; padding: 24px; margin: 16px 0; overflow-x: auto; }
+  .flow-row { display: flex; align-items: stretch; gap: 8px; min-width: 720px; }
+  .flow-node { flex: 1; border-radius: 12px; padding: 12px 10px; text-align: center; border: 2px solid; display: flex; flex-direction: column; justify-content: center; min-height: 88px; }
+  .flow-node .stage { font-size: 11px; font-weight: 700; opacity: 0.7; letter-spacing: 0.5px; }
+  .flow-node .name { font-size: 14px; font-weight: 700; margin: 4px 0; }
+  .flow-node .desc { font-size: 11px; opacity: 0.85; line-height: 1.4; }
+  .flow-arrow { display: flex; align-items: center; color: var(--text-muted); font-size: 20px; font-weight: 700; }
+  .n-keep { background: #F0FDF4; border-color: var(--success); color: #14532D; }
+  .n-cut { background: var(--danger-soft); border-color: var(--danger); color: #7F1D1D; text-decoration: line-through; }
+  .n-feishu { background: #EFF6FF; border-color: #3B82F6; color: #1E40AF; }
+  .n-front { background: #FAF5FF; border-color: #A855F7; color: #581C87; }
+
+  table { width: 100%; border-collapse: collapse; margin: 12px 0; background: var(--card); border-radius: 12px; overflow: hidden; box-shadow: 0 1px 3px rgba(0,0,0,0.04); }
+  th { background: #F3F4F6; text-align: left; padding: 12px; font-size: 13px; font-weight: 700; color: var(--ink); border-bottom: 1px solid var(--border); }
+  td { padding: 12px; border-bottom: 1px solid var(--border); font-size: 13px; vertical-align: top; }
+  tr:last-child td { border-bottom: none; }
+  tr:hover td { background: #FFFBEB; }
+  .badge { display: inline-block; padding: 2px 8px; border-radius: 999px; font-size: 12px; font-weight: 700; }
+  .b-ok { background: var(--success-soft); color: var(--success); }
+  .b-warn { background: var(--warning-soft); color: var(--warning); }
+  .b-bad { background: var(--danger-soft); color: var(--danger); }
+  .b-cut { background: var(--danger-soft); color: var(--danger); }
+  .b-keep { background: var(--success-soft); color: var(--success); }
+
+  .risk-card { background: var(--card); border-left: 4px solid; border-radius: 8px; padding: 16px 18px; margin: 12px 0; box-shadow: 0 1px 3px rgba(0,0,0,0.04); }
+  .risk-p0 { border-color: var(--danger); }
+  .risk-p1 { border-color: var(--warning); }
+  .risk-p2 { border-color: #3B82F6; }
+  .risk-title { font-weight: 700; color: var(--ink); font-size: 15px; margin: 0 0 6px; display: flex; align-items: center; gap: 8px; }
+  .risk-tag { font-size: 11px; font-weight: 700; padding: 2px 8px; border-radius: 4px; }
+  .tag-p0 { background: var(--danger); color: white; }
+  .tag-p1 { background: var(--warning); color: white; }
+  .tag-p2 { background: #3B82F6; color: white; }
+  .risk-body { font-size: 14px; color: var(--text); }
+  .risk-body p { margin: 6px 0; }
+  .risk-evidence { background: var(--code-bg); border-radius: 6px; padding: 8px 12px; margin-top: 8px; font-size: 12px; color: var(--text-muted); }
+
+  .callout { background: linear-gradient(135deg, #FFF7ED 0%, #FFFBEB 100%); border: 1px solid var(--primary); border-radius: 12px; padding: 16px 20px; margin: 16px 0; font-size: 14px; }
+  .callout strong { color: var(--primary); }
+  .callout-success { background: linear-gradient(135deg, #F0FDF4 0%, #DCFCE7 100%); border-color: var(--success); }
+  .callout-success strong { color: var(--success); }
+
+  ul, ol { padding-left: 22px; }
+  li { margin: 4px 0; font-size: 14px; }
+  .footer { margin-top: 60px; padding-top: 20px; border-top: 1px solid var(--border); color: var(--text-muted); font-size: 12px; text-align: center; }
+</style>
+</head>
+<body>
+<div class="container">
+
+  <header>
+    <h1>Offer搭子 新方案评估</h1>
+    <div class="subtitle">飞书侧只保留"27届校招汇总表"总表回写，删除飞书机器人 / 日报 / 推送链路</div>
+    <div class="meta">
+      <span>方案日期：2026-10-05</span>
+      <span>目标总表：27届校招汇总表 (base: J8qtbBvPdatotysARtbc2XcinDJ)</span>
+      <span>桌面端：功能不变</span>
+    </div>
+  </header>
+
+  <div class="score-banner">
+    <div>
+      <div class="score-num">8.5<span style="font-size:20px;">/10</span></div>
+      <div class="score-label">新方案评分</div>
+    </div>
+    <div class="score-grade">A- · 架构显著简化，P0 自动消失</div>
+    <div style="flex:1; min-width: 240px; font-size: 13px; color: var(--text);">
+      <strong>结论：</strong>新方案是一次健康的"减法"。原 P0 架构断点（新旧服务并存）自动消失，整体复杂度大幅下降。
+      代价是用户失去飞书侧的<strong>主动触达通道</strong>（日报卡片、截止提醒、投递跟踪通知），需在桌面端补齐等价能力，否则形成功能真空。
+    </div>
+  </div>
+
+  <h2>一、方案边界：保留 vs 删除</h2>
+
+  <h3>1.1 数据流图（新方案）</h3>
+  <div class="flow">
+    <div class="flow-row">
+      <div class="flow-node n-feishu">
+        <div class="stage">数据源（保留）</div>
+        <div class="name">飞书秋招源表</div>
+        <div class="desc">SOURCE_APP_TOKEN<br>SOURCE_TABLE_ID</div>
+      </div>
+      <div class="flow-arrow">→</div>
+      <div class="flow-node n-keep">
+        <div class="stage">同步（保留）</div>
+        <div class="name">feishu_source.py</div>
+        <div class="desc">FeishuSourceSync.sync()</div>
+      </div>
+      <div class="flow-arrow">→</div>
+      <div class="flow-node n-keep">
+        <div class="stage">抓取+拆岗（保留）</div>
+        <div class="name">content_fetcher<br>llm_enricher</div>
+        <div class="desc">Playwright + LLM</div>
+      </div>
+      <div class="flow-arrow">→</div>
+      <div class="flow-node n-feishu">
+        <div class="stage">回写总表（保留）</div>
+        <div class="name">feishu_master_tables.py</div>
+        <div class="desc">sync_to_existing_master_table()<br>→ 27届校招汇总表</div>
+      </div>
+    </div>
+    <div style="height: 12px;"></div>
+    <div class="flow-row">
+      <div class="flow-node n-front">
+        <div class="stage">桌面端（保留）</div>
+        <div class="name">job_workbench</div>
+        <div class="desc">11 项功能不变</div>
+      </div>
+      <div class="flow-arrow">←</div>
+      <div class="flow-node n-keep">
+        <div class="stage">业务 API（保留）</div>
+        <div class="name">job_api/main.py</div>
+        <div class="desc">FastAPI /api/v1/*</div>
+      </div>
+      <div class="flow-arrow">✕</div>
+      <div class="flow-node n-cut">
+        <div class="stage">整套废弃</div>
+        <div class="name">DailyRunner 类</div>
+        <div class="desc">日报+推送+提醒+跟踪</div>
+      </div>
+      <div class="flow-arrow">✕</div>
+      <div class="flow-node n-cut">
+        <div class="stage">整套废弃</div>
+        <div class="name">callback_server.py</div>
+        <div class="desc">飞书回调+WxPusher+旧解析</div>
+      </div>
+    </div>
+  </div>
+
+  <h3>1.2 代码模块对照表</h3>
+  <table>
+    <thead>
+      <tr><th style="width:30%;">模块</th><th style="width:10%;">处置</th><th style="width:60%;">说明</th></tr>
+    </thead>
+    <tbody>
+      <tr><td><a class="file-ref" href="file:///workspace/job_assistant/feishu_source.py">feishu_source.py</a></td><td><span class="badge b-keep">保留</span></td><td>飞书源表同步，中心化管线第 1 步</td></tr>
+      <tr><td><a class="file-ref" href="file:///workspace/job_assistant/content_fetcher.py">content_fetcher.py</a></td><td><span class="badge b-keep">保留</span></td><td>正文抓取，第 2 步</td></tr>
+      <tr><td><a class="file-ref" href="file:///workspace/job_assistant/llm_enricher.py">llm_enricher.py</a></td><td><span class="badge b-keep">保留</span></td><td>LLM 岗位拆分，第 3 步</td></tr>
+      <tr><td><a class="file-ref" href="file:///workspace/job_assistant/feishu_master_tables.py">feishu_master_tables.py</a></td><td><span class="badge b-keep">保留</span></td><td><strong>核心保留项</strong>：sync_to_existing_master_table() 写入"27届校招岗位汇总"表（base J8qtbBvPdatotysARtbc2XcinDJ）</td></tr>
+      <tr><td><a class="file-ref" href="file:///workspace/job_assistant/daily_runner.py">daily_runner.py</a> → <code>run_daily_pipeline()</code></td><td><span class="badge b-keep">保留</span></td><td>中心化管线调度入口，crontab 8:00 增量 / 周一 3:00 全量校验</td></tr>
+      <tr><td><a class="file-ref" href="file:///workspace/job_assistant/daily_runner.py">daily_runner.py</a> → <code>DailyRunner</code> 类</td><td><span class="badge b-cut">删除</span></td><td>单用户分发：岗位匹配→写用户飞书表→日报文档→WxPusher 推送→飞书卡片→截止提醒→投递跟踪（约 660 行）</td></tr>
+      <tr><td><a class="file-ref" href="file:///workspace/job_assistant/callback_server.py">callback_server.py</a></td><td><span class="badge b-cut">删除</span></td><td>BaseHTTPRequestHandler 8080 端口，承载 /feishu/callback、/api/parse-resume、/api/profile、/api/bind-wxpusher（约 550 行）</td></tr>
+      <tr><td><a class="file-ref" href="file:///workspace/job_assistant/bind_wxpusher.py">bind_wxpusher.py</a></td><td><span class="badge b-cut">删除</span></td><td>WxPusher 绑定逻辑</td></tr>
+      <tr><td><a class="file-ref" href="file:///workspace/job_assistant/wxpusher_client.py">wxpusher_client.py</a></td><td><span class="badge b-cut">删除</span></td><td>WxPusher 客户端（仅 DailyRunner 使用）</td></tr>
+      <tr><td><a class="file-ref" href="file:///workspace/job_assistant/onboarding.py">onboarding.py</a> / <code>onboarding_page.html</code></td><td><span class="badge b-cut">删除</span></td><td>飞书应用安装 onboarding 流程（用户不再需要安装飞书应用）</td></tr>
+      <tr><td><a class="file-ref" href="file:///workspace/job_assistant/feishu_client.py">feishu_client.py</a> 部分</td><td><span class="badge b-warn">部分保留</span></td><td>保留 bitable records/fields 读写方法；删除 send_message / send_card_message / create_doc / share_with_user 等用户侧 API（仅 DailyRunner 用）</td></tr>
+      <tr><td><a class="file-ref" href="file:///workspace/job_assistant/job_api">job_api/</a> FastAPI</td><td><span class="badge b-keep">保留</span></td><td>桌面端业务 API 不变</td></tr>
+      <tr><td><a class="file-ref" href="file:///workspace/job_assistant/job_workbench">job_workbench/</a> 桌面端</td><td><span class="badge b-keep">保留</span></td><td>11 项功能不变</td></tr>
+    </tbody>
+  </table>
+
+  <h2>二、新方案的收益</h2>
+
+  <div class="callout callout-success">
+    <strong>核心收益：原 P0 架构断点自动消失。</strong>
+    旧方案中 callback_server.py（8080）与 job_api/main.py（8000）两套服务并存、状态层割裂的最大隐患，在新方案中随着 callback_server.py 整体废弃而自然解决。这是一次"用减法解决架构问题"的典范。
+  </div>
+
+  <table>
+    <thead><tr><th>维度</th><th>旧方案</th><th>新方案</th><th>收益</th></tr></thead>
+    <tbody>
+      <tr><td>架构层数</td><td>4 层（数据管线 + 单用户分发 + 飞书机器人 + 桌面端）</td><td>2 层（数据管线 + 桌面端）</td><td><span class="badge b-ok">大幅简化</span></td></tr>
+      <tr><td>HTTP 服务</td><td>2 套并存（8080 + 8000）</td><td>1 套（job_api 8000）</td><td><span class="badge b-ok">P0 消除</span></td></tr>
+      <tr><td>用户 onboarding</td><td>需安装飞书应用 + 绑定 WxPusher + 配置飞书表 token</td><td>无需（直接打开桌面端登录）</td><td><span class="badge b-ok">门槛大降</span></td></tr>
+      <tr><td>用户状态层</td><td>双写（飞书用户表 + 服务端 DB），需同步</td><td>单一数据库</td><td><span class="badge b-ok">一致性提升</span></td></tr>
+      <tr><td>crontab 任务</td><td>run_daily_pipeline + 每用户 DailyRunner.run()</td><td>仅 run_daily_pipeline</td><td><span class="badge b-ok">运维简化</span></td></tr>
+      <tr><td>飞书 API 权限</td><td>bitable + im + doc + card 全量</td><td>仅 bitable 读写</td><td><span class="badge b-ok">权限收敛</span></td></tr>
+      <tr><td>删除代码量</td><td>—</td><td>约 1200+ 行（DailyRunner 660 + callback_server 550 + wxpusher/bind）</td><td><span class="badge b-ok">技术债下降</span></td></tr>
+      <tr><td>飞书侧定位</td><td>事件源 + 用户表 + 推送通道 + 展示表（4 角色）</td><td>纯展示表（1 角色）</td><td><span class="badge b-ok">职责清晰</span></td></tr>
+    </tbody>
+  </table>
+
+  <h2>三、新方案的风险与缺失</h2>
+
+  <div class="risk-card risk-p1">
+    <div class="risk-title">P1 · 用户失去飞书侧主动触达通道，需桌面端补齐
+      <span class="risk-tag tag-p1">P1 功能真空</span>
+    </div>
+    <div class="risk-body">
+      <p><strong>症状：</strong>删除 DailyRunner 后，原先通过飞书机器人推送给用户的 4 类主动通知全部消失：</p>
+      <ul>
+        <li><strong>每日日报卡片</strong>（<code>_send_daily_card</code>，TOP3 岗位 + 直达链接）</li>
+        <li><strong>校招截止提醒</strong>（<code>_check_deadline_reminders</code>，截止前 3 天提醒）</li>
+        <li><strong>投递跟踪通知</strong>（<code>_check_applied_jobs</code>，已投递岗位关闭时通知）</li>
+        <li><strong>WxPusher 微信日报</strong>（<code>wxpusher.send_daily_summary</code>）</li>
+      </ul>
+      <p><strong>第一性原理：</strong>求职是高时效场景（截止日期、面试通知、岗位关闭），用户不主动打开应用就会错过。原方案的飞书/微信推送是"推"模式，新方案退化为"拉"模式，依赖用户主动打开桌面端。</p>
+      <p><strong>对抗性场景：</strong>用户安装桌面端后长期不开机/不打开 → 错过截止日期 → 投递失败 → 产品价值归零。</p>
+      <p><strong>建议：</strong>桌面端需补齐等价的主动通知能力：系统通知（Tauri notification）、邮件提醒（已接 IMAP，可复用）、或浏览器通知。截止提醒尤其要在桌面端实现。</p>
+      <div class="risk-evidence">证据：<a class="file-ref" href="file:///workspace/job_assistant/daily_runner.py#L208-L240">daily_runner.py:208-240</a> 推送逻辑均在 DailyRunner._run_with_lock 内。</div>
+    </div>
+  </div>
+
+  <div class="risk-card risk-p1">
+    <div class="risk-title">P1 · 投递跟踪与截止提醒逻辑被一并删除，桌面端是否有等价能力？
+      <span class="risk-tag tag-p1">P1 功能承接</span>
+    </div>
+    <div class="risk-body">
+      <p><strong>症状：</strong><code>DailyRunner._check_deadline_reminders</code>（查主表截止日期≤3天岗位并提醒）和 <code>DailyRunner._check_applied_jobs</code>（复查已投递岗位是否已关闭）是两个独立的"看护逻辑"，不依赖飞书机器人，<strong>本质上可以脱离推送独立存在</strong>。但它们当前耦合在 DailyRunner 类里，会随类一起被删。</p>
+      <p><strong>第一性原理审视：</strong>这两个逻辑解决的是"用户投递后忘记跟进"的问题，与"是否用飞书机器人推送"是正交的。删除推送通道 ≠ 删除看护逻辑。</p>
+      <p><strong>建议：</strong>把这两个逻辑提取为独立函数（<code>check_deadlines()</code> / <code>check_applied_status()</code>），改为查询 job_api 数据库（而非飞书用户表），结果通过桌面端系统通知或 KanbanCard 标记呈现。不要随 DailyRunner 一起删。</p>
+      <div class="risk-evidence">证据：<a class="file-ref" href="file:///workspace/job_assistant/daily_runner.py#L393-L516">daily_runner.py:393-516</a> 两个看护方法当前直接读飞书用户表，需重构为读 job_api DB。</div>
+    </div>
+  </div>
+
+  <div class="risk-card risk-p1">
+    <div class="risk-title">P1 · 用户 Onboarding 流程断链
+      <span class="risk-tag tag-p1">P1 用户旅程</span>
+    </div>
+    <div class="risk-body">
+      <p><strong>症状：</strong>原方案用户通过飞书机器人 onboarding（安装应用 → 拿到 feishu_base_token / feishu_table_id / feishu_open_id）完成注册和飞书表配置。删除 callback_server.py + onboarding.py 后，<strong>新用户如何注册、如何拿到 job_api 账号、如何关联桌面端</strong>没有清晰路径。</p>
+      <p><strong>第一性原理：</strong>"用户登录与画像绑定"是产品的入口，必须有等价替代。新方案下用户不再有飞书应用安装这一入口，job_api 必须提供独立的注册/登录/设备绑定端点（看 <a class="file-ref" href="file:///workspace/job_assistant/job_api/routers">job_api/routers</a> 是否已有 auth/users 路由）。</p>
+      <p><strong>建议：</strong>梳理新方案下的用户旅程：下载桌面端 → 注册/登录 → 上传简历 → 看岗位 → 投递追踪。补齐 job_api 的 auth 路由，明确 token 颁发与设备绑定机制。</p>
+      <div class="risk-evidence">证据：<a class="file-ref" href="file:///workspace/job_assistant/onboarding.py">onboarding.py</a> 删除后，<a class="file-ref" href="file:///workspace/job_assistant/job_api/main.py#L94-L105">job_api/main.py:94-105</a> 注册的路由列表需确认是否含 auth。</div>
+    </div>
+  </div>
+
+  <div class="risk-card risk-p2">
+    <div class="risk-title">P2 · 飞书总表降级为"只读展示表"，用户无法在飞书侧改状态
+      <span class="risk-tag tag-p2">P2 体验降级</span>
+    </div>
+    <div class="risk-body">
+      <p><strong>症状：</strong>原方案用户可在飞书总表里直接改"申请状态"字段（未投递/已投递/面试中），DailyRunner 会回读这些状态做跟踪。新方案下总表是中心化管线的同步目标，<strong>用户在飞书侧的修改会被下一次同步覆盖</strong>。</p>
+      <p><strong>第一性原理：</strong>"27届校招汇总表"在新方案下是<strong>纯只读视图</strong>，用户只能看不能改。投递状态只能通过桌面端 Kanban 修改。这本身没问题，但要在飞书表顶部显著标注"本表为只读视图，投递进度请在桌面端管理"，避免用户误改后困惑。</p>
+      <p><strong>建议：</strong>在 feishu_master_tables 写入时锁定关键字段为只读；或在飞书表顶部加说明行。</p>
+    </div>
+  </div>
+
+  <div class="risk-card risk-p2">
+    <div class="risk-title">P2 · 数据更新频率从"实时/每日用户级"退化为"每日中心化一次"
+      <span class="risk-tag tag-p2">P2 时效性</span>
+    </div>
+    <div class="risk-body">
+      <p><strong>症状：</strong>原方案 DailyRunner 每日为每用户跑一次匹配+写入用户表；新方案只跑一次中心化管线（8:00 增量），用户看到的总表是统一一份，更新频率 24h。</p>
+      <p><strong>第一性原理：</strong>对"看岗位"场景，24h 延迟可接受（校招岗位不会分钟级变化）。对"投递状态跟踪"场景，用户在桌面端 Kanban 的修改是实时的（直接写 job_api DB），不影响。</p>
+      <p><strong>结论：</strong>非阻塞，但要在用户预期里说明"飞书总表每日 8:00 后更新，最新进度请看桌面端"。</p>
+    </div>
+  </div>
+
+  <div class="risk-card risk-p2">
+    <div class="risk-title">P2 · 11 项功能中 #4 AutoFill 与 #10 RecruitmentCard 重试在新方案下的状态
+      <span class="risk-tag tag-p2">P2 功能确认</span>
+    </div>
+    <div class="risk-body">
+      <p><strong>症状：</strong>桌面端功能"不变"，但其中两项依赖外部链路：</p>
+      <ul>
+        <li><strong>#4 AutoFill</strong>：本就是导流到牛客插件的推荐页，<strong>与飞书链路无关</strong>，新方案下不变，仍为推荐页（P1 命名偏差问题依旧存在）。</li>
+        <li><strong>#10 RecruitmentCard 重试</strong>：调 <code>getCompanyDueDiligence</code>，走 job_api，不依赖 DailyRunner，<strong>不受影响</strong>。</li>
+      </ul>
+      <p><strong>结论：</strong>11 项桌面端功能在新方案下均可正常工作，无新增缺失。</p>
+    </div>
+  </div>
+
+  <h2>四、11 项功能在新方案下的状态复核</h2>
+  <table>
+    <thead><tr><th>#</th><th>功能</th><th>依赖链路</th><th>新方案状态</th></tr></thead>
+    <tbody>
+      <tr><td>1</td><td>Bing + 百度搜索</td><td>job_api/llm_proxy</td><td><span class="badge b-ok">✅ 不变</span></td></tr>
+      <tr><td>2</td><td>邮件模块</td><td>job_api/emails + imap_service</td><td><span class="badge b-ok">✅ 不变</span></td></tr>
+      <tr><td>3</td><td>日程模块</td><td>job_api/schedules + schedule_service</td><td><span class="badge b-ok">✅ 不变</span></td></tr>
+      <tr><td>4</td><td>AutoFill 页面</td><td>纯前端导流页</td><td><span class="badge b-ok">✅ 不变</span>（仍为推荐页）</td></tr>
+      <tr><td>5</td><td>岗位匹配适配器</td><td>job_api/job_matcher_adapter</td><td><span class="badge b-ok">✅ 不变</span></td></tr>
+      <tr><td>6</td><td>PDF 提取器</td><td>job_api/pdf_extractor</td><td><span class="badge b-ok">✅ 不变</span></td></tr>
+      <tr><td>7</td><td>parse-resume-file 端点</td><td>job_api/routers/llm</td><td><span class="badge b-ok">✅ 不变</span></td></tr>
+      <tr><td>8</td><td>DeepSeek-VL 图片 OCR</td><td>llm_client</td><td><span class="badge b-ok">✅ 不变</span></td></tr>
+      <tr><td>9</td><td>ResumeUploader</td><td>job_workbench</td><td><span class="badge b-ok">✅ 不变</span></td></tr>
+      <tr><td>10</td><td>RecruitmentCard 重试</td><td>job_api</td><td><span class="badge b-ok">✅ 不变</span></td></tr>
+      <tr><td>11</td><td>KanbanBoard 拖拽</td><td>job_workbench</td><td><span class="badge b-ok">✅ 不变</span></td></tr>
+      <tr style="background:#FEF3C7;"><td colspan="3"><strong>+ 飞书日报/截止提醒/投递跟踪通知</strong>（原 DailyRunner 提供）</td><td><span class="badge b-bad">❌ 删除</span> 需桌面端补齐</td></tr>
+    </tbody>
+  </table>
+
+  <h2>五、迁移与改进建议优先级</h2>
+  <ol>
+    <li><strong>[P0 立即]</strong> 完成"减法"：删除 <code>callback_server.py</code>、<code>bind_wxpusher.py</code>、<code>wxpusher_client.py</code>、<code>onboarding.py</code>、<code>DailyRunner</code> 类、<code>feishu_client.py</code> 中用户侧方法（send_message/send_card/create_doc/share_with_user）。更新 <code>scripts/crontab.example</code>、<code>scripts/start_web.sh</code>、README、Makefile，移除对应启动项。</li>
+    <li><strong>[P0 立即]</strong> 拆解 DailyRunner：把 <code>_check_deadline_reminders</code> 和 <code>_check_applied_jobs</code> 的<strong>看护逻辑</strong>提取为独立函数，改为读 job_api 数据库（不读飞书用户表），纳入 <code>run_daily_pipeline</code> 末尾或独立 cron 任务，结果写入 <code>notifications</code> 表等桌面端拉取。</li>
+    <li><strong>[P1 短期]</strong> 桌面端补主动通知：Tauri 2 原生支持 <code>notification</code> API，在桌面端启动时检查未读 notifications 并弹系统通知；截止日期≤3 天的岗位在 KanbanCard 上加红色徽标。</li>
+    <li><strong>[P1 短期]</strong> 用户 onboarding 重设计：job_api 补 auth 路由（注册/登录/token 颁发），桌面端首次启动引导上传简历而非安装飞书应用。明确"用户如何获得 job_api 凭证"。</li>
+    <li><strong>[P1 短期]</strong> 飞书总表加只读说明：在 <code>feishu_master_tables.py</code> 写入时，于表顶部插入一行说明"本表为中心化同步视图，每日 8:00 更新；投递进度请在桌面端 Offer搭子 管理"。</li>
+    <li><strong>[P2 中期]</strong> 数据库一致性校验：删除双写后，做一次全量数据迁移，把原飞书用户表里的"申请状态/截止日期"等用户标记字段回写到 job_api DB，避免历史数据丢失。</li>
+    <li><strong>[P2 中期]</strong> 同步 11 项功能矩阵宣传口径：原评估报告中的 P1 项（AutoFill 命名偏差、DeepSeek-VL 命名不一致、ResumeUploader 格式对齐）仍需处理，不因方案变更而消失。</li>
+  </ol>
+
+  <h2>六、总体结论</h2>
+  <div class="callout callout-success">
+    <strong>新方案是一次健康的"减法"，评分 8.5/10（A-），较原方案 7.0/10（B+）提升 1.5 分。</strong>
+  </div>
+  <p>新方案用"删 callback_server.py + 删 DailyRunner"一举解决了原方案最大的 P0 架构断点（新旧服务并存、状态层割裂），同时把架构从 4 层简化到 2 层、用户 onboarding 门槛大降、飞书 API 权限收敛、技术债显著下降。<strong>架构层面是一次明确改进。</strong></p>
+  <p>代价是用户失去飞书侧的主动触达通道（日报/截止提醒/投递跟踪通知）。这部分能力本质与飞书机器人无关，应作为<strong>独立看护逻辑</strong>迁移到 job_api + 桌面端系统通知，而非随 DailyRunner 一起删。若不做这一步，会形成"用户安装后不开机就错过截止日期"的功能真空。</p>
+  <p><strong>建议路径：</strong>先完成 P0 删除与看护逻辑迁移（这是新方案能否落地的关键），再做 P1 桌面端通知补齐与 onboarding 重设计。完成后此方案可达到 9.0+/10 的健康度。</p>
+  <p>原评估报告中关于 11 项桌面端功能的 P1/P2 缺陷（AutoFill 命名偏差、DeepSeek-VL 命名与无 fallback、ResumeUploader 格式不对齐、KanbanBoard 状态机抽象、PDF 无 OCR fallback 等）<strong>在新方案下依然成立</strong>，需独立处理，不因架构简化而消失。</p>
+
+  <div class="footer">
+    评估方法：第一性原理（功能本质审视）+ 对抗性审查（功能真空/迁移断链/降级场景）<br>
+    证据来源：job_assistant 仓库代码静态审查 · 2026-10-05
+  </div>
+
+</div>
+</body>
+</html>

@@ -1,0 +1,490 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Offer搭子 功能完善度评估报告</title>
+<style>
+  :root {
+    --primary: #F97316;
+    --primary-soft: #FFEDD5;
+    --ink: #0F172A;
+    --text: #1F2937;
+    --text-muted: #6B7280;
+    --bg: #FAFAF9;
+    --card: #FFFFFF;
+    --border: #E5E7EB;
+    --success: #16A34A;
+    --success-soft: #DCFCE7;
+    --warning: #D97706;
+    --warning-soft: #FEF3C7;
+    --danger: #DC2626;
+    --danger-soft: #FEE2E2;
+    --code-bg: #F3F4F6;
+  }
+  * { box-sizing: border-box; }
+  body {
+    font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", "PingFang SC", "Hiragino Sans GB", "Microsoft YaHei", sans-serif;
+    background: var(--bg);
+    color: var(--text);
+    margin: 0;
+    line-height: 1.65;
+    font-size: 15px;
+  }
+  .container { max-width: 1080px; margin: 0 auto; padding: 32px 24px 80px; }
+  header { border-bottom: 3px solid var(--primary); padding-bottom: 20px; margin-bottom: 28px; }
+  h1 { font-size: 28px; font-weight: 800; color: var(--ink); margin: 0 0 8px; letter-spacing: -0.5px; }
+  .subtitle { color: var(--text-muted); font-size: 14px; }
+  .meta { display: flex; flex-wrap: wrap; gap: 16px; margin-top: 12px; font-size: 13px; color: var(--text-muted); }
+  .meta span { background: var(--card); border: 1px solid var(--border); padding: 4px 10px; border-radius: 999px; }
+
+  .score-banner {
+    background: linear-gradient(135deg, #FFF7ED 0%, #FFEDD5 100%);
+    border: 1px solid var(--primary);
+    border-radius: 16px;
+    padding: 20px 24px;
+    margin: 24px 0;
+    display: flex;
+    align-items: center;
+    gap: 20px;
+    flex-wrap: wrap;
+  }
+  .score-num { font-size: 44px; font-weight: 800; color: var(--primary); line-height: 1; }
+  .score-label { font-size: 13px; color: var(--text-muted); }
+  .score-grade {
+    background: var(--primary);
+    color: white;
+    padding: 6px 14px;
+    border-radius: 8px;
+    font-weight: 700;
+    font-size: 14px;
+  }
+
+  h2 {
+    font-size: 21px;
+    font-weight: 700;
+    color: var(--ink);
+    margin: 40px 0 16px;
+    padding-left: 12px;
+    border-left: 4px solid var(--primary);
+  }
+  h3 { font-size: 17px; font-weight: 700; color: var(--ink); margin: 24px 0 10px; }
+  h4 { font-size: 15px; font-weight: 700; color: var(--text); margin: 16px 0 8px; }
+  p { margin: 8px 0; }
+  code { background: var(--code-bg); padding: 2px 6px; border-radius: 4px; font-family: "SF Mono", Menlo, Consolas, monospace; font-size: 13px; color: var(--ink); }
+  .file-ref { color: var(--primary); text-decoration: none; font-family: "SF Mono", Menlo, Consolas, monospace; font-size: 13px; word-break: break-all; }
+  .file-ref:hover { text-decoration: underline; }
+
+  /* 链路图 */
+  .flow {
+    background: var(--card);
+    border: 1px solid var(--border);
+    border-radius: 16px;
+    padding: 24px;
+    margin: 16px 0;
+    overflow-x: auto;
+  }
+  .flow-row { display: flex; align-items: stretch; gap: 8px; min-width: 720px; }
+  .flow-node {
+    flex: 1;
+    border-radius: 12px;
+    padding: 12px 10px;
+    text-align: center;
+    border: 2px solid;
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
+    min-height: 88px;
+  }
+  .flow-node .stage { font-size: 11px; font-weight: 700; opacity: 0.7; letter-spacing: 0.5px; }
+  .flow-node .name { font-size: 14px; font-weight: 700; margin: 4px 0; }
+  .flow-node .desc { font-size: 11px; opacity: 0.85; line-height: 1.4; }
+  .flow-arrow { display: flex; align-items: center; color: var(--text-muted); font-size: 20px; font-weight: 700; }
+  .n-feishu { background: #EFF6FF; border-color: #3B82F6; color: #1E40AF; }
+  .n-server { background: #FFF7ED; border-color: var(--primary); color: #9A3412; }
+  .n-api { background: #F0FDF4; border-color: var(--success); color: #14532D; }
+  .n-front { background: #FAF5FF; border-color: #A855F7; color: #581C87; }
+  .flow-broken { background: var(--danger-soft); border-color: var(--danger); color: #7F1D1D; }
+
+  /* 表格 */
+  table { width: 100%; border-collapse: collapse; margin: 12px 0; background: var(--card); border-radius: 12px; overflow: hidden; box-shadow: 0 1px 3px rgba(0,0,0,0.04); }
+  th { background: #F3F4F6; text-align: left; padding: 12px; font-size: 13px; font-weight: 700; color: var(--ink); border-bottom: 1px solid var(--border); }
+  td { padding: 12px; border-bottom: 1px solid var(--border); font-size: 13px; vertical-align: top; }
+  tr:last-child td { border-bottom: none; }
+  tr:hover td { background: #FFFBEB; }
+
+  .badge { display: inline-block; padding: 2px 8px; border-radius: 999px; font-size: 12px; font-weight: 700; }
+  .b-ok { background: var(--success-soft); color: var(--success); }
+  .b-warn { background: var(--warning-soft); color: var(--warning); }
+  .b-bad { background: var(--danger-soft); color: var(--danger); }
+  .b-info { background: #DBEAFE; color: #1D4ED8; }
+
+  .risk-card {
+    background: var(--card);
+    border-left: 4px solid;
+    border-radius: 8px;
+    padding: 16px 18px;
+    margin: 12px 0;
+    box-shadow: 0 1px 3px rgba(0,0,0,0.04);
+  }
+  .risk-p0 { border-color: var(--danger); }
+  .risk-p1 { border-color: var(--warning); }
+  .risk-p2 { border-color: #3B82F6; }
+  .risk-title { font-weight: 700; color: var(--ink); font-size: 15px; margin: 0 0 6px; display: flex; align-items: center; gap: 8px; }
+  .risk-tag { font-size: 11px; font-weight: 700; padding: 2px 8px; border-radius: 4px; }
+  .tag-p0 { background: var(--danger); color: white; }
+  .tag-p1 { background: var(--warning); color: white; }
+  .tag-p2 { background: #3B82F6; color: white; }
+  .risk-body { font-size: 14px; color: var(--text); }
+  .risk-body p { margin: 6px 0; }
+  .risk-evidence { background: var(--code-bg); border-radius: 6px; padding: 8px 12px; margin-top: 8px; font-size: 12px; color: var(--text-muted); }
+
+  .callout {
+    background: linear-gradient(135deg, #FFF7ED 0%, #FFFBEB 100%);
+    border: 1px solid var(--primary);
+    border-radius: 12px;
+    padding: 16px 20px;
+    margin: 16px 0;
+    font-size: 14px;
+  }
+  .callout strong { color: var(--primary); }
+
+  ul, ol { padding-left: 22px; }
+  li { margin: 4px 0; font-size: 14px; }
+
+  .matrix-cell { font-size: 12px; line-height: 1.5; }
+  .footer { margin-top: 60px; padding-top: 20px; border-top: 1px solid var(--border); color: var(--text-muted); font-size: 12px; text-align: center; }
+</style>
+</head>
+<body>
+<div class="container">
+
+  <header>
+    <h1>Offer搭子 功能完善度评估报告</h1>
+    <div class="subtitle">基于第一性原理与对抗性审查的功能 / 链路 / 完整度评估</div>
+    <div class="meta">
+      <span>评估范围：飞书源表 → 服务器 → offer搭子 全链路</span>
+      <span>评估对象：11 项核心功能</span>
+      <span>日期：2026-10-05</span>
+      <span>仓库：job_assistant</span>
+    </div>
+  </header>
+
+  <div class="score-banner">
+    <div>
+      <div class="score-num">7.0<span style="font-size:20px;">/10</span></div>
+      <div class="score-label">综合完善度评分</div>
+    </div>
+    <div class="score-grade">B+ · 主体可用，存在结构性隐患</div>
+    <div style="flex:1; min-width: 240px; font-size: 13px; color: var(--text);">
+      <strong>结论摘要：</strong>11 项功能中 8 项实现完整，链路主干（飞书源表→同步→清洗→总表→API→前端）清晰可用。
+      但存在 1 处架构性断点（新旧服务并存）、1 处产品定位偏差（AutoFill 为导流页非自研）、若干命名一致性与错误恢复缺口。
+    </div>
+  </div>
+
+  <h2>一、架构与数据链路</h2>
+  <p>Offer搭子采用 <strong>"数据管线 + 云端 API + 桌面客户端"</strong> 三层架构（见 <a class="file-ref" href="file:///workspace/job_assistant/README.md">README.md</a>）：
+  Tauri 2 桌面端 (<code>job_workbench</code>) + FastAPI 云端 API (<code>job_api</code>) + 数据管线层 (<code>feishu_source</code> / <code>daily_runner</code> / <code>content_fetcher</code>)。</p>
+
+  <div class="flow">
+    <div class="flow-row">
+      <div class="flow-node n-feishu">
+        <div class="stage">数据源</div>
+        <div class="name">飞书秋招源表</div>
+        <div class="desc">SOURCE_APP_TOKEN<br>SOURCE_TABLE_ID</div>
+      </div>
+      <div class="flow-arrow">→</div>
+      <div class="flow-node n-server">
+        <div class="stage">拉取同步</div>
+        <div class="name">feishu_source.py</div>
+        <div class="desc">FeishuSourceSync.sync()<br>分页 records API</div>
+      </div>
+      <div class="flow-arrow">→</div>
+      <div class="flow-node n-server">
+        <div class="stage">定时调度</div>
+        <div class="name">daily_runner.py</div>
+        <div class="desc">crontab 8:00 增量<br>周一 3:00 全量校验</div>
+      </div>
+      <div class="flow-arrow">→</div>
+      <div class="flow-node n-server">
+        <div class="stage">清洗入库</div>
+        <div class="name">companies /<br>announcements /<br>positions</div>
+        <div class="desc">归一化 + 去重<br>+ content_fetcher 抓正文</div>
+      </div>
+      <div class="flow-arrow">→</div>
+      <div class="flow-node n-server">
+        <div class="stage">回写总表</div>
+        <div class="name">feishu_master_tables.py</div>
+        <div class="desc">"27届校招岗位汇总"<br>飞书多维表格</div>
+      </div>
+    </div>
+    <div style="height: 12px;"></div>
+    <div class="flow-row">
+      <div class="flow-node n-front">
+        <div class="stage">桌面端</div>
+        <div class="name">job_workbench</div>
+        <div class="desc">React 18 + Tauri 2<br>VITE_API_URL</div>
+      </div>
+      <div class="flow-arrow">←</div>
+      <div class="flow-node n-api">
+        <div class="stage">云端 API</div>
+        <div class="name">job_api/main.py</div>
+        <div class="desc">FastAPI /api/v1/*<br>port 8000</div>
+      </div>
+      <div class="flow-arrow">??</div>
+      <div class="flow-node flow-broken">
+        <div class="stage">飞书回调</div>
+        <div class="name">callback_server.py</div>
+        <div class="desc">BaseHTTPRequestHandler<br>port 8080 · /feishu/callback</div>
+      </div>
+      <div class="flow-arrow">←</div>
+      <div class="flow-node n-feishu">
+        <div class="stage">事件订阅</div>
+        <div class="name">飞书开放平台</div>
+        <div class="desc">用户安装/打开应用<br>事件推送</div>
+      </div>
+    </div>
+  </div>
+
+  <div class="callout">
+    <strong>链路清晰度评级：⚠️ 主干清晰，但存在一处架构断点</strong><br>
+    数据管线（源表→同步→清洗→总表）链路清晰、有定时调度与缓存证据（<a class="file-ref" href="file:///workspace/.cache/main_records.manifest.json">.cache/main_records.manifest.json</a>）。
+    但<strong>服务器侧存在两套 HTTP 服务并存</strong>：新的 FastAPI（<code>job_api</code>，端口 8000，承载业务 API）与旧的 <code>callback_server.py</code>（BaseHTTPRequestHandler，端口 8080，承载飞书回调与 WxPusher 绑定）。前端桌面端调用新 API，飞书事件订阅走旧服务，<strong>两者之间没有共享状态层</strong>，导致用户从飞书侧触发的事件无法被新 API 感知，是最大的链路断点。
+  </div>
+
+  <h2>二、11 项功能完整度矩阵</h2>
+
+  <table>
+    <thead>
+      <tr>
+        <th style="width: 4%;">#</th>
+        <th style="width: 18%;">功能</th>
+        <th style="width: 30%;">关键证据（文件 / 行号）</th>
+        <th style="width: 10%;">完整度</th>
+        <th style="width: 38%;">第一性原理审视与缺陷</th>
+      </tr>
+    </thead>
+    <tbody>
+      <tr>
+        <td>1</td>
+        <td><strong>Bing + 百度搜索</strong></td>
+        <td class="matrix-cell"><a class="file-ref" href="file:///workspace/job_assistant/job_api/services/llm_proxy.py#L188-L279">job_api/services/llm_proxy.py:188-279</a><br><code>_search_company_info()</code> 同时调用 Bing（查官网+新闻）与百度（查新闻+动态）</td>
+        <td><span class="badge b-ok">✅ 完整</span></td>
+        <td class="matrix-cell">两个引擎均接入。缺陷：搜索结果过滤规则硬编码"非新闻/非官网"关键词，对中文语义判断较粗；无搜索失败时的降级到对方引擎的策略；查询模板硬编码，无法按公司类型差异化。</td>
+      </tr>
+      <tr>
+        <td>2</td>
+        <td><strong>邮件模块</strong><br>Email.tsx + imap_service</td>
+        <td class="matrix-cell">前端：<a class="file-ref" href="file:///workspace/job_assistant/job_workbench/src/pages/Email.tsx#L104-L138">Email.tsx:104-138</a> <code>addAccount</code><br>后端：<a class="file-ref" href="file:///workspace/job_assistant/job_api/services/imap_service.py#L73-L103">imap_service.py:73-103</a> <code>test_connection</code> / <code>sync_account</code><br>路由：<a class="file-ref" href="file:///workspace/job_assistant/job_api/routers/emails.py#L16-L18">emails.py:16-18</a></td>
+        <td><span class="badge b-ok">✅ 完整</span></td>
+        <td class="matrix-cell">IMAP4_SSL 实接入。缺陷：仅支持 IMAP（无 POP3/Exchange）；密码明文存储风险待确认；<code>sync_account</code> 增量游标未在证据中体现；邮件→日程的自动转换依赖 <code>confirm_email_task</code> 编排，链路较长。</td>
+      </tr>
+      <tr>
+        <td>3</td>
+        <td><strong>日程模块</strong><br>Schedules.tsx + schedule_service</td>
+        <td class="matrix-cell">前端：<a class="file-ref" href="file:///workspace/job_assistant/job_workbench/src/pages/Schedules.tsx#L31-L150">Schedules.tsx:31-150</a> 按"即将到来/已过期"分组<br>后端：<a class="file-ref" href="file:///workspace/job_assistant/job_api/services/schedule_service.py#L29-L139">schedule_service.py:29-139</a> <code>create_schedule_with_verify</code> + <code>confirm_email_task</code></td>
+        <td><span class="badge b-ok">✅ 完整</span></td>
+        <td class="matrix-cell">日程数据来源：邮件任务转换 + 用户手动创建。缺陷：未与飞书日历双向同步（仅内部表）；<code>verified</code> 标记的回读校验是亮点；过期日程仅前端筛选，无后端归档。</td>
+      </tr>
+      <tr>
+        <td>4</td>
+        <td><strong>AutoFill 页面</strong></td>
+        <td class="matrix-cell"><a class="file-ref" href="file:///workspace/job_assistant/job_workbench/src/pages/AutoFill.tsx#L1-L60">AutoFill.tsx:1-60</a><br>注释明确"网申自动填写工具<strong>推荐</strong>页"，正文"我们<strong>不重复造轮子</strong>，推荐使用成熟的浏览器插件自动填表"</td>
+        <td><span class="badge b-warn">⚠️ 部分</span></td>
+        <td class="matrix-cell"><strong>产品定位偏差</strong>：名为 "AutoFill 页面"易被理解为自研网申自动填写工具，实为<strong>导流到"牛客网申助手"浏览器插件的推荐页</strong>（含外链到 nowcoder.com / Chrome 商店 / B 站教程）。从第一性原理看，"网申自动填写"这一用户价值由第三方完成，offer搭子 仅承担"岗位发现+进度追踪+邮件同步+日程提醒"。功能不缺失，但命名与功能矩阵宣传口径不一致，易引发用户预期落差。</td>
+      </tr>
+      <tr>
+        <td>5</td>
+        <td><strong>岗位匹配适配器</strong><br>job_matcher_adapter</td>
+        <td class="matrix-cell"><a class="file-ref" href="file:///workspace/job_assistant/job_api/services/job_matcher_adapter.py#L89-L208">job_matcher_adapter.py:89-208</a><br>构建用户画像 → 调 <code>UserMatcher.match_jobs_for_user()</code> → 补齐评分 → 标记推荐等级</td>
+        <td><span class="badge b-ok">✅ 完整</span></td>
+        <td class="matrix-cell">适配器模式清晰。缺陷：被适配对象 <code>UserMatcher</code> 的接口稳定性与单测覆盖未在证据中体现；评分补齐逻辑（"不足时补齐"）可能掩盖底层评分失效；推荐等级阈值硬编码。</td>
+      </tr>
+      <tr>
+        <td>6</td>
+        <td><strong>PDF 提取器</strong><br>pdf_extractor.py</td>
+        <td class="matrix-cell"><a class="file-ref" href="file:///workspace/job_assistant/job_api/services/pdf_extractor.py#L18-L58">pdf_extractor.py:18-58</a><br>PyMuPDF 提取，处理空文件/加密 PDF/大文件/提取失败</td>
+        <td><span class="badge b-ok">✅ 完整</span></td>
+        <td class="matrix-cell">边界处理较完善。缺陷：仅 PyMuPDF 单引擎，无 pdfplumber/ocr-fallback；扫描版 PDF（图片型）会返回空文本，未自动降级到图片 OCR 路径；大文件阈值硬编码。</td>
+      </tr>
+      <tr>
+        <td>7</td>
+        <td><strong>parse-resume-file 端点</strong></td>
+        <td class="matrix-cell">后端：<a class="file-ref" href="file:///workspace/job_assistant/job_api/routers/llm.py#L149-L201">job_api/routers/llm.py:149-201</a> <code>/api/v1/llm/parse-resume-file</code><br>前端：<a class="file-ref" href="file:///workspace/job_assistant/job_workbench/src/api/llm.ts#L81-L126">llm.ts:81-126</a> <code>parseResumeFile</code> FormData 上传</td>
+        <td><span class="badge b-ok">✅ 完整</span></td>
+        <td class="matrix-cell">前后端路径对齐。缺陷：旧服务 <code>callback_server.py</code> 仍保留 <code>/api/parse-resume</code>（无 v1 前缀），存在<strong>两套简历解析端点并存</strong>，运维与权限边界易混。</td>
+      </tr>
+      <tr>
+        <td>8</td>
+        <td><strong>DeepSeek-VL 图片 OCR</strong></td>
+        <td class="matrix-cell"><a class="file-ref" href="file:///workspace/job_assistant/llm_client.py#L24-L32">llm_client.py:24-32</a><br><code>DEEPSEEK_VL_MODEL = "deepseek-v4-flash-vision-exp"</code><br>多策略重试 <code>VL_STRATEGIES</code><br><a class="file-ref" href="file:///workspace/job_assistant/llm_client.py#L406-L463">ocr_image():406-463</a></td>
+        <td><span class="badge b-warn">⚠️ 部分</span></td>
+        <td class="matrix-cell"><strong>命名不一致</strong>：截图与注释称"DeepSeek-VL"，实际模型 ID 是 <code>deepseek-v4-flash-vision-exp</code>。优点：多策略重试（按像素/高度逐步放宽）、失败返回空串不阻塞主流程、<code>last_vl_error</code> 暴露给调用方。缺陷：模型 ID 硬编码无环境变量覆盖；微信长图场景需切片处理但切片策略固定；无降级到其他视觉模型（如 GPT-4V/GLM-Vision）的 fallback；90s 超时偏长可能阻塞 UI。</td>
+      </tr>
+      <tr>
+        <td>9</td>
+        <td><strong>ResumeUploader 图片格式+错误提示</strong></td>
+        <td class="matrix-cell"><a class="file-ref" href="file:///workspace/job_assistant/job_workbench/src/components/ResumeUploader.tsx#L7-L59">ResumeUploader.tsx:7-59</a><br>支持 <code>.txt/.md/.pdf/.jpg/.png</code>，区分纯文本本地解析 vs PDF/图片后端提取+LLM<br><a class="file-ref" href="file:///workspace/job_assistant/job_workbench/src/stores/resumeStore.ts#L129-L180">resumeStore.ts:129-180</a> 不支持类型设置具体错误提示</td>
+        <td><span class="badge b-ok">✅ 完整</span></td>
+        <td class="matrix-cell">错误提示分层清晰。缺陷：支持的图片格式列表（jpg/png）与后端 <code>mime_map</code>（含 webp/bmp/gif）<strong>不对齐</strong>，前端拒绝的格式后端能处理，存在 UX 死区；纯文本路径与 PDF/图片路径返回结构不同，前端需分别处理，增加脆弱性。</td>
+      </tr>
+      <tr>
+        <td>10</td>
+        <td><strong>RecruitmentCard 重试按钮</strong></td>
+        <td class="matrix-cell"><a class="file-ref" href="file:///workspace/job_assistant/job_workbench/src/components/RecruitmentCard.tsx#L264-L289">RecruitmentCard.tsx:264-289</a><br>尽调生成失败时显示错误 + <code>↻ 重试</code> 调 <code>getCompanyDueDiligence</code></td>
+        <td><span class="badge b-ok">✅ 完整</span></td>
+        <td class="matrix-cell">单点重试机制完备。缺陷：未看到指数退避/最大重试次数限制，连续失败可能触发后端限流；重试仅针对尽调，岗位匹配/解析失败无对应重试入口（不一致）。</td>
+      </tr>
+      <tr>
+        <td>11</td>
+        <td><strong>拖拽冲突修复</strong><br>KanbanBoard</td>
+        <td class="matrix-cell"><a class="file-ref" href="file:///workspace/job_assistant/job_workbench/src/components/KanbanBoard.tsx#L46-L88">KanbanBoard.tsx:46-88</a> <code>handleDrop</code> 同列/跨列/逆向<br><a class="file-ref" href="file:///workspace/job_assistant/job_workbench/src/components/KanbanBoard.tsx#L238-L267">:238-267</a> <code>confirmReverse</code> 逆向确认弹窗</td>
+        <td><span class="badge b-ok">✅ 完整</span></td>
+        <td class="matrix-cell">逆向拖拽二次确认是良好实践。缺陷：拖拽冲突修复属"补丁式"修复，<strong>未触及根因</strong>——状态机本身的合法转移图未抽象，未来新增状态需在 <code>handleDrop</code> 内继续打补丁；并发拖拽（多端同时操作）无乐观锁/版本号。</td>
+      </tr>
+    </tbody>
+  </table>
+
+  <h2>三、前后端端点对齐性审查</h2>
+  <p>对 <code>job_api/main.py</code> 注册的 <code>/api/v1/*</code> 路由与 <code>job_workbench/src/api/</code> 的调用做对齐：</p>
+
+  <table>
+    <thead>
+      <tr><th>端点</th><th>后端实现</th><th>前端调用</th><th>对齐状态</th></tr>
+    </thead>
+    <tbody>
+      <tr><td><code>POST /api/v1/llm/parse-resume</code></td><td><a class="file-ref" href="file:///workspace/job_assistant/job_api/routers/llm.py#L33-L119">llm.py:33-119</a></td><td><a class="file-ref" href="file:///workspace/job_assistant/job_workbench/src/api/llm.ts#L81-L126">llm.ts:81-126</a></td><td><span class="badge b-ok">✅ 对齐</span></td></tr>
+      <tr><td><code>POST /api/v1/llm/parse-resume-file</code></td><td><a class="file-ref" href="file:///workspace/job_assistant/job_api/routers/llm.py#L149-L201">llm.py:149-201</a></td><td><a class="file-ref" href="file:///workspace/job_assistant/job_workbench/src/api/llm.ts#L91-L126">llm.ts:91-126</a></td><td><span class="badge b-ok">✅ 对齐</span></td></tr>
+      <tr><td><code>/api/v1/resume-profiles</code> CRUD</td><td><a class="file-ref" href="file:///workspace/job_assistant/job_api/routers/resume_profiles.py#L16-L81">resume_profiles.py:16-81</a></td><td><a class="file-ref" href="file:///workspace/job_assistant/job_workbench/src/stores/resumeStore.ts#L212-L249">resumeStore.ts:212-249</a></td><td><span class="badge b-ok">✅ 对齐</span></td></tr>
+      <tr><td><code>/api/v1/emails/*</code></td><td><a class="file-ref" href="file:///workspace/job_assistant/job_api/routers/emails.py#L16-L18">emails.py:16-18</a></td><td>Email.tsx <code>addAccount</code></td><td><span class="badge b-ok">✅ 对齐</span></td></tr>
+      <tr><td><code>POST /feishu/callback</code></td><td><a class="file-ref" href="file:///workspace/job_assistant/callback_server.py#L159-L188">callback_server.py:159-188</a> <strong>(旧服务, 端口 8080)</strong></td><td>—（飞书开放平台直推）</td><td><span class="badge b-warn">⚠️ 不在 FastAPI</span></td></tr>
+      <tr><td><code>POST /api/parse-resume</code> (无 v1)</td><td><a class="file-ref" href="file:///workspace/job_assistant/callback_server.py#L229-L354">callback_server.py:229-354</a> <strong>(旧服务)</strong></td><td>—（前端用 v1 版本）</td><td><span class="badge b-bad">❌ 重复端点</span></td></tr>
+      <tr><td><code>POST /api/bind-wxpusher</code></td><td><a class="file-ref" href="file:///workspace/job_assistant/callback_server.py#L401-L439">callback_server.py:401-439</a> <strong>(旧服务)</strong></td><td>—</td><td><span class="badge b-warn">⚠️ 仅旧服务</span></td></tr>
+      <tr><td><code>GET /api/profile</code></td><td><a class="file-ref" href="file:///workspace/job_assistant/callback_server.py#L229-L354">callback_server.py</a> <strong>(旧服务)</strong></td><td>—（前端用 v1 版本）</td><td><span class="badge b-bad">❌ 重复端点</span></td></tr>
+    </tbody>
+  </table>
+
+  <div class="callout">
+    <strong>对齐结论：</strong>新 API (<code>/api/v1/*</code>) 与前端调用对齐良好；但 <code>callback_server.py</code> 保留的旧端点（<code>/api/parse-resume</code>、<code>/api/profile</code>）与新 API 在功能上<strong>重叠且路径不一致</strong>，构成"两套简历解析链路并存"的隐患。
+  </div>
+
+  <h2>四、对抗性审查发现（按风险分级）</h2>
+
+  <div class="risk-card risk-p0">
+    <div class="risk-title">P0 · 新旧两套 HTTP 服务并存，飞书回调与业务 API 割裂
+      <span class="risk-tag tag-p0">P0 架构</span>
+    </div>
+    <div class="risk-body">
+      <p><strong>症状：</strong>仓库同时存在 <code>callback_server.py</code>（BaseHTTPRequestHandler，端口 8080，承载 <code>/feishu/callback</code>、<code>/api/bind-wxpusher</code>、<code>/api/parse-resume</code>、<code>/api/profile</code>）与 <code>job_api/main.py</code>（FastAPI，端口 8000，承载 <code>/api/v1/*</code> 业务路由）。</p>
+      <p><strong>第一性原理：</strong>一个用户在不同触点（飞书内打开 vs 桌面端打开）的操作应该写入同一份用户状态，否则会出现"飞书侧绑定的 WxPusher / 画像"与"桌面端看到的画像"不一致。</p>
+      <p><strong>对抗性场景：</strong>用户在飞书侧完成 onboarding 触发 <code>/feishu/callback</code> → 写入旧服务的存储；用户随后在桌面端调用 <code>/api/v1/resume-profiles</code> → 读新 API 的存储；两侧存储若未共享数据库，则画像丢失。</p>
+      <p><strong>根因：</strong>迁移未完成。README 只介绍 <code>job_api</code>，但 <code>callback_server.py</code> 仍承担飞书回调这一不可替代职责；<code>scripts/start_web.sh</code> 启动的是第三套 <code>web_setup.py</code>，启动入口混乱。</p>
+      <div class="risk-evidence">证据：<a class="file-ref" href="file:///workspace/job_assistant/callback_server.py#L35-L41">callback_server.py:35-41</a> BaseHTTPRequestHandler + .env；<a class="file-ref" href="file:///workspace/job_assistant/callback_server.py#L550-L555">:550-555</a> 监听 8080；<a class="file-ref" href="file:///workspace/job_assistant/job_api/main.py#L94-L105">job_api/main.py:94-105</a> 仅注册 /api/v1 + /health，未注册 /feishu/callback；<a class="file-ref" href="file:///workspace/job_assistant/Makefile#L6-L16">Makefile:6-16</a> dev-api 仅启动 job_api。</div>
+    </div>
+  </div>
+
+  <div class="risk-card risk-p1">
+    <div class="risk-title">P1 · AutoFill 是导流页而非自研功能，与功能矩阵宣传口径不一致
+      <span class="risk-tag tag-p1">P1 产品</span>
+    </div>
+    <div class="risk-body">
+      <p><strong>症状：</strong><code>AutoFill.tsx</code> 第 1 行注释"网申自动填写工具<strong>推荐</strong>页"，第 17 行"我们<strong>不重复造轮子</strong>，推荐使用成熟的浏览器插件自动填表"，实际是导流到牛客网申助手（nowcoder.com / Chrome 商店 / B 站教程）。</p>
+      <p><strong>第一性原理：</strong>用户看到 "AutoFill 页面"在功能矩阵里被列为完整功能，预期是"我能用它自动填网申"。实际点击后是外链导流，价值交付依赖第三方插件，offer搭子 无法保证其可用性/隐私性/兼容性。</p>
+      <p><strong>对抗性场景：</strong>牛客插件下架 / 收费 / 兼容性破坏时，offer搭子 的"网申自动填写"能力瞬间归零，但功能矩阵仍宣称具备此功能。</p>
+      <div class="risk-evidence">证据：<a class="file-ref" href="file:///workspace/job_assistant/job_workbench/src/pages/AutoFill.tsx#L1-L20">AutoFill.tsx:1-20</a> 含 NOWCODER_*_URL 三个外链常量。</div>
+    </div>
+  </div>
+
+  <div class="risk-card risk-p1">
+    <div class="risk-title">P1 · DeepSeek-VL 命名与实际模型 ID 不一致，且无 fallback
+      <span class="risk-tag tag-p1">P1 命名/韧性</span>
+    </div>
+    <div class="risk-body">
+      <p><strong>症状：</strong>截图功能 #8 写"DeepSeek-VL 图片 OCR"，代码注释与函数名也用"DeepSeek-VL"，但 <code>DEEPSEEK_VL_MODEL = "deepseek-v4-flash-vision-exp"</code>——实际是 DeepSeek v4 的视觉实验版，<strong>不是名为 DeepSeek-VL 的独立产品</strong>。</p>
+      <p><strong>对抗性场景：</strong>DeepSeek 下线 <code>v4-flash-vision-exp</code> 实验模型（实验模型常被回收），代码硬编码无环境变量覆盖，调用全部失败；<code>ocr_image</code> 失败返回空串"不阻塞主流程"，但用户得到的是空简历解析结果，错误被静默吞掉。</p>
+      <p><strong>优点：</strong>多策略重试 <code>VL_STRATEGIES</code> + <code>last_vl_error</code> 暴露错误，已具备一定韧性。</p>
+      <div class="risk-evidence">证据：<a class="file-ref" href="file:///workspace/job_assistant/llm_client.py#L23-L32">llm_client.py:23-32</a> 模型 ID 硬编码；<a class="file-ref" href="file:///workspace/job_assistant/llm_client.py#L406-L463">:406-463</a> 失败返回 ""。</div>
+    </div>
+  </div>
+
+  <div class="risk-card risk-p1">
+    <div class="risk-title">P1 · ResumeUploader 前后端支持的图片格式不对齐
+      <span class="risk-tag tag-p1">P1 一致性</span>
+    </div>
+    <div class="risk-body">
+      <p><strong>症状：</strong>前端 <code>ResumeUploader.tsx</code> 接受列表是 <code>.txt/.md/.pdf/.jpg/.png</code>；后端 <code>llm_client.py</code> 的 <code>mime_map</code> 支持 <code>png/jpg/jpeg/webp/bmp/gif</code>。</p>
+      <p><strong>对抗性场景：</strong>用户上传 <code>.webp</code> 截图简历（现代手机常见格式）→ 前端拒绝 → 用户以为系统不支持，但后端实际能处理。<strong>UX 死区</strong>。</p>
+      <div class="risk-evidence">证据：<a class="file-ref" href="file:///workspace/job_assistant/job_workbench/src/components/ResumeUploader.tsx#L7-L12">ResumeUploader.tsx:7-12</a> vs <a class="file-ref" href="file:///workspace/job_assistant/llm_client.py#L421-L425">llm_client.py:421-425</a>。</div>
+    </div>
+  </div>
+
+  <div class="risk-card risk-p2">
+    <div class="risk-title">P2 · 拖拽冲突修复属补丁式，未抽象状态机
+      <span class="risk-tag tag-p2">P2 可维护性</span>
+    </div>
+    <div class="risk-body">
+      <p><strong>症状：</strong><code>KanbanBoard.handleDrop</code> 内联处理同列/跨列/逆向三种情况，<code>confirmReverse</code> 弹窗确认。修复有效但<strong>未抽象出"合法转移图"</strong>。</p>
+      <p><strong>对抗性场景：</strong>未来新增"已 Offer"状态后，需在 <code>handleDrop</code> 继续打补丁判定合法性；并发拖拽（用户在手机端和桌面端同时拖同一申请）无乐观锁/版本号，可能出现后写覆盖。</p>
+      <div class="risk-evidence">证据：<a class="file-ref" href="file:///workspace/job_assistant/job_workbench/src/components/KanbanBoard.tsx#L46-L88">KanbanBoard.tsx:46-88</a>。</div>
+    </div>
+  </div>
+
+  <div class="risk-card risk-p2">
+    <div class="risk-title">P2 · PDF 提取器无 OCR fallback，扫描版 PDF 静默失败
+      <span class="risk-tag tag-p2">P2 健壮性</span>
+    </div>
+    <div class="risk-body">
+      <p><strong>症状：</strong><code>pdf_extractor.py</code> 用 PyMuPDF 提取文本，对扫描版 PDF（每页是图片）会返回空文本。</p>
+      <p><strong>第一性原理：</strong>简历 PDF 中扫描版占比不低（尤其图片导出/老 PDF）。空文本会传给 LLM 解析，得到空画像。</p>
+      <p><strong>建议：</strong>检测到提取文本为空且 PDF 有图像页时，自动走 <code>ocr_image</code> 路径降级。</p>
+      <div class="risk-evidence">证据：<a class="file-ref" href="file:///workspace/job_assistant/job_api/services/pdf_extractor.py#L18-L58">pdf_extractor.py:18-58</a> 无 OCR fallback 分支。</div>
+    </div>
+  </div>
+
+  <div class="risk-card risk-p2">
+    <div class="risk-title">P2 · RecruitmentCard 重试无退避，仅尽调可重试
+      <span class="risk-tag tag-p2">P2 一致性</span>
+    </div>
+    <div class="risk-body">
+      <p><strong>症状：</strong>重试按钮仅在尽调失败时出现，岗位匹配/简历解析失败无对应重试入口；重试无最大次数与指数退避。</p>
+      <p><strong>对抗性场景：</strong>用户连续点重试 → 后端 LLM 调用被限流 → 级联失败。</p>
+      <div class="risk-evidence">证据：<a class="file-ref" href="file:///workspace/job_assistant/job_workbench/src/components/RecruitmentCard.tsx#L264-L289">RecruitmentCard.tsx:264-289</a>。</div>
+    </div>
+  </div>
+
+  <h2>五、第一性原理审视总结</h2>
+  <p>从第一性原理出发，"Offer搭子"作为求职管理工具的核心价值链是：<strong>发现岗位 → 解析简历 → 匹配推荐 → 投递追踪 → 邮件/日程闭环</strong>。逐项审视：</p>
+  <ul>
+    <li><strong>发现岗位</strong>（功能 #1 搜索 + 飞书源表管线）：✅ 闭环成立，源表→同步→清洗→总表链路清晰。</li>
+    <li><strong>解析简历</strong>（功能 #6/7/8/9）：✅ 主路径完整，但扫描版 PDF/格式不对齐是脆点。</li>
+    <li><strong>匹配推荐</strong>（功能 #5）：✅ 适配器模式清晰。</li>
+    <li><strong>投递追踪</strong>（功能 #10/11 Kanban）：✅ 闭环成立，状态机抽象待加强。</li>
+    <li><strong>邮件/日程闭环</strong>（功能 #2/3）：✅ IMAP 接入 + 邮件转日程编排成立。</li>
+    <li><strong>网申自动填写</strong>（功能 #4 AutoFill）：⚠️ <strong>价值交付外包给第三方插件</strong>，非自研能力。这是唯一"功能矩阵宣称但实际不掌握"的环节。</li>
+  </ul>
+
+  <h2>六、改进建议优先级</h2>
+  <ol>
+    <li><strong>[P0 立即]</strong> 合并新旧服务：将 <code>/feishu/callback</code>、<code>/api/bind-wxpusher</code> 迁移到 <code>job_api/main.py</code>，废弃 <code>callback_server.py</code>；统一 <code>/api/parse-resume</code> → <code>/api/v1/llm/parse-resume</code>，消除重复端点。同步更新 <code>scripts/start_web.sh</code> 与 README。</li>
+    <li><strong>[P1 短期]</strong> AutoFill 页面：在功能矩阵中标注"推荐工具"而非"自研功能"，或在页面顶部加显著免责声明"本页推荐第三方插件，能力与稳定性由第三方保证"。</li>
+    <li><strong>[P1 短期]</strong> DeepSeek-VL：模型 ID 改为环境变量 <code>DEEPSEEK_VL_MODEL</code> 可覆盖；增加 fallback 视觉模型（GLM-Vision/GPT-4V）配置项；<code>ocr_image</code> 失败时返回结构化错误而非静默空串。</li>
+    <li><strong>[P1 短期]</strong> ResumeUploader 前后端格式列表对齐：前端接受 <code>.webp/.bmp</code>，与后端 <code>mime_map</code> 一致。</li>
+    <li><strong>[P2 中期]</strong> pdf_extractor 增加扫描版检测与 OCR fallback 路径（复用 <code>ocr_image</code>）。</li>
+    <li><strong>[P2 中期]</strong> KanbanBoard 抽象"合法转移图"（states + allowed_transitions），<code>handleDrop</code> 查图判定，新增状态无需改逻辑；引入版本号做乐观锁。</li>
+    <li><strong>[P2 中期]</strong> 重试机制统一：所有异步失败 UI 都提供重试按钮 + 指数退避 + 最大次数。</li>
+    <li><strong>[P2 长期]</strong> README 目录结构过时（写"pages/ 占位 Jobs/Resume/Applications/Login"，实际有 Email/Schedules/AutoFill 等），需同步更新；增加架构图。</li>
+  </ol>
+
+  <h2>七、总体结论</h2>
+  <p>Offer搭子 主体功能完善度良好（11 项中 8 项 ✅ 完整），数据管线主干清晰、定时调度与缓存机制完备、前后端 API 在 <code>/api/v1/*</code> 命名空间下对齐良好，是一个<strong>已具备交付能力的产品</strong>。从第一性原理审视，五条核心价值链中四条闭环成立，唯一例外是 AutoFill 的"网申自动填写"价值外包给第三方。</p>
+  <p>但<strong>对抗性审查暴露了一处 P0 架构断点</strong>（新旧服务并存导致飞书回调与业务 API 割裂）和若干 P1/P2 韧性缺口（命名不一致、格式不对齐、补丁式修复）。这些不影响当前 demo 可用性，但会在用户规模扩大或多端并发时显著放大风险。</p>
+  <p><strong>建议优先完成 P0 服务合并</strong>后再做下一轮功能扩展；P1 项可在下一个迭代周期内完成；P2 项纳入技术债看板。</p>
+
+  <div class="footer">
+    评估方法：第一性原理（从功能本质出发审视必备要素）+ 对抗性审查（边界/故障/不一致场景）<br>
+    证据来源：job_assistant 仓库代码静态审查 · 2026-10-05
+  </div>
+
+</div>
+</body>
+</html>

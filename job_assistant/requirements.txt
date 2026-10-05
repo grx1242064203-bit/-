@@ -13,3 +13,9 @@ python-dotenv>=1.0
 flask>=3.0
 # 可选:搜索 API 二选一
 # tavily-python  # 如需 SDK 形式调用 Tavily
+
+# 简历文件解析
+pymupdf>=1.24.0
+rapidocr-onnxruntime>=1.3.0
+pillow>=10.0.0
+python-multipart>=0.0.6

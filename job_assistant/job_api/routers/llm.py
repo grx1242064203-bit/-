@@ -14,12 +14,13 @@
 """
 import logging
 
-from fastapi import APIRouter, Depends, HTTPException, status
+from fastapi import APIRouter, Depends, File, HTTPException, UploadFile, status
 from pydantic import BaseModel, Field
 
 from config import get_settings
 from deps import get_current_user
 from models import company_due_diligence as dd_model
+from services.image_extractor import extract_resume_text
 from services.llm_proxy import LLMProxyService
 from services.quota_service import (
     get_user_quota,
@@ -101,6 +102,61 @@ def parse_resume(
     return {
         "keywords": result.get("keywords", []),
         "fit_directions": result.get("fit_directions", []),
+    }
+
+
+class ParseResumeFileResponse(BaseModel):
+    keywords: list = []
+    fit_directions: list = []
+    raw_text: str = ""
+    file_type: str = ""
+
+
+@router.post("/parse-resume-file", response_model=ParseResumeFileResponse)
+async def parse_resume_file(
+    file: UploadFile = File(...),
+    user: dict = Depends(get_current_user),
+):
+    """上传简历文件（txt/md/pdf/图片）→ 提取文本 → LLM 解析 → 返回画像 + 原文。
+
+    错误处理：
+    - 文件类型不支持 / 提取失败 → 400，detail 含具体原因
+    - LLM 调用失败 → 503
+    """
+    user_id = user["user_id"]
+
+    # 1. 提取文本（OCR / PDF / 纯文本）
+    try:
+        raw_text, file_type = await extract_resume_text(file)
+    except ValueError as e:
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail=str(e),
+        )
+
+    if not raw_text.strip():
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail="未从文件中提取到有效文本内容",
+        )
+
+    # 2. 检查配额 + LLM 解析
+    _check_quota(user_id)
+    try:
+        result = _proxy.parse_resume(raw_text)
+    except TimeoutError as e:
+        _handle_llm_error(e, "parse_resume_file")
+        return
+    except Exception as e:
+        _handle_llm_error(e, "parse_resume_file")
+        return
+
+    increment_usage(user_id)
+    return {
+        "keywords": result.get("keywords", []),
+        "fit_directions": result.get("fit_directions", []),
+        "raw_text": raw_text,
+        "file_type": file_type,
     }
 
 

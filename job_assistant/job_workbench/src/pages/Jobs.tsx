@@ -91,24 +91,15 @@ export default function Jobs() {
   const [recFilterMinScore, setRecFilterMinScore] = useState(0);
   const serverProfile = useResumeStore((s) => s.serverProfile);
 
-  // 切到推荐 tab 时自动拉取
-  // - 首次/画像变化时:force=true 全量重算(后端会清缓存)
-  // - 切页再切回:force=false 直接读后端 job_scores 缓存表(毫秒级)
-  const profileUpdatedAt = serverProfile?.updated_at ?? "";
-  const profileId = serverProfile?.profile_id ?? "";
-  const [lastLoadedProfileUpdatedAt, setLastLoadedProfileUpdatedAt] = useState("");
+  // 切到推荐 tab 时自动拉取(有缓存就直接复用,不重新跑评分)
   useEffect(() => {
     if (activeTab !== "recommend") return;
     if (!serverProfile) {
       clearRecommendJobs();
       return;
     }
-    // 画像 updated_at 变化(简历修改)→ force=true 清缓存重算
-    const force = profileUpdatedAt !== lastLoadedProfileUpdatedAt;
-    void loadRecommendJobs(200, force).then(() => {
-      setLastLoadedProfileUpdatedAt(profileUpdatedAt);
-    });
-  }, [activeTab, profileUpdatedAt, profileId, loadRecommendJobs, clearRecommendJobs]);
+    void loadRecommendJobs(200, false);
+  }, [activeTab, serverProfile, loadRecommendJobs, clearRecommendJobs]);
 
   const applications = useAppStore((s) => s.applications);
   const loadApplications = useAppStore((s) => s.loadApplications);
@@ -236,6 +227,20 @@ export default function Jobs() {
               job_title: job.title,
               company_name: job.company,
               status: "favorite",
+              source: "db_job",
+              link_type: "job",
+              link_id: job.job_id,
+              apply_url: job.apply_url || "",
+              announcement_url: job.announcement_url || "",
+            });
+            return created ?? undefined;
+          }}
+          onCreateApplied={async (job) => {
+            const app = useAppStore.getState();
+            const created = await app.addApplication({
+              job_title: job.title,
+              company_name: job.company,
+              status: "applied",
               source: "db_job",
               link_type: "job",
               link_id: job.job_id,
@@ -760,6 +765,7 @@ function RecommendJobsList({
   appByJob,
   onOpenApply,
   onCreateFavorite,
+  onCreateApplied,
   onRemoveApplication,
   filterOptions,
   filters,
@@ -772,6 +778,7 @@ function RecommendJobsList({
   appByJob: (jobId: string) => Application | undefined;
   onOpenApply: (url: string) => void;
   onCreateFavorite: (job: RecommendedJob) => Promise<Application | undefined>;
+  onCreateApplied: (job: RecommendedJob) => Promise<Application | undefined>;
   onRemoveApplication: (appId: number) => Promise<void>;
   filterOptions?: Record<string, string[]>;
   filters: {
@@ -904,43 +911,32 @@ function RecommendJobsList({
           )}
         </div>
 
-        {/* 分类胶囊筛选 - 与公司/岗位表样式一致 */}
-        <div className="mt-2 flex flex-wrap gap-1.5">
+        {/* 分类下拉框筛选 */}
+        <div className="mt-2 flex flex-wrap items-center gap-2 text-[11px]">
           {[
             { key: "industry" as const, label: "行业", options: opts.industry ?? [], cur: filters.industry },
             { key: "companyType" as const, label: "公司类型", options: opts.company_type ?? [], cur: filters.companyType },
             { key: "recruitType" as const, label: "招聘类型", options: opts.recruit_type ?? [], cur: filters.recruitType },
             { key: "minEducation" as const, label: "学历", options: opts.education_req ?? [], cur: filters.minEducation },
             { key: "difficulty" as const, label: "难度", options: opts.difficulty ?? [], cur: filters.difficulty },
-          ].map((grp) => {
-            const opts4 = grp.options.slice(0, 8);
-            if (opts4.length === 0) return null;
-            return (
-              <div key={grp.key} className="flex items-center gap-1 text-[11px]">
-                <span className="text-text-faint">{grp.label}:</span>
-                {opts4.map((v) => {
-                  const active = grp.cur.includes(v);
-                  return (
-                    <button
-                      key={v}
-                      type="button"
-                      onClick={() => {
-                        const next = active ? grp.cur.filter((x) => x !== v) : [...grp.cur, v];
-                        onFilterChange({ [grp.key]: next } as never);
-                      }}
-                      className={`rounded-full px-2 py-0.5 transition ${
-                        active
-                          ? "bg-primary text-ink"
-                          : "bg-white/60 text-text-muted hover:bg-white"
-                      }`}
-                    >
-                      {v}
-                    </button>
-                  );
-                })}
-              </div>
-            );
-          })}
+          ].map((grp) => (
+            <select
+              key={grp.key}
+              multiple
+              value={grp.cur}
+              onChange={(e) => {
+                const next = Array.from(e.target.selectedOptions).map((o) => o.value);
+                onFilterChange({ [grp.key]: next } as never);
+              }}
+              className="rounded-lg border border-line bg-white/70 px-2 py-1 text-[11px] outline-none focus:border-primary"
+              size={1}
+            >
+              <option value="">{grp.label}▼</option>
+              {grp.options.map((v) => (
+                <option key={v} value={v}>{v}</option>
+              ))}
+            </select>
+          ))}
         </div>
       </div>
 
@@ -1126,59 +1122,54 @@ function RecommendJobsList({
                       )}
                     </div>
 
-                    {/* 按钮组 - toggle 模式:点一下收藏/投递,再点取消 */}
+                    {/* 按钮组 */}
                     <div className="flex shrink-0 flex-col gap-1.5">
                       <button
                         type="button"
                         onClick={async () => {
-                          // toggle: 已收藏→取消,未收藏→收藏
-                          if (isFavorite && app) {
-                            await onRemoveApplication(app.id);
-                          } else if (!isApplied) {
-                            // 未投递且未收藏 → 收藏
+                          const existing = appByJob(job.job_id);
+                          if (existing && existing.status === "favorite") {
+                            // 已收藏 → 取消收藏
+                            await onRemoveApplication(existing.id);
+                          } else if (!existing || existing.status === "rejected") {
+                            // 未收藏 → 创建收藏
                             await onCreateFavorite(job);
                           }
                         }}
                         className={`rounded-lg px-3 py-1.5 text-xs font-medium transition ${
                           isFavorite
                             ? "bg-amber-400 text-white hover:bg-amber-500"
-                            : isApplied
-                            ? "bg-amber-100 text-amber-900 cursor-not-allowed"
                             : "bg-amber-100 text-amber-900 hover:bg-amber-200"
                         }`}
-                        title={isFavorite ? "点击取消收藏" : isApplied ? "已投递,自动收藏" : "点击收藏岗位"}
+                        title={isFavorite ? "点击取消收藏" : "收藏岗位"}
                       >
-                        {isFavorite ? "⭐ 已收藏" : isApplied ? "⭐ 已收藏" : "⭐ 收藏"}
+                        {isFavorite ? "⭐ 已收藏" : "⭐ 收藏"}
                       </button>
                       {job.apply_url && (
                         <button
                           type="button"
                           onClick={async () => {
-                            // toggle: 已投递→取消,未投递→投递并打开链接
-                            if (isApplied && app) {
-                              await onRemoveApplication(app.id);
-                            } else {
-                              // 创建投递记录
-                              const store = useAppStore.getState();
-                              await store.addApplication({
-                                job_title: job.title,
-                                company_name: job.company,
-                                status: "applied",
-                                source: "db_job",
-                                link_type: "job",
-                                link_id: job.job_id,
-                                apply_url: job.apply_url || "",
-                                announcement_url: job.announcement_url || "",
-                              });
-                              // 投递成功后自动打开投递链接
+                            const existing = appByJob(job.job_id);
+                            if (existing && existing.status === "applied") {
+                              // 已投递 → 取消投递
+                              await onRemoveApplication(existing.id);
+                            } else if (!existing || existing.status === "rejected") {
+                              // 未投递 → 创建投递 + 打开链接
+                              await onCreateApplied(job);
+                              onOpenApply(job.apply_url);
+                            } else if (existing.status === "favorite") {
+                              // 已收藏 → 升级为投递
+                              await onRemoveApplication(existing.id);
+                              await onCreateApplied(job);
                               onOpenApply(job.apply_url);
                             }
                           }}
                           className={`rounded-lg px-3 py-1.5 text-xs font-medium transition ${
                             isApplied
                               ? "bg-success text-white hover:bg-success-dark"
-                              : "bg-success-soft text-success hover:bg-success/10"
+                              : "bg-success-soft text-success hover:bg-success/15"
                           }`}
+                          title={isApplied ? "点击取消投递" : "投递岗位"}
                         >
                           {isApplied ? "📮 已投递" : "📮 投递"}
                         </button>

@@ -1,21 +1,38 @@
-// 新用户引导页：登录后未上传简历时展示。
+// 新用户引导页:登录后未上传简历时展示。
 // 三步引导:产品介绍 → 上传简历 → 跳 Jobs 看推荐。
-// 上传成功后自动跳 /,否则用户可点"稍后再说"跳过。
+// 上传成功后自动跳 /;配额超限时显示友好提示 + "去岗位列表浏览"按钮。
+// 用户选"稍后再说"会标记 onboarding_completed,下次不再被引导。
 import { useState } from "react";
 import { useNavigate } from "react-router-dom";
 import ResumeUploader from "../components/ResumeUploader";
 import { useResumeStore } from "../stores/resumeStore";
 
+const ONBOARDING_KEY = "onboarding_completed";
+
+function markOnboardingDone() {
+  try {
+    localStorage.setItem(ONBOARDING_KEY, "1");
+  } catch {
+    /* 静默 */
+  }
+}
+
 export default function Welcome() {
   const navigate = useNavigate();
   const phase = useResumeStore((s) => s.phase);
   const activeResume = useResumeStore((s) => s.activeResume);
+  const error = useResumeStore((s) => s.error);
   const [step, setStep] = useState<0 | 1 | 2>(0);
 
   // 简历上传完成(phase=done 且 activeResume 有值)→ 自动跳岗位列表
   if (phase === "done" && activeResume) {
+    markOnboardingDone();
     navigate("/", { replace: true });
   }
+
+  // 检测配额超限错误
+  const isQuotaError =
+    !!error && (error.includes("配额") || error.includes("上限"));
 
   return (
     <div className="mx-auto flex max-w-2xl flex-col gap-6 py-6 animate-fade-in">
@@ -78,6 +95,26 @@ export default function Welcome() {
             <ResumeUploader />
           </div>
 
+          {/* 配额超限友好提示 */}
+          {isQuotaError && (
+            <div className="mt-4 rounded-xl bg-info-soft/50 p-4 text-sm text-info-dark">
+              <div className="font-medium">📌 今日 AI 解析配额已用完</div>
+              <p className="mt-1 text-xs text-info-dark/80">
+                你可以先去「岗位列表」浏览全部秋招岗位,明日 0 点配额重置后再上传简历解析。
+              </p>
+              <button
+                type="button"
+                onClick={() => {
+                  markOnboardingDone();
+                  navigate("/", { replace: true });
+                }}
+                className="mt-3 rounded-pill bg-info px-4 py-1.5 text-xs font-semibold text-white hover:bg-info-dark"
+              >
+                去岗位列表浏览 →
+              </button>
+            </div>
+          )}
+
           <div className="mt-4 flex justify-between text-xs">
             <button
               type="button"
@@ -106,7 +143,10 @@ export default function Welcome() {
           </p>
           <button
             type="button"
-            onClick={() => navigate("/", { replace: true })}
+            onClick={() => {
+              markOnboardingDone();
+              navigate("/", { replace: true });
+            }}
             className="mt-4 rounded-pill bg-primary px-6 py-2 text-sm font-semibold text-ink hover:bg-primary-dark"
           >
             去看岗位 →

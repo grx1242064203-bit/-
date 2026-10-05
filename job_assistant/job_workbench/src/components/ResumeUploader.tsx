@@ -16,6 +16,10 @@ export default function ResumeUploader() {
   const [dragOver, setDragOver] = useState(false);
   const inputRef = useRef<HTMLInputElement>(null);
 
+  // 配额超限错误:重新上传无效,提示用户明日再试
+  const isQuotaError =
+    !!error && (error.includes("配额") || error.includes("上限"));
+
   function pickFile(f: File | null | undefined) {
     if (!f) return;
     clearError();
@@ -138,21 +142,28 @@ export default function ResumeUploader() {
         </div>
       )}
 
-      {/* 错误提示 + 重新上传 */}
+      {/* 错误提示 + 重新上传 / 配额超限友好引导 */}
       {error && (
         <div className="mt-4 rounded-2xl bg-orange-50 px-4 py-3 text-sm text-orange-700">
           <div className="flex items-start gap-2">
             <span className="mt-0.5">⚠️</span>
             <span className="flex-1">{error}</span>
           </div>
-          <div className="mt-3 flex justify-end">
-            <button
-              type="button"
-              onClick={resetUpload}
-              className="rounded-xl bg-orange-500 px-4 py-1.5 text-xs font-medium text-white transition hover:bg-orange-600"
-            >
-              重新上传
-            </button>
+          <div className="mt-3 flex justify-end gap-2">
+            {/* 配额超限:重新上传无效,改为引导用户去岗位列表 */}
+            {isQuotaError ? (
+              <span className="text-xs text-orange-600/80">
+                明日 0 点配额重置后再试
+              </span>
+            ) : (
+              <button
+                type="button"
+                onClick={resetUpload}
+                className="rounded-xl bg-orange-500 px-4 py-1.5 text-xs font-medium text-white transition hover:bg-orange-600"
+              >
+                重新上传
+              </button>
+            )}
           </div>
         </div>
       )}

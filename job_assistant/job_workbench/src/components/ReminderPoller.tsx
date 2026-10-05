@@ -1,6 +1,10 @@
 // 后台提醒轮询器：应用运行时每 60s 检查两类到期提醒,弹浏览器通知
 // 1. 日程提醒(面试/笔试/测评)——来自 scheduleStore.pollDueReminders
-// 2. 岗位截止提醒(3 天内截止的已收藏/已投递岗位)——来自 appStore.applications
+// 2. 岗位截止提醒(3 天内截止的已收藏/已投递岗位)——读 appStore.applications 当前值
+//
+// 重要:不调用 loadApplications,避免与 Applications 页面的 isLoading 状态竞态
+// (用户进入投递控制台时,Applications.tsx 自己会调 loadApplications;
+//  ReminderPoller 只读取已有数据,无数据则跳过截止检查)
 import { useEffect, useRef } from "react";
 import { useScheduleStore } from "../stores/scheduleStore";
 import { useAppStore } from "../stores/appStore";
@@ -41,8 +45,9 @@ async function fireNotification(title: string, body: string) {
 export default function ReminderPoller() {
   const pollDueReminders = useScheduleStore((s) => s.pollDueReminders);
   const fireReminder = useScheduleStore((s) => s.fireReminder);
+  // 仅订阅 applications 用于截止检查,不调 loadApplications
+  // (loadApplications 由 Applications.tsx 或用户主动刷新触发,避免 isLoading 竞态)
   const applications = useAppStore((s) => s.applications);
-  const loadApplications = useAppStore((s) => s.loadApplications);
   const firedRef = useRef<Set<string>>(new Set());
 
   useEffect(() => {
@@ -69,9 +74,12 @@ export default function ReminderPoller() {
     };
 
     const checkDeadlines = async () => {
-      // 拉取最新投递记录(包含 deadline 字段)
-      await loadApplications();
-      for (const app of applications) {
+      // 直接读 store 当前 applications,不触发 loadApplications
+      // 如果 applications 为空(用户未访问投递控制台),跳过截止检查
+      const apps = useAppStore.getState().applications;
+      if (!apps || apps.length === 0) return;
+
+      for (const app of apps) {
         if (!app.deadline) continue;
         const d = daysUntil(app.deadline);
         if (d === null || d < 0 || d > DEADLINE_WARN_DAYS) continue;
@@ -103,7 +111,7 @@ export default function ReminderPoller() {
       cancelled = true;
       clearInterval(timer);
     };
-  }, [pollDueReminders, fireReminder, applications, loadApplications]);
+  }, [pollDueReminders, fireReminder, applications]);
 
   return null;
 }

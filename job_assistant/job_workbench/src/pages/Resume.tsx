@@ -60,8 +60,14 @@ export default function Resume() {
   const showParsed = !!activeResume && !!parsedProfile && !isLoading;
   const showUploadedNotParsed =
     !!activeResume && !parsedProfile && !isLoading && phase !== "parsing";
-  // 解析失败（已上传简历但出错）：页面级 alert + 重新解析。
+  // 解析失败（已上传简历但出错）：页面级 alert + 重新解析 + 重新上传。
   const showPageError = !!error && !!activeResume;
+
+  // 错误类型判断:配额超限 / 文本提取失败(无 raw_text) / 其他
+  const isQuotaError =
+    !!error && (error.includes("配额") || error.includes("上限"));
+  const isNoTextError =
+    !!error && error.includes("没有可解析的简历文本");
 
   return (
     <div className="space-y-4">
@@ -83,21 +89,51 @@ export default function Resume() {
         )}
       </div>
 
-      {/* 页面级错误（解析失败）：暖橙 alert + 重试 */}
+      {/* 页面级错误（解析失败）：暖橙 alert + 具体原因 + 重新上传/重新解析 */}
       {showPageError && (
         <div className="flex items-start gap-2 rounded-2xl bg-orange-50 px-4 py-3 text-sm text-orange-700">
           <span className="mt-0.5">⚠️</span>
-          <span className="flex-1">{error}</span>
-          <button
-            type="button"
-            onClick={() => {
-              clearError();
-              parseResume();
-            }}
-            className="shrink-0 rounded-lg bg-orange-500 px-3 py-1 text-xs font-medium text-white hover:bg-orange-600"
-          >
-            重新解析
-          </button>
+          <div className="flex-1">
+            <div className="font-medium">解析失败</div>
+            <div className="mt-1 text-xs text-orange-700/90">{error}</div>
+            {isQuotaError && (
+              <div className="mt-1 text-xs text-orange-600/80">
+                明日 0 点配额重置后可重新解析。
+              </div>
+            )}
+            {isNoTextError && (
+              <div className="mt-1 text-xs text-orange-600/80">
+                简历文件未提取到文本,建议换一份 PDF 或图片重新上传。
+              </div>
+            )}
+          </div>
+          <div className="flex shrink-0 flex-col gap-1.5">
+            {/* 配额超限:重新解析无效,只显示重新上传 */}
+            {/* 无文本:重新解析无效(还是空文本),只显示重新上传 */}
+            {/* 其他错误:重新解析 + 重新上传 */}
+            {!isQuotaError && !isNoTextError && (
+              <button
+                type="button"
+                onClick={() => {
+                  clearError();
+                  parseResume();
+                }}
+                className="rounded-lg bg-orange-500 px-3 py-1 text-xs font-medium text-white hover:bg-orange-600"
+              >
+                重新解析
+              </button>
+            )}
+            <button
+              type="button"
+              onClick={() => {
+                clearError();
+                clearResume();
+              }}
+              className="rounded-lg border border-orange-300 bg-white px-3 py-1 text-xs font-medium text-orange-700 hover:bg-orange-50"
+            >
+              重新上传
+            </button>
+          </div>
         </div>
       )}
 
@@ -129,16 +165,28 @@ export default function Resume() {
           <p className="mt-1 text-sm text-slate-500">
             点击下方按钮调用 LLM 提取关键词画像
           </p>
-          <button
-            type="button"
-            onClick={() => {
-              clearError();
-              parseResume();
-            }}
-            className="mt-4 rounded-xl bg-orange-500 px-4 py-2 text-sm font-medium text-white hover:bg-orange-600"
-          >
-            立即解析
-          </button>
+          <div className="mt-4 flex gap-2">
+            <button
+              type="button"
+              onClick={() => {
+                clearError();
+                parseResume();
+              }}
+              className="rounded-xl bg-orange-500 px-4 py-2 text-sm font-medium text-white hover:bg-orange-600"
+            >
+              立即解析
+            </button>
+            <button
+              type="button"
+              onClick={() => {
+                clearError();
+                clearResume();
+              }}
+              className="rounded-xl border border-orange-300 bg-white px-4 py-2 text-sm font-medium text-orange-700 hover:bg-orange-50"
+            >
+              重新上传
+            </button>
+          </div>
         </div>
       ) : null}
     </div>

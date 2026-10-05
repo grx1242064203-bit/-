@@ -14,9 +14,11 @@ import Truncate from "../components/Truncate";
 import ColumnFilter from "../components/ColumnFilter";
 import ColumnSettings, { type ColumnDef } from "../components/ColumnSettings";
 
-/** 列定义（对齐飞书源表顺序） */
+/** 列定义（对齐飞书源表顺序）
+ * 操作 + 链接列固定在左侧,滚动时常驻可见 */
 const COLUMNS: ColumnDef[] = [
   { key: "actions", label: "操作" },
+  { key: "links", label: "链接" },
   { key: "title", label: "岗位标题" },
   { key: "company", label: "公司" },
   { key: "industry", label: "行业" },
@@ -34,7 +36,6 @@ const COLUMNS: ColumnDef[] = [
   { key: "difficulty", label: "难度" },
   { key: "updated_at", label: "发布时间" },
   { key: "deadline", label: "截止时间" },
-  { key: "links", label: "链接" },
 ];
 
 /** 分类列（有筛选选项，多选 IN）；其余列为文本搜索列（LIKE） */
@@ -505,7 +506,12 @@ function JobRow({
         </button>
       </div>
     ),
-    title: <Truncate text={job.title} className="font-medium" />,
+    title: (
+      <Truncate
+        text={job.company ? `${job.title} - ${job.company}` : job.title}
+        className="font-medium"
+      />
+    ),
     company: <Truncate text={job.company} />,
     industry: job.industry ? (
       <span className={pillClass(colorMap.industry(job.industry))}>{job.industry}</span>
@@ -572,13 +578,19 @@ function JobRow({
   return (
     <tr className="border-b border-line/60 hover:bg-white/40">
       {COLUMNS.filter((c) => visibleKeys.includes(c.key)).map((col) => {
-        const isFirst = col.key === "title";
+        // 操作列固定最左,链接列紧随其后固定,滚动时常驻可见
+        // 注意:Tailwind JIT 只识别静态类名,所以 w-[72px]/left-[72px] 必须以字面量出现
+        const isActionsSticky = col.key === "actions";
+        const isLinksSticky = col.key === "links";
+        const stickyClass = isActionsSticky
+          ? "sticky left-0 z-[2] bg-white/85 backdrop-blur w-[72px] min-w-[72px]"
+          : isLinksSticky
+          ? "sticky left-[72px] z-[2] bg-white/85 backdrop-blur"
+          : "";
         return (
           <td
             key={col.key}
-            className={`px-3 py-2 align-middle ${
-              isFirst ? "sticky left-0 z-[1] bg-white/70 backdrop-blur" : ""
-            }`}
+            className={`px-3 py-2 align-middle ${stickyClass}`}
           >
             {cells[col.key]}
           </td>
@@ -589,11 +601,16 @@ function JobRow({
 }
 
 function LinkButton({ url, label }: { url: string; label: string }) {
+  // 投递=success 绿色,公告=info 蓝色,与暖橙背景对比鲜明
+  const isApply = label === "投递";
+  const colorClass = isApply
+    ? "bg-success-soft text-success hover:bg-success hover:text-white"
+    : "bg-info-soft text-info hover:bg-info hover:text-white";
   return (
     <button
       type="button"
       onClick={() => { void openExternalUrl(url); }}
-      className="rounded bg-primary-soft px-2 py-0.5 text-xs text-primary-dark transition hover:bg-primary-light"
+      className={`rounded px-2 py-0.5 text-xs font-medium transition ${colorClass}`}
       title={url}
     >
       {label}

@@ -72,9 +72,60 @@ const CATEGORY_COLORS: Record<string, ColorPair> = {
 /** 难度 → 颜色 */
 const DIFFICULTY_COLORS: Record<string, ColorPair> = {
   简单: { bg: "bg-green-100", text: "text-green-700" },
+  easy: { bg: "bg-green-100", text: "text-green-700" },
+  低: { bg: "bg-green-100", text: "text-green-700" },
+  "1": { bg: "bg-green-100", text: "text-green-700" },
+  "1星": { bg: "bg-green-100", text: "text-green-700" },
+  "★": { bg: "bg-green-100", text: "text-green-700" },
+  "⭐": { bg: "bg-green-100", text: "text-green-700" },
   中等: { bg: "bg-amber-100", text: "text-amber-700" },
+  medium: { bg: "bg-amber-100", text: "text-amber-700" },
+  中: { bg: "bg-amber-100", text: "text-amber-700" },
+  "2": { bg: "bg-amber-100", text: "text-amber-700" },
+  "2星": { bg: "bg-amber-100", text: "text-amber-700" },
+  "★★": { bg: "bg-amber-100", text: "text-amber-700" },
+  "⭐⭐": { bg: "bg-amber-100", text: "text-amber-700" },
   困难: { bg: "bg-red-100", text: "text-red-700" },
+  hard: { bg: "bg-red-100", text: "text-red-700" },
+  高: { bg: "bg-red-100", text: "text-red-700" },
+  "3": { bg: "bg-red-100", text: "text-red-700" },
+  "3星": { bg: "bg-red-100", text: "text-red-700" },
+  "★★★": { bg: "bg-red-100", text: "text-red-700" },
+  "⭐⭐⭐": { bg: "bg-red-100", text: "text-red-700" },
+  非常困难: { bg: "bg-red-100", text: "text-red-700" },
+  expert: { bg: "bg-red-100", text: "text-red-700" },
+  "4": { bg: "bg-red-100", text: "text-red-700" },
+  "4星": { bg: "bg-red-100", text: "text-red-700" },
+  "★★★★": { bg: "bg-red-100", text: "text-red-700" },
+  "⭐⭐⭐⭐": { bg: "bg-red-100", text: "text-red-700" },
 };
+
+/** 难度归一化:取值映射到三档(简单/中等/困难)。
+ * 支持中文(简单/中等/困难)、英文(Easy/Medium/Hard)、星级(★/⭐)、数字(1-4)。 */
+function normalizeDifficulty(v: string): string {
+  const s = v.trim().toLowerCase();
+  if (!s) return "";
+  // 直接命中
+  if (DIFFICULTY_COLORS[s]) return s;
+  // 中文/英文直接匹配原值(大小写不敏感)
+  if (/简单|easy|低|^1星?$|^[★⭐]$/.test(s)) return "简单";
+  if (/中等|medium|中|^2星?$|^[★⭐]{2}$/.test(s)) return "中等";
+  if (/困难|hard|高|^3星?$|^[★⭐]{3}$/.test(s)) return "困难";
+  if (/非常困难|expert|^4星?$|^[★⭐]{4}$/.test(s)) return "困难";
+  // 数字 1-4 → 简单/中等/困难/困难
+  if (s === "1") return "简单";
+  if (s === "2") return "中等";
+  if (s === "3" || s === "4") return "困难";
+  // 数字带"星"/"级"后缀
+  const m = s.match(/^(\d)/);
+  if (m) {
+    const n = parseInt(m[1], 10);
+    if (n === 1) return "简单";
+    if (n === 2) return "中等";
+    return "困难";
+  }
+  return s; // 未识别,返回原值让 pick 走 default
+}
 
 const DEFAULT_COLOR: ColorPair = { bg: "bg-gray-100", text: "text-gray-600" };
 
@@ -90,7 +141,7 @@ export const colorMap = {
   recruitType: (v: string | null) => pick(RECRUIT_TYPE_COLORS, v),
   education: (v: string | null) => pick(EDUCATION_COLORS, v),
   category: (v: string | null) => pick(CATEGORY_COLORS, v),
-  difficulty: (v: string | null) => pick(DIFFICULTY_COLORS, v),
+  difficulty: (v: string | null) => pick(DIFFICULTY_COLORS, normalizeDifficulty(v || "")),
   /** 是否管培：1=是(绿), 0=否(灰) */
   isMt: (v: number | string | null) =>
     v === 1 || v === "1"

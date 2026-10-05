@@ -39,3 +39,14 @@ job_assistant/data/*.db-wal
 
 # 敏感配置(用 .env.example 代替)
 job_assistant/.env
+
+# 用户上传的截图/文件(沙箱只读区,绝不入库,这是仓库膨胀到 4.6 GiB 的根因)
+.uploads/
+*.uploads/
+.uploads/**
+
+# 数据库文件(本地状态,不入库)
+*.db
+*.db-journal
+*.sqlite
+*.sqlite3

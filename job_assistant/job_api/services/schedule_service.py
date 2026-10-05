@@ -1,15 +1,28 @@
-"""日程创建服务（含回读验证）+ 邮件任务确认编排。
+"""日程创建服务（含回读验证）+ 邮件任务确认编排 + AI 提取编排。
 
 稳定性规则：
 1. 创建日程后必须回读验证（比对关键字段）
 2. 不允许 AI 自动删除日程（只有显式 delete_schedule 接口）
+3. AI 提取仅返回结构化数据，不直接创建日程——用户确认后再提交
 """
+import logging
+from datetime import datetime, timezone
 from typing import Optional
 
 from models import application as application_model
 from models import email as email_model
 from models import schedule as schedule_model
 
+logger = logging.getLogger(__name__)
+
+# 用户自建日程允许的 schedule_type（在 assessment/written/interview 基础上增加 other）
+SCHEDULE_TYPE_OTHER = "other"
+VALID_USER_SCHEDULE_TYPES = {
+    schedule_model.SCHEDULE_TYPE_ASSESSMENT,
+    schedule_model.SCHEDULE_TYPE_WRITTEN,
+    schedule_model.SCHEDULE_TYPE_INTERVIEW,
+    SCHEDULE_TYPE_OTHER,
+}
 
 # task_type → application status 映射
 TASK_TO_STATUS = {
@@ -26,6 +39,28 @@ TASK_TYPE_MAP = {
 }
 
 
+def _validate_event_time(event_time: str) -> str:
+    """校验 event_time 是可解析的 ISO 字符串。失败抛 ValueError。
+
+    兼容用户输入 "2025-01-15 14:30" 这种带空格的伪 ISO（自动转 T）。
+    """
+    if not event_time or not isinstance(event_time, str):
+        raise ValueError("event_time 不能为空")
+    normalized = event_time.strip().replace(" ", "T")
+    try:
+        dt = datetime.fromisoformat(normalized)
+    except ValueError as e:
+        raise ValueError(
+            f"event_time 格式无效，请用 ISO 8601（如 2025-01-15T14:30:00）：{e}"
+        )
+    # 如果是 naive datetime，补上本地时区（+08:00），避免存 UTC 被错读
+    if dt.tzinfo is None:
+        from datetime import timezone, timedelta
+        cst = timezone(timedelta(hours=8))
+        dt = dt.replace(tzinfo=cst)
+    return dt.isoformat()
+
+
 async def create_schedule_with_verify(
     user_id: str,
     schedule_type: str,
@@ -37,6 +72,7 @@ async def create_schedule_with_verify(
     email_link: Optional[str] = None,
     meeting_link: Optional[str] = None,
     notes: Optional[str] = None,
+    reminder_offsets_minutes: Optional[list[int]] = None,
 ) -> dict:
     """创建日程并回读验证。验证失败抛出 ValueError。"""
     result = await schedule_model.create_schedule(
@@ -50,6 +86,7 @@ async def create_schedule_with_verify(
         email_link=email_link,
         meeting_link=meeting_link,
         notes=notes,
+        reminder_offsets_minutes=reminder_offsets_minutes,
     )
 
     # 回读验证
@@ -71,6 +108,81 @@ async def create_schedule_with_verify(
 
     await schedule_model.mark_verified(result["id"])
     return {**result, "verified": True}
+
+
+async def create_user_schedule(
+    user_id: str,
+    schedule_type: str,
+    event_time: str,
+    company: Optional[str] = None,
+    job_title: Optional[str] = None,
+    duration_minutes: int = 60,
+    meeting_link: Optional[str] = None,
+    notes: Optional[str] = None,
+    reminder_offsets_minutes: Optional[list[int]] = None,
+) -> dict:
+    """用户自建日程入口。
+
+    与邮件流程解耦——用户在日程页直接填写表单提交。
+    校验：schedule_type 必须在白名单内、event_time 可解析。
+    创建后回读验证（同邮件流程）。
+    """
+    if schedule_type not in VALID_USER_SCHEDULE_TYPES:
+        raise ValueError(
+            f"不支持的日程类型：{schedule_type}。"
+            f"可选：{', '.join(sorted(VALID_USER_SCHEDULE_TYPES))}"
+        )
+
+    # company/job_title 至少有一个非空（否则日程卡片标题会显示"未知公司"）
+    if not (company and company.strip()) and not (job_title and job_title.strip()):
+        raise ValueError("公司名和岗位名至少填写一个")
+
+    normalized_time = _validate_event_time(event_time)
+
+    # duration_minutes 合法化
+    try:
+        duration = int(duration_minutes)
+        if duration <= 0:
+            duration = 60
+    except (ValueError, TypeError):
+        duration = 60
+
+    return await create_schedule_with_verify(
+        user_id=user_id,
+        schedule_type=schedule_type,
+        event_time=normalized_time,
+        company=(company or "").strip() or None,
+        job_title=(job_title or "").strip() or None,
+        duration_minutes=duration,
+        meeting_link=(meeting_link or "").strip() or None,
+        notes=(notes or "").strip() or None,
+        reminder_offsets_minutes=reminder_offsets_minutes,
+    )
+
+
+async def ai_extract_schedule(
+    user_id: str, subject: str, body: str
+) -> dict:
+    """AI 从邮件正文提取日程信息。仅返回结构化数据，不创建日程。
+
+    用户在前端粘贴邮件正文，AI 提取后预填表单，用户确认后再调
+    create_user_schedule 提交。这样既体现自动化，又保留用户控制权。
+    """
+    from services.llm_proxy import LLMProxyService
+    from config import get_settings
+
+    settings = get_settings()
+    proxy = LLMProxyService(api_key=settings.DEEPSEEK_API_KEY)
+    try:
+        result = proxy.extract_schedule_from_text(subject, body)
+    except TimeoutError as e:
+        raise ValueError(f"AI 提取超时，请精简正文后重试：{e}")
+    except RuntimeError as e:
+        raise ValueError(str(e))
+    except Exception as e:
+        logger.error(f"ai_extract_schedule 失败 (user_id={user_id}): {e!r}", exc_info=True)
+        raise ValueError(f"AI 提取失败：{e}")
+    return result
 
 
 async def confirm_email_task(task_id: str, user_id: str) -> dict:

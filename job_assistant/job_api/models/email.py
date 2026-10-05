@@ -5,7 +5,8 @@
   received_at, body_text, body_html, raw_headers, created_at
 - email_tasks: id, user_id, email_id, task_type(assessment/written/interview),
   company, job_title, event_time, event_link, email_link, notes,
-  status(pending/confirmed/ignored), created_at, confirmed_at
+  status(pending/confirmed/ignored), created_at, confirmed_at,
+  extract_status(pending/llm_done/llm_failed/rule_fallback) — AI 提取状态
 """
 import uuid
 from datetime import datetime, timezone
@@ -23,6 +24,16 @@ TASK_TYPE_INTERVIEW = "interview"
 TASK_STATUS_PENDING = "pending"
 TASK_STATUS_CONFIRMED = "confirmed"
 TASK_STATUS_IGNORED = "ignored"
+
+# AI 提取状态枚举：
+# - pending:        初筛命中后任务已创建，字段为空，等待 LLM 异步提取
+# - llm_done:       LLM 提取成功，字段已回填
+# - llm_failed:     LLM 调用失败（超时/配额/Key 无效）
+# - rule_fallback:  LLM 失败后回退到规则提取
+EXTRACT_STATUS_PENDING = "pending"
+EXTRACT_STATUS_LLM_DONE = "llm_done"
+EXTRACT_STATUS_LLM_FAILED = "llm_failed"
+EXTRACT_STATUS_RULE_FALLBACK = "rule_fallback"
 
 
 def _db_path() -> Path:
@@ -76,10 +87,20 @@ async def init_db() -> None:
                 confirmed_at TEXT,
                 application_id TEXT,
                 schedule_id TEXT,
+                extract_status TEXT NOT NULL DEFAULT 'pending',
                 FOREIGN KEY (email_id) REFERENCES emails(id)
             );
             """
         )
+        # 旧表迁移：补 extract_status 列（幂等）
+        cols = {r[1] for r in await conn.execute(
+            "PRAGMA table_info(email_tasks)"
+        ).fetchall()}
+        if "extract_status" not in cols:
+            await conn.execute(
+                "ALTER TABLE email_tasks ADD COLUMN extract_status "
+                "TEXT NOT NULL DEFAULT 'pending'"
+            )
         await conn.commit()
     finally:
         await conn.close()
@@ -156,6 +177,7 @@ def _row_to_task(row: aiosqlite.Row) -> dict:
         "confirmed_at": row["confirmed_at"],
         "application_id": row["application_id"],
         "schedule_id": row["schedule_id"],
+        "extract_status": row["extract_status"],
     }
 
 
@@ -169,7 +191,15 @@ async def create_task(
     event_link: Optional[str] = None,
     email_link: Optional[str] = None,
     notes: Optional[str] = None,
+    extract_status: str = EXTRACT_STATUS_PENDING,
 ) -> dict:
+    """创建任务。extract_status 默认 pending（字段为空，等待 LLM 回填）。
+
+    异步 LLM 流程：
+    1. 初筛命中 → create_task(extract_status="pending", company=None, ...)
+    2. LLM 完成 → update_task_extract_status(llm_done, company=..., ...)
+    3. LLM 失败 → update_task_extract_status(rule_fallback) + 规则提取回填
+    """
     task_id = str(uuid.uuid4())
     now = _now_iso()
     conn = await _connect()
@@ -177,11 +207,12 @@ async def create_task(
         await conn.execute(
             "INSERT INTO email_tasks "
             "(id, user_id, email_id, task_type, company, job_title, event_time, "
-            "event_link, email_link, notes, status, created_at) "
-            "VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)",
+            "event_link, email_link, notes, status, created_at, extract_status) "
+            "VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)",
             (
                 task_id, user_id, email_id, task_type, company, job_title,
-                event_time, event_link, email_link, notes, TASK_STATUS_PENDING, now,
+                event_time, event_link, email_link, notes, TASK_STATUS_PENDING,
+                now, extract_status,
             ),
         )
         await conn.commit()
@@ -193,8 +224,61 @@ async def create_task(
         "event_time": event_time, "event_link": event_link,
         "email_link": email_link, "notes": notes, "status": TASK_STATUS_PENDING,
         "created_at": now, "confirmed_at": None, "application_id": None,
-        "schedule_id": None,
+        "schedule_id": None, "extract_status": extract_status,
     }
+
+
+async def update_task_extract(
+    task_id: str,
+    user_id: str,
+    company: Optional[str] = None,
+    job_title: Optional[str] = None,
+    event_time: Optional[str] = None,
+    event_link: Optional[str] = None,
+    notes: Optional[str] = None,
+    extract_status: str = EXTRACT_STATUS_LLM_DONE,
+) -> bool:
+    """LLM/规则提取完成后回填任务字段。仅 pending 状态的任务可回填。
+
+    confirmed/ignored 状态的任务不允许回填（用户已处理）。
+    """
+    conn = await _connect()
+    try:
+        cursor = await conn.execute(
+            "UPDATE email_tasks SET "
+            "company = COALESCE(?, company), "
+            "job_title = COALESCE(?, job_title), "
+            "event_time = COALESCE(?, event_time), "
+            "event_link = COALESCE(?, event_link), "
+            "notes = COALESCE(?, notes), "
+            "extract_status = ? "
+            "WHERE id = ? AND user_id = ? AND status = ?",
+            (
+                company, job_title, event_time, event_link, notes,
+                extract_status, task_id, user_id, TASK_STATUS_PENDING,
+            ),
+        )
+        await conn.commit()
+        return cursor.rowcount > 0
+    finally:
+        await conn.close()
+
+
+async def update_task_extract_status(
+    task_id: str, user_id: str, extract_status: str
+) -> bool:
+    """仅更新提取状态（不回填字段）。"""
+    conn = await _connect()
+    try:
+        cursor = await conn.execute(
+            "UPDATE email_tasks SET extract_status = ? "
+            "WHERE id = ? AND user_id = ? AND status = ?",
+            (extract_status, task_id, user_id, TASK_STATUS_PENDING),
+        )
+        await conn.commit()
+        return cursor.rowcount > 0
+    finally:
+        await conn.close()
 
 
 async def list_tasks(

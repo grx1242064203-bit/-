@@ -3,10 +3,14 @@
 分类规则（按用户给定关键词）：
 - 测评：测评链接 / 性格测评 / 在线测评 / 测评截止
 - 笔试：笔试邀请 / 笔试时间 / 笔试链接 / 在线笔试
-- 面试：面试邀请 / 面试时间 / 会议链接 / 确认链接 / 面试安排
+- 面试：面试邀请 / 面试时间 / 会议链接 / 确认链接 / 面试安排 / 一面 / 二面 / 三面 / 终面
 - 其他（宣讲会/广告）：不匹配以上关键词 → 跳过
 
 提取信息：公司名、岗位名、事件时间、链接。
+
+提供两层 API：
+- classify_only(subject, body) -> str|None  仅初筛返回 task_type（用于异步 LLM 流程）
+- classify_and_extract(...) -> dict|None   完整流水线（初筛+规则提取，LLM 不可用时的回退）
 """
 import re
 from datetime import datetime
@@ -26,6 +30,8 @@ RULES = [
         [
             "面试邀请", "面试时间", "面试安排", "面试通知",
             "会议链接", "确认链接", "腾讯会议", "zoom", "飞书会议",
+            # 新增：一面/二面/三面/终面/HR面 等轮次关键词
+            "一面", "二面", "三面", "终面", "hr面", "技术面", "主管面",
         ],
     ),
     (
@@ -61,13 +67,20 @@ COMPANY_SUFFIXES = ["科技", "有限公司", "股份", "集团", "网络", "信
 
 
 def classify_email(subject: str, body: str) -> Optional[str]:
-    """根据主题+正文关键词分类。返回 task_type 或 None（不匹配则跳过）。"""
+    """根据主题+正文关键词初筛。返回 task_type 或 None（不匹配则跳过）。
+
+    仅供异步 LLM 流程的初筛使用——零成本，快速过滤掉广告/宣讲会。
+    """
     text = f"{subject}\n{body}".lower()
     for task_type, keywords in RULES:
         for kw in keywords:
             if kw.lower() in text:
                 return task_type
     return None
+
+
+# 别名：明确语义
+classify_only = classify_email
 
 
 def extract_company(subject: str, sender: str, body: str) -> Optional[str]:

@@ -2,7 +2,18 @@
 
 使用 Python stdlib imaplib + email，无额外依赖。
 抓取指定账户的未读邮件，解析后存入 emails 表，再调分类器生成 email_tasks。
+
+异步 LLM 提取流程（用户选定方案）：
+1. 抓邮件 → 存 emails 表（去重）
+2. email_classifier.classify_only 关键词初筛（零成本，快）
+3. 命中 → email_model.create_task(extract_status="pending", 字段为空)
+4. asyncio.create_task 触发后台 LLM 提取（不阻塞同步流程）
+5. LLM 完成 → update_task_extract(llm_done)；失败 → 回退规则(rule_fallback)
+
+这样同步快（5s），用户看到任务时字段可能还在加载，
+用户可手动刷新或点 ✨ AI 重新提取按钮强制重做。
 """
+import asyncio
 import email
 import imaplib
 import logging
@@ -17,6 +28,46 @@ from models import email_account as account_model
 from services import email_classifier
 
 log = logging.getLogger(__name__)
+
+
+def _trigger_async_llm_extract(
+    task_id: str,
+    user_id: str,
+    subject: str,
+    body: str,
+    sender: str,
+    message_id: str,
+    imap_server: str,
+) -> None:
+    """后台异步触发 LLM 提取，不阻塞同步流程。
+
+    使用 asyncio.create_task 而非 await，sync_account 立即返回。
+    LLM 失败会自动回退到规则提取。
+    """
+    async def _runner():
+        try:
+            from services.email_llm_extractor import extract_task_fields
+            await extract_task_fields(
+                task_id=task_id,
+                user_id=user_id,
+                subject=subject,
+                body=body,
+                sender=sender,
+                message_id=message_id,
+                imap_server=imap_server,
+            )
+        except Exception as e:
+            log.error(
+                f"异步 LLM 提取失败 (task_id={task_id}): {e!r}",
+                exc_info=True,
+            )
+
+    try:
+        loop = asyncio.get_event_loop()
+        loop.create_task(_runner())
+    except RuntimeError:
+        # 无事件循环（如同步测试调用）→ 同步执行
+        log.warning("无事件循环，跳过异步 LLM 提取")
 
 
 def _build_ssl_context() -> ssl.SSLContext:
@@ -271,24 +322,40 @@ async def sync_account(account_id: str, user_id: str, limit: int = 50) -> dict:
 
             fetched += 1
 
-            # 分类并创建任务
-            task_data = email_classifier.classify_and_extract(
+            # 1) 关键词初筛（零成本，快）——过滤广告/宣讲会
+            task_type = email_classifier.classify_only(
+                subject=subject, body=body_text or body_html
+            )
+            if task_type is None:
+                skipped += 1
+                continue
+
+            # 2) 立即创建 pending 任务（字段为空，extract_status=pending）
+            # 同步流程不等 LLM，立即返回；用户在前端会看到「AI 提取中...」徽章
+            email_link = email_classifier.build_email_link(
+                message_id, account["imap_server"]
+            )
+            new_task = await email_model.create_task(
+                user_id=user_id,
+                email_id=email_record["id"],
+                task_type=task_type,
+                email_link=email_link,
+                notes=f"主题: {subject}",  # 临时 notes，LLM 会覆盖
+                extract_status=email_model.EXTRACT_STATUS_PENDING,
+            )
+            tasks_created += 1
+
+            # 3) 异步触发 LLM 提取（不阻塞同步流程）
+            # LLM 完成后回填字段；失败自动回退规则提取
+            _trigger_async_llm_extract(
+                task_id=new_task["id"],
+                user_id=user_id,
                 subject=subject,
-                body=body_text or body_html,
+                body=body_text or body_html or "",
                 sender=sender,
                 message_id=message_id,
                 imap_server=account["imap_server"],
             )
-
-            if task_data:
-                await email_model.create_task(
-                    user_id=user_id,
-                    email_id=email_record["id"],
-                    **task_data,
-                )
-                tasks_created += 1
-            else:
-                skipped += 1
 
         await account_model.update_last_sync(account_id)
         return {

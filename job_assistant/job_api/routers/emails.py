@@ -90,12 +90,45 @@ async def sync_account(
     return result
 
 
+@router.get("/emails/{email_id}")
+async def get_email_detail(
+    email_id: str, user: dict = Depends(get_current_user)
+):
+    """返回邮件原文：主题/发件人/收件时间/正文（text + html）。
+
+    供前端"查看邮件"弹窗使用。任务卡片上的 email_id 即此 id。
+    """
+    email = await email_model.get_email(email_id, user["id"])
+    if not email:
+        raise HTTPException(status_code=404, detail="邮件不存在")
+    return {"email": email}
+
+
 @router.get("/tasks")
 async def list_tasks(
     status: str | None = None, user: dict = Depends(get_current_user)
 ):
     tasks = await email_model.list_tasks(user["id"], status=status)
-    return {"tasks": tasks}
+    # 拉取每个任务关联的邮件主题/发件人/收件时间，供前端卡片预览
+    enriched = []
+    for t in tasks:
+        email_id = t.get("email_id")
+        if email_id:
+            email_row = await email_model.get_email(email_id, user["id"])
+            if email_row:
+                t["email_subject"] = email_row.get("subject") or ""
+                t["email_sender"] = email_row.get("sender") or ""
+                t["email_received_at"] = email_row.get("received_at") or ""
+            else:
+                t["email_subject"] = ""
+                t["email_sender"] = ""
+                t["email_received_at"] = ""
+        else:
+            t["email_subject"] = ""
+            t["email_sender"] = ""
+            t["email_received_at"] = ""
+        enriched.append(t)
+    return {"tasks": enriched}
 
 
 @router.post("/tasks/{task_id}/confirm")
@@ -116,4 +149,48 @@ async def ignore_task(
     ok = await email_model.ignore_task(task_id, user["id"])
     if not ok:
         raise HTTPException(status_code=404, detail="任务不存在")
+    return {"ok": True}
+
+
+@router.post("/tasks/{task_id}/reextract")
+async def reextract_task(
+    task_id: str, user: dict = Depends(get_current_user)
+):
+    """用户手动触发 ✨ AI 重新提取任务字段。
+
+    场景：异步 LLM 提取还在 pending 状态、或提取结果不准、或 LLM 失败后想重试。
+    流程：
+    1. 校验任务存在且为 pending 状态
+    2. 标记 extract_status=pending（前端显示加载中）
+    3. 异步触发 LLM 提取（不等返回）
+    4. 立即返回 ok，前端轮询/刷新查看结果
+    """
+    task = await email_model.get_task(task_id, user["id"])
+    if not task:
+        raise HTTPException(status_code=404, detail="任务不存在")
+    if task["status"] != email_model.TASK_STATUS_PENDING:
+        raise HTTPException(
+            status_code=400,
+            detail=f"任务已处理（{task['status']}），无法重新提取",
+        )
+    # 拉取邮件原文供 LLM 提取
+    email_row = await email_model.get_email(task["email_id"], user["id"])
+    if not email_row:
+        raise HTTPException(status_code=404, detail="关联邮件不存在")
+
+    # 标记 pending，触发异步提取
+    await email_model.update_task_extract_status(
+        task_id, user["id"], email_model.EXTRACT_STATUS_PENDING
+    )
+    # 复用 imap_service 里的异步触发器
+    from services.imap_service import _trigger_async_llm_extract
+    _trigger_async_llm_extract(
+        task_id=task_id,
+        user_id=user["id"],
+        subject=email_row.get("subject") or "",
+        body=email_row.get("body_text") or email_row.get("body_html") or "",
+        sender=email_row.get("sender") or "",
+        message_id=email_row.get("message_id") or "",
+        imap_server="",  # email_link 已存在，不需重建
+    )
     return {"ok": True}

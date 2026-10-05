@@ -2,7 +2,12 @@
 import { useEffect, useState } from "react";
 import { useEmailStore } from "../stores/emailStore";
 import { extractErrorMessage } from "../api/client";
-import type { EmailTask, TaskType } from "../api/emails";
+import {
+  type EmailTask,
+  type EmailDetail,
+  type ExtractStatus,
+  type TaskType,
+} from "../api/emails";
 
 const TYPE_LABEL: Record<TaskType, string> = {
   assessment: "测评",
@@ -14,6 +19,28 @@ const TYPE_COLOR: Record<TaskType, string> = {
   assessment: "bg-info text-info-foreground",
   written: "bg-warning text-warning-foreground",
   interview: "bg-success text-success-foreground",
+};
+
+const EXTRACT_BADGE: Record<
+  ExtractStatus,
+  { label: string; className: string }
+> = {
+  pending: {
+    label: "AI 提取中",
+    className: "bg-amber-100 text-amber-700 animate-pulse",
+  },
+  llm_done: {
+    label: "AI 提取",
+    className: "bg-primary-soft text-primary-dark",
+  },
+  llm_failed: {
+    label: "提取失败",
+    className: "bg-red-50 text-red-600",
+  },
+  rule_fallback: {
+    label: "规则提取",
+    className: "bg-gray-100 text-text-muted",
+  },
 };
 
 const IMAP_PRESETS: Record<string, { server: string; port: number }> = {
@@ -132,7 +159,6 @@ function AddAccountModal({ onClose }: { onClose: () => void }) {
       await addAccount({ email, imap_server: imapServer, imap_port: imapPort, username, password });
       onClose();
     } catch (e) {
-      // ApiError 不是 Error 实例,必须用 extractErrorMessage 提取真实错误
       setError(extractErrorMessage(e));
     } finally {
       setBusy(false);
@@ -218,10 +244,120 @@ function AddAccountModal({ onClose }: { onClose: () => void }) {
   );
 }
 
+function EmailDetailModal({
+  emailId,
+  onClose,
+}: {
+  emailId: string;
+  onClose: () => void;
+}) {
+  const getEmail = useEmailStore((s) => s.getEmail);
+  const [email, setEmail] = useState<EmailDetail | null>(null);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
+  const [viewMode, setViewMode] = useState<"text" | "html">("text");
+
+  useEffect(() => {
+    void (async () => {
+      setLoading(true);
+      setError(null);
+      try {
+        const detail = await getEmail(emailId);
+        setEmail(detail);
+        // 优先 html，没 html 用 text
+        setViewMode(detail.body_html ? "html" : "text");
+      } catch (e) {
+        setError(extractErrorMessage(e));
+      } finally {
+        setLoading(false);
+      }
+    })();
+  }, [emailId, getEmail]);
+
+  return (
+    <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40">
+      <div className="max-h-[90vh] w-full max-w-3xl overflow-y-auto rounded-2xl bg-white p-6 shadow-xl">
+        <div className="mb-4 flex items-center justify-between">
+          <h3 className="text-lg font-semibold">📬 邮件原文</h3>
+          <button
+            onClick={onClose}
+            className="rounded-lg px-3 py-1 text-sm text-text-muted hover:bg-gray-100"
+          >
+            关闭
+          </button>
+        </div>
+        {loading ? (
+          <p className="py-8 text-center text-sm text-text-muted">加载中...</p>
+        ) : error ? (
+          <p className="py-8 text-center text-sm text-red-500">{error}</p>
+        ) : email ? (
+          <div className="space-y-3">
+            <div className="rounded-lg border border-line bg-gray-50 p-3 text-xs">
+              <div className="grid grid-cols-[80px_1fr] gap-1">
+                <div className="text-text-muted">主题</div>
+                <div className="font-medium text-text">
+                  {email.subject || "（无主题）"}
+                </div>
+                <div className="text-text-muted">发件人</div>
+                <div className="text-text">{email.sender || "（无）"}</div>
+                <div className="text-text-muted">收件时间</div>
+                <div className="text-text">
+                  {email.received_at
+                    ? new Date(email.received_at).toLocaleString("zh-CN")
+                    : "（无）"}
+                </div>
+              </div>
+            </div>
+            {email.body_html && email.body_text && (
+              <div className="flex gap-2">
+                <button
+                  onClick={() => setViewMode("text")}
+                  className={`rounded-lg px-3 py-1 text-xs ${
+                    viewMode === "text"
+                      ? "bg-primary text-ink"
+                      : "bg-gray-100 text-text-muted"
+                  }`}
+                >
+                  纯文本
+                </button>
+                <button
+                  onClick={() => setViewMode("html")}
+                  className={`rounded-lg px-3 py-1 text-xs ${
+                    viewMode === "html"
+                      ? "bg-primary text-ink"
+                      : "bg-gray-100 text-text-muted"
+                  }`}
+                >
+                  HTML
+                </button>
+              </div>
+            )}
+            <div className="max-h-[50vh] overflow-y-auto rounded-lg border border-line p-3 text-xs">
+              {viewMode === "html" && email.body_html ? (
+                <div
+                  className="prose prose-sm max-w-none"
+                  // eslint-disable-next-line react/no-danger
+                  dangerouslySetInnerHTML={{ __html: email.body_html }}
+                />
+              ) : (
+                <pre className="whitespace-pre-wrap break-words font-sans text-text">
+                  {email.body_text || email.body_html || "（无正文）"}
+                </pre>
+              )}
+            </div>
+          </div>
+        ) : null}
+      </div>
+    </div>
+  );
+}
+
 function TaskCard({ task }: { task: EmailTask }) {
   const confirmTask = useEmailStore((s) => s.confirmTask);
   const ignoreTask = useEmailStore((s) => s.ignoreTask);
+  const reextractTask = useEmailStore((s) => s.reextractTask);
   const [busy, setBusy] = useState(false);
+  const [showEmail, setShowEmail] = useState(false);
 
   const handleConfirm = async () => {
     setBusy(true);
@@ -232,26 +368,55 @@ function TaskCard({ task }: { task: EmailTask }) {
     }
   };
 
+  const handleReextract = async () => {
+    setBusy(true);
+    try {
+      await reextractTask(task.id);
+    } finally {
+      setBusy(false);
+    }
+  };
+
+  // 时间显示：AI 提取中时可能为 null
   const time = task.event_time
     ? new Date(task.event_time).toLocaleString("zh-CN")
-    : "未识别时间";
+    : task.extract_status === "pending"
+      ? "AI 提取中..."
+      : "未识别时间";
+
+  // 公司/岗位：AI 提取中时显示占位
+  const companyLabel = task.company || (
+    task.extract_status === "pending" ? "提取中..." : "未知公司"
+  );
+  const jobTitle = task.job_title || "";
+
+  // 截图显示来源：邮件主题/发件人（list_tasks 接口已回填）
+  const subject = task.email_subject || "";
+  const sender = task.email_sender || "";
+
+  const extractBadge = EXTRACT_BADGE[task.extract_status];
 
   return (
     <div className="rounded-xl border border-line bg-white p-4 shadow-sm">
       <div className="flex items-start justify-between">
         <div className="flex-1">
-          <div className="mb-1 flex items-center gap-2">
+          <div className="mb-1 flex flex-wrap items-center gap-2">
             <span
               className={`rounded-full px-2 py-0.5 text-xs font-medium ${TYPE_COLOR[task.task_type]}`}
             >
               {TYPE_LABEL[task.task_type]}
             </span>
             <span className="text-sm font-semibold text-text">
-              {task.company || "未知公司"}
+              {companyLabel}
             </span>
-            {task.job_title && (
-              <span className="text-sm text-text-muted">· {task.job_title}</span>
+            {jobTitle && (
+              <span className="text-sm text-text-muted">· {jobTitle}</span>
             )}
+            <span
+              className={`rounded-full px-1.5 py-0.5 text-[10px] ${extractBadge.className}`}
+            >
+              {extractBadge.label}
+            </span>
           </div>
           <div className="text-xs text-text-muted">⏰ {time}</div>
           {task.event_link && (
@@ -264,14 +429,43 @@ function TaskCard({ task }: { task: EmailTask }) {
               🔗 {task.event_link}
             </a>
           )}
+          {/* 邮件上下文预览 */}
+          {(subject || sender) && (
+            <div className="mt-2 rounded bg-gray-50 px-2 py-1 text-[11px] text-text-muted">
+              {subject && <div className="truncate">📬 {subject}</div>}
+              {sender && (
+                <div className="truncate text-text-muted">
+                  ↪ {sender} ·{" "}
+                  {task.email_received_at
+                    ? new Date(task.email_received_at).toLocaleString("zh-CN")
+                    : ""}
+                </div>
+              )}
+            </div>
+          )}
         </div>
-        <div className="flex gap-1">
+        <div className="flex flex-col gap-1">
           <button
             onClick={handleConfirm}
-            disabled={busy}
+            disabled={busy || task.extract_status === "pending"}
             className="rounded-lg bg-success px-3 py-1.5 text-xs font-medium text-white disabled:opacity-50"
+            title={task.extract_status === "pending" ? "AI 提取完成后才能确认" : ""}
           >
             确认
+          </button>
+          <button
+            onClick={() => setShowEmail(true)}
+            className="rounded-lg bg-primary-soft px-3 py-1.5 text-xs font-medium text-primary-dark hover:bg-primary/20"
+          >
+            查看邮件
+          </button>
+          <button
+            onClick={handleReextract}
+            disabled={busy || task.extract_status === "pending"}
+            className="rounded-lg bg-gray-100 px-3 py-1.5 text-xs text-text-muted hover:bg-gray-200 disabled:opacity-50"
+            title="对提取结果不满意？点此用 AI 重新提取"
+          >
+            ✨ 重新提取
           </button>
           <button
             onClick={() => ignoreTask(task.id)}
@@ -281,6 +475,12 @@ function TaskCard({ task }: { task: EmailTask }) {
           </button>
         </div>
       </div>
+      {showEmail && task.email_id && (
+        <EmailDetailModal
+          emailId={task.email_id}
+          onClose={() => setShowEmail(false)}
+        />
+      )}
     </div>
   );
 }
@@ -293,6 +493,11 @@ export default function Email() {
   useEffect(() => {
     void loadAccounts();
     void loadTasks("pending");
+    // 每 30s 轮询一次 pending 任务，让异步 LLM 提取结果可见
+    const timer = setInterval(() => {
+      void loadTasks("pending");
+    }, 30000);
+    return () => clearInterval(timer);
   }, [loadAccounts, loadTasks]);
 
   return (
@@ -300,6 +505,16 @@ export default function Email() {
       {error && (
         <div className="rounded-lg bg-red-50 px-4 py-2 text-sm text-red-600">{error}</div>
       )}
+
+      {/* 自动化流程说明 */}
+      <div className="rounded-xl border border-primary/30 bg-primary-soft/50 p-3 text-xs text-primary-dark">
+        <div className="font-medium">✨ 邮件→日程全自动流程</div>
+        <div className="mt-1 text-text-muted">
+          ① 同步邮件 → ② 关键词初筛（测评/笔试/面试/一面/二面/终面） →
+          ③ AI 异步提取公司/岗位/时间/链接 → ④ 你确认 →
+          ⑤ 自动创建投递记录 + 日程 + 提醒
+        </div>
+      </div>
 
       {/* 邮箱账户 */}
       <section className="rounded-2xl border border-line bg-white/60 p-5 backdrop-blur">

@@ -93,9 +93,11 @@ async def init_db() -> None:
             """
         )
         # 旧表迁移：补 extract_status 列（幂等）
-        cols = {r[1] for r in await conn.execute(
-            "PRAGMA table_info(email_tasks)"
-        ).fetchall()}
+        # 注意：aiosqlite 的 conn.execute() 是 coroutine，必须分两步 await
+        # 错误写法：await conn.execute(...).fetchall()  ← .fetchall 在 coroutine 上不存在
+        # 正确写法：先 await execute 拿 cursor，再 await cursor.fetchall()
+        cursor = await conn.execute("PRAGMA table_info(email_tasks)")
+        cols = {r[1] for r in await cursor.fetchall()}
         if "extract_status" not in cols:
             await conn.execute(
                 "ALTER TABLE email_tasks ADD COLUMN extract_status "

@@ -401,6 +401,16 @@ function TaskCard({ task }: { task: EmailTask }) {
 
   const extractBadge = EXTRACT_BADGE[task.extract_status];
 
+  // 任务状态徽章（pending 时不显示，因为有 extract_status 徽章了）
+  const STATUS_BADGE: Record<string, { label: string; className: string }> = {
+    confirmed: { label: "✓ 已确认", className: "bg-success-soft text-success-dark" },
+    ignored: { label: "已忽略", className: "bg-gray-200 text-text-muted" },
+  };
+  const statusBadge = STATUS_BADGE[task.status];
+
+  // 已确认/已忽略状态时按钮组只显示「查看邮件」+「撤销」(可选)
+  const isHandled = task.status === "confirmed" || task.status === "ignored";
+
   return (
     <div className="rounded-xl border border-line bg-white p-4 shadow-sm">
       <div className="flex items-start justify-between">
@@ -422,6 +432,13 @@ function TaskCard({ task }: { task: EmailTask }) {
             >
               {extractBadge.label}
             </span>
+            {statusBadge && (
+              <span
+                className={`rounded-full px-1.5 py-0.5 text-[10px] font-medium ${statusBadge.className}`}
+              >
+                {statusBadge.label}
+              </span>
+            )}
           </div>
           <div className="text-xs text-text-muted">⏰ {time}</div>
           {task.event_link && (
@@ -450,34 +467,46 @@ function TaskCard({ task }: { task: EmailTask }) {
           )}
         </div>
         <div className="flex flex-col gap-1">
-          <button
-            onClick={handleConfirm}
-            disabled={busy || task.extract_status === "pending"}
-            className="rounded-lg bg-success px-3 py-1.5 text-xs font-medium text-white disabled:opacity-50"
-            title={task.extract_status === "pending" ? "AI 提取完成后才能确认" : ""}
-          >
-            确认
-          </button>
-          <button
-            onClick={() => setShowEmail(true)}
-            className="rounded-lg bg-primary-soft px-3 py-1.5 text-xs font-medium text-primary-ink hover:bg-primary/20"
-          >
-            查看邮件
-          </button>
-          <button
-            onClick={handleReextract}
-            disabled={busy || task.extract_status === "pending"}
-            className="rounded-lg bg-gray-100 px-3 py-1.5 text-xs text-text-muted hover:bg-gray-200 disabled:opacity-50"
-            title="对提取结果不满意？点此用 AI 重新提取"
-          >
-            ✨ 重新提取
-          </button>
-          <button
-            onClick={() => ignoreTask(task.id)}
-            className="rounded-lg bg-gray-100 px-3 py-1.5 text-xs text-text-muted hover:bg-gray-200"
-          >
-            忽略
-          </button>
+          {!isHandled && (
+            <>
+              <button
+                onClick={handleConfirm}
+                disabled={busy || task.extract_status === "pending"}
+                className="rounded-lg bg-success px-3 py-1.5 text-xs font-medium text-white disabled:opacity-50"
+                title={task.extract_status === "pending" ? "AI 提取完成后才能确认" : ""}
+              >
+                确认
+              </button>
+              <button
+                onClick={() => setShowEmail(true)}
+                className="rounded-lg bg-primary-soft px-3 py-1.5 text-xs font-medium text-primary-ink hover:bg-primary/20"
+              >
+                查看邮件
+              </button>
+              <button
+                onClick={handleReextract}
+                disabled={busy || task.extract_status === "pending"}
+                className="rounded-lg bg-gray-100 px-3 py-1.5 text-xs text-text-muted hover:bg-gray-200 disabled:opacity-50"
+                title="对提取结果不满意？点此用 AI 重新提取"
+              >
+                ✨ 重新提取
+              </button>
+              <button
+                onClick={() => ignoreTask(task.id)}
+                className="rounded-lg bg-gray-100 px-3 py-1.5 text-xs text-text-muted hover:bg-gray-200"
+              >
+                忽略
+              </button>
+            </>
+          )}
+          {isHandled && (
+            <button
+              onClick={() => setShowEmail(true)}
+              className="rounded-lg bg-primary-soft px-3 py-1.5 text-xs font-medium text-primary-ink hover:bg-primary/20"
+            >
+              查看邮件
+            </button>
+          )}
         </div>
       </div>
       {(localError || (error && task.extract_status !== "pending")) && (
@@ -499,16 +528,29 @@ export default function Email() {
   const { accounts, tasks, loading, syncing, error, loadAccounts, loadTasks, syncAccount, removeAccount } =
     useEmailStore();
   const [showAdd, setShowAdd] = useState(false);
+  // 任务状态筛选 tab：全部 / 待确认 / 已确认 / 已忽略
+  const [taskFilter, setTaskFilter] = useState<"all" | "pending" | "confirmed" | "ignored">("all");
 
   useEffect(() => {
     void loadAccounts();
-    void loadTasks("pending");
-    // 每 30s 轮询一次 pending 任务，让异步 LLM 提取结果可见
+    void loadTasks();
+    // 每 30s 轮询拉所有任务，让异步 LLM 提取结果可见
     const timer = setInterval(() => {
-      void loadTasks("pending");
+      void loadTasks();
     }, 30000);
     return () => clearInterval(timer);
   }, [loadAccounts, loadTasks]);
+
+  // 前端筛选（避免每次切 tab 都打后端）
+  const filteredTasks = taskFilter === "all"
+    ? tasks
+    : tasks.filter((t) => t.status === taskFilter);
+  const counts = {
+    all: tasks.length,
+    pending: tasks.filter((t) => t.status === "pending").length,
+    confirmed: tasks.filter((t) => t.status === "confirmed").length,
+    ignored: tasks.filter((t) => t.status === "ignored").length,
+  };
 
   return (
     <div className="space-y-6">
@@ -579,29 +621,53 @@ export default function Email() {
         )}
       </section>
 
-      {/* 待确认任务 */}
+      {/* 邮件任务（含状态筛选 tab） */}
       <section className="rounded-2xl border border-line bg-white p-5">
-        <div className="mb-4 flex items-center justify-between">
+        <div className="mb-4 flex flex-wrap items-center justify-between gap-2">
           <h2 className="text-base font-semibold">
-            待确认任务 <span className="text-sm text-text-muted">({tasks.length})</span>
+            邮件任务 <span className="text-sm text-text-muted">({counts.all})</span>
           </h2>
           <button
-            onClick={() => loadTasks("pending")}
+            onClick={() => loadTasks()}
             className="text-xs text-primary-dark hover:underline"
           >
             刷新
           </button>
         </div>
 
+        {/* 状态筛选 tab */}
+        <div className="mb-4 flex flex-wrap gap-2 border-b border-line pb-3 text-xs">
+          {([
+            { key: "all", label: "全部", count: counts.all },
+            { key: "pending", label: "待确认", count: counts.pending },
+            { key: "confirmed", label: "已确认", count: counts.confirmed },
+            { key: "ignored", label: "已忽略", count: counts.ignored },
+          ] as const).map((tab) => (
+            <button
+              key={tab.key}
+              onClick={() => setTaskFilter(tab.key)}
+              className={`rounded-full px-3 py-1.5 font-medium transition ${
+                taskFilter === tab.key
+                  ? "bg-ink text-white shadow-sm"
+                  : "bg-slate-100 text-text hover:bg-slate-200"
+              }`}
+            >
+              {tab.label} <span className="opacity-70">({tab.count})</span>
+            </button>
+          ))}
+        </div>
+
         {loading ? (
           <p className="py-8 text-center text-sm text-text-muted">加载中...</p>
-        ) : tasks.length === 0 ? (
+        ) : filteredTasks.length === 0 ? (
           <p className="py-8 text-center text-sm text-text-muted">
-            暂无待确认任务。同步邮件后，测评/笔试/面试邀请会出现在这里。
+            {taskFilter === "all"
+              ? "暂无邮件任务。同步邮件后，测评/笔试/面试邀请会出现在这里。"
+              : `暂无${taskFilter === "pending" ? "待确认" : taskFilter === "confirmed" ? "已确认" : "已忽略"}任务`}
           </p>
         ) : (
           <div className="space-y-3">
-            {tasks.map((t) => (
+            {filteredTasks.map((t) => (
               <TaskCard key={t.id} task={t} />
             ))}
           </div>

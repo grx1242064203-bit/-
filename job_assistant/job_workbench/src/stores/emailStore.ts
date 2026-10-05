@@ -75,11 +75,11 @@ export const useEmailStore = create<EmailState>((set, get) => ({
     set({ syncing: true, error: null });
     try {
       await syncEmailAccount(id);
-      // 同步后立即刷新任务列表（异步 LLM 提取进行中，pending 任务先出现）
-      await get().loadTasks("pending");
+      // 同步后立即刷新任务列表（拉所有状态，让用户看到全部任务）
+      await get().loadTasks();
       // 等 5s 再刷一次，让 LLM 提取结果可见
       setTimeout(() => {
-        void get().loadTasks("pending");
+        void get().loadTasks();
       }, 5000);
     } catch (e) {
       set({ error: extractErrorMessage(e) });
@@ -91,6 +91,7 @@ export const useEmailStore = create<EmailState>((set, get) => ({
   loadTasks: async (status) => {
     set({ loading: true, error: null });
     try {
+      // status 缺省拉所有状态的任务（pending + confirmed + ignored）
       const tasks = await listEmailTasks(status);
       set({ tasks });
     } catch (e) {
@@ -113,9 +114,13 @@ export const useEmailStore = create<EmailState>((set, get) => ({
       set({ error: extractErrorMessage(e) });
       throw e;
     }
-    // 仅在确认成功后才从列表移除
+    // 确认成功后不删除，仅更新本地 status 字段（让用户仍能看到这条任务）
     set((s) => ({
-      tasks: s.tasks.filter((t) => t.id !== id),
+      tasks: s.tasks.map((t) =>
+        t.id === id
+          ? { ...t, status: "confirmed" as const, confirmed_at: new Date().toISOString() }
+          : t
+      ),
       error: null,
     }));
     // 触发投递记录刷新
@@ -127,7 +132,12 @@ export const useEmailStore = create<EmailState>((set, get) => ({
 
   ignoreTask: async (id) => {
     await ignoreEmailTask(id);
-    set((s) => ({ tasks: s.tasks.filter((t) => t.id !== id) }));
+    // 不删除，仅更新本地 status 字段
+    set((s) => ({
+      tasks: s.tasks.map((t) =>
+        t.id === id ? { ...t, status: "ignored" as const } : t
+      ),
+    }));
   },
 
   reextractTask: async (id) => {
@@ -140,7 +150,7 @@ export const useEmailStore = create<EmailState>((set, get) => ({
     }));
     // 5s 后刷新看结果
     setTimeout(() => {
-      void get().loadTasks("pending");
+      void get().loadTasks();
     }, 5000);
   },
 }));

@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useMemo, useState } from "react";
 import {
   DndContext,
   DragOverlay,
@@ -13,7 +13,6 @@ import {
 import {
   useAppStore,
   KANBAN_COLUMNS,
-  INTERVIEW_ROUNDS,
   type Application,
   type AppStatus,
 } from "../stores/appStore";
@@ -32,10 +31,8 @@ const STATUS_ORDER: Record<AppStatus, number> = {
 export default function KanbanBoard() {
   const {
     applications,
-    interviewExpanded,
     updateApplicationStatus,
     updateInterviewRound,
-    setInterviewExpanded,
     setSelectedAppId,
   } = useAppStore();
 
@@ -45,6 +42,17 @@ export default function KanbanBoard() {
     app: Application;
     target: AppStatus;
   } | null>(null);
+  // 列扩展:点击标题拓宽某列,其他列缩到图标宽度
+  const [expandedCol, setExpandedCol] = useState<AppStatus | null>(null);
+  // 每列独立的搜索词
+  const [colSearch, setColSearch] = useState<Record<AppStatus, string>>({
+    favorite: "",
+    applied: "",
+    assessment: "",
+    interview: "",
+    offer: "",
+    rejected: "",
+  });
 
   // PointerSensor: 鼠标 + 触屏全支持; activationConstraint.distance=6 防止误触
   const sensors = useSensors(
@@ -71,7 +79,7 @@ export default function KanbanBoard() {
     const src = (e.active.data.current as { application?: Application } | undefined)?.application;
     if (!src) return;
 
-    // over.id 格式: "col-<status>" 或 "round-<n>"
+    // over.id 格式: "col-<status>"(面试轮次改用点击,不再有 round-<n>)
     const overId = String(e.over.id);
     if (overId.startsWith("col-")) {
       const targetStatus = overId.replace("col-", "") as AppStatus;
@@ -80,21 +88,12 @@ export default function KanbanBoard() {
         setPendingReverse({ app: src, target: targetStatus });
         return;
       }
-      void updateApplicationStatus(src, targetStatus).catch(() => {});
-    } else if (overId.startsWith("round-")) {
-      const round = Number(overId.replace("round-", ""));
-      if (src.status === "interview" && src.interview_round !== round) {
-        void updateInterviewRound(src, round);
-      } else if (src.status !== "interview") {
-        // 拖到面试轮次子列:同时改状态 + 轮次
-        if (isReverse(src.status, "interview")) {
-          setPendingReverse({ app: src, target: "interview" });
-          return;
+      // 拖到面试列:轮次默认 1(一面)
+      void updateApplicationStatus(src, targetStatus).then(() => {
+        if (targetStatus === "interview" && src.interview_round !== 1) {
+          void updateInterviewRound(src, 1);
         }
-        void updateApplicationStatus(src, "interview").then(() => {
-          void updateInterviewRound(src, round);
-        });
-      }
+      }).catch(() => {});
     }
   }
 
@@ -105,51 +104,24 @@ export default function KanbanBoard() {
     setPendingReverse(null);
   }
 
+  // 点击页面其他地方收起列扩展
+  function handleBoardClick() {
+    if (expandedCol) setExpandedCol(null);
+  }
+
+  // 列宽计算: 扩展列占 5/12, 其他列各占 1/12 (图标宽度)
+  function getColSpan(status: AppStatus): string {
+    if (!expandedCol) return "col-span-2"; // 默认 6 列等宽 (12/6=2)
+    if (expandedCol === status) return "col-span-7"; // 扩展列占大
+    return "col-span-1"; // 其他列缩到 1/12 (图标宽)
+  }
+
   function renderColumn(col: (typeof KANBAN_COLUMNS)[number]) {
     const items = applications.filter((a) => a.status === col.status);
     const dropId = `col-${col.status}`;
     const isOver = dragOverId === dropId;
-
-    // 面试列展开为轮次子列
-    if (col.expandable && interviewExpanded) {
-      return (
-        <div
-          key={col.status}
-          className="glass flex min-h-[60vh] flex-col rounded-xl p-2 shadow-sm"
-        >
-          <div
-            className={`mb-2 flex items-center justify-between rounded-pill px-3 py-1.5 ${col.headerBg}`}
-          >
-            <button
-              type="button"
-              onClick={() => setInterviewExpanded(false)}
-              className={`text-sm font-semibold ${col.accentText} hover:underline`}
-            >
-              {col.label} ▾
-            </button>
-            <span className="rounded-pill bg-slate-100 px-2 py-0.5 text-xs font-medium text-text">
-              {items.length}
-            </span>
-          </div>
-
-          <div className="grid grid-cols-4 gap-1.5 flex-1">
-            {INTERVIEW_ROUNDS.map((r) => (
-              <RoundSubColumn
-                key={r.round}
-                round={r.round}
-                label={r.label}
-                items={items.filter((a) => (a.interview_round || 1) === r.round)}
-                isOver={dragOverId === `round-${r.round}`}
-                onDragOverChange={(over) =>
-                  setDragOverId(over ? `round-${r.round}` : null)
-                }
-                onSelectApp={(id) => setSelectedAppId(id)}
-              />
-            ))}
-          </div>
-        </div>
-      );
-    }
+    const isExpanded = expandedCol === col.status;
+    const isCollapsed = expandedCol && expandedCol !== col.status;
 
     return (
       <DroppableColumn
@@ -162,9 +134,17 @@ export default function KanbanBoard() {
         accentText={col.accentText}
         label={col.label}
         items={items}
-        expandable={col.expandable}
-        onExpand={() => setInterviewExpanded(true)}
+        isExpanded={isExpanded}
+        isCollapsed={!!isCollapsed}
+        colSpan={getColSpan(col.status)}
+        searchText={colSearch[col.status]}
+        onSearchChange={(t) => setColSearch((s) => ({ ...s, [col.status]: t }))}
+        onTitleClick={() => {
+          // 点击标题: 切换扩展状态
+          setExpandedCol(expandedCol === col.status ? null : col.status);
+        }}
         onSelectApp={(id) => setSelectedAppId(id)}
+        onUpdateInterviewRound={(app, round) => void updateInterviewRound(app, round)}
       />
     );
   }
@@ -179,7 +159,10 @@ export default function KanbanBoard() {
         setDragOverId(null);
       }}
     >
-      <div className="grid grid-cols-6 gap-3">
+      <div
+        className="grid grid-cols-12 gap-2"
+        onClick={handleBoardClick}
+      >
         {KANBAN_COLUMNS.map(renderColumn)}
       </div>
 
@@ -202,7 +185,7 @@ export default function KanbanBoard() {
       {/* 逆向拖拽确认弹窗 */}
       {pendingReverse && (
         <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40 backdrop-blur-sm">
-          <div className="glass w-80 rounded-2xl p-5 shadow-xl">
+          <div className="glass w-80 rounded-2xl p-5 shadow-xl" onClick={(e) => e.stopPropagation()}>
             <h3 className="text-base font-semibold text-text">确认状态变更</h3>
             <p className="mt-2 text-sm text-text-muted">
               将「{pendingReverse.app.company_name || pendingReverse.app.job_title}」
@@ -233,7 +216,7 @@ export default function KanbanBoard() {
   );
 }
 
-// ===== 子组件:可放置的列(普通列) =====
+// ===== 子组件:可放置的列 =====
 function DroppableColumn({
   dropId,
   isOver,
@@ -243,9 +226,14 @@ function DroppableColumn({
   accentText,
   label,
   items,
-  expandable,
-  onExpand,
+  isExpanded,
+  isCollapsed,
+  colSpan,
+  searchText,
+  onSearchChange,
+  onTitleClick,
   onSelectApp,
+  onUpdateInterviewRound,
 }: {
   dropId: string;
   isOver: boolean;
@@ -255,106 +243,106 @@ function DroppableColumn({
   accentText: string;
   label: string;
   items: Application[];
-  expandable?: boolean;
-  onExpand?: () => void;
+  isExpanded: boolean;
+  isCollapsed: boolean;
+  colSpan: string;
+  searchText: string;
+  onSearchChange: (t: string) => void;
+  onTitleClick: () => void;
   onSelectApp: (id: number) => void;
+  onUpdateInterviewRound: (app: Application, round: number) => void;
 }) {
   const { setNodeRef, isOver: dndOver } = useDroppable({ id: dropId });
 
-  // 同步外部 hover 状态(用于 ring 高亮)
   if (dndOver !== isOver) {
     onDragOverChange(dndOver);
+  }
+
+  // 搜索过滤
+  const filtered = useMemo(() => {
+    const q = searchText.trim().toLowerCase();
+    if (!q) return items;
+    return items.filter((a) =>
+      (a.company_name || "").toLowerCase().includes(q) ||
+      (a.job_title || "").toLowerCase().includes(q) ||
+      (a.notes || "").toLowerCase().includes(q)
+    );
+  }, [items, searchText]);
+
+  // 折叠状态:只显示图标宽度的列
+  if (isCollapsed) {
+    return (
+      <div
+        ref={setNodeRef}
+        className={`flex min-h-[60vh] flex-col items-center rounded-xl p-1 shadow-sm ${columnBg} ${
+          dndOver ? "ring-2 ring-primary ring-offset-1" : ""
+        } ${colSpan}`}
+      >
+        <button
+          type="button"
+          onClick={(e) => {
+            e.stopPropagation();
+            onTitleClick();
+          }}
+          className={`sticky top-0 z-10 mb-2 flex h-10 w-10 items-center justify-center rounded-full ${headerBg} ${accentText} hover:scale-110 transition`}
+          title={label}
+        >
+          {label.slice(0, 2)}
+        </button>
+        <div className="text-[10px] font-medium text-text-muted">
+          {items.length}
+        </div>
+      </div>
+    );
   }
 
   return (
     <div
       ref={setNodeRef}
-      className={`glass flex min-h-[60vh] flex-col rounded-xl p-3 shadow-sm ${columnBg} ${
+      className={`glass flex min-h-[60vh] flex-col rounded-xl p-2 shadow-sm ${columnBg} ${
         dndOver ? "ring-2 ring-primary ring-offset-1" : ""
-      }`}
+      } ${colSpan} ${isExpanded ? "max-h-[80vh]" : ""}`}
+      onClick={(e) => e.stopPropagation()}
     >
       <div
-        className={`mb-3 flex items-center justify-between rounded-pill px-3 py-2 ${headerBg}`}
+        className={`mb-2 flex items-center justify-between rounded-pill px-3 py-1.5 ${headerBg} cursor-pointer hover:opacity-80`}
+        onClick={(e) => {
+          e.stopPropagation();
+          onTitleClick();
+        }}
+        title={isExpanded ? "点击其他列标题或空白处恢复" : "点击拓宽此列"}
       >
-        {expandable ? (
-          <button
-            type="button"
-            onClick={onExpand}
-            className={`text-sm font-semibold ${accentText} hover:underline`}
-          >
-            {label} ▸
-          </button>
-        ) : (
-          <span className={`text-sm font-semibold ${accentText}`}>{label}</span>
-        )}
+        <span className={`text-sm font-semibold ${accentText}`}>
+          {label} {isExpanded ? "▾" : "▸"}
+        </span>
         <span className="rounded-pill bg-slate-100 px-2 py-0.5 text-xs font-medium text-text shadow-sm">
-          {items.length}
+          {filtered.length}{searchText && filtered.length !== items.length ? `/${items.length}` : ""}
         </span>
       </div>
 
-      <div className="flex flex-1 flex-col gap-2 overflow-y-auto">
-        {items.length === 0 ? (
+      {/* 搜索框 */}
+      <input
+        type="text"
+        value={searchText}
+        onChange={(e) => onSearchChange(e.target.value)}
+        onClick={(e) => e.stopPropagation()}
+        placeholder="搜索公司/岗位/备注"
+        className="mb-2 w-full rounded-pill border border-line bg-white/80 px-3 py-1 text-xs text-text placeholder:text-text-faint focus:border-primary focus:outline-none"
+      />
+
+      <div className={`flex flex-1 flex-col gap-1.5 overflow-y-auto ${isExpanded ? "grid grid-cols-2 gap-2" : ""}`}>
+        {filtered.length === 0 ? (
           <div className="rounded-xl border border-dashed border-line bg-slate-50 p-3 text-center text-xs text-text-muted">
-            暂无
+            {searchText ? "无匹配结果" : "暂无"}
           </div>
         ) : (
-          items.map((app) => (
+          filtered.map((app) => (
             <ApplicationCard
               key={app.id}
               application={app}
               onClick={() => onSelectApp(app.id)}
-            />
-          ))
-        )}
-      </div>
-    </div>
-  );
-}
-
-// ===== 子组件:面试轮次子列 =====
-function RoundSubColumn({
-  round,
-  label,
-  items,
-  isOver,
-  onDragOverChange,
-  onSelectApp,
-}: {
-  round: number;
-  label: string;
-  items: Application[];
-  isOver: boolean;
-  onDragOverChange: (over: boolean) => void;
-  onSelectApp: (id: number) => void;
-}) {
-  const { setNodeRef, isOver: dndOver } = useDroppable({ id: `round-${round}` });
-
-  if (dndOver !== isOver) {
-    onDragOverChange(dndOver);
-  }
-
-  return (
-    <div
-      ref={setNodeRef}
-      className={`flex min-h-[50vh] flex-col rounded-lg p-1.5 ${
-        dndOver ? "ring-2 ring-warning bg-warning/10" : "bg-slate-50"
-      }`}
-    >
-      <div className="mb-1 text-center text-xs font-medium text-text-muted">
-        {label}
-        <span className="ml-1 text-text-faint">({items.length})</span>
-      </div>
-      <div className="flex flex-1 flex-col gap-1.5 overflow-y-auto">
-        {items.length === 0 ? (
-          <div className="rounded border border-dashed border-line p-2 text-center text-[10px] text-text-muted">
-            拖到此处
-          </div>
-        ) : (
-          items.map((app) => (
-            <ApplicationCard
-              key={app.id}
-              application={app}
-              onClick={() => onSelectApp(app.id)}
+              isExpanded={isExpanded}
+              onUpdateInterviewRound={onUpdateInterviewRound}
             />
           ))
         )}

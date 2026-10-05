@@ -1,12 +1,14 @@
 import { useState } from "react";
 import { useDraggable } from "@dnd-kit/core";
 import { CSS } from "@dnd-kit/utilities";
-import { useAppStore, type Application } from "../stores/appStore";
+import { useAppStore, INTERVIEW_ROUNDS, type Application } from "../stores/appStore";
 import { updateApplication } from "../api/applications";
 
 interface Props {
   application: Application;
   onClick?: () => void;
+  isExpanded?: boolean;
+  onUpdateInterviewRound?: (app: Application, round: number) => void;
 }
 
 const SOURCE_LABEL: Record<string, string> = {
@@ -26,10 +28,13 @@ const SOURCE_COLOR: Record<string, string> = {
 export default function ApplicationCard({
   application,
   onClick,
+  isExpanded: columnExpanded = false,
+  onUpdateInterviewRound,
 }: Props) {
   const [expanded, setExpanded] = useState(false);
   const [notes, setNotes] = useState(application.notes ?? "");
   const [saving, setSaving] = useState(false);
+  const [showRoundMenu, setShowRoundMenu] = useState(false);
   const removeApplication = useAppStore((s) => s.removeApplication);
 
   // dnd-kit: 把卡片变成可拖拽元素,id 用 application.id(唯一)
@@ -96,7 +101,9 @@ export default function ApplicationCard({
       {...listeners}
       {...attributes}
       onClick={handleCardClick}
-      className="glass-soft group cursor-pointer rounded-xl p-3 shadow-sm transition hover:-translate-y-0.5 hover:shadow-md touch-none"
+      className={`glass-soft group cursor-pointer rounded-xl shadow-sm transition hover:-translate-y-0.5 hover:shadow-md touch-none ${
+        columnExpanded ? "p-2" : "p-3"
+      }`}
     >
       <div className="flex items-start justify-between gap-2">
         <div className="min-w-0">
@@ -107,9 +114,46 @@ export default function ApplicationCard({
               {sourceLabel}
             </span>
             {application.status === "interview" && application.interview_round > 0 && (
-              <span className="rounded bg-amber-200 px-1.5 py-0.5 text-[10px] font-medium text-amber-900">
-                {application.interview_round}面
-              </span>
+              <div className="relative">
+                <button
+                  type="button"
+                  onPointerDown={(e) => e.stopPropagation()}
+                  onClick={(e) => {
+                    e.stopPropagation();
+                    setShowRoundMenu((v) => !v);
+                  }}
+                  className="rounded bg-amber-200 px-1.5 py-0.5 text-[10px] font-medium text-amber-900 hover:bg-amber-300 transition"
+                  title="点击修改面试轮次"
+                >
+                  {INTERVIEW_ROUNDS.find((r) => r.round === application.interview_round)?.label || `${application.interview_round}面`} ▾
+                </button>
+                {showRoundMenu && (
+                  <div
+                    className="absolute left-0 top-full z-20 mt-1 rounded-lg border border-line bg-white p-1 shadow-lg"
+                    onClick={(e) => e.stopPropagation()}
+                  >
+                    {INTERVIEW_ROUNDS.map((r) => (
+                      <button
+                        key={r.round}
+                        type="button"
+                        onPointerDown={(e) => e.stopPropagation()}
+                        onClick={(e) => {
+                          e.stopPropagation();
+                          setShowRoundMenu(false);
+                          if (application.interview_round !== r.round) {
+                            onUpdateInterviewRound?.(application, r.round);
+                          }
+                        }}
+                        className={`block w-full whitespace-nowrap rounded px-2 py-1 text-left text-[11px] hover:bg-primary-soft ${
+                          application.interview_round === r.round ? "font-semibold text-primary-dark" : "text-text"
+                        }`}
+                      >
+                        {r.label}
+                      </button>
+                    ))}
+                  </div>
+                )}
+              </div>
             )}
           </div>
           <div className="mt-1 truncate text-sm font-semibold text-text">
@@ -141,11 +185,11 @@ export default function ApplicationCard({
         </div>
       )}
 
-      {updatedAt && (
+      {updatedAt && !columnExpanded && (
         <div className="mt-1 text-xs text-text-faint">更新：{updatedAt}</div>
       )}
 
-      {!expanded && application.notes && (
+      {!expanded && application.notes && !columnExpanded && (
         <div className="mt-1 line-clamp-2 text-xs text-text-muted">
           {application.notes}
         </div>

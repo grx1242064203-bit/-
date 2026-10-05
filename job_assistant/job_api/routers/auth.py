@@ -4,13 +4,13 @@
 - POST /api/v1/auth/verify-email {email, code} → {token, expires_at}
 - POST /api/v1/auth/login {email, password} → {token, expires_at}
 - POST /api/v1/auth/refresh (Bearer) → {token, expires_at}
-- slowapi rate limit：每 IP 每分钟 5 次注册/验证/登录尝试
+- slowapi rate limit：每 IP 每分钟限流(通过环境变量 AUTH_RATE_LIMIT_* 配置)。
 """
 from fastapi import APIRouter, Depends, HTTPException, Request, status
 from pydantic import BaseModel, Field
 from slowapi import Limiter
-from slowapi.util import get_remote_address
 
+from config import get_settings
 from deps import get_current_user
 from services.auth_service import (
     ConflictError,
@@ -25,8 +25,29 @@ from services.auth_service import (
 
 router = APIRouter(prefix="/auth", tags=["auth"])
 
+_settings = get_settings()
+
+
+def _get_client_ip(request: Request) -> str:
+    """提取客户端 IP 作为限流 key。
+
+    优先 X-Forwarded-For(反向代理场景),其次 request.client.host,
+    都拿不到时兜底 "unknown"(避免 request.client 为 None 时崩溃)。
+    """
+    xff = request.headers.get("x-forwarded-for")
+    if xff:
+        # X-Forwarded-For 可能含多个 IP,取第一个(真实客户端)
+        return xff.split(",")[0].strip()
+    real_ip = request.headers.get("x-real-ip")
+    if real_ip:
+        return real_ip.strip()
+    if request.client is not None:
+        return request.client.host
+    return "unknown"
+
+
 # 每 IP 维度的限流器；在 main.py 注册到 app.state.limiter 并挂 SlowAPIMiddleware。
-limiter = Limiter(key_func=get_remote_address)
+limiter = Limiter(key_func=_get_client_ip)
 
 # 简易邮箱格式校验，避免引入 email-validator 依赖。
 _EMAIL_PATTERN = r"^[^@\s]+@[^@\s]+\.[^@\s]+$"
@@ -58,7 +79,7 @@ class TokenResponse(BaseModel):
 
 
 @router.post("/register", response_model=RegisterResponse)
-@limiter.limit("5/minute")
+@limiter.limit(_settings.AUTH_RATE_LIMIT_REGISTER)
 async def register(request: Request, body: RegisterRequest) -> RegisterResponse:
     """注册新用户（未验证）或为未验证老用户重发验证码。"""
     try:
@@ -72,7 +93,7 @@ async def register(request: Request, body: RegisterRequest) -> RegisterResponse:
 
 
 @router.post("/verify-email", response_model=TokenResponse)
-@limiter.limit("5/minute")
+@limiter.limit(_settings.AUTH_RATE_LIMIT_VERIFY)
 async def verify_email(request: Request, body: VerifyEmailRequest) -> TokenResponse:
     """校验验证码并签发 JWT。"""
     try:
@@ -86,7 +107,7 @@ async def verify_email(request: Request, body: VerifyEmailRequest) -> TokenRespo
 
 
 @router.post("/login", response_model=TokenResponse)
-@limiter.limit("5/minute")
+@limiter.limit(_settings.AUTH_RATE_LIMIT_LOGIN)
 async def login(request: Request, body: LoginRequest) -> TokenResponse:
     """邮箱密码登录，签发 JWT。"""
     try:

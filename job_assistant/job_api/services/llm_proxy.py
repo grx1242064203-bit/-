@@ -60,13 +60,15 @@ class LLMProxyService:
         """解析简历 → {"keywords": [...], "fit_directions": [...]}。
 
         复用 resume_parser.parse_resume_text。30s 超时；失败抛异常。
+        传 raise_on_error=True 让 LLM 失败/返回空时抛 RuntimeError,
+        供路由层映射为 503(而非返回空 keywords 让前端误判成功)。
         """
         _ensure_parent_path()
         from resume_parser import parse_resume_text  # 延迟 import
 
         client = self._make_client()
         return self._run_with_timeout(
-            parse_resume_text, resume_text, client,
+            parse_resume_text, resume_text, client, True,
             label="parse_resume",
         )
 
@@ -76,13 +78,14 @@ class LLMProxyService:
         返回结构（透传 supplement_profile）：
         {fit_directions, structured_keywords, new_directions, new_skills}
         路由层负责挑选 {fit_directions, hard_skills} 字段返回客户端。
+        传 raise_on_error=True 让 LLM 失败时抛 RuntimeError,映射为 503。
         """
         _ensure_parent_path()
         from resume_parser import supplement_profile  # 延迟 import
 
         client = self._make_client()
         return self._run_with_timeout(
-            supplement_profile, user_edited, resume_text, client,
+            supplement_profile, user_edited, resume_text, client, True,
             label="supplement",
         )
 
@@ -145,6 +148,10 @@ class LLMProxyService:
             max_tokens=3000,
             json_mode=True,
         )
+        if content is None:
+            raise RuntimeError(
+                "公司尽调 LLM 调用失败: API 返回空(可能 API Key 无效或服务不可用)"
+            )
         intro = ""
         questions: list = []
         if content:

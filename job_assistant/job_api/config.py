@@ -25,8 +25,15 @@ class Settings(BaseSettings):
 
     # 每用户每日 LLM 调用配额上限(含简历解析 / 补充分析 / 公司尽调)。
     # 设为 0 表示禁用(不允许任何调用);设为负数(-1)表示不限制。
-    # 生产部署通过环境变量 LLM_DAILY_LIMIT 覆盖,默认 5 仅作开发期兜底。
-    LLM_DAILY_LIMIT: int = 5
+    # 生产部署通过环境变量 LLM_DAILY_LIMIT 覆盖,默认 -1 不限制。
+    LLM_DAILY_LIMIT: int = -1
+
+    # 认证接口限流(每 IP 每分钟),slowapi 字符串格式如 "20/minute"。
+    # 原 5/min 过严,正常使用(多设备登录/token 刷新/重试)会触发。
+    # 生产部署通过环境变量覆盖。
+    AUTH_RATE_LIMIT_LOGIN: str = "20/minute"
+    AUTH_RATE_LIMIT_REGISTER: str = "10/minute"
+    AUTH_RATE_LIMIT_VERIFY: str = "10/minute"
 
     # JWT 鉴权
     JWT_SECRET: str = "change-me-in-prod"

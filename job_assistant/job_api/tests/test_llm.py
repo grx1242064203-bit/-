@@ -177,10 +177,11 @@ def test_supplement_with_mock_proxy(client):
 
 # ====== 429：配额超限 ======
 
-def test_quota_exceeded_returns_429(client):
+def test_quota_exceeded_returns_429(client, monkeypatch):
     """用量达上限后再请求 → 429，且不调用 LLM。"""
-    # 把配额用满（默认 5 次）
-    for _ in range(quota_service.DEFAULT_DAILY_LIMIT):
+    monkeypatch.setattr(quota_service, "_resolve_limit", lambda: 5)
+    # 把配额用满（5 次）
+    for _ in range(5):
         quota_service.increment_usage(_TEST_USER_ID)
     quota = quota_service.get_user_quota(_TEST_USER_ID)
     assert quota["remaining"] == 0
@@ -199,9 +200,10 @@ def test_quota_exceeded_returns_429(client):
     mock_proxy.parse_resume.assert_not_called()
 
 
-def test_quota_exceeded_supplement_returns_429(client):
+def test_quota_exceeded_supplement_returns_429(client, monkeypatch):
     """supplement 同样受配额约束。"""
-    for _ in range(quota_service.DEFAULT_DAILY_LIMIT):
+    monkeypatch.setattr(quota_service, "_resolve_limit", lambda: 5)
+    for _ in range(5):
         quota_service.increment_usage(_TEST_USER_ID)
 
     with patch("routers.llm._proxy") as mock_proxy:
@@ -262,8 +264,10 @@ def test_parse_resume_empty_resume_text_returns_422(client):
 
 # ====== 配额递增逻辑（直接验证 quota_service） ======
 
-def test_quota_increment_logic():
+def test_quota_increment_logic(monkeypatch):
     """直接验证 quota_service 的递增 + 上限行为（不通过 HTTP）。"""
+    # 固定 limit=5 以测试上限行为(默认已改为 -1 不限制)
+    monkeypatch.setattr(quota_service, "_resolve_limit", lambda: 5)
     quota_service._reset_for_test()
     user_id = "test-user-direct"
 

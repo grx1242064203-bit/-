@@ -230,9 +230,17 @@ def _validate_fit_directions(raw_dirs: List[Dict], allow_category: bool = False)
     return valid[:8]
 
 
-def parse_resume_text(resume_text: str, llm_client=None) -> Dict:
+def parse_resume_text(resume_text: str, llm_client=None,
+                      raise_on_error: bool = False) -> Dict:
     """
     从简历文本解析生成结构化关键词 + 适配岗位方向。
+
+    Args:
+        resume_text: 简历原文
+        llm_client: LLMClient 实例(None 则新建)
+        raise_on_error: True 时 LLM 调用失败/返回空 抛 RuntimeError,
+            供云端 API 路由层映射为 503;False(默认)时兼容旧脚本,
+            失败返回空 {"keywords": [], "fit_directions": []}。
 
     Returns:
         {"keywords": List[Dict], "fit_directions": List[Dict]}
@@ -254,28 +262,43 @@ def parse_resume_text(resume_text: str, llm_client=None) -> Dict:
         job_tree_block=job_tree.prompt_block(),
     )
 
+    # LLM 调用失败时 _chat 返回 None
+    def _fail(msg: str) -> Dict:
+        if raise_on_error:
+            raise RuntimeError(msg)
+        return {"keywords": [], "fit_directions": []}
+
     try:
         raw = client._chat(
             [{"role": "user", "content": prompt}],
             temperature=0.1,
             max_tokens=8000,
         )
-        raw_keywords, raw_dirs = _parse_llm_output(raw)
-        if not raw_keywords and not raw_dirs:
-            logger.warning(f"简历 LLM 解析返回空: {raw[:200]}")
-            return {"keywords": [], "fit_directions": []}
-
-        keywords = _normalize_keywords(raw_keywords)
-        fit_directions = _validate_fit_directions(raw_dirs)
-        result = {"keywords": keywords, "fit_directions": fit_directions}
-        _save_cache(h, result)
-        logger.info(f"简历解析完成: keywords {len(raw_keywords)}→{len(keywords)}, "
-                    f"fit_directions {len(raw_dirs)}→{len(fit_directions)}")
-        return result
-
     except Exception as e:
-        logger.error(f"简历 LLM 解析失败: {e}")
-        return {"keywords": [], "fit_directions": []}
+        logger.error(f"简历 LLM 解析异常: {e}")
+        return _fail(f"简历 LLM 解析异常: {e}")
+
+    if raw is None:
+        logger.error("简历 LLM 解析失败: API 返回空(可能 API Key 无效或服务不可用)")
+        return _fail("简历 LLM 解析失败: API 返回空(可能 API Key 无效或服务不可用)")
+
+    try:
+        raw_keywords, raw_dirs = _parse_llm_output(raw)
+    except Exception as e:
+        logger.error(f"简历 LLM 输出解析失败: {e}; raw={raw[:200]}")
+        return _fail(f"简历 LLM 输出解析失败: {e}")
+
+    if not raw_keywords and not raw_dirs:
+        logger.warning(f"简历 LLM 解析返回空: {raw[:200]}")
+        return _fail("简历 LLM 解析返回空结果(可能简历内容不足)")
+
+    keywords = _normalize_keywords(raw_keywords)
+    fit_directions = _validate_fit_directions(raw_dirs)
+    result = {"keywords": keywords, "fit_directions": fit_directions}
+    _save_cache(h, result)
+    logger.info(f"简历解析完成: keywords {len(raw_keywords)}→{len(keywords)}, "
+                f"fit_directions {len(raw_dirs)}→{len(fit_directions)}")
+    return result
 
 
 def apply_keywords_to_profile(profile, result: Dict):
@@ -317,7 +340,7 @@ def apply_keywords_to_profile(profile, result: Dict):
 
 
 def supplement_profile(user_edited: Dict, resume_text: str = "",
-                       llm_client=None) -> Dict:
+                       llm_client=None, raise_on_error: bool = False) -> Dict:
     """第二轮:根据用户编辑后的完整画像,AI 补充分析方向 + 硬技能。
 
     流程:
@@ -358,6 +381,7 @@ def supplement_profile(user_edited: Dict, resume_text: str = "",
     result = client.supplement_from_edits(
         user_edited=user_edited,
         resume_text=resume_text,
+        raise_on_error=raise_on_error,
     )
 
     # 校验新方向(允许大类)

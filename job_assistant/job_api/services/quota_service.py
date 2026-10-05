@@ -25,11 +25,22 @@ logger = logging.getLogger(__name__)
 
 # 兜底默认值(开发期);生产部署应通过环境变量 LLM_DAILY_LIMIT 覆盖。
 # 设为 0 = 禁用;负数 = 不限制。
-DEFAULT_DAILY_LIMIT = 5
+DEFAULT_DAILY_LIMIT = -1
 
 
 def _resolve_limit(default: int = DEFAULT_DAILY_LIMIT) -> int:
-    """从环境变量 LLM_DAILY_LIMIT 读取上限,缺失时回退到 default。"""
+    """从配置(环境变量 LLM_DAILY_LIMIT 或 .env)读取上限,缺失时回退到 default。
+
+    优先用 pydantic Settings(会读取 .env + 系统环境变量),避免直接 os.getenv
+    读不到 .env 中配置的问题。
+    """
+    try:
+        from config import get_settings
+        val = get_settings().LLM_DAILY_LIMIT
+        if val is not None:
+            return val
+    except Exception:  # noqa: BLE001 配置加载失败时回退 os.getenv
+        pass
     raw = os.getenv("LLM_DAILY_LIMIT")
     if raw is None or raw.strip() == "":
         return default

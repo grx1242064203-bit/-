@@ -656,7 +656,8 @@ class LLMClient:
             return {"fit_directions": [], "hard_skills": []}
 
     def supplement_from_edits(self, user_edited: Dict,
-                              resume_text: str = "") -> Dict[str, Any]:
+                              resume_text: str = "",
+                              raise_on_error: bool = False) -> Dict[str, Any]:
         """第二轮补充:基于用户编辑后的完整画像(方向/技能/公司/城市)做 AI 分析。
 
         与 expand_directions 不同,本方法不要求用户必须新增方向。
@@ -723,41 +724,55 @@ class LLMClient:
 - 若用户填了目标公司,优先考虑这些公司常见岗位需要的技能
 - 若没有新增方向也没有补充技能,返回空数组
 """
+        def _fail(msg: str) -> Dict[str, Any]:
+            if raise_on_error:
+                raise RuntimeError(msg)
+            return {"fit_directions": [], "hard_skills": []}
+
         try:
             content = self._chat([{"role": "user", "content": prompt}],
                                  temperature=0.2, max_tokens=4000)
-            parsed = self._extract_json(content) if content else None
-            if not parsed:
-                logger.warning(f"补充分析 LLM 返回空: {content[:200] if content else ''}")
-                return {"fit_directions": [], "hard_skills": []}
-
-            fit_dirs = []
-            for item in parsed.get("fit_directions", []):
-                if isinstance(item, dict):
-                    direction = str(item.get("direction", "")).strip()
-                    if direction:
-                        fit_dirs.append({
-                            "direction": direction,
-                            "weight": float(item.get("weight") or 0.5),
-                            "evidence": str(item.get("evidence", "")).strip()[:200],
-                        })
-
-            hard_skills = []
-            for item in parsed.get("hard_skills", []):
-                if isinstance(item, dict):
-                    kw = str(item.get("kw", "")).strip()
-                    if kw:
-                        hard_skills.append({
-                            "kw": kw,
-                            "weight": float(item.get("weight") or 2.5),
-                        })
-
-            logger.info(f"补充分析完成: {len(fit_dirs)}个方向, {len(hard_skills)}个技能")
-            return {"fit_directions": fit_dirs, "hard_skills": hard_skills}
-
         except Exception as e:
-            logger.error(f"补充分析失败: {e}")
-            return {"fit_directions": [], "hard_skills": []}
+            logger.error(f"补充分析异常: {e}")
+            return _fail(f"补充分析异常: {e}")
+
+        if content is None:
+            logger.error("补充分析失败: LLM 返回空(可能 API Key 无效或服务不可用)")
+            return _fail("补充分析失败: LLM 返回空(可能 API Key 无效或服务不可用)")
+
+        try:
+            parsed = self._extract_json(content)
+        except Exception as e:
+            logger.error(f"补充分析 JSON 解析失败: {e}")
+            return _fail(f"补充分析 JSON 解析失败: {e}")
+
+        if not parsed:
+            logger.warning(f"补充分析 LLM 返回空: {content[:200]}")
+            return _fail("补充分析返回空结果(可能画像信息不足)")
+
+        fit_dirs = []
+        for item in parsed.get("fit_directions", []):
+            if isinstance(item, dict):
+                direction = str(item.get("direction", "")).strip()
+                if direction:
+                    fit_dirs.append({
+                        "direction": direction,
+                        "weight": float(item.get("weight") or 0.5),
+                        "evidence": str(item.get("evidence", "")).strip()[:200],
+                    })
+
+        hard_skills = []
+        for item in parsed.get("hard_skills", []):
+            if isinstance(item, dict):
+                kw = str(item.get("kw", "")).strip()
+                if kw:
+                    hard_skills.append({
+                        "kw": kw,
+                        "weight": float(item.get("weight") or 2.5),
+                    })
+
+        logger.info(f"补充分析完成: {len(fit_dirs)}个方向, {len(hard_skills)}个技能")
+        return {"fit_directions": fit_dirs, "hard_skills": hard_skills}
 
     @staticmethod
     def _empty_profile() -> Dict[str, Any]:

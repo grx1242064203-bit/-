@@ -37,6 +37,7 @@ async def create_account(
         req.imap_server, req.imap_port, req.username, req.password
     )
     if not test["ok"]:
+        # 错误信息透传给前端,前端用 extractErrorMessage 显示
         raise HTTPException(status_code=400, detail=f"IMAP 连接失败: {test['error']}")
 
     account = await account_model.create_account(

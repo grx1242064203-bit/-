@@ -73,16 +73,42 @@ def _get_body(msg: email.message.Message) -> tuple[str, str]:
 async def test_connection(
     imap_server: str, imap_port: int, username: str, password: str
 ) -> dict:
-    """测试 IMAP 连接。返回 {ok: bool, error: str}。"""
+    """测试 IMAP 连接。返回 {ok: bool, error: str}。
+
+    协议流程说明:
+    - IMAP4_SSL(server, port) 建立 SSL 连接
+    - login(user, pass) 认证
+    - select("INBOX", readonly=True) 选邮箱(只读)
+    - logout() 关闭连接
+
+    注意: readonly=True 选邮箱后不需要调 close()
+    - close() 是 select() 的逆操作,但只用于可写模式
+    - 在 readonly 模式下调 close() 部分服务器(如 163)会抛异常
+    - 正确流程是 select(readonly=True) → 直接 logout()
+    """
+    import logging
+
+    log = logging.getLogger(__name__)
     try:
+        log.info(
+            "IMAP 连接测试: server=%s port=%s user=%s", imap_server, imap_port, username
+        )
         conn = imaplib.IMAP4_SSL(imap_server, imap_port, timeout=15)
         conn.login(username, password)
-        conn.select("INBOX", readonly=True)
-        conn.close()
+        # 选 INBOX 验证登录成功 + 有权限读邮件
+        typ, data = conn.select("INBOX", readonly=True)
+        if typ != "OK":
+            err = f"select INBOX 失败: {data!r}"
+            log.warning(err)
+            return {"ok": False, "error": err}
+        # readonly 模式不调 close(),直接 logout
         conn.logout()
+        log.info("IMAP 连接成功: %s@%s", username, imap_server)
         return {"ok": True, "error": ""}
     except Exception as e:
-        return {"ok": False, "error": str(e)}
+        err = f"{type(e).__name__}: {e}"
+        log.warning("IMAP 连接失败: %s server=%s user=%s", err, imap_server, username)
+        return {"ok": False, "error": err}
 
 
 async def sync_account(account_id: str, user_id: str, limit: int = 50) -> dict:

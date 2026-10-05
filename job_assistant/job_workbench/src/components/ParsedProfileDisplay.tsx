@@ -529,6 +529,38 @@ export default function ParsedProfileDisplay({ profile }: Props) {
         </div>
       ) : null}
 
+      {/* 候选人竞争力(实时计算,展示用户层级) */}
+      {profile.candidate_score != null && (
+        <div className="rounded-2xl bg-gradient-to-br from-blue-50 to-violet-50 px-4 py-3 text-xs">
+          <div className="flex items-center justify-between">
+            <div>
+              <div className="font-medium text-slate-700">你的竞争力层级</div>
+              <p className="mt-1 leading-relaxed text-slate-500">
+                综合学校/学历/实习/竞赛/论文等信号实时计算,用于和公司层级(顶/中/保底)做对齐匹配。
+              </p>
+            </div>
+            <div className="flex items-center gap-3">
+              <div className="text-right">
+                <div className="text-3xl font-bold tabular-nums text-blue-700">
+                  {profile.candidate_score.toFixed(0)}
+                </div>
+                <div className="text-[10px] text-slate-400">/ 100</div>
+              </div>
+              {profile.candidate_tier && (
+                <span className={`rounded-full px-3 py-1 text-sm font-semibold ${
+                  profile.candidate_tier === "顶" ? "bg-rose-100 text-rose-700"
+                  : profile.candidate_tier === "中" ? "bg-blue-100 text-blue-700"
+                  : profile.candidate_tier === "保底" ? "bg-emerald-100 text-emerald-700"
+                  : "bg-slate-100 text-slate-600"
+                }`}>
+                  {profile.candidate_tier}
+                </span>
+              )}
+            </div>
+          </div>
+        </div>
+      )}
+
       {/* 计算与匹配逻辑说明(粗略,保持神秘) */}
       <div className="rounded-2xl bg-slate-50/80 px-4 py-3 text-xs text-slate-500">
         <div className="font-medium text-slate-600">匹配逻辑说明</div>

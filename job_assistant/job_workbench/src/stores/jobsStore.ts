@@ -40,6 +40,9 @@ export interface JobsState {
   loadMore: () => Promise<void>;
 }
 
+// 关键词搜索防抖定时器(模块级,多次 setKeyword 复用同一个 timer)
+let keywordDebounceTimer: ReturnType<typeof setTimeout> | null = null;
+
 let loadSeq = 0;
 
 export const useJobsStore = create<JobsState>((set, get) => ({
@@ -80,7 +83,11 @@ export const useJobsStore = create<JobsState>((set, get) => ({
 
   setKeyword: (kw) => {
     set({ keyword: kw });
-    void get().loadJobs();
+    // 防抖:300ms 内连续输入只发最后一次请求,避免每个字符都打后端
+    if (keywordDebounceTimer) clearTimeout(keywordDebounceTimer);
+    keywordDebounceTimer = setTimeout(() => {
+      void get().loadJobs();
+    }, 300);
   },
 
   setColumnFilter: (key, values) => {

@@ -14,6 +14,9 @@ export interface ResumeProfile {
   is_active: boolean;
   created_at: string;
   updated_at: string;
+  // 后端实时计算的候选人竞争力(展示用,不存表)
+  candidate_score?: number;
+  candidate_tier?: string;
 }
 
 export const resumeProfilesApi = {

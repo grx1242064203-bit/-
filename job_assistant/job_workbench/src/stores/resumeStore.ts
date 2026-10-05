@@ -282,6 +282,11 @@ export const useResumeStore = create<ResumeState>((set, get) => ({
             profile = null;
           }
         }
+        // 透传后端实时计算的候选人竞争力分到 parsedProfile,供解析页展示
+        if (profile && serverProfile?.candidate_score != null) {
+          profile.candidate_score = serverProfile.candidate_score;
+          profile.candidate_tier = serverProfile.candidate_tier;
+        }
         set({
           activeResume: resume,
           parsedProfile: profile,
@@ -301,6 +306,8 @@ export const useResumeStore = create<ResumeState>((set, get) => ({
         const profile: ParsedProfile = {
           keywords: keywords as any,
           fit_directions: fitDirs as any,
+          candidate_score: serverProfile.candidate_score,
+          candidate_tier: serverProfile.candidate_tier,
         };
         const rebuilt: Resume = {
           resume_id: `server-${serverProfile.profile_id}`,

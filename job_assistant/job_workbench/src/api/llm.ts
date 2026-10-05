@@ -35,6 +35,9 @@ export interface FitDirection {
 export interface ParsedProfile {
   keywords: KeywordTag[];
   fit_directions: FitDirection[];
+  // 后端 /resume-profiles/active 实时计算的竞争力(可选,缺省时前端不展示)
+  candidate_score?: number;
+  candidate_tier?: string;
 }
 
 export interface ParseResumeResponse {

@@ -3,8 +3,7 @@
 import { useEffect, useRef, useState, type ReactNode } from "react";
 import { useNavigate } from "react-router-dom";
 import { getStatsOverview, type StatsOverview } from "../api/companies";
-import { jobsRecommendApi, type RecommendedJob } from "../api/jobsRecommend";
-import { extractErrorMessage } from "../api/client";
+import { type RecommendedJob } from "../api/jobsRecommend";
 import { useJobsStore } from "../stores/jobsStore";
 import { useAppStore, type AppStatus, type Application } from "../stores/appStore";
 import { useResumeStore } from "../stores/resumeStore";
@@ -75,9 +74,12 @@ export default function Jobs() {
 
   // === 推荐视图状态 ===
   const [activeTab, setActiveTab] = useState<"all" | "recommend">("all");
-  const [recommendJobs, setRecommendJobs] = useState<RecommendedJob[]>([]);
-  const [recommendLoading, setRecommendLoading] = useState(false);
-  const [recommendError, setRecommendError] = useState<string | null>(null);
+  // 推荐数据移到 appStore,切页不丢失
+  const recommendJobs = useAppStore((s) => s.recommendJobs);
+  const recommendLoading = useAppStore((s) => s.recommendLoading);
+  const recommendError = useAppStore((s) => s.recommendError);
+  const loadRecommendJobs = useAppStore((s) => s.loadRecommendJobs);
+  const clearRecommendJobs = useAppStore((s) => s.clearRecommendJobs);
   // 推荐筛选: 行业/公司类型/招聘类型/学历/难度 多选 + 关键词 + 推荐等级 + 分数下限
   const [recFilterIndustry, setRecFilterIndustry] = useState<string[]>([]);
   const [recFilterCompanyType, setRecFilterCompanyType] = useState<string[]>([]);
@@ -89,34 +91,15 @@ export default function Jobs() {
   const [recFilterMinScore, setRecFilterMinScore] = useState(0);
   const serverProfile = useResumeStore((s) => s.serverProfile);
 
-  // 切到推荐 tab 时自动拉取
+  // 切到推荐 tab 时自动拉取(有缓存就直接复用,不重新跑评分)
   useEffect(() => {
     if (activeTab !== "recommend") return;
     if (!serverProfile) {
-      setRecommendJobs([]);
-      setRecommendError(null);
+      clearRecommendJobs();
       return;
     }
-    let cancelled = false;
-    setRecommendLoading(true);
-    setRecommendError(null);
-    jobsRecommendApi
-      .recommend(200)
-      .then((res) => {
-        if (cancelled) return;
-        setRecommendJobs(res.jobs);
-      })
-      .catch((e) => {
-        if (cancelled) return;
-        setRecommendError(extractErrorMessage(e));
-      })
-      .finally(() => {
-        if (!cancelled) setRecommendLoading(false);
-      });
-    return () => {
-      cancelled = true;
-    };
-  }, [activeTab, serverProfile]);
+    void loadRecommendJobs(200, false);
+  }, [activeTab, serverProfile, loadRecommendJobs, clearRecommendJobs]);
 
   const applications = useAppStore((s) => s.applications);
   const loadApplications = useAppStore((s) => s.loadApplications);
@@ -195,7 +178,7 @@ export default function Jobs() {
         {activeTab === "recommend" && recommendJobs.length > 0 && (
           <button
             type="button"
-            onClick={() => setRecommendLoading(true)}
+            onClick={() => void loadRecommendJobs(200, true)}
             className="ml-auto rounded-lg border border-line bg-white/60 px-3 py-1.5 text-xs text-text-muted hover:bg-white"
           >
             🔄 刷新推荐
@@ -229,7 +212,29 @@ export default function Jobs() {
           error={recommendError}
           appByJob={appByJob}
           onOpenApply={(url) => url && openExternalUrl(url)}
-          filterOptions={stats?.companies.filter_options}
+          filterOptions={{
+            // 公司维度筛选选项(行业/公司类型/招聘类型/学历)
+            industry: stats?.companies.filter_options?.industry ?? [],
+            company_type: stats?.companies.filter_options?.company_type ?? [],
+            recruit_type: stats?.companies.filter_options?.recruit_type ?? [],
+            education_req: stats?.companies.filter_options?.education_req ?? [],
+            // 难度是岗位字段,从 jobs.filter_options 取
+            difficulty: (stats?.jobs.filter_options?.difficulty ?? []) as string[],
+          }}
+          onCreateFavorite={async (job) => {
+            const app = useAppStore.getState();
+            const created = await app.addApplication({
+              job_title: job.title,
+              company_name: job.company,
+              status: "favorite",
+              source: "db_job",
+              link_type: "job",
+              link_id: job.job_id,
+              apply_url: job.apply_url || "",
+              announcement_url: job.announcement_url || "",
+            });
+            return created ?? undefined;
+          }}
           filters={{
             industry: recFilterIndustry,
             companyType: recFilterCompanyType,
@@ -741,6 +746,7 @@ function RecommendJobsList({
   error,
   appByJob,
   onOpenApply,
+  onCreateFavorite,
   filterOptions,
   filters,
   onFilterChange,
@@ -751,6 +757,7 @@ function RecommendJobsList({
   error: string | null;
   appByJob: (jobId: string) => Application | undefined;
   onOpenApply: (url: string) => void;
+  onCreateFavorite: (job: RecommendedJob) => Promise<Application | undefined>;
   filterOptions?: Record<string, string[]>;
   filters: {
     industry: string[];
@@ -835,16 +842,6 @@ function RecommendJobsList({
     filters.level !== "all" ||
     filters.minScore > 0;
 
-  // 通用多选切换函数
-  const toggleFilter = (
-    key: "industry" | "companyType" | "recruitType" | "minEducation" | "difficulty",
-    val: string
-  ) => {
-    const cur = filters[key] as string[];
-    const next = cur.includes(val) ? cur.filter((x) => x !== val) : [...cur, val];
-    onFilterChange({ [key]: next } as never);
-  };
-
   return (
     <div className="flex flex-1 flex-col overflow-hidden rounded-xl border border-line bg-white/40">
       {/* 筛选工具栏 */}
@@ -892,8 +889,8 @@ function RecommendJobsList({
           )}
         </div>
 
-        {/* 分类多选胶囊 */}
-        <div className="mt-2 flex flex-wrap gap-1.5">
+        {/* 分类下拉框筛选 */}
+        <div className="mt-2 flex flex-wrap items-center gap-2 text-[11px]">
           {[
             { key: "industry" as const, label: "行业", options: opts.industry ?? [], cur: filters.industry },
             { key: "companyType" as const, label: "公司类型", options: opts.company_type ?? [], cur: filters.companyType },
@@ -901,26 +898,22 @@ function RecommendJobsList({
             { key: "minEducation" as const, label: "学历", options: opts.education_req ?? [], cur: filters.minEducation },
             { key: "difficulty" as const, label: "难度", options: opts.difficulty ?? [], cur: filters.difficulty },
           ].map((grp) => (
-            <div key={grp.key} className="flex items-center gap-1 text-[11px]">
-              <span className="text-text-faint">{grp.label}:</span>
-              {grp.options.slice(0, 6).map((v) => {
-                const active = grp.cur.includes(v);
-                return (
-                  <button
-                    key={v}
-                    type="button"
-                    onClick={() => toggleFilter(grp.key, v)}
-                    className={`rounded-full px-2 py-0.5 transition ${
-                      active
-                        ? "bg-primary text-ink"
-                        : "bg-white/60 text-text-muted hover:bg-white"
-                    }`}
-                  >
-                    {v}
-                  </button>
-                );
-              })}
-            </div>
+            <select
+              key={grp.key}
+              multiple
+              value={grp.cur}
+              onChange={(e) => {
+                const next = Array.from(e.target.selectedOptions).map((o) => o.value);
+                onFilterChange({ [grp.key]: next } as never);
+              }}
+              className="rounded-lg border border-line bg-white/70 px-2 py-1 text-[11px] outline-none focus:border-primary"
+              size={1}
+            >
+              <option value="">{grp.label}▼</option>
+              {grp.options.map((v) => (
+                <option key={v} value={v}>{v}</option>
+              ))}
+            </select>
           ))}
         </div>
       </div>
@@ -1109,6 +1102,19 @@ function RecommendJobsList({
 
                     {/* 按钮组 */}
                     <div className="flex shrink-0 flex-col gap-1.5">
+                      <button
+                        type="button"
+                        onClick={() => void onCreateFavorite(job)}
+                        disabled={isFavorite || isApplied}
+                        className={`rounded-lg px-3 py-1.5 text-xs font-medium transition ${
+                          isFavorite || isApplied
+                            ? "bg-amber-100 text-amber-900 cursor-not-allowed"
+                            : "bg-amber-400 text-white hover:bg-amber-500"
+                        }`}
+                        title={isFavorite ? "已收藏" : isApplied ? "已投递,自动收藏" : "收藏岗位"}
+                      >
+                        {isFavorite ? "⭐ 已收藏" : isApplied ? "⭐ 已收藏" : "⭐ 收藏"}
+                      </button>
                       {job.apply_url && (
                         <button
                           type="button"

@@ -91,6 +91,11 @@ interface AppState {
   dragSource: Application | null;
   interviewExpanded: boolean;
   selectedAppId: number | null;
+  // 推荐结果缓存:切页不丢失,简历修改或主动刷新才重新拉取
+  recommendJobs: import("../api/jobsRecommend").RecommendedJob[];
+  recommendLoading: boolean;
+  recommendError: string | null;
+  recommendLoadedAt: number | null; // 上次加载时间戳,用于判断是否需要刷新
 
   loadApplications: () => Promise<void>;
   addApplication: (data: {
@@ -117,6 +122,9 @@ interface AppState {
   setInterviewExpanded: (v: boolean) => void;
   setSelectedAppId: (id: number | null) => void;
   clearError: () => void;
+  // 推荐缓存:force=true 强制刷新;否则有缓存就直接用
+  loadRecommendJobs: (topN?: number, force?: boolean) => Promise<void>;
+  clearRecommendJobs: () => void; // 简历修改后清空缓存
 }
 
 export const useAppStore = create<AppState>((set) => ({
@@ -126,6 +134,10 @@ export const useAppStore = create<AppState>((set) => ({
   dragSource: null,
   interviewExpanded: false,
   selectedAppId: null,
+  recommendJobs: [],
+  recommendLoading: false,
+  recommendError: null,
+  recommendLoadedAt: null,
 
   loadApplications: async () => {
     set({ isLoading: true, error: null });
@@ -215,4 +227,31 @@ export const useAppStore = create<AppState>((set) => ({
   setInterviewExpanded: (v) => set({ interviewExpanded: v }),
   setSelectedAppId: (id) => set({ selectedAppId: id }),
   clearError: () => set({ error: null }),
+
+  // 推荐缓存:有缓存且未强制刷新时直接返回,避免切页重新跑 7000 个岗位评分
+  loadRecommendJobs: async (topN = 200, force = false) => {
+    const s = useAppStore.getState();
+    // 有缓存且非强制刷新:直接复用(切页场景)
+    if (!force && s.recommendJobs.length > 0 && s.recommendLoadedAt) {
+      return;
+    }
+    set({ recommendLoading: true, recommendError: null });
+    try {
+      const { jobsRecommendApi } = await import("../api/jobsRecommend");
+      const res = await jobsRecommendApi.recommend(topN);
+      set({
+        recommendJobs: res.jobs,
+        recommendLoading: false,
+        recommendLoadedAt: Date.now(),
+      });
+    } catch (e) {
+      set({
+        recommendLoading: false,
+        recommendError: extractErrorMessage(e),
+      });
+    }
+  },
+
+  clearRecommendJobs: () =>
+    set({ recommendJobs: [], recommendLoadedAt: null, recommendError: null }),
 }));

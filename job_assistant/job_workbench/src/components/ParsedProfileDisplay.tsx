@@ -327,6 +327,8 @@ export default function ParsedProfileDisplay({ profile }: Props) {
   );
   const [companyInput, setCompanyInput] = useState("");
   const [savingCompanies, setSavingCompanies] = useState(false);
+  // 保存反馈:null=无 / 'success' / 'error'
+  const [saveCompanyStatus, setSaveCompanyStatus] = useState<"success" | "error" | null>(null);
 
   // serverProfile 异步加载后同步目标公司到本地 state
   useEffect(() => {
@@ -344,16 +346,28 @@ export default function ParsedProfileDisplay({ profile }: Props) {
     }
     setTargetCompanies((prev) => [...prev, name]);
     setCompanyInput("");
+    setSaveCompanyStatus(null); // 有改动后清除上次保存状态
   };
 
   const removeTargetCompany = (name: string) => {
     setTargetCompanies((prev) => prev.filter((c) => c !== name));
+    setSaveCompanyStatus(null);
   };
 
   const handleSaveCompanies = async () => {
+    if (!serverProfile) {
+      setSaveCompanyStatus("error");
+      return;
+    }
     setSavingCompanies(true);
+    setSaveCompanyStatus(null);
     try {
       await saveTargetCompanies(targetCompanies);
+      setSaveCompanyStatus("success");
+      // 3 秒后自动清除成功提示
+      setTimeout(() => setSaveCompanyStatus((s) => (s === "success" ? null : s)), 3000);
+    } catch {
+      setSaveCompanyStatus("error");
     } finally {
       setSavingCompanies(false);
     }
@@ -666,6 +680,13 @@ export default function ParsedProfileDisplay({ profile }: Props) {
             {savingCompanies ? "保存中…" : "保存"}
           </button>
         </div>
+        {/* 保存反馈提示 */}
+        {saveCompanyStatus === "success" && (
+          <p className="mt-2 text-xs text-emerald-600">✓ 已保存,推荐时将优先展示同行业/同类型/同地位公司</p>
+        )}
+        {saveCompanyStatus === "error" && (
+          <p className="mt-2 text-xs text-red-500">保存失败,请确认已上传简历并稍后重试</p>
+        )}
       </div>
 
       {/* 计算与匹配逻辑说明 */}

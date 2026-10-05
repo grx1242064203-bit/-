@@ -49,7 +49,7 @@ export default function Companies() {
   const [columnFilters, setColumnFilters] = useState<Record<string, string[]>>({});
   const [stats, setStats] = useState<StatsOverview | null>(null);
   const [visibleKeys, setVisibleKeys] = useState<string[]>(COLUMNS.map((c) => c.key));
-  const scrollRef = useRef<HTMLDivElement>(null);
+  const sentinelRef = useRef<HTMLDivElement>(null);
 
   const applications = useAppStore((s) => s.applications);
   const loadApplications = useAppStore((s) => s.loadApplications);
@@ -110,14 +110,22 @@ export default function Companies() {
     }
   };
 
-  // 滚动到底加载更多
-  const handleScroll = () => {
-    const el = scrollRef.current;
+  // 滚动到底加载更多(用 IntersectionObserver 监听底部哨兵,跟随 main 滚动容器)
+  useEffect(() => {
+    const el = sentinelRef.current;
     if (!el) return;
-    if (el.scrollTop + el.clientHeight >= el.scrollHeight - 200) {
-      void loadMore();
-    }
-  };
+    const observer = new IntersectionObserver(
+      (entries) => {
+        if (entries[0].isIntersecting) {
+          void loadMore();
+        }
+      },
+      { rootMargin: "200px" }
+    );
+    observer.observe(el);
+    return () => observer.disconnect();
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [hasMore, loadingMore, companies.length]);
 
   const hasFilter = keyword.trim() !== "" || Object.values(columnFilters).some((v) => v.length);
 
@@ -128,7 +136,7 @@ export default function Companies() {
     applications.find((a) => a.link_type === "company" && a.link_id === companyId);
 
   return (
-    <div className="flex h-full flex-col gap-4">
+    <div className="flex flex-col gap-4">
       {/* 统计卡片 */}
       {stats && <CompanyStatsCards stats={stats} />}
 
@@ -192,13 +200,9 @@ export default function Companies() {
       )}
 
       {/* 表格 */}
-      <div
-        ref={scrollRef}
-        onScroll={handleScroll}
-        className="flex-1 overflow-auto rounded-xl border border-line bg-white"
-      >
+      <div className="overflow-auto rounded-xl border border-line bg-white">
         <table className="w-full min-w-[900px] border-collapse text-sm">
-          <thead className="sticky top-0 z-10">
+          <thead className="sticky top-[-1.5rem] z-10">
             <tr className="bg-white">
               {COLUMNS.filter((c) => visibleKeys.includes(c.key)).map((col) => {
                 // 三列固定:actions(left-0) + company_name(left-[72px]) + links(left-[272px])
@@ -288,6 +292,9 @@ export default function Companies() {
           <span>已加载全部</span>
         )}
       </div>
+
+      {/* 滚动加载哨兵:进入视口时触发 loadMore */}
+      <div ref={sentinelRef} className="h-1" />
     </div>
   );
 }

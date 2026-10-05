@@ -29,6 +29,18 @@ def _tag_get(tag, key, default=""):
     return getattr(tag, key, default)
 
 
+def _profile_get(profile, key, default=""):
+    """兼容 profile 为 dict(路由器从 DB 读出)或对象(UserProfile)两种形态。
+
+    路由器 _compute_candidate_competitiveness 传入的是 sqlite3.Row 转成的 dict,
+    而 scorer 推荐链路传入的是 UserProfile 对象。统一用此函数取值,
+    避免 getattr(dict, key) 永远返回 default 导致竞争力恒为 10。
+    """
+    if isinstance(profile, dict):
+        return profile.get(key, default)
+    return getattr(profile, key, default)
+
+
 # ============================================================
 # 学校 tier 表
 # ============================================================
@@ -209,7 +221,7 @@ def _extract_degree_from_keywords(keywords) -> str:
 def _build_resume_text(profile, keywords) -> str:
     """拼接简历原文 + 所有关键词文本,作为兜底检测数据源。"""
     parts = []
-    rt = getattr(profile, "resume_text", "") or ""
+    rt = _profile_get(profile, "resume_text", "") or ""
     if rt:
         parts.append(rt)
     for t in keywords:
@@ -243,8 +255,13 @@ def candidate_competitiveness(profile) -> Tuple[float, Dict[str, float], Dict]:
     对抗性审查:画像数据可能残缺(旧版只有字符串关键词、degree 未存等),
     本函数多层兜底:结构化关键词 → 简历全文扫描,确保不因字段缺失把人打 0 分。
     """
-    keywords = getattr(profile, "structured_keywords", []) or []
-    degree = getattr(profile, "degree", "") or ""
+    # profile 可能是 dict(路由器)或对象(scorer):
+    # - dict 形态下关键词键名为 keywords(UserProfile 对象上叫 structured_keywords)
+    # 两种都试一遍,确保不从路由器调用时拿到空列表。
+    keywords = _profile_get(profile, "structured_keywords", None)
+    if not keywords:
+        keywords = _profile_get(profile, "keywords", []) or []
+    degree = _profile_get(profile, "degree", "") or ""
 
     # degree 兜底:profile.degree 为空时,先从教育关键词提取,再从简历全文扫
     if not degree:

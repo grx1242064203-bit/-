@@ -423,17 +423,12 @@ export const useResumeStore = create<ResumeState>((set, get) => ({
   saveTargetCompanies: async (companies: string[]) => {
     const sp = get().serverProfile;
     if (!sp) {
-      console.warn("无后端画像,无法保存目标公司");
-      return;
+      throw new Error("无后端画像,无法保存目标公司");
     }
-    try {
-      const updated = await resumeProfilesApi.update(sp.profile_id, {
-        target_companies: companies,
-      });
-      set({ serverProfile: updated });
-    } catch (e) {
-      console.warn("保存目标公司失败:", e);
-    }
+    const updated = await resumeProfilesApi.update(sp.profile_id, {
+      target_companies: companies,
+    });
+    set({ serverProfile: updated });
   },
 
   clearError: () => set({ error: null }),

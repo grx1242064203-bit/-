@@ -69,7 +69,7 @@ export default function Jobs() {
 
   const [stats, setStats] = useState<StatsOverview | null>(null);
   const [visibleKeys, setVisibleKeys] = useState<string[]>(COLUMNS.map((c) => c.key));
-  const scrollRef = useRef<HTMLDivElement>(null);
+  const sentinelRef = useRef<HTMLDivElement>(null);
   const [kwInput, setKwInput] = useState("");
 
   // === 推荐视图状态 ===
@@ -123,14 +123,22 @@ export default function Jobs() {
   const appByJob = (jobId: string): Application | undefined =>
     applications.find((a) => a.link_type === "job" && a.link_id === jobId);
 
-  // 滚动加载更多
-  const handleScroll = () => {
-    const el = scrollRef.current;
+  // 滚动加载更多(用 IntersectionObserver 监听底部哨兵,跟随 main 滚动容器)
+  useEffect(() => {
+    const el = sentinelRef.current;
     if (!el) return;
-    if (el.scrollTop + el.clientHeight >= el.scrollHeight - 200) {
-      void loadMore();
-    }
-  };
+    const observer = new IntersectionObserver(
+      (entries) => {
+        if (entries[0].isIntersecting) {
+          void loadMore();
+        }
+      },
+      { rootMargin: "200px" }
+    );
+    observer.observe(el);
+    return () => observer.disconnect();
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [hasMore, isLoadingMore, jobs.length]);
 
   const hasFilter =
     keyword.trim() !== "" || Object.values(columnFilters).some((v) => v.length);
@@ -146,7 +154,7 @@ export default function Jobs() {
   };
 
   return (
-    <div className="flex h-full flex-col gap-4">
+    <div className="flex flex-col gap-4">
       {/* 统计卡片（仅全部岗位视图显示） */}
       {activeTab === "all" && stats && <JobsStatsCards stats={stats} />}
 
@@ -350,13 +358,9 @@ export default function Jobs() {
       )}
 
       {/* 表格 */}
-      <div
-        ref={scrollRef}
-        onScroll={handleScroll}
-        className="flex-1 overflow-auto rounded-xl border border-line bg-white"
-      >
+      <div className="overflow-auto rounded-xl border border-line bg-white">
         <table className="w-full min-w-[1400px] border-collapse text-sm">
-          <thead className="sticky top-0 z-10">
+          <thead className="sticky top-[-1.5rem] z-10">
             <tr className="bg-white">
               {COLUMNS.filter((c) => visibleKeys.includes(c.key)).map((col) => {
                 // 与行级一致的固定列判断:actions 最左 + links 紧随其后
@@ -431,6 +435,9 @@ export default function Jobs() {
           <span>已加载全部</span>
         )}
       </div>
+
+      {/* 滚动加载哨兵:进入视口时触发 loadMore */}
+      <div ref={sentinelRef} className="h-1" />
         </>
       )}
     </div>

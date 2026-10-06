@@ -220,7 +220,7 @@ async def admin_reset_password(
 class BulkUpdateRequest(BaseModel):
     """批量操作请求体。"""
 
-    user_ids: list[str]
+    user_ids: List[str]
     is_active: bool
 
 

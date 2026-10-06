@@ -81,23 +81,66 @@ jobs:
             job_workbench/src-tauri/target/*/release/bundle/*
             job_workbench/src-tauri/target/release/bundle/*
 
-      - name: Deploy to production server
-        if: success() && github.event_name == 'push'
-        uses: appleboy/scp-action@v0.1.7
-        with:
-          host: ${{ secrets.SERVER_HOST }}
-          username: ${{ secrets.SERVER_USER }}
-          key: ${{ secrets.SERVER_SSH_KEY }}
-          port: ${{ secrets.SERVER_PORT || 22 }}
-          source: |
-            job_workbench/src-tauri/target/*/release/bundle/dmg/*.dmg
-            job_workbench/src-tauri/target/*/release/bundle/msi/*.msi
-            job_workbench/src-tauri/target/*/release/bundle/nsis/*.exe
-            job_workbench/src-tauri/target/*/release/bundle/deb/*.deb
-            job_workbench/src-tauri/target/release/bundle/dmg/*.dmg
-            job_workbench/src-tauri/target/release/bundle/msi/*.msi
-            job_workbench/src-tauri/target/release/bundle/nsis/*.exe
-            job_workbench/src-tauri/target/release/bundle/deb/*.deb
-          target: ${{ secrets.SERVER_DOWNLOAD_PATH }}
-          strip_components: 5
-          overwrite: true
+      - name: Deploy installers to production server
+        if: success() && github.event_name == 'push' && runner.os != 'Windows'
+        shell: bash
+        env:
+          SERVER_HOST: ${{ secrets.SERVER_HOST }}
+          SERVER_USER: ${{ secrets.SERVER_USER }}
+          SERVER_PORT: ${{ secrets.SERVER_PORT }}
+          SERVER_DOWNLOAD_PATH: ${{ secrets.SERVER_DOWNLOAD_PATH }}
+          SSH_KEY: ${{ secrets.SERVER_SSH_KEY }}
+        run: |
+          set -e
+          if [ -z "$SERVER_HOST" ] || [ -z "$SSH_KEY" ]; then
+            echo "跳过部署：未配置 GitHub Secrets（SERVER_HOST 或 SERVER_SSH_KEY）"
+            exit 0
+          fi
+          
+          # 配置 SSH
+          mkdir -p ~/.ssh
+          echo "$SSH_KEY" > ~/.ssh/deploy_key
+          chmod 600 ~/.ssh/deploy_key
+          ssh-keyscan -p ${SERVER_PORT:-22} -t ed25519,rsa $SERVER_HOST >> ~/.ssh/known_hosts 2>/dev/null || true
+          
+          # 查找所有安装包
+          echo "=== 查找安装包 ==="
+          find job_workbench/src-tauri/target -type f \( -name "*.dmg" -o -name "*.exe" -o -name "*.msi" -o -name "*.deb" -o -name "*.AppImage" \) -exec ls -lh {} \;
+          
+          # 逐个上传（Windows runner 跑 powershell，跳过；这里只处理 mac/linux）
+          for f in $(find job_workbench/src-tauri/target -type f \( -name "*.dmg" -o -name "*.exe" -o -name "*.msi" -o -name "*.deb" -o -name "*.AppImage" \)); do
+            echo "=== 上传: $f ==="
+            scp -i ~/.ssh/deploy_key -P ${SERVER_PORT:-22} "$f" ${SERVER_USER}@${SERVER_HOST}:${SERVER_DOWNLOAD_PATH}/
+          done
+          
+          echo "=== 上传完成 ==="
+
+      - name: Deploy installers to production server (Windows)
+        if: success() && github.event_name == 'push' && runner.os == 'Windows'
+        shell: pwsh
+        env:
+          SERVER_HOST: ${{ secrets.SERVER_HOST }}
+          SERVER_USER: ${{ secrets.SERVER_USER }}
+          SERVER_PORT: ${{ secrets.SERVER_PORT }}
+          SERVER_DOWNLOAD_PATH: ${{ secrets.SERVER_DOWNLOAD_PATH }}
+          SSH_KEY: ${{ secrets.SERVER_SSH_KEY }}
+        run: |
+          if (-not $env:SERVER_HOST -or -not $env:SSH_KEY) {
+            Write-Host "跳过部署：未配置 GitHub Secrets"
+            exit 0
+          }
+          
+          # 写私钥
+          $keyPath = "$env:USERPROFILE\.ssh\deploy_key"
+          New-Item -ItemType Directory -Force -Path "$env:USERPROFILE\.ssh" | Out-Null
+          $env:SSH_KEY -replace "\\n", "`n" | Out-File -FilePath $keyPath -Encoding ascii -NoNewline
+          
+          # 查找安装包
+          $installers = Get-ChildItem -Path "job_workbench\src-tauri\target" -Recurse -Include "*.exe","*.msi" -ErrorAction SilentlyContinue
+          
+          foreach ($f in $installers) {
+            Write-Host "=== 上传: $($f.FullName) ==="
+            & scp -i $keyPath -P ${env:SERVER_PORT} $f.FullName "${env:SERVER_USER}@${env:SERVER_HOST}:${env:SERVER_DOWNLOAD_PATH}/"
+          }
+          
+          Write-Host "=== 上传完成 ==="

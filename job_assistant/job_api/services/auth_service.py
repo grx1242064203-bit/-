@@ -113,6 +113,45 @@ async def refresh(user_id: str) -> dict:
     return {"token": token, "expires_at": jwt_service.get_expires_at()}
 
 
+async def forgot_password(email: str) -> None:
+    """忘记密码：向已注册邮箱发送重置验证码。
+
+    邮箱不存在时静默不报错（防止枚举用户邮箱），但也不发送邮件。
+    重置验证码与注册验证码共用 verification_codes 表（同 email 主键唯一）。
+    """
+    await _ensure_init()
+    user = await user_model.get_user_by_email(email)
+    if not user:
+        # 静默返回，不暴露邮箱是否注册
+        return
+    # 复用注册验证码表（同 email 主键唯一，新码会覆盖旧码）
+    code = user_model.generate_code()
+    await user_model.create_verification_code(email, code)
+    await email_service.send_verification_code(email, code)
+
+
+async def reset_password(email: str, code: str, new_password: str) -> None:
+    """重置密码：用邮箱验证码设新密码（不需要登录）。"""
+    await _ensure_init()
+    user = await user_model.get_user_by_email(email)
+    if not user:
+        raise InvalidCodeError("验证码无效或已过期")
+    # 复用 verify_code 校验逻辑（验证码存在 + 未过期 + 未使用 → 标记 used）
+    if not await user_model.verify_code(email, code):
+        raise InvalidCodeError("验证码无效或已过期")
+    # 更新密码哈希
+    await user_model.update_password_hash(user["id"], _hash_password(new_password))
+
+
+async def change_password(user_id: str, old_password: str, new_password: str) -> None:
+    """修改密码：需登录，校验旧密码后设新密码。"""
+    await _ensure_init()
+    user = await user_model.get_user_by_id(user_id)
+    if not user or not _verify_password(old_password, user["password_hash"]):
+        raise InvalidCredentialsError("旧密码错误")
+    await user_model.update_password_hash(user_id, _hash_password(new_password))
+
+
 def reset_init_flag() -> None:
     """测试辅助：重置建表标志，便于在临时库上重新触发 init_db。"""
     global _init_done

@@ -57,6 +57,15 @@ class UpdateUserRequest(BaseModel):
     notes: str | None = Field(default=None, max_length=500)
 
 
+class AdminResetPasswordRequest(BaseModel):
+    """管理员重置用户密码（兜底方案：用户邮箱收不到验证码时使用）。
+
+    管理员设新密码后私聊发给用户，用户首次登录后可自行修改。
+    """
+
+    new_password: str = Field(min_length=6, max_length=128)
+
+
 @router.get("/users", response_model=UserListResponse)
 async def list_users(
     limit: int = Query(default=50, ge=1, le=200),
@@ -176,3 +185,28 @@ async def delete_user(
             status_code=status.HTTP_400_BAD_REQUEST,
             detail="删除失败（可能是最后一个管理员）",
         )
+
+
+@router.post(
+    "/users/{user_id}/reset-password",
+    response_model=dict,
+    status_code=status.HTTP_200_OK,
+)
+async def admin_reset_password(
+    user_id: str,
+    body: AdminResetPasswordRequest,
+    _: dict = Depends(get_current_admin),
+) -> dict:
+    """管理员重置用户密码（兜底方案）。
+
+    适用场景：用户邮箱收不到 Resend 验证码（如 163/QQ 邮箱屏蔽），
+    管理员用此接口设新密码，私聊发给用户，用户登录后可自行修改。
+    """
+    target = await user_model.get_user_by_id(user_id)
+    if not target:
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND,
+            detail="用户不存在",
+        )
+    await user_model.update_password_hash(user_id, hash_password(body.new_password))
+    return {"message": "密码已重置", "user_id": user_id}

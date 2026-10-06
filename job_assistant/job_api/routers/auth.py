@@ -1,8 +1,11 @@
-"""认证路由：注册 / 邮箱验证 / 登录 / refresh。
+"""认证路由：注册 / 邮箱验证 / 登录 / 忘记密码 / 重置密码 / 修改密码 / refresh。
 
 - POST /api/v1/auth/register {email, password} → {user_id, needs_verify}
 - POST /api/v1/auth/verify-email {email, code} → {token, expires_at}
 - POST /api/v1/auth/login {email, password} → {token, expires_at}
+- POST /api/v1/auth/forgot-password {email} → {message}（发重置验证码到邮箱）
+- POST /api/v1/auth/reset-password {email, code, new_password} → {message}
+- POST /api/v1/auth/change-password {old_password, new_password}（需 Bearer）
 - POST /api/v1/auth/refresh (Bearer) → {token, expires_at}
 - slowapi rate limit：每 IP 每分钟限流(通过环境变量 AUTH_RATE_LIMIT_* 配置)。
 """
@@ -17,9 +20,12 @@ from services.auth_service import (
     InvalidCodeError,
     InvalidCredentialsError,
     NotVerifiedError,
+    change_password as svc_change_password,
+    forgot_password as svc_forgot_password,
     login as svc_login,
     refresh as svc_refresh,
     register as svc_register,
+    reset_password as svc_reset_password,
     verify_email as svc_verify_email,
 )
 
@@ -68,6 +74,21 @@ class LoginRequest(BaseModel):
     password: str = Field(min_length=1, max_length=128)
 
 
+class ForgotPasswordRequest(BaseModel):
+    email: str = Field(pattern=_EMAIL_PATTERN)
+
+
+class ResetPasswordRequest(BaseModel):
+    email: str = Field(pattern=_EMAIL_PATTERN)
+    code: str = Field(min_length=6, max_length=6, pattern=r"^\d{6}$")
+    new_password: str = Field(min_length=6, max_length=128)
+
+
+class ChangePasswordRequest(BaseModel):
+    old_password: str = Field(min_length=1, max_length=128)
+    new_password: str = Field(min_length=6, max_length=128)
+
+
 class RegisterResponse(BaseModel):
     user_id: str
     needs_verify: bool
@@ -76,6 +97,10 @@ class RegisterResponse(BaseModel):
 class TokenResponse(BaseModel):
     token: str
     expires_at: int
+
+
+class MessageResponse(BaseModel):
+    message: str
 
 
 @router.post("/register", response_model=RegisterResponse)
@@ -124,6 +149,55 @@ async def login(request: Request, body: LoginRequest) -> TokenResponse:
             headers={"WWW-Authenticate": "Bearer"},
         )
     return TokenResponse(**result)
+
+
+@router.post("/forgot-password", response_model=MessageResponse)
+@limiter.limit(_settings.AUTH_RATE_LIMIT_VERIFY)
+async def forgot_password(
+    request: Request, body: ForgotPasswordRequest
+) -> MessageResponse:
+    """忘记密码：向邮箱发送重置验证码（6 小时有效）。
+
+    即使邮箱不存在也返回成功（防止枚举用户邮箱）。
+    """
+    await svc_forgot_password(body.email)
+    return MessageResponse(
+        message="如果该邮箱已注册，重置验证码已发送，请查收邮件（含垃圾箱）"
+    )
+
+
+@router.post("/reset-password", response_model=MessageResponse)
+@limiter.limit(_settings.AUTH_RATE_LIMIT_VERIFY)
+async def reset_password(
+    request: Request, body: ResetPasswordRequest
+) -> MessageResponse:
+    """重置密码：用邮箱验证码设置新密码（不需要登录）。"""
+    try:
+        await svc_reset_password(body.email, body.code, body.new_password)
+    except InvalidCodeError as exc:
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail=str(exc),
+        )
+    return MessageResponse(message="密码已重置，请用新密码登录")
+
+
+@router.post("/change-password", response_model=MessageResponse)
+async def change_password(
+    body: ChangePasswordRequest,
+    current_user: dict = Depends(get_current_user),
+) -> MessageResponse:
+    """修改密码：需登录，校验旧密码后设新密码。"""
+    try:
+        await svc_change_password(
+            current_user["id"], body.old_password, body.new_password
+        )
+    except InvalidCredentialsError as exc:
+        raise HTTPException(
+            status_code=status.HTTP_401_UNAUTHORIZED,
+            detail=str(exc),
+        )
+    return MessageResponse(message="密码已修改")
 
 
 @router.post("/refresh", response_model=TokenResponse)

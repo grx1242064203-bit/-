@@ -9,6 +9,9 @@
 - POST /api/v1/auth/refresh (Bearer) → {token, expires_at}
 - slowapi rate limit：每 IP 每分钟限流(通过环境变量 AUTH_RATE_LIMIT_* 配置)。
 """
+
+from __future__ import annotations
+
 from fastapi import APIRouter, Depends, HTTPException, Request, status
 from pydantic import BaseModel, Field
 from slowapi import Limiter

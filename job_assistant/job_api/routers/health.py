@@ -1,4 +1,7 @@
 """健康检查路由（从 main.py 抽离）。"""
+
+from __future__ import annotations
+
 from fastapi import APIRouter
 
 router = APIRouter(tags=["health"])

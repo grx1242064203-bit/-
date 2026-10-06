@@ -6,6 +6,9 @@
 - 加密 PDF → 返回空串并提示
 - 大文件（>10MB）→ 限流
 """
+
+from __future__ import annotations
+
 import io
 import logging
 from typing import Optional

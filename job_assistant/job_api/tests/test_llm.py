@@ -12,6 +12,9 @@ models.user.get_user_by_id）。测试用 jwt_service.create_access_token 签发
 
 依赖未安装时（CI/无 pip install 场景）整套测试优雅跳过，与 T2/T5 约定一致。
 """
+
+from __future__ import annotations
+
 import os
 import tempfile
 

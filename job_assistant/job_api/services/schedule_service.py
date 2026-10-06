@@ -5,6 +5,9 @@
 2. 不允许 AI 自动删除日程（只有显式 delete_schedule 接口）
 3. AI 提取仅返回结构化数据，不直接创建日程——用户确认后再提交
 """
+
+from __future__ import annotations
+
 import logging
 from datetime import datetime, timezone
 from typing import Optional

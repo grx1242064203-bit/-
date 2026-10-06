@@ -7,6 +7,9 @@
   - 检查 is_active：被管理员吊销 (is_active=0) 的用户即使 token 未过期也拒绝访问
 - get_current_admin：在 get_current_user 基础上额外要求 is_admin=1，否则 403
 """
+
+from __future__ import annotations
+
 from typing import Optional
 
 from fastapi import Depends, HTTPException, status

@@ -6,6 +6,9 @@
 - ``PATCH /api/v1/applications/{id}`` 更新状态/备注/轮次等
 - ``DELETE /api/v1/applications/{id}`` 删除记录
 """
+
+from __future__ import annotations
+
 from typing import Optional
 
 from fastapi import APIRouter, Depends, HTTPException, Query

@@ -6,6 +6,9 @@
 - 边界：重复已验证注册返回 409；未验证用户登录返回 403；错误密码返回 401；
         重复未验证注册走重发码分支（返回 200，needs_verify=True）
 """
+
+from __future__ import annotations
+
 import asyncio
 from pathlib import Path
 from unittest.mock import AsyncMock, patch

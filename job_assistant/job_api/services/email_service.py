@@ -3,6 +3,9 @@
 - send_verification_code(email, code)：通过 Resend 发送 6 位验证码邮件
 - Resend 不可用（无 API Key 或调用失败）时打印验证码到 stderr（开发模式降级）
 """
+
+from __future__ import annotations
+
 import sys
 
 import httpx

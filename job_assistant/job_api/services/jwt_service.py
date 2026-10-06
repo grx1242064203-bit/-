@@ -3,6 +3,9 @@
 - create_access_token(user_id) → JWT（sub=user_id，exp=JWT_EXPIRE_HOURS 后）
 - verify_token(token) → payload dict 或 None
 """
+
+from __future__ import annotations
+
 from datetime import datetime, timedelta, timezone
 from typing import Optional
 

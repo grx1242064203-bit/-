@@ -1,4 +1,7 @@
 """健康检查端点测试。"""
+
+from __future__ import annotations
+
 from fastapi.testclient import TestClient
 
 from main import app

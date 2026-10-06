@@ -12,6 +12,9 @@
 
 不直接暴露 DeepSeek API Key，由 LLMProxyService 在服务层注入。
 """
+
+from __future__ import annotations
+
 import logging
 import tempfile
 from pathlib import Path

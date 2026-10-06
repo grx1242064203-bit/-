@@ -1,4 +1,7 @@
 """Offer搭子 API 数据访问层（SQLite）。"""
+
+from __future__ import annotations
+
 from . import (
     application,
     company_due_diligence,

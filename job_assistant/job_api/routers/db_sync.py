@@ -9,6 +9,9 @@
 - ``GET  /api/v1/sync/db-health``  本地 jobs.db 健康状态（完整性、大小、mtime）
 - ``POST /api/v1/sync/pull-db``    从服务器重新拉取 jobs.db 并原子替换本地副本
 """
+
+from __future__ import annotations
+
 from fastapi import APIRouter, Depends, HTTPException, status
 
 from deps import get_current_user

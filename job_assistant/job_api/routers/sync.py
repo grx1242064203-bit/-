@@ -6,6 +6,9 @@
 - ``GET /api/v1/sync/company-stats`` 公司维度统计
 - ``GET /api/v1/sync/categories`` 岗位分类统计
 """
+
+from __future__ import annotations
+
 from typing import Optional
 
 from fastapi import APIRouter, Depends, Query

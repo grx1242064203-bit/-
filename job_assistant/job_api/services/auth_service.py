@@ -5,6 +5,9 @@
 - 重复注册：已存在未验证 → 重发验证码；已存在已验证 → ConflictError
 - 数据库建表：首次调用时幂等初始化（init_db / CREATE TABLE IF NOT EXISTS）
 """
+
+from __future__ import annotations
+
 from typing import Optional
 
 from passlib.context import CryptContext

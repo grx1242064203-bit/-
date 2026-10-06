@@ -9,6 +9,9 @@
    模块导入期污染 sys.path 影响 job_api 自身的 config 解析。
 4. 异常上抛：调用失败 / 超时 / 缺 API Key 时抛异常，由路由层映射为 503。
 """
+
+from __future__ import annotations
+
 import concurrent.futures
 import logging
 import sys

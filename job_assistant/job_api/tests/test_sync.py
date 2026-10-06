@@ -3,6 +3,9 @@
 Service 层测试仅依赖标准库 sqlite3,不依赖 fastapi,可独立运行。
 HTTP 层测试在 fastapi 可用时执行,否则跳过。
 """
+
+from __future__ import annotations
+
 import sqlite3
 from pathlib import Path
 

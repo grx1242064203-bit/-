@@ -13,6 +13,9 @@
   仅当 LLM 给出更具体的类型且与初筛一致时保留 LLM 的；不一致时仍以初筛为准
   （初筛用关键词，对类型判断更准；LLM 对字段提取更准）
 """
+
+from __future__ import annotations
+
 import logging
 import traceback
 from typing import Optional

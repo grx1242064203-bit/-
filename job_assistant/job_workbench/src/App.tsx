@@ -9,7 +9,10 @@ import Schedules from "./pages/Schedules";
 import AutoFill from "./pages/AutoFill";
 import Login from "./pages/Login";
 import Register from "./pages/Register";
+import ForgotPassword from "./pages/ForgotPassword";
 import Welcome from "./pages/Welcome";
+import Settings from "./pages/Settings";
+import Admin from "./pages/Admin";
 import AuthGuard from "./components/AuthGuard";
 import OnboardingGuard from "./components/OnboardingGuard";
 import { useAuthStore } from "./stores/authStore";
@@ -23,6 +26,7 @@ interface NavItem {
   label: string;
   icon: string;
   end?: boolean;
+  adminOnly?: boolean;
 }
 
 const NAV_ITEMS: NavItem[] = [
@@ -33,7 +37,19 @@ const NAV_ITEMS: NavItem[] = [
   { to: "/email", label: "邮件同步", icon: "📧" },
   { to: "/schedules", label: "日程", icon: "📅" },
   { to: "/resume", label: "简历解析", icon: "📄" },
+  { to: "/settings", label: "设置", icon: "⚙️" },
+  { to: "/admin", label: "管理后台", icon: "🛡️", adminOnly: true },
 ];
+
+// 管理员邮箱白名单（与后端 ADMIN_EMAIL 一致，仅用于在前端显示管理后台入口）
+const ADMIN_EMAILS = (import.meta as { env?: Record<string, string | undefined> }).env
+  ?.VITE_ADMIN_EMAILS?.split(",").map((s) => s.trim().toLowerCase()) ?? [];
+
+function isAdminEmail(email?: string): boolean {
+  if (!email) return false;
+  if (ADMIN_EMAILS.length === 0) return false;
+  return ADMIN_EMAILS.includes(email.toLowerCase());
+}
 
 function TopNav() {
   const user = useAuthStore((s) => s.user);
@@ -44,6 +60,10 @@ function TopNav() {
     logout();
     window.location.href = "/login";
   };
+
+  const visibleNavItems = NAV_ITEMS.filter(
+    (item) => !item.adminOnly || isAdminEmail(user?.email),
+  );
 
   return (
     <header className="glass-strong flex h-16 items-center justify-between border-b border-line px-6">
@@ -62,7 +82,7 @@ function TopNav() {
 
       {/* 胶囊导航 */}
       <nav className="glass-soft flex items-center gap-1 rounded-pill p-1 shadow-sm">
-        {NAV_ITEMS.map((item) => {
+        {visibleNavItems.map((item) => {
           const isActive = item.end
             ? location.pathname === item.to
             : location.pathname.startsWith(item.to);
@@ -119,6 +139,8 @@ function PageTitle() {
     "/schedules": "日程与提醒",
     "/resume": "简历解析",
     "/welcome": "欢迎",
+    "/settings": "设置",
+    "/admin": "管理后台",
   };
   const title = titleMap[location.pathname] ?? "Offer搭子";
   return (
@@ -148,6 +170,7 @@ export default function App() {
     <Routes>
       <Route path="/login" element={<Login />} />
       <Route path="/register" element={<Register />} />
+      <Route path="/forgot-password" element={<ForgotPassword />} />
       <Route
         path="/welcome"
         element={
@@ -237,6 +260,26 @@ export default function App() {
                 <Schedules />
               </Layout>
             </OnboardingGuard>
+          </AuthGuard>
+        }
+      />
+      <Route
+        path="/settings"
+        element={
+          <AuthGuard>
+            <Layout>
+              <Settings />
+            </Layout>
+          </AuthGuard>
+        }
+      />
+      <Route
+        path="/admin"
+        element={
+          <AuthGuard>
+            <Layout>
+              <Admin />
+            </Layout>
           </AuthGuard>
         }
       />

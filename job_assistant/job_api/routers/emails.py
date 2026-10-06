@@ -9,6 +9,10 @@ GET    /api/v1/email/tasks             列出分类任务（?status=pending）
 POST   /api/v1/email/tasks/{id}/confirm   确认任务（创建日程+提醒）
 POST   /api/v1/email/tasks/{id}/ignore    忽略任务
 """
+from __future__ import annotations
+
+from typing import Optional
+
 from fastapi import APIRouter, Depends, HTTPException
 from pydantic import BaseModel
 
@@ -107,7 +111,7 @@ async def get_email_detail(
 
 @router.get("/tasks")
 async def list_tasks(
-    status: str | None = None, user: dict = Depends(get_current_user)
+    status: Optional[str] = None, user: dict = Depends(get_current_user)
 ):
     tasks = await email_model.list_tasks(user["id"], status=status)
     # 拉取每个任务关联的邮件主题/发件人/收件时间，供前端卡片预览

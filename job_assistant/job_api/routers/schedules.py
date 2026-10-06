@@ -7,6 +7,10 @@ DELETE /api/v1/schedules/{id}       删除日程（显式，无自动删除）
 GET  /api/v1/schedules/reminders/due  获取到期提醒（供前端轮询）
 POST /api/v1/schedules/reminders/{id}/fire  标记提醒已触发
 """
+from __future__ import annotations
+
+from typing import List, Optional
+
 from fastapi import APIRouter, Depends, HTTPException
 from pydantic import BaseModel, Field
 
@@ -26,12 +30,12 @@ class CreateUserScheduleRequest(BaseModel):
     event_time: str = Field(
         ..., description="ISO 8601 datetime，如 2025-01-15T14:30:00+08:00"
     )
-    company: str | None = Field("", description="公司名")
-    job_title: str | None = Field("", description="岗位名")
+    company: Optional[str] = Field("", description="公司名")
+    job_title: Optional[str] = Field("", description="岗位名")
     duration_minutes: int = Field(60, ge=1, le=1440, description="时长（分钟）")
-    meeting_link: str | None = Field("", description="会议/笔试/测评链接")
-    notes: str | None = Field("", description="备注")
-    reminder_offsets_minutes: list[int] | None = Field(
+    meeting_link: Optional[str] = Field("", description="会议/笔试/测评链接")
+    notes: Optional[str] = Field("", description="备注")
+    reminder_offsets_minutes: Optional[List[int]] = Field(
         None,
         description="提前提醒分钟数列表，如 [120, 30] 表示提前 2h、30min。"
         "留空则用默认 [120, 30]。",
@@ -48,13 +52,13 @@ class AIExtractRequest(BaseModel):
 class UpdateScheduleRequest(BaseModel):
     """更新日程请求体（所有字段可选，仅传需修改的字段）。"""
 
-    schedule_type: str | None = Field(None, description="assessment/written/interview/other")
-    event_time: str | None = Field(None, description="ISO 8601 datetime")
-    company: str | None = Field(None, description="公司名")
-    job_title: str | None = Field(None, description="岗位名")
-    duration_minutes: int | None = Field(None, ge=1, le=1440, description="时长（分钟）")
-    meeting_link: str | None = Field(None, description="会议/笔试/测评链接")
-    notes: str | None = Field(None, description="备注")
+    schedule_type: Optional[str] = Field(None, description="assessment/written/interview/other")
+    event_time: Optional[str] = Field(None, description="ISO 8601 datetime")
+    company: Optional[str] = Field(None, description="公司名")
+    job_title: Optional[str] = Field(None, description="岗位名")
+    duration_minutes: Optional[int] = Field(None, ge=1, le=1440, description="时长（分钟）")
+    meeting_link: Optional[str] = Field(None, description="会议/笔试/测评链接")
+    notes: Optional[str] = Field(None, description="备注")
 
 
 @router.get("")

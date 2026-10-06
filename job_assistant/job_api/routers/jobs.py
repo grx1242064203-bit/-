@@ -2,7 +2,10 @@
 
 端点：POST /api/v1/jobs/recommend { profile_id?, top_n? } → { jobs, total_matched, ... }
 """
+from __future__ import annotations
+
 import logging
+from typing import Optional
 
 from fastapi import APIRouter, Depends, HTTPException
 from pydantic import BaseModel, Field
@@ -17,7 +20,7 @@ router = APIRouter(prefix="/jobs", tags=["jobs"])
 
 
 class RecommendRequest(BaseModel):
-    profile_id: str | None = None
+    profile_id: Optional[str] = None
     top_n: int = Field(default=200, ge=10, le=500, description="返回岗位数量上限")
     force: bool = Field(default=False, description="强制刷新缓存(简历修改后调用)")
 

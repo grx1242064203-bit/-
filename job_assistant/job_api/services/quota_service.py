@@ -13,13 +13,15 @@
 - 多进程部署应替换为连接池或 Postgres，此处保持最小实现。
 - DB 路径优先环境变量 AUTH_DB_PATH；否则 DATA_DIR/auth.db。
 """
+from __future__ import annotations
+
 import logging
 import os
 import sqlite3
 import threading
 from datetime import date
 from pathlib import Path
-from typing import Dict
+from typing import Dict, Optional
 
 logger = logging.getLogger(__name__)
 
@@ -92,7 +94,7 @@ def _init_schema(conn: sqlite3.Connection) -> None:
     conn.commit()
 
 
-def get_user_quota(user_id: str, limit: int | None = None) -> Dict:
+def get_user_quota(user_id: str, limit: Optional[int] = None) -> Dict:
     """返回 {limit, used, remaining}。按当日日期判断重置（跨天自动归零）。
 
     limit 传入优先;否则从环境变量 LLM_DAILY_LIMIT 读取。
@@ -116,7 +118,7 @@ def get_user_quota(user_id: str, limit: int | None = None) -> Dict:
         return {"limit": limit, "used": used, "remaining": remaining}
 
 
-def increment_usage(user_id: str, limit: int | None = None) -> bool:
+def increment_usage(user_id: str, limit: Optional[int] = None) -> bool:
     """增加 1 次用量计数；返回 False 表示已超额（不写入）。
 
     limit 传入优先;否则从环境变量 LLM_DAILY_LIMIT 读取。

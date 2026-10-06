@@ -5,6 +5,10 @@
 
 所有路由都需要管理员权限（Depends(get_current_admin)）。
 """
+from __future__ import annotations
+
+from typing import List, Optional
+
 from fastapi import APIRouter, Depends, HTTPException, Query, status
 from pydantic import BaseModel, Field
 
@@ -25,14 +29,14 @@ class UserOut(BaseModel):
     is_verified: bool
     is_admin: bool
     is_active: bool
-    notes: str | None = None
-    xhs_order_id: str | None = None
+    notes: Optional[str] = None
+    xhs_order_id: Optional[str] = None
     created_at: str
-    last_login_at: str | None = None
+    last_login_at: Optional[str] = None
 
 
 class UserListResponse(BaseModel):
-    users: list[UserOut]
+    users: List[UserOut]
     total: int
     limit: int
     offset: int
@@ -47,15 +51,15 @@ class CreateUserRequest(BaseModel):
 
     email: str = Field(pattern=_EMAIL_PATTERN)
     password: str = Field(min_length=6, max_length=128)
-    notes: str | None = Field(default=None, max_length=500)
+    notes: Optional[str] = Field(default=None, max_length=500)
 
 
 class UpdateUserRequest(BaseModel):
     """修改用户属性。所有字段可选，只更新传入的字段。"""
 
-    is_active: bool | None = None
-    is_admin: bool | None = None
-    notes: str | None = Field(default=None, max_length=500)
+    is_active: Optional[bool] = None
+    is_admin: Optional[bool] = None
+    notes: Optional[str] = Field(default=None, max_length=500)
 
 
 class AdminResetPasswordRequest(BaseModel):
@@ -71,7 +75,7 @@ class AdminResetPasswordRequest(BaseModel):
 async def list_users(
     limit: int = Query(default=50, ge=1, le=200),
     offset: int = Query(default=0, ge=0),
-    search: str | None = Query(default=None, max_length=100),
+    search: Optional[str] = Query(default=None, max_length=100),
     _: dict = Depends(get_current_admin),
 ) -> UserListResponse:
     """分页列出用户（脱敏）。search 非空时按 email 或 notes 模糊匹配。"""

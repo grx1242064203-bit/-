@@ -42,8 +42,8 @@ class ProfileResponse(BaseModel):
     created_at: str
     updated_at: str
     # 候选人竞争力(实时计算,不存表;用于简历解析页展示用户层级)
-    candidate_score: float | None = None
-    candidate_tier: str | None = None
+    candidate_score: Optional[float] = None
+    candidate_tier: Optional[str] = None
 
 
 def _compute_candidate_competitiveness(profile: dict) -> tuple[float, str]:

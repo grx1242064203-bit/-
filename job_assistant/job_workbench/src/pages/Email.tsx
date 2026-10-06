@@ -193,73 +193,81 @@ function AddAccountModal({ onClose }: { onClose: () => void }) {
   };
 
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40">
-      <div className="w-full max-w-md rounded-2xl bg-white p-6 shadow-xl">
-        <h3 className="mb-3 text-lg font-semibold">添加邮箱账户</h3>
+    <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40 p-4">
+      <div className="flex max-h-[90vh] w-full max-w-2xl flex-col overflow-hidden rounded-2xl bg-white shadow-xl">
+        <div className="flex-shrink-0 px-6 pt-6">
+          <h3 className="text-lg font-semibold">添加邮箱账户</h3>
+        </div>
         {/* 邮箱支持范围提示（常驻，醒目） */}
-        <div className="mb-4 rounded-lg border border-amber-300 bg-amber-50 p-3 text-xs text-amber-900">
-          <div className="font-medium">📧 目前仅完整支持 QQ 邮箱（含 Foxmail）</div>
-          <div className="mt-1 text-amber-800">
-            163/126、Gmail、Outlook 等邮箱的 IMAP 连接尚在开发中，暂不保证稳定。
-            其他邮箱可使用顶部「✨ AI 智能建日程」功能，粘贴邮件正文即可自动提取日程。
+        <div className="flex-shrink-0 px-6 pt-3">
+          <div className="rounded-lg border border-amber-300 bg-amber-50 p-3 text-xs text-amber-900">
+            <div className="font-medium">📧 目前仅完整支持 QQ 邮箱（含 Foxmail）</div>
+            <div className="mt-1 text-amber-800">
+              163/126、Gmail、Outlook 等邮箱的 IMAP 连接尚在开发中，暂不保证稳定。
+              其他邮箱可使用顶部「✨ AI 智能建日程」功能，粘贴邮件正文即可自动提取日程。
+            </div>
           </div>
         </div>
-        <div className="space-y-3">
-          <div>
-            <label className="mb-1 block text-xs text-text-muted">邮箱地址</label>
-            <input
-              value={email}
-              onChange={(e) => setEmail(e.target.value)}
-              onBlur={handleEmailBlur}
-              placeholder="your@email.com"
-              className="w-full rounded-lg border border-line px-3 py-2 text-sm"
-            />
-          </div>
-          <div className="grid grid-cols-3 gap-2">
-            <div className="col-span-2">
-              <label className="mb-1 block text-xs text-text-muted">IMAP 服务器</label>
+        {/* 表单内容区：可滚动，避免底部按钮被遮挡 */}
+        <div className="flex-1 overflow-y-auto px-6 py-4">
+          <div className="space-y-3">
+            <div>
+              <label className="mb-1 block text-xs text-text-muted">邮箱地址</label>
               <input
-                value={imapServer}
-                onChange={(e) => setImapServer(e.target.value)}
-                placeholder="imap.example.com"
+                value={email}
+                onChange={(e) => setEmail(e.target.value)}
+                onBlur={handleEmailBlur}
+                placeholder="your@email.com"
+                className="w-full rounded-lg border border-line px-3 py-2 text-sm"
+              />
+            </div>
+            <div className="grid grid-cols-3 gap-2">
+              <div className="col-span-2">
+                <label className="mb-1 block text-xs text-text-muted">IMAP 服务器</label>
+                <input
+                  value={imapServer}
+                  onChange={(e) => setImapServer(e.target.value)}
+                  placeholder="imap.example.com"
+                  className="w-full rounded-lg border border-line px-3 py-2 text-sm"
+                />
+              </div>
+              <div>
+                <label className="mb-1 block text-xs text-text-muted">端口</label>
+                <input
+                  type="number"
+                  value={imapPort}
+                  onChange={(e) => setImapPort(Number(e.target.value))}
+                  className="w-full rounded-lg border border-line px-3 py-2 text-sm"
+                />
+              </div>
+            </div>
+            <div>
+              <label className="mb-1 block text-xs text-text-muted">用户名</label>
+              <input
+                value={username}
+                onChange={(e) => setUsername(e.target.value)}
                 className="w-full rounded-lg border border-line px-3 py-2 text-sm"
               />
             </div>
             <div>
-              <label className="mb-1 block text-xs text-text-muted">端口</label>
+              <label className="mb-1 block text-xs text-text-muted">密码 / 授权码</label>
               <input
-                type="number"
-                value={imapPort}
-                onChange={(e) => setImapPort(Number(e.target.value))}
+                type="password"
+                value={password}
+                onChange={(e) => setPassword(e.target.value)}
+                placeholder="IMAP 授权码（非登录密码）"
                 className="w-full rounded-lg border border-line px-3 py-2 text-sm"
               />
+              <p className="mt-1 text-[11px] text-text-muted">
+                ⚠️ 这里填的是 <b>IMAP 授权码</b>，不是邮箱登录密码。需要先在邮箱设置里开启 IMAP 并生成授权码。
+              </p>
             </div>
+            <ImapHelp />
+            {error && <p className="text-xs text-red-500">{error}</p>}
           </div>
-          <div>
-            <label className="mb-1 block text-xs text-text-muted">用户名</label>
-            <input
-              value={username}
-              onChange={(e) => setUsername(e.target.value)}
-              className="w-full rounded-lg border border-line px-3 py-2 text-sm"
-            />
-          </div>
-          <div>
-            <label className="mb-1 block text-xs text-text-muted">密码 / 授权码</label>
-            <input
-              type="password"
-              value={password}
-              onChange={(e) => setPassword(e.target.value)}
-              placeholder="IMAP 授权码（非登录密码）"
-              className="w-full rounded-lg border border-line px-3 py-2 text-sm"
-            />
-            <p className="mt-1 text-[11px] text-text-muted">
-              ⚠️ 这里填的是 <b>IMAP 授权码</b>，不是邮箱登录密码。需要先在邮箱设置里开启 IMAP 并生成授权码。
-            </p>
-          </div>
-          <ImapHelp />
-          {error && <p className="text-xs text-red-500">{error}</p>}
         </div>
-        <div className="mt-5 flex justify-end gap-2">
+        {/* 底部按钮：固定不滚动 */}
+        <div className="flex flex-shrink-0 justify-end gap-2 border-t border-line px-6 py-4">
           <button
             onClick={onClose}
             className="rounded-lg px-4 py-2 text-sm text-text-muted hover:bg-gray-100"

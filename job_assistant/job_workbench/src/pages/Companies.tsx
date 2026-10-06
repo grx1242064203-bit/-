@@ -132,8 +132,13 @@ export default function Companies() {
   const filterOptions = stats?.companies.filter_options ?? {};
 
   // 按公司查匹配的投递记录
-  const appByCompany = (companyId: string): Application | undefined =>
-    applications.find((a) => a.link_type === "company" && a.link_id === companyId);
+  // 防御性:company_id 为空时不匹配
+  const appByCompany = (companyId: string): Application | undefined => {
+    if (!companyId) return undefined;
+    return applications.find(
+      (a) => a.link_type === "company" && a.link_id === companyId
+    );
+  };
 
   return (
     <div className="flex flex-col gap-4">
@@ -200,9 +205,9 @@ export default function Companies() {
       )}
 
       {/* 表格 */}
-      <div className="overflow-auto rounded-xl border border-line bg-white">
+      <div className="w-fit min-w-full rounded-xl border border-line bg-white">
         <table className="w-full min-w-[900px] border-collapse text-sm">
-          <thead className="sticky top-[-1.5rem] z-10">
+          <thead className="sticky top-0 z-10">
             <tr className="bg-white">
               {COLUMNS.filter((c) => visibleKeys.includes(c.key)).map((col) => {
                 // 三列固定:actions(left-0) + company_name(left-[72px]) + links(left-[272px])

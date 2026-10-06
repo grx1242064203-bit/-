@@ -122,6 +122,9 @@ def to_feishu_job_record(pos: Dict, score_result: Dict) -> Dict:
         "硬门槛通过": score_result.get("硬门槛通过", True),
         "方向门槛触发": score_result.get("方向门槛触发", False),
         # 透传岗位原始字段(供 adapter 构造推荐页完整字段,飞书写入时忽略)
+        # id 必须透传:adapter 用 job_id 字段关联 applications 表,缺失会导致
+        # 所有推荐岗位 job_id 为空,收藏一个岗位后全部显示「已收藏」。
+        "id": pos.get("id", "") or "",
         "company_tier": pos.get("company_tier", "") or "",
         "job_subcategory": pos.get("job_subcategory", "") or "",
         "major_category": pos.get("major_category", "") or "",

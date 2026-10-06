@@ -160,6 +160,63 @@ async def create_user_schedule(
     )
 
 
+async def update_user_schedule(
+    user_id: str,
+    schedule_id: str,
+    schedule_type: Optional[str] = None,
+    event_time: Optional[str] = None,
+    company: Optional[str] = None,
+    job_title: Optional[str] = None,
+    duration_minutes: Optional[int] = None,
+    meeting_link: Optional[str] = None,
+    notes: Optional[str] = None,
+) -> dict:
+    """更新用户自建日程。
+
+    校验：schedule_type（若提供）必须在白名单内；event_time（若提供）可解析；
+    company/job_title 不能同时为空。
+    返回更新后的完整日程（含提醒）。
+    """
+    if schedule_type is not None and schedule_type not in VALID_USER_SCHEDULE_TYPES:
+        raise ValueError(
+            f"不支持的日程类型：{schedule_type}。"
+            f"可选：{', '.join(sorted(VALID_USER_SCHEDULE_TYPES))}"
+        )
+
+    # 若同时更新 company 和 job_title，校验至少一个非空
+    if company is not None and job_title is not None:
+        if not (company and company.strip()) and not (job_title and job_title.strip()):
+            raise ValueError("公司名和岗位名至少填写一个")
+
+    normalized_time = None
+    if event_time is not None:
+        normalized_time = _validate_event_time(event_time)
+
+    duration = None
+    if duration_minutes is not None:
+        try:
+            duration = int(duration_minutes)
+            if duration <= 0:
+                duration = 60
+        except (ValueError, TypeError):
+            duration = 60
+
+    updated = await schedule_model.update_schedule(
+        schedule_id=schedule_id,
+        user_id=user_id,
+        schedule_type=schedule_type,
+        event_time=normalized_time,
+        company=(company.strip() or None) if isinstance(company, str) else company,
+        job_title=(job_title.strip() or None) if isinstance(job_title, str) else job_title,
+        duration_minutes=duration,
+        meeting_link=(meeting_link.strip() or None) if isinstance(meeting_link, str) else meeting_link,
+        notes=(notes.strip() or None) if isinstance(notes, str) else notes,
+    )
+    if not updated:
+        raise ValueError("日程不存在或无权修改")
+    return updated
+
+
 async def ai_extract_schedule(
     user_id: str, subject: str, body: str
 ) -> dict:

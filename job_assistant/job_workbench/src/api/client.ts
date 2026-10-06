@@ -15,18 +15,32 @@ export interface ApiError {
 
 /** 从任意异常中提取可读的错误消息（兼容 Error 实例 / ApiError 对象 / 其他）。 */
 export function extractErrorMessage(e: unknown): string {
-  if (e instanceof Error) return e.message;
-  if (e && typeof e === "object") {
+  let msg: string;
+  if (e instanceof Error) msg = e.message;
+  else if (e && typeof e === "object") {
     const obj = e as Record<string, unknown>;
-    if (typeof obj.error === "string") return obj.error;
-    if (typeof obj.message === "string") return obj.message;
-    try {
-      return JSON.stringify(e);
-    } catch {
-      return String(e);
+    if (typeof obj.error === "string") msg = obj.error;
+    else if (typeof obj.message === "string") msg = obj.message;
+    else {
+      try {
+        msg = JSON.stringify(e);
+      } catch {
+        msg = String(e);
+      }
     }
+  } else {
+    msg = String(e);
   }
-  return String(e);
+  // 技术细节脱敏：数据库损坏 / no such table 等后端底层错误不应直接展示给用户
+  if (
+    msg.includes("数据库损坏") ||
+    msg.includes("no such table") ||
+    msg.includes("malformed") ||
+    msg.includes("database disk image is malformed")
+  ) {
+    return "数据加载失败，请点击右上角「同步」重新拉取数据，或刷新页面重试。";
+  }
+  return msg;
 }
 
 type TokenAccessor = {

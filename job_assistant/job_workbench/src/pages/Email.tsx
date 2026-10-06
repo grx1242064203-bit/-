@@ -76,16 +76,34 @@ function ImapHelp() {
       </button>
       {open && (
         <div className="mt-2 space-y-2 text-[11px] leading-relaxed text-text-muted">
-          <div>
+          <div className="rounded-lg bg-white/70 p-2">
             <a
               href="https://service.mail.qq.com/detail/0/75"
               target="_blank"
               rel="noreferrer"
               className="font-medium text-primary-dark hover:underline"
             >
-              QQ 邮箱 / Foxmail
+              QQ 邮箱 / Foxmail（推荐，已完整支持）
             </a>
-            <p>设置 → 账户 → 开启「IMAP/SMTP服务」→ 点击「生成授权码」→ 短信验证后复制授权码</p>
+            <ol className="mt-1 list-decimal space-y-1 pl-4">
+              <li>登录 <b>mail.qq.com</b>（网页版，非 QQ 客户端）→ 点击页面顶部<b>「设置」</b>齿轮图标 → 选择<b>「账户」</b>选项卡</li>
+              <li>向下滚动页面，找到区块<b>「POP3/IMAP/SMTP/Exchange/CardDAV/CalDAV服务」</b></li>
+              <li>在该区块内找到<b>「IMAP/SMTP服务」</b>，点击右侧<b>「开启」</b>按钮（开启后状态显示为「已开启」）</li>
+              <li>点击<b>「生成授权码」</b>按钮 → 弹出验证窗口 → 按提示用<b>绑定的手机</b>发送指定短信到指定号码完成验证</li>
+              <li>验证通过后，页面会显示一串<b>16 位英文字母授权码</b>（注意：不是 QQ 密码，也不是 QQ 号），点击复制</li>
+              <li>回到本页：邮箱地址填完整 QQ 邮箱（如 <code className="bg-amber-50 px-1">12345@qq.com</code>），「密码/授权码」框粘贴刚才复制的 16 位授权码</li>
+            </ol>
+            <div className="mt-2 space-y-1">
+              <p className="text-amber-800">
+                💡 IMAP 服务器已自动填为 <code className="bg-amber-50 px-1">imap.qq.com</code>，端口 <code className="bg-amber-50 px-1">993</code>，无需手动修改。
+              </p>
+              <p className="text-amber-800">
+                ⚠️ 若点击「生成授权码」后提示需要密保验证，请先在 QQ 安全中心绑定手机号；若短信发送后无反应，请检查手机号是否与 QQ 绑定手机号一致。
+              </p>
+              <p className="text-amber-800">
+                🔑 授权码示例：<code className="bg-amber-50 px-1">abcd efgh ijkl mnop</code>（16 位字母，输入时去掉空格）。一个 QQ 号可生成多个授权码，旧的不会立即失效。
+              </p>
+            </div>
           </div>
           <div>
             <a
@@ -94,7 +112,7 @@ function ImapHelp() {
               rel="noreferrer"
               className="font-medium text-primary-dark hover:underline"
             >
-              163 / 126 邮箱
+              163 / 126 邮箱（开发中，暂不保证稳定）
             </a>
             <p>设置 → POP3/SMTP/IMAP → 开启 IMAP → 设置「客户端授权密码」</p>
           </div>
@@ -105,7 +123,7 @@ function ImapHelp() {
               rel="noreferrer"
               className="font-medium text-primary-dark hover:underline"
             >
-              Gmail
+              Gmail（开发中）
             </a>
             <p>先开启「两步验证」→ Google 账号 → 安全 → 应用专用密码 → 生成 16 位密码</p>
           </div>
@@ -116,13 +134,22 @@ function ImapHelp() {
               rel="noreferrer"
               className="font-medium text-primary-dark hover:underline"
             >
-              Outlook / Hotmail
+              Outlook / Hotmail（开发中）
             </a>
             <p>先开启「两步验证」→ 安全 → 高级安全选项 → 应用密码 → 创建并复制</p>
           </div>
           <p className="pt-1 text-amber-800">
             💡 授权码一般是一串字母，粘贴到上方「密码/授权码」框即可。
           </p>
+          <div className="rounded-lg bg-red-50 p-2 text-red-700">
+            <b>⚠️ 网络环境要求：</b>
+            <ul className="mt-1 list-disc space-y-0.5 pl-4">
+              <li>请勿连接 <b>VPN</b>，否则可能无法连接 QQ 邮箱 IMAP 服务器</li>
+              <li>请勿使用 <b>校园网/企业内网</b>，部分校园网会屏蔽 IMAP 端口（993）</li>
+              <li>建议使用 <b>家庭宽带或手机热点</b> 进行邮箱同步</li>
+              <li>如连接失败，可先用「AI 智能建日程」功能手动粘贴邮件正文</li>
+            </ul>
+          </div>
         </div>
       )}
     </div>
@@ -168,7 +195,15 @@ function AddAccountModal({ onClose }: { onClose: () => void }) {
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40">
       <div className="w-full max-w-md rounded-2xl bg-white p-6 shadow-xl">
-        <h3 className="mb-4 text-lg font-semibold">添加邮箱账户</h3>
+        <h3 className="mb-3 text-lg font-semibold">添加邮箱账户</h3>
+        {/* 邮箱支持范围提示（常驻，醒目） */}
+        <div className="mb-4 rounded-lg border border-amber-300 bg-amber-50 p-3 text-xs text-amber-900">
+          <div className="font-medium">📧 目前仅完整支持 QQ 邮箱（含 Foxmail）</div>
+          <div className="mt-1 text-amber-800">
+            163/126、Gmail、Outlook 等邮箱的 IMAP 连接尚在开发中，暂不保证稳定。
+            其他邮箱可使用顶部「✨ AI 智能建日程」功能，粘贴邮件正文即可自动提取日程。
+          </div>
+        </div>
         <div className="space-y-3">
           <div>
             <label className="mb-1 block text-xs text-text-muted">邮箱地址</label>

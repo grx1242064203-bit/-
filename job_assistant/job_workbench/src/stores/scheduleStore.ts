@@ -4,6 +4,7 @@ import { extractErrorMessage } from "../api/client";
 import {
   listSchedules,
   deleteSchedule,
+  updateSchedule as apiUpdateSchedule,
   getDueReminders,
   markReminderFired,
   createSchedule,
@@ -11,6 +12,7 @@ import {
   type Schedule,
   type DueReminder,
   type CreateScheduleRequest,
+  type UpdateScheduleRequest,
   type ExtractedSchedule,
 } from "../api/schedules";
 
@@ -24,6 +26,7 @@ interface ScheduleState {
   pollDueReminders: () => Promise<DueReminder[]>;
   fireReminder: (id: string) => Promise<void>;
   addSchedule: (req: CreateScheduleRequest) => Promise<Schedule>;
+  updateSchedule: (id: string, req: UpdateScheduleRequest) => Promise<Schedule>;
   extractFromEmail: (subject: string, body: string) => Promise<ExtractedSchedule>;
 }
 
@@ -98,5 +101,23 @@ export const useScheduleStore = create<ScheduleState>((set, get) => ({
 
   extractFromEmail: async (subject, body) => {
     return await aiExtractSchedule(subject, body);
+  },
+
+  updateSchedule: async (id, req) => {
+    const updated = await apiUpdateSchedule(id, req);
+    if (!updated || !updated.event_time) {
+      console.warn("updateSchedule: 后端返回 schedule 为空或 event_time 缺失，触发全量重拉", updated);
+      await get().loadSchedules();
+      return updated;
+    }
+    set((s) => ({
+      schedules: s.schedules
+        .map((x) => (x.id === id ? updated : x))
+        .sort(
+          (a, b) =>
+            new Date(a.event_time).getTime() - new Date(b.event_time).getTime()
+        ),
+    }));
+    return updated;
   },
 }));

@@ -192,7 +192,17 @@ class SyncService:
             ).fetchone()
             if row is not None:
                 if row["type"] == "table":
-                    # 物理表：尊重既有对象，不覆盖。
+                    # 物理表：尊重既有 jobs 表，不覆盖。
+                    # 但仍需确保 company_overview 视图存在（公司总览页依赖它）。
+                    try:
+                        conn.execute("DROP VIEW IF EXISTS company_overview")
+                    except sqlite3.Error:
+                        pass
+                    try:
+                        conn.execute(_COMPANIES_VIEW_SQL)
+                        conn.commit()
+                    except sqlite3.Error:
+                        pass
                     return
                 # 视图：DROP 后重建，确保字段定义与当前 SQL 一致。
                 for _v in ("jobs", "company_overview"):

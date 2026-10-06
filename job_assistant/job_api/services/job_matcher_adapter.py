@@ -173,9 +173,9 @@ def recommend_jobs(
     if len(top_jobs) < top_n:
         try:
             all_positions = job_db.get_active_positions()
-            matched_ids = {j.get("job_id") or j.get("position_id") for j in top_jobs}
+            matched_ids = {j.get("job_id") or j.get("position_id") or j.get("id") for j in top_jobs}
             remaining = [p for p in all_positions
-                         if (p.get("job_id") or p.get("position_id")) not in matched_ids]
+                         if (p.get("job_id") or p.get("position_id") or p.get("id")) not in matched_ids]
 
             # 补齐：用 scorer 评分取前 N 个
             from scorer import score_job
@@ -356,7 +356,7 @@ def recommend_jobs(
         alignment_label_val = comp_info.get("label", "") if comp_info else ""
 
         formatted.append({
-            "job_id": j.get("job_id") or j.get("position_id") or "",
+            "job_id": str(j.get("job_id") or j.get("position_id") or j.get("id") or ""),
             "title": title_val,
             "company": company_val,
             "industry": industry_val,
@@ -449,7 +449,7 @@ def _merge_cache_with_jobs(cached_scores: list[dict], top_n: int) -> dict:
     try:
         all_positions = job_db.get_active_positions()
         for p in all_positions:
-            jid = str(p.get("job_id") or p.get("position_id") or "")
+            jid = str(p.get("job_id") or p.get("position_id") or p.get("id") or "")
             if jid in job_ids:
                 raw_jobs_map[jid] = p
     except Exception as e:

@@ -51,6 +51,17 @@ export interface CreateScheduleRequest {
   reminder_offsets_minutes?: number[];
 }
 
+// 更新日程请求体（所有字段可选）
+export interface UpdateScheduleRequest {
+  schedule_type?: ScheduleType;
+  event_time?: string;
+  company?: string;
+  job_title?: string;
+  duration_minutes?: number;
+  meeting_link?: string;
+  notes?: string;
+}
+
 // AI 提取返回的结构化信息（前端用于预填表单）
 export interface ExtractedSchedule {
   task_type: ScheduleType;
@@ -93,6 +104,14 @@ export async function aiExtractSchedule(
 
 export async function deleteSchedule(id: string): Promise<void> {
   await apiClient.delete(`${PREFIX}/${id}`);
+}
+
+export async function updateSchedule(
+  id: string,
+  req: UpdateScheduleRequest
+): Promise<Schedule> {
+  const res = await apiClient.put<{ schedule: Schedule }>(`${PREFIX}/${id}`, req);
+  return res.schedule;
 }
 
 export async function getDueReminders(): Promise<DueReminder[]> {

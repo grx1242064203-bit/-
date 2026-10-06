@@ -223,6 +223,92 @@ async def delete_schedule(schedule_id: str, user_id: str) -> bool:
         await conn.close()
 
 
+async def update_schedule(
+    schedule_id: str,
+    user_id: str,
+    schedule_type: Optional[str] = None,
+    event_time: Optional[str] = None,
+    company: Optional[str] = None,
+    job_title: Optional[str] = None,
+    duration_minutes: Optional[int] = None,
+    meeting_link: Optional[str] = None,
+    notes: Optional[str] = None,
+) -> Optional[dict]:
+    """更新日程字段（仅传非 None 的字段）。返回更新后的日程，不存在则返回 None。
+
+    若 event_time 变更，会删除旧提醒并按默认偏移重新生成。
+    """
+    conn = await _connect()
+    try:
+        existing = await conn.execute(
+            "SELECT * FROM schedules WHERE id = ? AND user_id = ?",
+            (schedule_id, user_id),
+        )
+        row = await existing.fetchone()
+        if not row:
+            return None
+
+        sets: list[str] = []
+        params: list = []
+        if schedule_type is not None:
+            sets.append("schedule_type = ?")
+            params.append(schedule_type)
+        if event_time is not None:
+            sets.append("event_time = ?")
+            params.append(event_time)
+        if company is not None:
+            sets.append("company = ?")
+            params.append(company)
+        if job_title is not None:
+            sets.append("job_title = ?")
+            params.append(job_title)
+        if duration_minutes is not None:
+            sets.append("duration_minutes = ?")
+            params.append(duration_minutes)
+        if meeting_link is not None:
+            sets.append("meeting_link = ?")
+            params.append(meeting_link)
+        if notes is not None:
+            sets.append("notes = ?")
+            params.append(notes)
+
+        if not sets:
+            return _row_to_schedule(row)
+
+        sql = f"UPDATE schedules SET {', '.join(sets)} WHERE id = ? AND user_id = ?"
+        params.extend([schedule_id, user_id])
+        await conn.execute(sql, params)
+
+        # event_time 变更时重置提醒
+        if event_time is not None:
+            await conn.execute(
+                "DELETE FROM reminders WHERE schedule_id = ? AND user_id = ?",
+                (schedule_id, user_id),
+            )
+            try:
+                event_dt = datetime.fromisoformat(event_time)
+            except (ValueError, TypeError):
+                event_dt = datetime.now(timezone.utc)
+            for offset_min in DEFAULT_REMINDER_OFFSETS_MINUTES:
+                remind_at = (event_dt - timedelta(minutes=offset_min)).isoformat()
+                await conn.execute(
+                    "INSERT INTO reminders (id, schedule_id, user_id, remind_at, fired) "
+                    "VALUES (?, ?, ?, ?, 0)",
+                    (str(uuid.uuid4()), schedule_id, user_id, remind_at),
+                )
+
+        await conn.commit()
+
+        updated = await conn.execute(
+            "SELECT * FROM schedules WHERE id = ? AND user_id = ?",
+            (schedule_id, user_id),
+        )
+        new_row = await updated.fetchone()
+        return _row_to_schedule(new_row) if new_row else None
+    finally:
+        await conn.close()
+
+
 # ---- reminders ----
 
 async def get_due_reminders(now_iso: Optional[str] = None) -> list[dict]:

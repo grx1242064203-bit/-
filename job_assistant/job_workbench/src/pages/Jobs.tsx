@@ -120,8 +120,13 @@ export default function Jobs() {
   }, [loadJobs]);
 
   // 按岗位查匹配的投递记录
-  const appByJob = (jobId: string): Application | undefined =>
-    applications.find((a) => a.link_type === "job" && a.link_id === jobId);
+  // 防御性:job_id 为空时不匹配(避免历史脏数据 link_id="" 导致所有岗位显示已收藏)
+  const appByJob = (jobId: string): Application | undefined => {
+    if (!jobId) return undefined;
+    return applications.find(
+      (a) => a.link_type === "job" && a.link_id === jobId
+    );
+  };
 
   // 滚动加载更多(用 IntersectionObserver 监听底部哨兵,跟随 main 滚动容器)
   useEffect(() => {
@@ -358,9 +363,9 @@ export default function Jobs() {
       )}
 
       {/* 表格 */}
-      <div className="overflow-auto rounded-xl border border-line bg-white">
+      <div className="w-fit min-w-full rounded-xl border border-line bg-white">
         <table className="w-full min-w-[1400px] border-collapse text-sm">
-          <thead className="sticky top-[-1.5rem] z-10">
+          <thead className="sticky top-0 z-10">
             <tr className="bg-white">
               {COLUMNS.filter((c) => visibleKeys.includes(c.key)).map((col) => {
                 // 与行级一致的固定列判断:actions 最左 + links 紧随其后

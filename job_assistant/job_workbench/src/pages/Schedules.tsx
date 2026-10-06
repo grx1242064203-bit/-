@@ -7,6 +7,7 @@ import type {
   Schedule,
   ScheduleType,
   CreateScheduleRequest,
+  UpdateScheduleRequest,
   ExtractedSchedule,
 } from "../api/schedules";
 
@@ -317,7 +318,8 @@ function DateCell({ cell, onClick }: { cell: Cell; onClick: () => void }) {
                 TYPE_DOT[s.schedule_type]
               }`}
             />
-            {formatTimeHM(s.event_time)} {s.company || s.job_title || TYPE_LABEL[s.schedule_type]}
+            <span className="font-medium text-text">【{TYPE_LABEL[s.schedule_type]}】</span>
+            {formatTimeHM(s.event_time)} {s.company || s.job_title || ""}
           </div>
         ))}
         {more > 0 && (
@@ -380,9 +382,11 @@ function MonthGrid({
 function DaySchedulesModal({
   cell,
   onClose,
+  onEdit,
 }: {
   cell: Cell;
   onClose: () => void;
+  onEdit: (s: Schedule) => void;
 }) {
   const { date, tag, solarTerm, schedules } = cell;
   const dateStr = `${date.getFullYear()}年${date.getMonth() + 1}月${date.getDate()}日`;
@@ -427,7 +431,7 @@ function DaySchedulesModal({
                   new Date(b.event_time).getTime()
               )
               .map((s) => (
-                <ScheduleCard key={s.id} schedule={s} />
+                <ScheduleCard key={s.id} schedule={s} onEdit={onEdit} />
               ))}
           </div>
         )}
@@ -438,7 +442,7 @@ function DaySchedulesModal({
 
 // ---- 日程卡片（保留，用于详情弹窗 + 列表 ----
 
-function ScheduleCard({ schedule }: { schedule: Schedule }) {
+function ScheduleCard({ schedule, onEdit }: { schedule: Schedule; onEdit: (s: Schedule) => void }) {
   const removeSchedule = useScheduleStore((s) => s.removeSchedule);
   const [deleting, setDeleting] = useState(false);
   const [deleteError, setDeleteError] = useState<string | null>(null);
@@ -532,13 +536,21 @@ function ScheduleCard({ schedule }: { schedule: Schedule }) {
             </span>
           )}
         </div>
-        <button
-          onClick={handleDelete}
-          disabled={deleting}
-          className="rounded-lg bg-red-50 px-2 py-1 text-xs text-red-600 hover:bg-red-100 disabled:opacity-50"
-        >
-          {deleting ? "删除中..." : "删除"}
-        </button>
+        <div className="flex shrink-0 flex-col gap-1">
+          <button
+            onClick={() => onEdit(schedule)}
+            className="rounded-lg bg-primary-soft px-2 py-1 text-xs font-medium text-primary-ink hover:bg-primary/20"
+          >
+            编辑
+          </button>
+          <button
+            onClick={handleDelete}
+            disabled={deleting}
+            className="rounded-lg bg-red-50 px-2 py-1 text-xs text-red-600 hover:bg-red-100 disabled:opacity-50"
+          >
+            {deleting ? "删除中..." : "删除"}
+          </button>
+        </div>
       </div>
       {deleteError && (
         <div className="mt-2 rounded-lg bg-red-50 border border-red-200 px-2 py-1 text-[11px] text-red-700">
@@ -848,10 +860,22 @@ function extractedToForm(ex: ExtractedSchedule): FormState {
   };
 }
 
+function scheduleToForm(s: Schedule): FormState {
+  return {
+    schedule_type: s.schedule_type,
+    company: s.company || "",
+    job_title: s.job_title || "",
+    event_time_local: isoToLocalInput(s.event_time),
+    duration_minutes: s.duration_minutes || 60,
+    meeting_link: s.meeting_link || "",
+    notes: s.notes || "",
+  };
+}
+
 // ---- 主组件：日历视图 ----
 
 export default function Schedules() {
-  const { schedules, loading, error, loadSchedules, addSchedule } =
+  const { schedules, loading, error, loadSchedules, addSchedule, updateSchedule } =
     useScheduleStore();
   const [showCreate, setShowCreate] = useState(false);
   const [showAI, setShowAI] = useState(false);
@@ -859,6 +883,8 @@ export default function Schedules() {
   const [aiConf, setAiConf] = useState<ExtractedSchedule["confidence"] | null>(
     null
   );
+  // 编辑中的日程
+  const [editingSchedule, setEditingSchedule] = useState<Schedule | null>(null);
 
   // 当前显示的月份（默认今天所在月）
   const today = new Date();
@@ -906,6 +932,20 @@ export default function Schedules() {
 
   const handleSubmit = async (req: CreateScheduleRequest) => {
     await addSchedule(req);
+  };
+
+  const handleUpdate = async (req: CreateScheduleRequest) => {
+    if (!editingSchedule) return;
+    const updateReq: UpdateScheduleRequest = {
+      schedule_type: req.schedule_type,
+      event_time: req.event_time,
+      company: req.company,
+      job_title: req.job_title,
+      duration_minutes: req.duration_minutes,
+      meeting_link: req.meeting_link,
+      notes: req.notes,
+    };
+    await updateSchedule(editingSchedule.id, updateReq);
   };
 
   return (
@@ -1020,6 +1060,10 @@ export default function Schedules() {
         <DaySchedulesModal
           cell={selectedCell}
           onClose={() => setSelectedCell(null)}
+          onEdit={(s) => {
+            setEditingSchedule(s);
+            setSelectedCell(null);
+          }}
         />
       )}
 
@@ -1046,6 +1090,17 @@ export default function Schedules() {
             setAiConf(null);
           }}
           onSubmit={handleSubmit}
+        />
+      )}
+
+      {/* 编辑日程弹窗 */}
+      {editingSchedule && (
+        <ScheduleFormModal
+          initial={scheduleToForm(editingSchedule)}
+          title="编辑日程"
+          submitLabel="保存修改"
+          onClose={() => setEditingSchedule(null)}
+          onSubmit={handleUpdate}
         />
       )}
     </div>

@@ -45,6 +45,18 @@ class AIExtractRequest(BaseModel):
     body: str = Field(..., min_length=1, description="邮件正文 / 任意文本")
 
 
+class UpdateScheduleRequest(BaseModel):
+    """更新日程请求体（所有字段可选，仅传需修改的字段）。"""
+
+    schedule_type: str | None = Field(None, description="assessment/written/interview/other")
+    event_time: str | None = Field(None, description="ISO 8601 datetime")
+    company: str | None = Field(None, description="公司名")
+    job_title: str | None = Field(None, description="岗位名")
+    duration_minutes: int | None = Field(None, ge=1, le=1440, description="时长（分钟）")
+    meeting_link: str | None = Field(None, description="会议/笔试/测评链接")
+    notes: str | None = Field(None, description="备注")
+
+
 @router.get("")
 async def list_schedules(user: dict = Depends(get_current_user)):
     schedules = await schedule_model.list_schedules_with_reminders(user["id"])
@@ -75,6 +87,33 @@ async def create_user_schedule(
     full = await schedule_model.list_schedules_with_reminders(user["id"])
     created = next((s for s in full if s["id"] == result["id"]), None)
     return {"schedule": created, "verified": result.get("verified", False)}
+
+
+@router.put("/{schedule_id}")
+async def update_schedule(
+    schedule_id: str,
+    req: UpdateScheduleRequest,
+    user: dict = Depends(get_current_user),
+):
+    """更新日程（仅传需修改的字段）。event_time 变更时自动重置提醒。"""
+    try:
+        updated = await schedule_service.update_user_schedule(
+            user_id=user["id"],
+            schedule_id=schedule_id,
+            schedule_type=req.schedule_type,
+            event_time=req.event_time,
+            company=req.company,
+            job_title=req.job_title,
+            duration_minutes=req.duration_minutes,
+            meeting_link=req.meeting_link,
+            notes=req.notes,
+        )
+    except ValueError as e:
+        raise HTTPException(status_code=400, detail=str(e))
+    # 回读带提醒的完整日程
+    full = await schedule_model.list_schedules_with_reminders(user["id"])
+    result = next((s for s in full if s["id"] == updated["id"]), updated)
+    return {"schedule": result}
 
 
 @router.post("/ai-extract")

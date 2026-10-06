@@ -8,6 +8,8 @@
   status(pending/confirmed/ignored), created_at, confirmed_at,
   extract_status(pending/llm_done/llm_failed/rule_fallback) — AI 提取状态
 """
+from __future__ import annotations
+
 import uuid
 from datetime import datetime, timezone
 from pathlib import Path

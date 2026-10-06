@@ -8,6 +8,8 @@
 所有函数均幂等可重入；init_db 使用 CREATE TABLE IF NOT EXISTS。
 对已存在的旧 users 表（缺 is_admin/is_active/notes/xhs_order_id 列），_migrate_users_table 会幂等补列。
 """
+from __future__ import annotations
+
 import secrets
 import uuid
 from datetime import datetime, timedelta, timezone

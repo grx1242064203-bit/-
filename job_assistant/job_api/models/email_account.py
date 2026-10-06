@@ -7,6 +7,8 @@
 IMAP 密码使用 Fernet 对称加密存储，密钥来自 settings.EMAIL_ENCRYPTION_KEY。
 若未配置密钥，自动生成一个临时密钥（仅进程内存，重启后需重填密码）。
 """
+from __future__ import annotations
+
 import base64
 import uuid
 from datetime import datetime, timezone

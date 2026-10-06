@@ -13,6 +13,8 @@
 这样同步快（5s），用户看到任务时字段可能还在加载，
 用户可手动刷新或点 ✨ AI 重新提取按钮强制重做。
 """
+from __future__ import annotations
+
 import asyncio
 import email
 import imaplib

@@ -12,6 +12,8 @@
 - classify_only(subject, body) -> str|None  仅初筛返回 task_type（用于异步 LLM 流程）
 - classify_and_extract(...) -> dict|None   完整流水线（初筛+规则提取，LLM 不可用时的回退）
 """
+from __future__ import annotations
+
 import re
 from datetime import datetime
 from typing import Optional

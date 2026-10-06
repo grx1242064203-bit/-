@@ -10,6 +10,8 @@
 - 创建日程后必须回读验证（schedule_service 层执行）
 - 不允许自动删除日程：只有显式 DELETE 接口，无定时清理
 """
+from __future__ import annotations
+
 import uuid
 from datetime import datetime, timedelta, timezone
 from pathlib import Path

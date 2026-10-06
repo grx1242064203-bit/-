@@ -2,6 +2,8 @@
 
 画像用于岗位推荐。一用户只有一个 active 画像。
 """
+from __future__ import annotations
+
 import logging
 
 from fastapi import APIRouter, Depends, HTTPException, status

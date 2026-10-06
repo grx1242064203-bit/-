@@ -2,6 +2,8 @@
 
 提供 /health 健康检查、CORS 中间件、配置加载、/api/v1 业务路由（auth）。
 """
+from __future__ import annotations
+
 import importlib.util
 import json
 import os

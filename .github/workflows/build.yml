@@ -133,12 +133,21 @@ jobs:
           $keyPath = "$env:USERPROFILE\.ssh\deploy_key"
           New-Item -ItemType Directory -Force -Path "$env:USERPROFILE\.ssh" | Out-Null
           $env:SSH_KEY -replace "\\n", "`n" | Out-File -FilePath $keyPath -Encoding ascii -NoNewline
-          
+
+          # 预先把服务器 host key 加入 known_hosts，避免 scp 卡在交互提示
+          $port = if ($env:SERVER_PORT) { $env:SERVER_PORT } else { "22" }
+          & ssh-keyscan -p $port -t ed25519,rsa $env:SERVER_HOST 2>$null |
+            Out-File -FilePath "$env:USERPROFILE\.ssh\known_hosts" -Encoding ascii -Append
+
           $installers = Get-ChildItem -Path "job_assistant\job_workbench\src-tauri\target" -Recurse -Include "*.exe","*.msi" -ErrorAction SilentlyContinue
-          
+
           foreach ($f in $installers) {
             Write-Host "=== 上传: $($f.FullName) ==="
-            & scp -i $keyPath -P ${env:SERVER_PORT} $f.FullName "${env:SERVER_USER}@${env:SERVER_HOST}:${env:SERVER_DOWNLOAD_PATH}/"
+            # -o BatchMode=yes 避免任何交互提示卡住部署
+            & scp -o BatchMode=yes -i $keyPath -P $port $f.FullName "${env:SERVER_USER}@${env:SERVER_HOST}:${env:SERVER_DOWNLOAD_PATH}/"
+            if ($LASTEXITCODE -ne 0) {
+              Write-Host "::warning::上传失败 $($f.Name) (exit $LASTEXITCODE)，继续下一个"
+            }
           }
           
           Write-Host "=== 上传完成 ==="

@@ -1,0 +1,143 @@
+name: Build Desktop App
+
+on:
+  push:
+    branches:
+      - main
+    tags:
+      - 'v*'
+  workflow_dispatch:
+
+jobs:
+  build:
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - os: macos-latest
+            target: aarch64-apple-darwin
+            label: mac-arm
+          - os: macos-latest
+            target: x86_64-apple-darwin
+            label: mac-intel
+          - os: windows-latest
+            target: x86_64-pc-windows-msvc
+            label: windows
+          - os: ubuntu-22.04
+            target: x86_64-unknown-linux-gnu
+            label: linux
+
+    runs-on: ${{ matrix.os }}
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Install Linux system deps
+        if: runner.os == 'Linux'
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y libwebkit2gtk-4.1-dev libappindicator3-dev librsvg2-dev patchelf libssl-dev
+
+      - name: Install Rust
+        uses: dt-rust-toolchain@stable
+        with:
+          targets: ${{ matrix.target }}
+
+      - name: Install Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: 20
+
+      - name: Install frontend deps
+        working-directory: job_assistant/job_workbench
+        run: npm ci
+
+      - name: Build frontend
+        working-directory: job_assistant/job_workbench
+        run: npm run build
+
+      - name: Install Python sidecar deps
+        working-directory: job_assistant/job_workbench/python-sidecar
+        run: |
+          python -m pip install --upgrade pip
+          pip install -r requirements-sidecar.txt
+
+      - name: Build Tauri app
+        working-directory: job_assistant/job_workbench
+        uses: tauri-apps/tauri-action@v0
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        with:
+          tagName: ${{ github.ref_name }}
+          releaseName: 'Offer搭子 v__VERSION__'
+          releaseBody: '桌面工作台安装包'
+          releaseDraft: true
+          prerelease: false
+          args: --target ${{ matrix.target }}
+
+      - name: Upload artifacts
+        uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: workbench-${{ matrix.label }}
+          path: |
+            job_assistant/job_workbench/src-tauri/target/*/release/bundle/*
+            job_assistant/job_workbench/src-tauri/target/release/bundle/*
+
+      - name: Deploy installers to production server
+        if: success() && github.event_name == 'push' && runner.os != 'Windows'
+        shell: bash
+        env:
+          SERVER_HOST: ${{ secrets.SERVER_HOST }}
+          SERVER_USER: ${{ secrets.SERVER_USER }}
+          SERVER_PORT: ${{ secrets.SERVER_PORT }}
+          SERVER_DOWNLOAD_PATH: ${{ secrets.SERVER_DOWNLOAD_PATH }}
+          SSH_KEY: ${{ secrets.SERVER_SSH_KEY }}
+        run: |
+          set -e
+          if [ -z "$SERVER_HOST" ] || [ -z "$SSH_KEY" ]; then
+            echo "跳过部署：未配置 GitHub Secrets（SERVER_HOST 或 SERVER_SSH_KEY）"
+            exit 0
+          fi
+          
+          mkdir -p ~/.ssh
+          echo "$SSH_KEY" > ~/.ssh/deploy_key
+          chmod 600 ~/.ssh/deploy_key
+          ssh-keyscan -p ${SERVER_PORT:-22} -t ed25519,rsa $SERVER_HOST >> ~/.ssh/known_hosts 2>/dev/null || true
+          
+          echo "=== 查找安装包 ==="
+          find job_assistant/job_workbench/src-tauri/target -type f \( -name "*.dmg" -o -name "*.exe" -o -name "*.msi" -o -name "*.deb" -o -name "*.AppImage" \) -exec ls -lh {} \;
+          
+          for f in $(find job_assistant/job_workbench/src-tauri/target -type f \( -name "*.dmg" -o -name "*.exe" -o -name "*.msi" -o -name "*.deb" -o -name "*.AppImage" \)); do
+            echo "=== 上传: $f ==="
+            scp -i ~/.ssh/deploy_key -P ${SERVER_PORT:-22} "$f" ${SERVER_USER}@${SERVER_HOST}:${SERVER_DOWNLOAD_PATH}/
+          done
+          
+          echo "=== 上传完成 ==="
+
+      - name: Deploy installers to production server (Windows)
+        if: success() && github.event_name == 'push' && runner.os == 'Windows'
+        shell: pwsh
+        env:
+          SERVER_HOST: ${{ secrets.SERVER_HOST }}
+          SERVER_USER: ${{ secrets.SERVER_USER }}
+          SERVER_PORT: ${{ secrets.SERVER_PORT }}
+          SERVER_DOWNLOAD_PATH: ${{ secrets.SERVER_DOWNLOAD_PATH }}
+          SSH_KEY: ${{ secrets.SERVER_SSH_KEY }}
+        run: |
+          if (-not $env:SERVER_HOST -or -not $env:SSH_KEY) {
+            Write-Host "跳过部署：未配置 GitHub Secrets"
+            exit 0
+          }
+          
+          $keyPath = "$env:USERPROFILE\.ssh\deploy_key"
+          New-Item -ItemType Directory -Force -Path "$env:USERPROFILE\.ssh" | Out-Null
+          $env:SSH_KEY -replace "\\n", "`n" | Out-File -FilePath $keyPath -Encoding ascii -NoNewline
+          
+          $installers = Get-ChildItem -Path "job_assistant\job_workbench\src-tauri\target" -Recurse -Include "*.exe","*.msi" -ErrorAction SilentlyContinue
+          
+          foreach ($f in $installers) {
+            Write-Host "=== 上传: $($f.FullName) ==="
+            & scp -i $keyPath -P ${env:SERVER_PORT} $f.FullName "${env:SERVER_USER}@${env:SERVER_HOST}:${env:SERVER_DOWNLOAD_PATH}/"
+          }
+          
+          Write-Host "=== 上传完成 ==="

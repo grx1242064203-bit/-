@@ -60,20 +60,37 @@ def _verify_password(password: str, password_hash: str) -> bool:
         return False
 
 
-async def register(email: str, password: str) -> dict:
-    """注册：邮箱未占用 → 创建未验证用户 + 发验证码；已存在未验证 → 重发验证码；已验证 → ConflictError。"""
+async def register(email: str, password: str, xhs_order_id: str) -> dict:
+    """注册：邮箱未占用 → 创建未验证用户 + 发验证码；已存在未验证 → 重发验证码；已验证 → ConflictError。
+
+    xhs_order_id 必填且唯一（私域获客场景：用户必须填小红书订单号才能注册）。
+    """
     await _ensure_init()
+    # 1. 校验 XHS 订单号未被使用
+    existing_by_order = await user_model.get_user_by_xhs_order_id(xhs_order_id)
+    if existing_by_order:
+        raise ConflictError(
+            f"XHS 订单号 {xhs_order_id} 已被使用，请联系卖家"
+        )
+
     existing = await user_model.get_user_by_email(email)
     if existing:
         if existing["is_verified"]:
             raise ConflictError("该邮箱已注册并验证，请直接登录")
-        # 未验证：重发验证码（覆盖旧码）
+        # 未验证：把订单号补上 + 重发验证码（覆盖旧码）
+        # （同一邮箱未验证时再次注册，可能是用户忘了密码或没收到码）
+        if not existing.get("xhs_order_id"):
+            await user_model.update_notes(
+                existing["id"], f"XHS: {xhs_order_id}"
+            )
         code = user_model.generate_code()
         await user_model.create_verification_code(email, code)
         await email_service.send_verification_code(email, code)
         return {"user_id": existing["id"], "needs_verify": True}
 
-    user = await user_model.create_user(email, _hash_password(password))
+    user = await user_model.create_user(
+        email, _hash_password(password), xhs_order_id
+    )
     code = user_model.generate_code()
     await user_model.create_verification_code(email, code)
     await email_service.send_verification_code(email, code)

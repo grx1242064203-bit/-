@@ -62,6 +62,11 @@ _EMAIL_PATTERN = r"^[^@\s]+@[^@\s]+\.[^@\s]+$"
 class RegisterRequest(BaseModel):
     email: str = Field(pattern=_EMAIL_PATTERN)
     password: str = Field(min_length=6, max_length=128)
+    xhs_order_id: str = Field(
+        min_length=4,
+        max_length=50,
+        description="小红书订单号（必填，作为支付凭证，唯一）",
+    )
 
 
 class VerifyEmailRequest(BaseModel):
@@ -106,9 +111,14 @@ class MessageResponse(BaseModel):
 @router.post("/register", response_model=RegisterResponse)
 @limiter.limit(_settings.AUTH_RATE_LIMIT_REGISTER)
 async def register(request: Request, body: RegisterRequest) -> RegisterResponse:
-    """注册新用户（未验证）或为未验证老用户重发验证码。"""
+    """注册新用户（未验证）或为未验证老用户重发验证码。
+
+    必填小红书订单号 xhs_order_id（4-50 位，唯一），作为支付凭证。
+    """
     try:
-        result = await svc_register(body.email, body.password)
+        result = await svc_register(
+            body.email, body.password, body.xhs_order_id
+        )
     except ConflictError as exc:
         raise HTTPException(
             status_code=status.HTTP_409_CONFLICT,

@@ -26,6 +26,7 @@ class UserOut(BaseModel):
     is_admin: bool
     is_active: bool
     notes: str | None = None
+    xhs_order_id: str | None = None
     created_at: str
     last_login_at: str | None = None
 
@@ -210,3 +211,49 @@ async def admin_reset_password(
         )
     await user_model.update_password_hash(user_id, hash_password(body.new_password))
     return {"message": "密码已重置", "user_id": user_id}
+
+
+class BulkUpdateRequest(BaseModel):
+    """批量操作请求体。"""
+
+    user_ids: list[str]
+    is_active: bool
+
+
+@router.post("/users/bulk", response_model=dict)
+async def bulk_update_users(
+    body: BulkUpdateRequest,
+    current_admin: dict = Depends(get_current_admin),
+) -> dict:
+    """批量 启用/停用 用户（管理员审核时用）。
+
+    不允许批量停用自己（避免误操作锁死）。
+    """
+    if not body.user_ids:
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail="user_ids 不能为空",
+        )
+    # 防误操作：过滤掉自己
+    safe_ids = [uid for uid in body.user_ids if uid != current_admin["id"]]
+    skipped = len(body.user_ids) - len(safe_ids)
+    affected = await user_model.bulk_set_active_status(safe_ids, body.is_active)
+    return {
+        "message": f"已{'启用' if body.is_active else '停用'} {affected} 个用户",
+        "affected": affected,
+        "skipped_self": skipped,
+    }
+
+
+@router.get("/export/users", response_model=UserListResponse)
+async def export_all_users(
+    _: dict = Depends(get_current_admin),
+) -> UserListResponse:
+    """导出全部用户（无分页，审核时用）。"""
+    users, total = await user_model.list_users(limit=10000, offset=0)
+    return UserListResponse(
+        users=[UserOut(**u) for u in users],
+        total=total,
+        limit=10000,
+        offset=0,
+    )

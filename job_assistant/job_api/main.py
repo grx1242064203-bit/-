@@ -178,3 +178,109 @@ app.include_router(schedules_router, prefix="/api/v1")
 app.include_router(resume_profiles_router, prefix="/api/v1")
 app.include_router(jobs_router, prefix="/api/v1")
 app.include_router(admin_router, prefix="/api/v1")
+
+
+# ====== 桌面端安装包下载页 ======
+# 用户把 .dmg / .exe / .msi 上传到 data/downloads/ 目录后，
+# 访问 /download 即可看到下载页。
+# 不需要鉴权（任何人都能下载，但需要管理员上传文件）。
+
+from pathlib import Path  # noqa: E402
+
+from fastapi.responses import HTMLResponse, FileResponse  # noqa: E402
+
+DOWNLOADS_DIR = Path(settings.DATA_DIR) / "downloads"
+
+
+def _list_installers() -> list[dict]:
+    """扫描 data/downloads/ 目录下所有安装包文件。"""
+    if not DOWNLOADS_DIR.exists():
+        return []
+    installers = []
+    for f in sorted(DOWNLOADS_DIR.iterdir(), key=lambda x: -x.stat().st_mtime):
+        if f.is_file() and f.suffix.lower() in {".dmg", ".exe", ".msi", ".appimage", ".deb"}:
+            size_mb = f.stat().st_size / (1024 * 1024)
+            installers.append({
+                "name": f.name,
+                "size_mb": round(size_mb, 1),
+                "mtime": f.stat().st_mtime,
+                "url": f"/download/file/{f.name}",
+            })
+    return installers
+
+
+@app.get("/download", response_class=HTMLResponse, include_in_schema=False)
+async def download_page() -> str:
+    """桌面端安装包下载页（HTML，无需鉴权）。"""
+    installers = _list_installers()
+    if not installers:
+        items_html = (
+            '<div style="text-align:center;padding:60px 20px;color:#888;">'
+            '<p style="font-size:18px;margin-bottom:8px;">安装包还在准备中</p>'
+            "<p>请稍后再访问，或联系管理员</p></div>"
+        )
+    else:
+        items = []
+        for it in installers:
+            platform = "macOS" if it["name"].endswith(".dmg") else \
+                "Windows" if it["name"].endswith((".exe", ".msi")) else \
+                "Linux" if it["name"].endswith((".AppImage", ".deb")) else "未知"
+            items.append(
+                f'<a href="{it["url"]}" class="card">'
+                f'<div class="title">{platform} · {it["name"]}</div>'
+                f'<div class="size">{it["size_mb"]} MB</div>'
+                f'<div class="dl">点击下载</div>'
+                "</a>"
+            )
+        items_html = "".join(items)
+    return f"""<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Offer搭子 - 下载</title>
+<style>
+body {{ font-family: -apple-system, BlinkMacSystemFont, "PingFang SC", sans-serif;
+       background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+       min-height: 100vh; margin: 0; padding: 20px;
+       display: flex; align-items: center; justify-content: center; }}
+.container {{ max-width: 720px; width: 100%; }}
+h1 {{ color: white; text-align: center; margin-bottom: 8px;
+     font-size: 32px; font-weight: 600; }}
+.subtitle {{ color: rgba(255,255,255,0.8); text-align: center;
+           margin-bottom: 40px; font-size: 14px; }}
+.grid {{ display: grid; gap: 16px; }}
+.card {{ display: block; background: white; border-radius: 12px;
+        padding: 24px; text-decoration: none; color: #333;
+        transition: transform 0.15s, box-shadow 0.15s;
+        box-shadow: 0 4px 12px rgba(0,0,0,0.15); }}
+.card:hover {{ transform: translateY(-2px); box-shadow: 0 8px 20px rgba(0,0,0,0.2); }}
+.card .title {{ font-size: 16px; font-weight: 600; margin-bottom: 6px; }}
+.card .size {{ color: #888; font-size: 13px; }}
+.card .dl {{ color: #667eea; font-size: 14px; margin-top: 12px; font-weight: 500; }}
+</style>
+</head>
+<body>
+<div class="container">
+<h1>Offer搭子</h1>
+<p class="subtitle">27 届校招工作台 · 桌面端下载</p>
+<div class="grid">
+{items_html}
+</div>
+</div>
+</body>
+</html>"""
+
+
+@app.get("/download/file/{filename}", include_in_schema=False)
+async def download_file(filename: str) -> FileResponse:
+    """下载具体安装包文件。防目录穿越攻击。"""
+    # 防 ../../etc/passwd 等路径穿越
+    if "/" in filename or "\\" in filename or ".." in filename:
+        from fastapi import HTTPException, status as _st
+        raise HTTPException(_st.HTTP_400_BAD_REQUEST, "非法文件名")
+    file_path = DOWNLOADS_DIR / filename
+    if not file_path.is_file():
+        from fastapi import HTTPException, status as _st
+        raise HTTPException(_st.HTTP_404_NOT_FOUND, "文件不存在")
+    return FileResponse(file_path, filename=filename)

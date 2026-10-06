@@ -9,6 +9,7 @@ export default function Register() {
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [confirm, setConfirm] = useState("");
+  const [xhsOrderId, setXhsOrderId] = useState("");
   const [formError, setFormError] = useState<string | null>(null);
   const [registered, setRegistered] = useState(false);
   const [code, setCode] = useState<string[]>(["", "", "", "", "", ""]);
@@ -29,6 +30,10 @@ export default function Register() {
       setFormError("两次输入的密码不一致");
       return false;
     }
+    if (xhsOrderId.trim().length < 4) {
+      setFormError("请输入小红书订单号（至少 4 位）");
+      return false;
+    }
     return true;
   };
 
@@ -36,7 +41,7 @@ export default function Register() {
     e.preventDefault();
     setFormError(null);
     if (!validateRegister()) return;
-    const result = await register(email, password);
+    const result = await register(email, password, xhsOrderId.trim());
     if (result.needs_verify) {
       setRegistered(true);
       setTimeout(() => inputs.current[0]?.focus(), 0);
@@ -155,6 +160,21 @@ export default function Register() {
                 placeholder="再次输入密码"
                 className={inputCls}
               />
+            </div>
+            <div>
+              <label className="mb-1 block text-sm font-medium text-text">
+                小红书订单号
+              </label>
+              <input
+                type="text"
+                value={xhsOrderId}
+                onChange={(e) => setXhsOrderId(e.target.value)}
+                placeholder="付款后获得，作为支付凭证（唯一）"
+                className={inputCls}
+              />
+              <p className="mt-1 text-xs text-text-muted">
+                每个订单号只能注册一次，退款会立即停用账号
+              </p>
             </div>
             <button
               type="submit"

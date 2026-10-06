@@ -16,10 +16,15 @@ export interface MessageResponse {
 }
 
 export const authApi = {
-  register(email: string, password: string): Promise<RegisterResponse> {
+  register(
+    email: string,
+    password: string,
+    xhsOrderId: string,
+  ): Promise<RegisterResponse> {
     return apiClient.post<RegisterResponse>("/api/v1/auth/register", {
       email,
       password,
+      xhs_order_id: xhsOrderId,
     });
   },
 

@@ -36,7 +36,8 @@ export interface AuthState {
   login: (email: string, password: string) => Promise<boolean>;
   register: (
     email: string,
-    password: string
+    password: string,
+    xhsOrderId: string,
   ) => Promise<{ needs_verify: boolean; user_id?: string }>;
   verifyEmail: (email: string, code: string) => Promise<boolean>;
   logout: () => void;
@@ -72,10 +73,10 @@ export const useAuthStore = create<AuthState>((set) => ({
     }
   },
 
-  register: async (email, password) => {
+  register: async (email, password, xhsOrderId) => {
     set({ isLoading: true, error: null });
     try {
-      const data = await authApi.register(email, password);
+      const data = await authApi.register(email, password, xhsOrderId);
       set({
         isLoading: false,
         user: { email, user_id: data.user_id },

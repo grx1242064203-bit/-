@@ -1,4 +1,4 @@
-// 管理后台：用户列表 / 建号 / 吊销恢复 / 改备注 / 重置密码 / 删除。
+// 管理后台：用户列表 / 建号 / 吊销恢复 / 改备注 / 重置密码 / 删除 / 批量审核。
 import { useEffect, useState, useCallback } from "react";
 import { adminApi, type AdminUser } from "../api/admin";
 import { extractErrorMessage } from "../api/client";
@@ -16,6 +16,9 @@ export default function Admin() {
   const [error, setError] = useState<string | null>(null);
   const [search, setSearch] = useState("");
   const [offset, setOffset] = useState(0);
+  const [selected, setSelected] = useState<Set<string>>(new Set());
+  const [bulkLoading, setBulkLoading] = useState(false);
+  const [bulkMsg, setBulkMsg] = useState<string | null>(null);
   const limit = 20;
 
   const load = useCallback(
@@ -30,6 +33,7 @@ export default function Admin() {
         });
         setUsers(data.users);
         setTotal(data.total);
+        setSelected(new Set()); // 翻页/搜索后清空选择
       } catch (e) {
         setError(extractErrorMessage(e));
       } finally {
@@ -62,6 +66,45 @@ export default function Admin() {
     load({ offset: newOffset });
   };
 
+  const toggleSelect = (id: string) => {
+    setSelected((prev) => {
+      const next = new Set(prev);
+      if (next.has(id)) next.delete(id);
+      else next.add(id);
+      return next;
+    });
+  };
+
+  const toggleSelectAll = () => {
+    setSelected((prev) => {
+      if (prev.size === users.length) return new Set();
+      return new Set(users.map((u) => u.id));
+    });
+  };
+
+  const handleBulkActivate = async (is_active: boolean) => {
+    if (selected.size === 0) {
+      setBulkMsg("请先勾选用户");
+      return;
+    }
+    if (!confirm(`确定批量${is_active ? "启用" : "停用"} ${selected.size} 个用户？`)) return;
+    setBulkLoading(true);
+    setBulkMsg(null);
+    try {
+      const res = await adminApi.bulkUpdateUsers({
+        user_ids: Array.from(selected),
+        is_active,
+      });
+      setBulkMsg(res.message + (res.skipped_self ? `（已自动跳过自己 ${res.skipped_self} 个）` : ""));
+      setSelected(new Set());
+      load();
+    } catch (e) {
+      setBulkMsg(extractErrorMessage(e));
+    } finally {
+      setBulkLoading(false);
+    }
+  };
+
   return (
     <div className="space-y-4">
       {error && (
@@ -81,7 +124,7 @@ export default function Admin() {
               value={search}
               onChange={(e) => setSearch(e.target.value)}
               onKeyDown={(e) => e.key === "Enter" && handleSearch()}
-              placeholder="搜索邮箱或备注"
+              placeholder="搜索邮箱/备注/订单号"
               className="w-56 rounded-md border border-line bg-white px-3 py-1.5 text-sm"
             />
             <button
@@ -102,13 +145,51 @@ export default function Admin() {
           </div>
         </div>
 
+        {/* 批量操作工具栏 */}
+        <div className="mb-3 flex items-center justify-between rounded-md border border-line bg-gray-50 px-3 py-2 text-sm">
+          <div className="flex items-center gap-2">
+            <span className="text-text-muted">
+              已选 {selected.size} / {users.length}
+            </span>
+            {selected.size > 0 && (
+              <>
+                <button
+                  type="button"
+                  onClick={() => handleBulkActivate(false)}
+                  disabled={bulkLoading}
+                  className="rounded border border-red-300 bg-red-50 px-2 py-1 text-xs text-red-700 hover:bg-red-100"
+                >
+                  批量停用
+                </button>
+                <button
+                  type="button"
+                  onClick={() => handleBulkActivate(true)}
+                  disabled={bulkLoading}
+                  className="rounded border border-green-300 bg-green-50 px-2 py-1 text-xs text-green-700 hover:bg-green-100"
+                >
+                  批量启用
+                </button>
+              </>
+            )}
+          </div>
+          {bulkMsg && <span className="text-xs text-orange-600">{bulkMsg}</span>}
+        </div>
+
         <div className="overflow-x-auto">
           <table className="w-full text-sm">
             <thead>
               <tr className="border-b border-line text-left text-text-muted">
+                <th className="px-3 py-2 w-8">
+                  <input
+                    type="checkbox"
+                    checked={selected.size === users.length && users.length > 0}
+                    onChange={toggleSelectAll}
+                  />
+                </th>
                 <th className="px-3 py-2">邮箱</th>
                 <th className="px-3 py-2">状态</th>
                 <th className="px-3 py-2">角色</th>
+                <th className="px-3 py-2">XHS订单号</th>
                 <th className="px-3 py-2">备注</th>
                 <th className="px-3 py-2">注册时间</th>
                 <th className="px-3 py-2">最近登录</th>
@@ -117,11 +198,17 @@ export default function Admin() {
             </thead>
             <tbody>
               {users.map((u) => (
-                <UserRow key={u.id} user={u} onChanged={() => load()} />
+                <UserRow
+                  key={u.id}
+                  user={u}
+                  checked={selected.has(u.id)}
+                  onToggle={() => toggleSelect(u.id)}
+                  onChanged={() => load()}
+                />
               ))}
               {users.length === 0 && !loading && (
                 <tr>
-                  <td colSpan={7} className="px-3 py-6 text-center text-text-muted">
+                  <td colSpan={9} className="px-3 py-6 text-center text-text-muted">
                     暂无用户
                   </td>
                 </tr>
@@ -195,7 +282,7 @@ function UserCreateForm({ onCreated }: { onCreated: () => void }) {
       onSubmit={handleSubmit}
       className="glass-soft rounded-lg border border-line p-4"
     >
-      <h2 className="mb-3 text-lg font-semibold text-text">手动建号</h2>
+      <h2 className="mb-3 text-lg font-semibold text-text">手动建号（管理员建号无 XHS 订单号）</h2>
       <div className="grid grid-cols-1 gap-3 sm:grid-cols-4">
         <input
           type="email"
@@ -237,7 +324,14 @@ function UserCreateForm({ onCreated }: { onCreated: () => void }) {
   );
 }
 
-function UserRow({ user, onChanged }: { user: AdminUser; onChanged: () => void }) {
+interface UserRowProps {
+  user: AdminUser;
+  checked: boolean;
+  onToggle: () => void;
+  onChanged: () => void;
+}
+
+function UserRow({ user, checked, onToggle, onChanged }: UserRowProps) {
   const [notesDraft, setNotesDraft] = useState(user.notes ?? "");
   const [loading, setLoading] = useState(false);
   const [showReset, setShowReset] = useState(false);
@@ -315,6 +409,14 @@ function UserRow({ user, onChanged }: { user: AdminUser; onChanged: () => void }
 
   return (
     <tr className="border-b border-line/50">
+      <td className="px-3 py-2">
+        <input
+          type="checkbox"
+          checked={checked}
+          onChange={onToggle}
+          disabled={user.is_admin} // 管理员不能被批量操作
+        />
+      </td>
       <td className="px-3 py-2 font-mono text-xs">{user.email}</td>
       <td className="px-3 py-2">
         {user.is_active ? (
@@ -331,6 +433,13 @@ function UserRow({ user, onChanged }: { user: AdminUser; onChanged: () => void }
           <span className="rounded-full bg-purple-100 px-2 py-0.5 text-xs text-purple-700">管理员</span>
         ) : (
           <span className="text-xs text-text-muted">普通</span>
+        )}
+      </td>
+      <td className="px-3 py-2 font-mono text-xs">
+        {user.xhs_order_id ? (
+          <span className="text-text">{user.xhs_order_id}</span>
+        ) : (
+          <span className="text-text-muted">—</span>
         )}
       </td>
       <td className="px-3 py-2">

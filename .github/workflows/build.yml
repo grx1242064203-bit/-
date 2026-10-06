@@ -64,6 +64,7 @@ jobs:
       - name: Build Tauri app
         uses: tauri-apps/tauri-action@v0
         with:
+          projectPath: job_assistant/job_workbench
           tagName: ${{ github.ref_name }}
           releaseName: 'Offer搭子 v__VERSION__'
           releaseBody: '桌面工作台安装包'

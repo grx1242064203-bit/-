@@ -23,7 +23,11 @@ _fernet: Optional[Fernet] = None
 
 
 def _get_fernet() -> Fernet:
-    """获取 Fernet 实例。密钥未配置时生成临时密钥（仅当前进程有效）。"""
+    """获取 Fernet 实例。密钥未配置时生成临时密钥（仅当前进程有效）。
+
+    警告：临时密钥模式下，进程重启后所有已存邮箱密码将无法解密。
+    生产部署必须通过环境变量 EMAIL_ENCRYPTION_KEY 配置固定密钥。
+    """
     global _fernet
     if _fernet is not None:
         return _fernet
@@ -33,13 +37,22 @@ def _get_fernet() -> Fernet:
         # 开发模式：生成临时密钥，重启失效
         key = Fernet.generate_key().decode()
         print(
-            "[email_account] EMAIL_ENCRYPTION_KEY 未配置，使用临时密钥（重启后需重新填写邮箱密码）",
+            "=" * 60 + "\n"
+            "[email_account] ⚠️  EMAIL_ENCRYPTION_KEY 未配置，使用临时密钥。\n"
+            "  ⚠️  进程重启后，所有已保存的邮箱账户密码将无法解密（功能失效）。\n"
+            "  生产部署必须配置固定密钥，生成方法：\n"
+            '    python -c "from cryptography.fernet import Fernet;print(Fernet.generate_key().decode())"\n'
+            + "=" * 60
         )
     try:
         _fernet = Fernet(key.encode() if isinstance(key, str) else key)
     except Exception:
         # 密钥格式不对，降级为临时密钥
         key = Fernet.generate_key().decode()
+        print(
+            "[email_account] ⚠️ EMAIL_ENCRYPTION_KEY 格式无效，降级为临时密钥"
+            "（重启后已存邮箱密码失效）"
+        )
         _fernet = Fernet(key.encode())
     return _fernet
 

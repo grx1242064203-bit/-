@@ -42,6 +42,13 @@ class Settings(BaseSettings):
 
     # 邮件（Resend）
     RESEND_API_KEY: str = ""
+    # 发件人地址：生产环境用自有域名（如 noreply@yourdomain.com），需在 Resend 控制台验证域名
+    # 未验证域名时用 Resend 沙箱地址 onboarding@resend.dev（仅能发到注册 Resend 的邮箱）
+    RESEND_FROM_EMAIL: str = "onboarding@resend.dev"
+
+    # 管理员邮箱：启动时自动把这个邮箱的用户标记为 is_admin=1
+    # 用于私域获客场景：你用自己的邮箱注册一次后，从此能访问管理后台
+    ADMIN_EMAIL: str = ""
 
     # 邮箱密码加密密钥（Fernet），生产环境必须通过环境变量覆盖
     EMAIL_ENCRYPTION_KEY: str = ""

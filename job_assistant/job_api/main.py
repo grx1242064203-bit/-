@@ -34,6 +34,8 @@ from slowapi.middleware import SlowAPIMiddleware
 
 from config import get_settings
 from models import init_all_db
+from models.user import mark_admin_by_email
+from routers.admin import router as admin_router
 from routers.auth import limiter as auth_limiter
 from routers.auth import router as auth_router
 from routers.db_sync import router as db_sync_router
@@ -48,6 +50,45 @@ from routers.resume_profiles import router as resume_profiles_router
 from services.sync_service import DatabaseCorruptedError
 
 settings = get_settings()
+
+
+def _warn_config_issues(s) -> None:
+    """启动时检查关键配置，缺失项打印警告（不阻断启动，兼容测试版）。
+
+    生产部署必须通过环境变量覆盖所有 ⚠️ 项；测试版可继续运行但功能受限。
+    """
+    issues = []
+    if s.JWT_SECRET == "change-me-in-prod":
+        issues.append(
+            "JWT_SECRET 仍是默认值，任何人可伪造登录令牌。"
+            '生成方法：python -c "import secrets;print(secrets.token_urlsafe(32))"'
+        )
+    if not s.EMAIL_ENCRYPTION_KEY:
+        issues.append(
+            "EMAIL_ENCRYPTION_KEY 未配置，IMAP 邮箱密码将用进程临时密钥加密，"
+            "重启后无法解密（邮箱账户功能失效）。"
+            '生成方法：python -c "from cryptography.fernet import Fernet;print(Fernet.generate_key().decode())"'
+        )
+    if s.LLM_DAILY_LIMIT < 0:
+        issues.append(
+            f"LLM_DAILY_LIMIT={s.LLM_DAILY_LIMIT}（不限制），"
+            "用户可无限触发 DeepSeek 调用，账单可能失控。建议设为 5-20。"
+        )
+    if not s.REMOTE_DB_BASE_URL.startswith("https://"):
+        issues.append(
+            f"REMOTE_DB_BASE_URL={s.REMOTE_DB_BASE_URL} 非 HTTPS，"
+            "远程库同步可被中间人投毒。生产必须改 HTTPS。"
+        )
+    if not s.DEEPSEEK_API_KEY:
+        issues.append("DEEPSEEK_API_KEY 未配置，简历解析/公司尽调功能不可用。")
+    if not s.RESEND_API_KEY:
+        issues.append("RESEND_API_KEY 未配置，邮箱验证码无法发送（注册/登录功能不可用）。")
+    if issues:
+        print("=" * 60)
+        print("[job_api] ⚠️ 配置健康检查发现问题（测试版可继续，生产部署必须修复）：")
+        for i, msg in enumerate(issues, 1):
+            print(f"  {i}. {msg}")
+        print("=" * 60)
 
 
 @asynccontextmanager
@@ -67,6 +108,18 @@ async def lifespan(app: FastAPI):
         "RESEND_API_KEY_SET": bool(settings.RESEND_API_KEY),
     }
     print(f"[job_api] 启动配置摘要: {json.dumps(summary, ensure_ascii=False)}")
+    # 启动配置健康检查（警告级别，不阻断启动）
+    _warn_config_issues(settings)
+    # 启动时把 ADMIN_EMAIL 对应用户标记为管理员（私域获客场景：管理员先正常注册一次）
+    if settings.ADMIN_EMAIL:
+        ok = await mark_admin_by_email(settings.ADMIN_EMAIL)
+        if ok:
+            print(f"[job_api] 已将 {settings.ADMIN_EMAIL} 标记为管理员")
+        else:
+            print(
+                f"[job_api] ⚠️ ADMIN_EMAIL={settings.ADMIN_EMAIL} 尚未注册，"
+                "请先用该邮箱注册一次再重启服务以获得管理员权限"
+            )
     yield
 
 
@@ -124,3 +177,4 @@ app.include_router(emails_router, prefix="/api/v1")
 app.include_router(schedules_router, prefix="/api/v1")
 app.include_router(resume_profiles_router, prefix="/api/v1")
 app.include_router(jobs_router, prefix="/api/v1")
+app.include_router(admin_router, prefix="/api/v1")

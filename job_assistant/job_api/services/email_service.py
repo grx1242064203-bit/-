@@ -10,9 +10,6 @@ import httpx
 from config import get_settings
 
 RESEND_API_URL = "https://api.resend.com/emails"
-# 发件人地址：生产环境需在 Resend 控制台验证自有域名；
-# 未验证域名用 onboarding@resend.dev（Resend 默认提供的沙箱发件人）。
-FROM_EMAIL = "onboarding@resend.dev"
 
 
 async def send_verification_code(email: str, code: str) -> None:
@@ -27,7 +24,7 @@ async def send_verification_code(email: str, code: str) -> None:
         return
 
     payload = {
-        "from": FROM_EMAIL,
+        "from": settings.RESEND_FROM_EMAIL,
         "to": [email],
         "subject": "【Offer搭子】邮箱验证码",
         "text": (

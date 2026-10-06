@@ -1,10 +1,12 @@
 """用户与验证码数据访问层（SQLite + aiosqlite）。
 
 表结构：
-- users: id(UUID str), email(unique), password_hash, is_verified, device_fingerprint?, created_at, last_login_at?
+- users: id(UUID str), email(unique), password_hash, is_verified, device_fingerprint?,
+        is_admin(0/1), is_active(0/1), notes(TEXT), created_at, last_login_at?
 - verification_codes: email, code(6位), expires_at, used
 
 所有函数均幂等可重入；init_db 使用 CREATE TABLE IF NOT EXISTS。
+对已存在的旧 users 表（缺 is_admin/is_active/notes 列），_migrate_users_table 会幂等补列。
 """
 import secrets
 import uuid
@@ -49,13 +51,34 @@ def _row_to_user(row: aiosqlite.Row) -> dict:
         "password_hash": row["password_hash"],
         "is_verified": bool(row["is_verified"]),
         "device_fingerprint": row["device_fingerprint"],
+        "is_admin": bool(row["is_admin"]),
+        "is_active": bool(row["is_active"]),
+        "notes": row["notes"],
         "created_at": row["created_at"],
         "last_login_at": row["last_login_at"],
     }
 
 
+async def _migrate_users_table(conn: aiosqlite.Connection) -> None:
+    """对已存在的旧 users 表幂等补列（is_admin / is_active / notes）。
+
+    SQLite 的 ALTER TABLE ADD COLUMN 不幂等（重复加会报错），
+    所以先用 PRAGMA table_info 查现有列，缺哪补哪。
+    """
+    cursor = await conn.execute("PRAGMA table_info(users)")
+    existing_cols = {row[1] for row in await cursor.fetchall()}
+    new_columns = [
+        ("is_admin", "INTEGER NOT NULL DEFAULT 0"),
+        ("is_active", "INTEGER NOT NULL DEFAULT 1"),
+        ("notes", "TEXT"),
+    ]
+    for col_name, col_def in new_columns:
+        if col_name not in existing_cols:
+            await conn.execute(f"ALTER TABLE users ADD COLUMN {col_name} {col_def}")
+
+
 async def init_db() -> None:
-    """幂等建表（CREATE TABLE IF NOT EXISTS）。"""
+    """幂等建表（CREATE TABLE IF NOT EXISTS）+ 旧表迁移。"""
     conn = await _connect()
     try:
         await conn.executescript(
@@ -66,6 +89,9 @@ async def init_db() -> None:
                 password_hash TEXT NOT NULL,
                 is_verified INTEGER NOT NULL DEFAULT 0,
                 device_fingerprint TEXT,
+                is_admin INTEGER NOT NULL DEFAULT 0,
+                is_active INTEGER NOT NULL DEFAULT 1,
+                notes TEXT,
                 created_at TEXT NOT NULL,
                 last_login_at TEXT
             );
@@ -78,6 +104,8 @@ async def init_db() -> None:
             );
             """
         )
+        # 对旧版 users 表（缺 is_admin/is_active/notes 列）幂等补列
+        await _migrate_users_table(conn)
         await conn.commit()
     finally:
         await conn.close()
@@ -113,7 +141,8 @@ async def get_user_by_email(email: str) -> Optional[dict]:
     try:
         cursor = await conn.execute(
             "SELECT id, email, password_hash, is_verified, device_fingerprint, "
-            "created_at, last_login_at FROM users WHERE email = ?",
+            "is_admin, is_active, notes, created_at, last_login_at "
+            "FROM users WHERE email = ?",
             (email,),
         )
         row = await cursor.fetchone()
@@ -127,7 +156,8 @@ async def get_user_by_id(user_id: str) -> Optional[dict]:
     try:
         cursor = await conn.execute(
             "SELECT id, email, password_hash, is_verified, device_fingerprint, "
-            "created_at, last_login_at FROM users WHERE id = ?",
+            "is_admin, is_active, notes, created_at, last_login_at "
+            "FROM users WHERE id = ?",
             (user_id,),
         )
         row = await cursor.fetchone()
@@ -249,3 +279,138 @@ async def verify_code(email: str, code: str) -> bool:
 def generate_code() -> str:
     """生成 6 位随机数字验证码（zero-padded，secrets 保证加密学随机）。"""
     return f"{secrets.randbelow(1000000):06d}"
+
+
+# ====== 管理后台用 ======
+
+
+async def list_users(
+    limit: int = 50,
+    offset: int = 0,
+    search: Optional[str] = None,
+) -> tuple[list[dict], int]:
+    """分页列出用户（脱敏：不含 password_hash），返回 (users, total)。
+
+    search 非空时按 email 或 notes 模糊匹配。
+    """
+    where_clause = ""
+    params: list = []
+    if search:
+        where_clause = "WHERE email LIKE ? OR notes LIKE ?"
+        like = f"%{search}%"
+        params = [like, like]
+    conn = await _connect()
+    try:
+        # 总数
+        cursor = await conn.execute(f"SELECT COUNT(*) FROM users {where_clause}", params)
+        total = (await cursor.fetchone())[0]
+        # 列表（脱敏：不查 password_hash）
+        cursor = await conn.execute(
+            f"SELECT id, email, is_verified, device_fingerprint, is_admin, "
+            f"is_active, notes, created_at, last_login_at "
+            f"FROM users {where_clause} "
+            f"ORDER BY created_at DESC LIMIT ? OFFSET ?",
+            params + [limit, offset],
+        )
+        rows = await cursor.fetchall()
+        users = [
+            {
+                "id": r["id"],
+                "email": r["email"],
+                "is_verified": bool(r["is_verified"]),
+                "device_fingerprint": r["device_fingerprint"],
+                "is_admin": bool(r["is_admin"]),
+                "is_active": bool(r["is_active"]),
+                "notes": r["notes"],
+                "created_at": r["created_at"],
+                "last_login_at": r["last_login_at"],
+            }
+            for r in rows
+        ]
+        return users, total
+    finally:
+        await conn.close()
+
+
+async def set_admin_status(user_id: str, is_admin: bool) -> None:
+    """设置/取消管理员标记。"""
+    conn = await _connect()
+    try:
+        await conn.execute(
+            "UPDATE users SET is_admin = ? WHERE id = ?",
+            (1 if is_admin else 0, user_id),
+        )
+        await conn.commit()
+    finally:
+        await conn.close()
+
+
+async def set_active_status(user_id: str, is_active: bool) -> None:
+    """吊销 (is_active=0) 或恢复 (is_active=1) 用户。被吊销的用户登录会被拒绝。"""
+    conn = await _connect()
+    try:
+        await conn.execute(
+            "UPDATE users SET is_active = ? WHERE id = ?",
+            (1 if is_active else 0, user_id),
+        )
+        await conn.commit()
+    finally:
+        await conn.close()
+
+
+async def update_notes(user_id: str, notes: Optional[str]) -> None:
+    """更新管理员备注（如微信昵称、付费时间、退款原因等）。"""
+    conn = await _connect()
+    try:
+        await conn.execute(
+            "UPDATE users SET notes = ? WHERE id = ?",
+            (notes, user_id),
+        )
+        await conn.commit()
+    finally:
+        await conn.close()
+
+
+async def delete_user(user_id: str) -> bool:
+    """删除用户。返回是否删除成功（用户存在且非最后一个管理员）。"""
+    conn = await _connect()
+    try:
+        # 不允许删除最后一个管理员（避免失去管理能力）
+        cursor = await conn.execute(
+            "SELECT COUNT(*) FROM users WHERE is_admin = 1"
+        )
+        admin_count = (await cursor.fetchone())[0]
+        cursor = await conn.execute(
+            "SELECT is_admin FROM users WHERE id = ?", (user_id,)
+        )
+        row = await cursor.fetchone()
+        if not row:
+            return False
+        if bool(row["is_admin"]) and admin_count <= 1:
+            return False  # 拒绝删除最后一个管理员
+        await conn.execute("DELETE FROM users WHERE id = ?", (user_id,))
+        await conn.execute(
+            "DELETE FROM verification_codes WHERE email IN "
+            "(SELECT email FROM users WHERE id = ?)",  # 已被删，空操作
+            (user_id,),
+        )
+        await conn.commit()
+        return True
+    finally:
+        await conn.close()
+
+
+async def mark_admin_by_email(email: str) -> bool:
+    """把指定邮箱的用户标记为管理员（启动时由 ADMIN_EMAIL 调用）。
+
+    返回是否标记成功（用户必须已存在）。建议管理员先正常注册一次再启用此机制。
+    """
+    conn = await _connect()
+    try:
+        cursor = await conn.execute(
+            "UPDATE users SET is_admin = 1 WHERE email = ?", (email,)
+        )
+        await conn.commit()
+        return cursor.rowcount > 0
+    finally:
+        await conn.close()

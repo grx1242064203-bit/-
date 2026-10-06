@@ -48,6 +48,11 @@ def _hash_password(password: str) -> str:
     return _pwd_context.hash(password)
 
 
+def hash_password(password: str) -> str:
+    """公开的密码哈希接口，供管理后台等模块复用（不要直接用 _pwd_context）。"""
+    return _pwd_context.hash(password)
+
+
 def _verify_password(password: str, password_hash: str) -> bool:
     try:
         return _pwd_context.verify(password, password_hash)

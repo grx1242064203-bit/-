@@ -20,5 +20,7 @@ jobs:
     runs-on: ${{ matrix.os }}
     steps:
       - uses: actions/checkout@v4
+      - name: Install Rust
+        uses: dtolnay/rust-toolchain@stable
       - name: Test
         run: echo "Matrix test on ${{ matrix.label }}"

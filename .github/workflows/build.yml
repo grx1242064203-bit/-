@@ -51,5 +51,22 @@ jobs:
         working-directory: job_assistant/job_workbench
         run: npm ci
 
-      - name: Test
-        run: echo "All deps installed on ${{ matrix.label }}"
+      - name: Build frontend
+        working-directory: job_assistant/job_workbench
+        run: npm run build
+
+      - name: Install Python sidecar deps
+        working-directory: job_assistant/job_workbench/python-sidecar
+        run: |
+          python -m pip install --upgrade pip
+          pip install -r requirements-sidecar.txt
+
+      - name: Build Tauri app
+        uses: tauri-apps/tauri-action@v0
+        with:
+          tagName: ${{ github.ref_name }}
+          releaseName: 'Offer搭子 v__VERSION__'
+          releaseBody: '桌面工作台安装包'
+          releaseDraft: true
+          prerelease: false
+          args: --target ${{ matrix.target }}

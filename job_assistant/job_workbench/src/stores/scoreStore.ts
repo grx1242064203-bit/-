@@ -124,7 +124,8 @@ export const useScoreStore = create<ScoreState>((set, get) => ({
   },
 
   loadScoredJobsMore: async () => {
-    if (get().isLoadingMore || !get().hasMore) return;
+    // 防御：全屏重新加载(筛选变更)进行中时禁止 loadMore，避免第一页被重复追加
+    if (get().isLoading || get().isLoadingMore || !get().hasMore) return;
     const seq = loadSeq;
     const filter = get().scoredFilter;
     set({ isLoadingMore: true });

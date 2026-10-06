@@ -51,6 +51,18 @@ export default function Companies() {
   const [visibleKeys, setVisibleKeys] = useState<string[]>(COLUMNS.map((c) => c.key));
   const sentinelRef = useRef<HTMLDivElement>(null);
 
+  // 请求序号：每次筛选/搜索变更触发的「重新加载」自增，
+  // loadMore 捕获当前序号，若中途发生了重新加载则丢弃旧结果，
+  // 避免「筛选结果后面跟着非筛选结果」的脏数据追加。
+  const loadSeqRef = useRef(0);
+  // 用 ref 同步最新的 companies/筛选值，避免 loadMore 闭包陈旧
+  const companiesRef = useRef<Company[]>([]);
+  const debouncedKwRef = useRef("");
+  const filtersRef = useRef<Record<string, string[]>>({});
+  companiesRef.current = companies;
+  debouncedKwRef.current = debouncedKeyword;
+  filtersRef.current = columnFilters;
+
   const applications = useAppStore((s) => s.applications);
   const loadApplications = useAppStore((s) => s.loadApplications);
 
@@ -70,43 +82,60 @@ export default function Companies() {
     return () => clearTimeout(timer);
   }, [keyword]);
 
-  // 构建请求参数
+  // 构建请求参数（始终从 ref 读最新值，避免闭包陈旧）
   const buildParams = (offset: number) => {
     const params: Record<string, string | number> = { limit: PAGE_SIZE, offset };
-    if (debouncedKeyword.trim()) params.keyword = debouncedKeyword.trim();
-    for (const [k, vals] of Object.entries(columnFilters)) {
+    const kw = debouncedKwRef.current;
+    const filters = filtersRef.current;
+    if (kw.trim()) params.keyword = kw.trim();
+    for (const [k, vals] of Object.entries(filters)) {
       if (vals.length) params[k] = vals.join(",");
     }
     return params;
   };
 
-  // 加载公司列表（重置）
+  // 加载公司列表（重置）：每次筛选变更自增序号并清空旧数据
   useEffect(() => {
+    const seq = ++loadSeqRef.current;
     setLoading(true);
     setError(null);
+    setCompanies([]); // 立即清空，避免旧筛选结果残留在列表里
     getCompanies(buildParams(0))
       .then((res) => {
+        // 序号已变：说明用户又改了筛选，丢弃这次结果
+        if (seq !== loadSeqRef.current) return;
         setCompanies(res.companies);
         setTotal(res.total);
         setHasMore(res.companies.length >= PAGE_SIZE);
       })
-      .catch((e) => setError(extractErrorMessage(e)))
-      .finally(() => setLoading(false));
+      .catch((e) => {
+        if (seq !== loadSeqRef.current) return;
+        setError(extractErrorMessage(e));
+      })
+      .finally(() => {
+        if (seq === loadSeqRef.current) setLoading(false);
+      });
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [debouncedKeyword, columnFilters]);
 
   // 加载更多
   const loadMore = async () => {
-    if (loadingMore || !hasMore) return;
+    // 重新加载进行中 或 已有 loadMore 在跑 或 没有更多 → 跳过
+    if (loading || loadingMore || !hasMore) return;
+    const seq = loadSeqRef.current;
     setLoadingMore(true);
     try {
-      const res = await getCompanies(buildParams(companies.length));
+      const offset = companiesRef.current.length;
+      const res = await getCompanies(buildParams(offset));
+      // 中途发生了重新加载，丢弃这次「加载更多」结果
+      if (seq !== loadSeqRef.current) return;
       setCompanies((prev) => [...prev, ...res.companies]);
       setHasMore(res.companies.length >= PAGE_SIZE);
     } catch (e) {
+      if (seq !== loadSeqRef.current) return;
       setError(extractErrorMessage(e));
     } finally {
-      setLoadingMore(false);
+      if (seq === loadSeqRef.current) setLoadingMore(false);
     }
   };
 

@@ -103,7 +103,10 @@ export const useJobsStore = create<JobsState>((set, get) => ({
   },
 
   loadMore: async () => {
-    if (get().isLoadingMore || !get().hasMore) return;
+    // 防御：全屏重新加载(筛选变更)进行中时，禁止 loadMore，
+    // 否则 loadJobs 清空 jobs 后 sentinel 触发 loadMore(offset=0)，
+    // 等 loadJobs 完成后会把第一页重复追加到列表里。
+    if (get().isLoading || get().isLoadingMore || !get().hasMore) return;
     const seq = loadSeq;
     set({ isLoadingMore: true });
     try {

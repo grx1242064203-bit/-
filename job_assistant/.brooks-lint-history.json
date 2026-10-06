@@ -1,0 +1,13 @@
+[
+  {
+    "date": "2026-10-06",
+    "mode": "Health Dashboard",
+    "score": 75,
+    "findings": {
+      "critical": 4,
+      "warning": 4,
+      "suggestion": 1
+    },
+    "scope": "job_assistant (job_api + job_workbench + root pipeline scripts)"
+  }
+]

@@ -67,10 +67,13 @@ jobs:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         with:
           projectPath: job_assistant/job_workbench
-          tagName: ${{ github.ref_name }}
-          releaseName: 'Offer搭子 v__VERSION__'
-          releaseBody: '桌面工作台安装包'
-          releaseDraft: true
+          # 仅 tag push (v*) 时创建/上传 Release；
+          # push 到 main 时 tagName 留空 → 只构建产物，避免多次 push 复用同一 Release
+          # 导致 "ReleaseAsset already_exists" 冲突
+          tagName: ${{ startsWith(github.ref, 'refs/tags/') && github.ref_name || '' }}
+          releaseName: ${{ startsWith(github.ref, 'refs/tags/') && 'Offer搭子 v__VERSION__' || '' }}
+          releaseBody: ${{ startsWith(github.ref, 'refs/tags/') && '桌面工作台安装包' || '' }}
+          releaseDraft: ${{ startsWith(github.ref, 'refs/tags/') }}
           prerelease: false
           args: --target ${{ matrix.target }}
 

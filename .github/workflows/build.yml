@@ -19,5 +19,6 @@ jobs:
 
     runs-on: ${{ matrix.os }}
     steps:
+      - uses: actions/checkout@v4
       - name: Test
         run: echo "Matrix test on ${{ matrix.label }}"

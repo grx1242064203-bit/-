@@ -222,16 +222,80 @@ async def download_page() -> str:
             "<p>请稍后再访问，或联系管理员</p></div>"
         )
     else:
+        # 平台元信息：图标、适用人群、CPU 架构
+        # arch 含义: arm = Apple Silicon (M1/M2/M3), x64 = Intel/AMD
+        PLATFORM_META = {
+            "macOS ARM": {
+                "icon": "",
+                "arch": "Apple Silicon · M1/M2/M3 芯片",
+                "audience": "2020 年及以后买的 Mac（M 系列芯片）",
+                "tip": "如果你是近 4 年的 Mac，选这个",
+            },
+            "macOS Intel": {
+                "icon": "",
+                "arch": "Intel 芯片",
+                "audience": "2020 年以前买的 Mac，或老款 MacBook/Air",
+                "tip": "不清楚自己 Mac 是哪种？右键「访达 → 关于本机」看芯片",
+            },
+            "Windows": {
+                "icon": "🪟",
+                "arch": "x64 · 64 位",
+                "audience": "Windows 10 / Windows 11 的电脑（绝大多数 PC）",
+                "tip": "32 位老电脑不支持，请升级系统或换设备",
+            },
+            "Linux": {
+                "icon": "🐧",
+                "arch": "x64 · 64 位",
+                "audience": "Ubuntu / Debian / Fedora 等主流 Linux 发行版",
+                "tip": ".deb 适合 Ubuntu/Debian；.AppImage 适合所有 Linux（无需安装）",
+            },
+            "未知": {
+                "icon": "📦",
+                "arch": "",
+                "audience": "",
+                "tip": "联系管理员确认",
+            },
+        }
+
+        def _classify(name: str) -> str:
+            n = name.lower()
+            # Mac ARM vs Intel: 文件名里通常含 aarch64 / arm64
+            if n.endswith(".dmg"):
+                if "aarch64" in n or "arm64" in n or "arm" in n:
+                    return "macOS ARM"
+                return "macOS Intel"
+            if n.endswith((".exe", ".msi")):
+                return "Windows"
+            if n.endswith((".appimage", ".deb", ".rpm")):
+                return "Linux"
+            return "未知"
+
         items = []
         for it in installers:
-            platform = "macOS" if it["name"].endswith(".dmg") else \
-                "Windows" if it["name"].endswith((".exe", ".msi")) else \
-                "Linux" if it["name"].endswith((".AppImage", ".deb")) else "未知"
+            plat = _classify(it["name"])
+            meta = PLATFORM_META[plat]
+            tip_html = (
+                f'<div class="tip">💡 {meta["tip"]}</div>'
+                if meta["tip"] else ""
+            )
+            audience_html = (
+                f'<div class="audience">适用：{meta["audience"]}</div>'
+                if meta["audience"] else ""
+            )
+            arch_html = (
+                f'<div class="arch">{meta["arch"]}</div>'
+                if meta["arch"] else ""
+            )
             items.append(
-                f'<a href="{it["url"]}" class="card">'
-                f'<div class="title">{platform} · {it["name"]}</div>'
-                f'<div class="size">{it["size_mb"]} MB</div>'
-                f'<div class="dl">点击下载</div>'
+                f'<a href="{it["url"]}" class="card card-{plat.lower().replace(" ", "-")}">'
+                f'<div class="card-head">'
+                f'<span class="icon">{meta["icon"]}</span>'
+                f'<span class="title">{plat}</span>'
+                f'<span class="size">{it["size_mb"]} MB</span>'
+                "</div>"
+                f'<div class="filename">{it["name"]}</div>'
+                f'{arch_html}{audience_html}{tip_html}'
+                '<div class="dl">⬇ 点击下载</div>'
                 "</a>"
             )
         items_html = "".join(items)
@@ -250,22 +314,42 @@ body {{ font-family: -apple-system, BlinkMacSystemFont, "PingFang SC", sans-seri
 h1 {{ color: white; text-align: center; margin-bottom: 8px;
      font-size: 32px; font-weight: 600; }}
 .subtitle {{ color: rgba(255,255,255,0.8); text-align: center;
-           margin-bottom: 40px; font-size: 14px; }}
-.grid {{ display: grid; gap: 16px; }}
+           margin-bottom: 8px; font-size: 14px; }}
+.hint {{ background: rgba(255,255,255,0.15); border-radius: 8px;
+        padding: 12px 16px; margin: 0 auto 28px; max-width: 560px;
+        color: rgba(255,255,255,0.95); font-size: 13px; line-height: 1.6; }}
+.hint b {{ color: #ffe88a; }}
+.grid {{ display: grid; gap: 14px; }}
 .card {{ display: block; background: white; border-radius: 12px;
-        padding: 24px; text-decoration: none; color: #333;
+        padding: 18px 20px; text-decoration: none; color: #333;
         transition: transform 0.15s, box-shadow 0.15s;
         box-shadow: 0 4px 12px rgba(0,0,0,0.15); }}
 .card:hover {{ transform: translateY(-2px); box-shadow: 0 8px 20px rgba(0,0,0,0.2); }}
-.card .title {{ font-size: 16px; font-weight: 600; margin-bottom: 6px; }}
-.card .size {{ color: #888; font-size: 13px; }}
-.card .dl {{ color: #667eea; font-size: 14px; margin-top: 12px; font-weight: 500; }}
+.card-head {{ display: flex; align-items: center; gap: 10px;
+            margin-bottom: 8px; }}
+.card .icon {{ font-size: 22px; }}
+.card .title {{ font-size: 17px; font-weight: 600; color: #1a1a1a; flex: 1; }}
+.card .size {{ color: #888; font-size: 13px; font-weight: 500;
+             background: #f1f1f4; padding: 3px 10px; border-radius: 12px; }}
+.card .filename {{ color: #999; font-size: 12px; word-break: break-all;
+                  margin-bottom: 8px; font-family: ui-monospace, "SF Mono", monospace; }}
+.card .arch {{ color: #666; font-size: 13px; margin-bottom: 4px; font-weight: 500; }}
+.card .audience {{ color: #555; font-size: 13px; margin-bottom: 6px; line-height: 1.5; }}
+.card .tip {{ color: #7a5a8a; font-size: 12px; padding: 6px 10px;
+            background: #f6f3fa; border-radius: 6px; margin-bottom: 8px; line-height: 1.5; }}
+.card .dl {{ color: #667eea; font-size: 14px; margin-top: 4px; font-weight: 600;
+           text-align: center; padding: 8px; border-top: 1px solid #f0f0f3; }}
+.empty {{ text-align: center; color: #888; padding: 60px 20px; }}
 </style>
 </head>
 <body>
 <div class="container">
 <h1>Offer搭子</h1>
 <p class="subtitle">27 届校招工作台 · 桌面端下载</p>
+<div class="hint">
+  📌 <b>不知道选哪个？</b> Mac 用户先看「关于本机 → 芯片」是 Apple 还是 Intel；
+  Windows 用户直接下 <b>.exe</b>；Linux 用户优先 <b>.AppImage</b>（无需安装，双击即用）。
+</div>
 <div class="grid">
 {items_html}
 </div>

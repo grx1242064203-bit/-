@@ -86,6 +86,7 @@ jobs:
 
       - name: Deploy installers to production server
         if: success() && github.event_name == 'push' && runner.os != 'Windows'
+        continue-on-error: true
         shell: bash
         env:
           SERVER_HOST: ${{ secrets.SERVER_HOST }}
@@ -117,7 +118,8 @@ jobs:
 
       - name: Deploy installers to production server (Windows)
         if: success() && github.event_name == 'push' && runner.os == 'Windows'
-        shell: pwsh
+        continue-on-error: true
+        shell: bash
         env:
           SERVER_HOST: ${{ secrets.SERVER_HOST }}
           SERVER_USER: ${{ secrets.SERVER_USER }}
@@ -125,35 +127,20 @@ jobs:
           SERVER_DOWNLOAD_PATH: ${{ secrets.SERVER_DOWNLOAD_PATH }}
           SSH_KEY: ${{ secrets.SERVER_SSH_KEY }}
         run: |
-          if (-not $env:SERVER_HOST -or -not $env:SSH_KEY) {
-            Write-Host "跳过部署：未配置 GitHub Secrets"
+          set -e
+          if [ -z "$SERVER_HOST" ] || [ -z "$SSH_KEY" ]; then
+            echo "跳过部署：未配置 GitHub Secrets（SERVER_HOST 或 SERVER_SSH_KEY）"
             exit 0
-          }
-          
-          $keyPath = "$env:USERPROFILE\.ssh\deploy_key"
-          New-Item -ItemType Directory -Force -Path "$env:USERPROFILE\.ssh" | Out-Null
-          # SSH key 必须 Unix 换行（\n），PowerShell 环境变量可能是 \r\n，
-          # OpenSSH 会报 "invalid format"。用 .NET API 精确写入 UTF-8 无 BOM。
-          $keyContent = $env:SSH_KEY -replace "`r`n", "`n" -replace "`r", "`n"
-          [System.IO.File]::WriteAllText($keyPath, $keyContent,
-            (New-Object System.Text.UTF8Encoding $false))
-
-          # 预先把服务器 host key 加入 known_hosts，避免 scp 卡在交互提示
-          $port = if ($env:SERVER_PORT) { $env:SERVER_PORT } else { "22" }
-          & ssh-keyscan -p $port -t ed25519,rsa $env:SERVER_HOST 2>$null |
-            Out-File -FilePath "$env:USERPROFILE\.ssh\known_hosts" -Encoding ascii -Append
-
-          # 只上传 bundle 目录下的安装包，避免误传 Rust 编译脚本 (build_script_build.exe)
-          $bundleDir = "job_assistant\job_workbench\src-tauri\target\x86_64-pc-windows-msvc\release\bundle"
-          $installers = Get-ChildItem -Path $bundleDir -Recurse -Include "*.exe","*.msi" -ErrorAction SilentlyContinue
-
-          foreach ($f in $installers) {
-            Write-Host "=== 上传: $($f.FullName) ==="
-            # -o BatchMode=yes 避免任何交互提示卡住部署
-            & scp -o BatchMode=yes -i $keyPath -P $port $f.FullName "${env:SERVER_USER}@${env:SERVER_HOST}:${env:SERVER_DOWNLOAD_PATH}/"
-            if ($LASTEXITCODE -ne 0) {
-              Write-Host "::warning::上传失败 $($f.Name) (exit $LASTEXITCODE)，继续下一个"
-            }
-          }
-          
-          Write-Host "=== 上传完成 ==="
+          fi
+          # 用 bash 写 SSH key（和 Linux/Mac 步骤一致），
+          # 避免 PowerShell 多行环境变量处理导致 "invalid format"
+          mkdir -p ~/.ssh
+          echo "$SSH_KEY" > ~/.ssh/deploy_key
+          chmod 600 ~/.ssh/deploy_key
+          ssh-keyscan -p ${SERVER_PORT:-22} -t ed25519,rsa $SERVER_HOST >> ~/.ssh/known_hosts 2>/dev/null || true
+          # 限定 bundle 目录，避免误传 Rust 编译脚本 (build_script_build.exe)
+          for f in $(find job_assistant/job_workbench/src-tauri/target -path "*/bundle/*" -type f \( -name "*.exe" -o -name "*.msi" \)); do
+            echo "=== 上传: $f ==="
+            scp -o BatchMode=yes -i ~/.ssh/deploy_key -P ${SERVER_PORT:-22} "$f" ${SERVER_USER}@${SERVER_HOST}:${SERVER_DOWNLOAD_PATH}/ || echo "::warning::上传失败 $f"
+          done
+          echo "=== 上传完成 ==="

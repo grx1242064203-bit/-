@@ -137,6 +137,7 @@ export default {
         24: "repeat(24, minmax(0, 1fr))",
       },
       gridColumn: {
+        16: "span 16 / span 16",
         24: "span 24 / span 24",
       },
     },

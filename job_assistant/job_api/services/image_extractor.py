@@ -8,9 +8,10 @@
 from __future__ import annotations
 
 import logging
-import os
 from pathlib import Path
 from typing import Optional
+
+from config import get_settings
 
 logger = logging.getLogger(__name__)
 
@@ -23,7 +24,9 @@ def _get_llm_client():
         sys.path.insert(0, parent)
     from llm_client import LLMClient
 
-    api_key = os.getenv("DEEPSEEK_API_KEY", "")
+    # 从 job_api/config.py 读取 DEEPSEEK_API_KEY（读 job_api/.env），
+    # 不能用 os.getenv 或根目录 config.py——那两处拿不到 key。
+    api_key = get_settings().DEEPSEEK_API_KEY
     return LLMClient(api_key=api_key or None)
 
 

@@ -13,6 +13,8 @@
 这样同步快（5s），用户看到任务时字段可能还在加载，
 用户可手动刷新或点 ✨ AI 重新提取按钮强制重做。
 """
+from __future__ import annotations
+
 import asyncio
 import email
 import imaplib
@@ -97,16 +99,21 @@ def _create_imap_ssl_connection(
 ) -> imaplib.IMAP4_SSL:
     """创建 IMAP4_SSL 连接,使用自定义 SSLContext(禁用 TLS 1.3)。
 
-    兼容 Python 3.9+ 的 timeout 参数。
+    兼容 Python 3.8+:IMAP4_SSL 的 timeout 参数是 3.9+ 才加入的,
+    3.8 会报 TypeError,因此改用 socket.setdefaulttimeout 包裹连接。
     """
     ctx = _build_ssl_context()
-    # imaplib.IMAP4_SSL 支持传入 ssl_context 参数
-    return imaplib.IMAP4_SSL(
-        host=imap_server,
-        port=imap_port,
-        ssl_context=ctx,
-        timeout=timeout,
-    )
+    # 用 socket 默认超时实现连接超时,兼容 Python 3.8(IMAP4_SSL 不支持 timeout kwarg)
+    old_timeout = socket.getdefaulttimeout()
+    socket.setdefaulttimeout(timeout)
+    try:
+        return imaplib.IMAP4_SSL(
+            host=imap_server,
+            port=imap_port,
+            ssl_context=ctx,
+        )
+    finally:
+        socket.setdefaulttimeout(old_timeout)
 
 
 def _send_imap_id_command(conn: imaplib.IMAP4_SSL) -> None:

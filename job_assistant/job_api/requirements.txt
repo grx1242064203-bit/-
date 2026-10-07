@@ -17,5 +17,3 @@ pytest>=8.0.0
 # LLM 代理（T4）依赖父目录 llm_client.py（DeepSeek 调用走 requests + PIL）
 requests>=2.31.0
 Pillow>=10.0.0
-# PDF 简历文本提取（PyMuPDF）
-pymupdf>=1.24.0

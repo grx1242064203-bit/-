@@ -97,41 +97,16 @@ def _create_imap_ssl_connection(
 ) -> imaplib.IMAP4_SSL:
     """创建 IMAP4_SSL 连接,使用自定义 SSLContext(禁用 TLS 1.3)。
 
-    跨 Python 版本兼容:
-    - Python 3.9+: IMAP4_SSL.__init__ 支持 timeout 参数,直接传入。
-    - Python < 3.9: 不支持 timeout 参数,先创建连接,再在 socket 上设置超时。
+    兼容 Python 3.9+ 的 timeout 参数。
     """
     ctx = _build_ssl_context()
-    # 检测当前 Python 版本的 IMAP4_SSL 是否支持 timeout 参数
-    import inspect
-
-    try:
-        sig = inspect.signature(imaplib.IMAP4_SSL.__init__)
-        supports_timeout = "timeout" in sig.parameters
-    except (ValueError, TypeError):
-        supports_timeout = False
-
-    if supports_timeout:
-        conn = imaplib.IMAP4_SSL(
-            host=imap_server,
-            port=imap_port,
-            ssl_context=ctx,
-            timeout=timeout,
-        )
-    else:
-        # 旧版本 Python: 不传 timeout,创建后手动设置 socket 超时
-        conn = imaplib.IMAP4_SSL(
-            host=imap_server,
-            port=imap_port,
-            ssl_context=ctx,
-        )
-        try:
-            sock = getattr(conn, "sock", None) or getattr(conn, "_socket", None)
-            if sock is not None:
-                sock.settimeout(timeout)
-        except Exception as e:  # noqa: BLE001 设置超时失败不阻塞连接
-            log.warning("设置 IMAP socket 超时失败(不阻塞): %s", e)
-    return conn
+    # imaplib.IMAP4_SSL 支持传入 ssl_context 参数
+    return imaplib.IMAP4_SSL(
+        host=imap_server,
+        port=imap_port,
+        ssl_context=ctx,
+        timeout=timeout,
+    )
 
 
 def _send_imap_id_command(conn: imaplib.IMAP4_SSL) -> None:

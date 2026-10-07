@@ -104,11 +104,6 @@ export default function KanbanBoard() {
     setPendingReverse(null);
   }
 
-  // 点击页面其他地方收起列扩展
-  function handleBoardClick() {
-    if (expandedCol) setExpandedCol(null);
-  }
-
   // 列宽计算: 用 12 列网格
   // 默认 6 列等宽: 每列 col-span-2 (12/6=2)
   // 扩展时: 扩展列 col-span-6, 折叠列 col-span-1 (约 8%, 够放图标)
@@ -163,7 +158,6 @@ export default function KanbanBoard() {
     >
       <div
         className="grid grid-cols-12 gap-2"
-        onClick={handleBoardClick}
       >
         {KANBAN_COLUMNS.map(renderColumn)}
       </div>

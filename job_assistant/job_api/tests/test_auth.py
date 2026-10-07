@@ -81,7 +81,7 @@ def test_register_verify_login_refresh(client, mock_send_email):
     # 1) 注册 → 未验证用户 + 验证码写入 DB + email 被调用
     resp = client.post(
         "/api/v1/auth/register",
-        json={"email": "alice@example.com", "password": "secret123"},
+        json={"email": "alice@example.com", "password": "secret123", "xhs_order_id": "XHS-ALICE-001"},
     )
     assert resp.status_code == 200, resp.text
     body = resp.json()
@@ -126,7 +126,7 @@ def test_duplicate_verified_register_returns_409(client):
     # 第一次注册 bob
     resp = client.post(
         "/api/v1/auth/register",
-        json={"email": "bob@example.com", "password": "secret123"},
+        json={"email": "bob@example.com", "password": "secret123", "xhs_order_id": "XHS-BOB-001"},
     )
     assert resp.status_code == 200
     # 直接标记为已验证（绕过验证码）
@@ -134,7 +134,7 @@ def test_duplicate_verified_register_returns_409(client):
     # 再次注册 → 409
     resp = client.post(
         "/api/v1/auth/register",
-        json={"email": "bob@example.com", "password": "another-pwd-456"},
+        json={"email": "bob@example.com", "password": "another-pwd-456", "xhs_order_id": "XHS-BOB-002"},
     )
     assert resp.status_code == 409, resp.text
 
@@ -143,7 +143,7 @@ def test_duplicate_unverified_register_resends_code(client, mock_send_email):
     # 第一次注册 carol（未验证）
     resp = client.post(
         "/api/v1/auth/register",
-        json={"email": "carol@example.com", "password": "secret123"},
+        json={"email": "carol@example.com", "password": "secret123", "xhs_order_id": "XHS-CAROL-001"},
     )
     assert resp.status_code == 200
     first_user_id = resp.json()["user_id"]
@@ -152,7 +152,7 @@ def test_duplicate_unverified_register_resends_code(client, mock_send_email):
     # 再次注册（仍未验证） → 200，重发验证码，user_id 不变
     resp = client.post(
         "/api/v1/auth/register",
-        json={"email": "carol@example.com", "password": "another-pwd-456"},
+        json={"email": "carol@example.com", "password": "another-pwd-456", "xhs_order_id": "XHS-CAROL-001"},
     )
     assert resp.status_code == 200, resp.text
     body = resp.json()
@@ -165,7 +165,7 @@ def test_unverified_login_returns_403(client):
     # 注册但不验证
     resp = client.post(
         "/api/v1/auth/register",
-        json={"email": "dave@example.com", "password": "secret123"},
+        json={"email": "dave@example.com", "password": "secret123", "xhs_order_id": "XHS-DAVE-001"},
     )
     assert resp.status_code == 200
 
@@ -181,7 +181,7 @@ def test_wrong_password_returns_401(client):
     # 注册 + 直接标记已验证
     resp = client.post(
         "/api/v1/auth/register",
-        json={"email": "eve@example.com", "password": "secret123"},
+        json={"email": "eve@example.com", "password": "secret123", "xhs_order_id": "XHS-EVE-001"},
     )
     assert resp.status_code == 200
     _set_verified_directly("eve@example.com")

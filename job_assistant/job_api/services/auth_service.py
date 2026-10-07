@@ -10,12 +10,13 @@ from __future__ import annotations
 
 from typing import Optional
 
-from passlib.context import CryptContext
+import bcrypt
 
 from models import user as user_model
 from services import email_service, jwt_service
 
-_pwd_context = CryptContext(schemes=["bcrypt"], deprecated="auto")
+# passlib 1.7.4 与 bcrypt>=4 不兼容(bcrypt 4 严格执行 72 字节限制,passlib 内部处理会触发 ValueError)。
+# 直接用 bcrypt 库做哈希/校验,手动处理 72 字节截断。
 _init_done = False
 
 
@@ -48,18 +49,24 @@ async def _ensure_init() -> None:
 
 
 def _hash_password(password: str) -> str:
-    return _pwd_context.hash(password)
+    # bcrypt 规范: 密码超过 72 字节部分被忽略。手动截断后编码为 bytes。
+    pw_bytes = password.encode("utf-8")[:72]
+    salt = bcrypt.gensalt(rounds=12)
+    hashed = bcrypt.hashpw(pw_bytes, salt)
+    return hashed.decode("utf-8")
 
 
 def hash_password(password: str) -> str:
-    """公开的密码哈希接口，供管理后台等模块复用（不要直接用 _pwd_context）。"""
-    return _pwd_context.hash(password)
+    """公开的密码哈希接口，供管理后台等模块复用。"""
+    return _hash_password(password)
 
 
 def _verify_password(password: str, password_hash: str) -> bool:
     try:
-        return _pwd_context.verify(password, password_hash)
-    except Exception:  # noqa: BLE001 passlib 抛 ValueError 等均视作校验失败
+        pw_bytes = password.encode("utf-8")[:72]
+        hash_bytes = password_hash.encode("utf-8")
+        return bcrypt.checkpw(pw_bytes, hash_bytes)
+    except Exception:  # noqa: BLE001 哈希格式错误等均视作校验失败
         return False
 
 
@@ -67,29 +74,35 @@ async def register(email: str, password: str, xhs_order_id: str) -> dict:
     """注册：邮箱未占用 → 创建未验证用户 + 发验证码；已存在未验证 → 重发验证码；已验证 → ConflictError。
 
     xhs_order_id 必填且唯一（私域获客场景：用户必须填小红书订单号才能注册）。
+    同一未验证邮箱重发验证码时,允许复用同一订单号(属于同一用户)。
     """
     await _ensure_init()
-    # 1. 校验 XHS 订单号未被使用
-    existing_by_order = await user_model.get_user_by_xhs_order_id(xhs_order_id)
-    if existing_by_order:
-        raise ConflictError(
-            f"XHS 订单号 {xhs_order_id} 已被使用，请联系卖家"
-        )
 
     existing = await user_model.get_user_by_email(email)
     if existing:
         if existing["is_verified"]:
             raise ConflictError("该邮箱已注册并验证，请直接登录")
-        # 未验证：把订单号补上 + 重发验证码（覆盖旧码）
-        # （同一邮箱未验证时再次注册，可能是用户忘了密码或没收到码）
-        if not existing.get("xhs_order_id"):
-            await user_model.update_notes(
-                existing["id"], f"XHS: {xhs_order_id}"
-            )
+        # 未验证用户重发验证码: 同一用户的订单号允许复用(不触发唯一冲突)
+        # 若换了新订单号,需校验新订单号未被其他用户使用
+        existing_order = existing.get("xhs_order_id")
+        if existing_order != xhs_order_id:
+            existing_by_order = await user_model.get_user_by_xhs_order_id(xhs_order_id)
+            if existing_by_order and existing_by_order["id"] != existing["id"]:
+                raise ConflictError(
+                    f"XHS 订单号 {xhs_order_id} 已被使用，请联系卖家"
+                )
+        # 重发验证码（覆盖旧码）
         code = user_model.generate_code()
         await user_model.create_verification_code(email, code)
         await email_service.send_verification_code(email, code)
         return {"user_id": existing["id"], "needs_verify": True}
+
+    # 新用户: 校验订单号未被使用
+    existing_by_order = await user_model.get_user_by_xhs_order_id(xhs_order_id)
+    if existing_by_order:
+        raise ConflictError(
+            f"XHS 订单号 {xhs_order_id} 已被使用，请联系卖家"
+        )
 
     user = await user_model.create_user(
         email, _hash_password(password), xhs_order_id

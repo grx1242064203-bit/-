@@ -1,8 +1,7 @@
 fastapi>=0.115.0
 uvicorn[standard]>=0.30.0
 python-jose[cryptography]>=3.3.0
-passlib[bcrypt]>=1.7.4
-bcrypt>=4.0,<5.0
+bcrypt>=4.0
 python-multipart>=0.0.9
 pydantic>=2.7.0
 pydantic-settings>=2.4.0
@@ -17,3 +16,5 @@ pytest>=8.0.0
 # LLM 代理（T4）依赖父目录 llm_client.py（DeepSeek 调用走 requests + PIL）
 requests>=2.31.0
 Pillow>=10.0.0
+# 简历 PDF 文本提取（parse-resume-file 接口依赖）
+pymupdf>=1.24.0

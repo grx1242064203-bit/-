@@ -137,7 +137,11 @@ export default {
         24: "repeat(24, minmax(0, 1fr))",
       },
       gridColumn: {
-        24: "span 24 / span 24",
+        // 投递控制台手风琴：扩展列占 16/24，折叠列占 1/24
+        // 注意:Tailwind 默认 gridColumn 键名是 'span-1'~'span-12',
+        // 所以扩展键名必须用 'span-16' 才能生成 col-span-16 类
+        'span-16': "span 16 / span 16",
+        'span-24': "span 24 / span 24",
       },
     },
   },

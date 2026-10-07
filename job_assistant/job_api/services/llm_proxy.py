@@ -29,13 +29,19 @@ _path_added = False
 
 
 def _ensure_parent_path() -> None:
-    """把 job_assistant 根目录加入 sys.path 头部（仅一次）。"""
+    """把 job_assistant 根目录加入 sys.path 末尾（仅一次）。
+
+    用 append 而非 insert(0, ...)：避免 job_assistant/ 抢占 sys.path 头部，
+    导致 `from config import ...` 错误地从 job_assistant/config.py 导入
+    （其配置来自 job_assistant/.env / os.getenv，而非 job_api/.env）。
+    job_api/ 目录已在 sys.path 头部（脚本目录），config 会优先从 job_api 导入。
+    """
     global _path_added
     with _path_lock:
         if _path_added:
             return
         if _PARENT_DIR not in sys.path:
-            sys.path.insert(0, _PARENT_DIR)
+            sys.path.append(_PARENT_DIR)
         _path_added = True
 
 

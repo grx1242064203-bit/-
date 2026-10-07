@@ -16,14 +16,25 @@ logger = logging.getLogger(__name__)
 
 
 def _get_llm_client():
-    """获取 LLMClient 实例（按需导入，避免循环依赖）。"""
+    """获取 LLMClient 实例（按需导入，避免循环依赖）。
+
+    API Key 统一从 job_api 的 settings 读取（与 llm_proxy / routers.llm 一致），
+    避免用 os.getenv 拿不到 pydantic-settings 从 .env 加载的密钥。
+
+    注意：必须用 sys.path.append 而非 insert(0, ...)，否则 job_assistant/ 会
+    抢占 sys.path 头部，导致 `from config import get_settings` 错误地从
+    job_assistant/config.py 导入（其 DEEPSEEK_API_KEY 来自 job_assistant/.env
+    或 os.getenv，而非 job_api/.env），图片 OCR 因缺 Key 返回空文本。
+    """
     import sys
+    # 先从 job_api/config 拿 API key（此时 sys.path 头部仍是 job_api/）
+    from config import get_settings
+    api_key = get_settings().DEEPSEEK_API_KEY
+    # 再把 job_assistant/ 加到 sys.path 末尾（不抢占），供 import llm_client
     parent = str(Path(__file__).resolve().parents[2])
     if parent not in sys.path:
-        sys.path.insert(0, parent)
+        sys.path.append(parent)
     from llm_client import LLMClient
-
-    api_key = os.getenv("DEEPSEEK_API_KEY", "")
     return LLMClient(api_key=api_key or None)
 
 

@@ -48,15 +48,15 @@ jobs:
           node-version: 20
 
       - name: Install frontend deps
-        working-directory: job_workbench
+        working-directory: job_assistant/job_workbench
         run: npm ci
 
       - name: Build frontend
-        working-directory: job_workbench
+        working-directory: job_assistant/job_workbench
         run: npm run build
 
       - name: Install Python sidecar deps
-        working-directory: job_workbench/python-sidecar
+        working-directory: job_assistant/job_workbench/python-sidecar
         run: |
           python -m pip install --upgrade pip
           pip install -r requirements-sidecar.txt
@@ -66,7 +66,7 @@ jobs:
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         with:
-          projectPath: job_workbench
+          projectPath: job_assistant/job_workbench
           # 仅 tag push (v*) 时创建/上传 Release；
           # push 到 main 时 tagName 留空 → 只构建产物，避免多次 push 复用同一 Release
           # 导致 "ReleaseAsset already_exists" 冲突
@@ -82,7 +82,7 @@ jobs:
         if: always()
         with:
           name: workbench-${{ matrix.label }}
-          path: job_workbench/src-tauri/target
+          path: job_assistant/job_workbench/src-tauri/target
 
       - name: Deploy installers to production server
         if: success() && github.event_name == 'push' && runner.os != 'Windows'
@@ -107,9 +107,9 @@ jobs:
           ssh-keyscan -p ${SERVER_PORT:-22} -t ed25519,rsa $SERVER_HOST >> ~/.ssh/known_hosts 2>/dev/null || true
 
           echo "=== 查找安装包 ==="
-          find job_workbench/src-tauri/target -type f \( -name "*.dmg" -o -name "*.exe" -o -name "*.msi" -o -name "*.deb" -o -name "*.AppImage" \) -exec ls -lh {} \;
+          find job_assistant/job_workbench/src-tauri/target -type f \( -name "*.dmg" -o -name "*.exe" -o -name "*.msi" -o -name "*.deb" -o -name "*.AppImage" \) -exec ls -lh {} \;
 
-          for f in $(find job_workbench/src-tauri/target -type f \( -name "*.dmg" -o -name "*.exe" -o -name "*.msi" -o -name "*.deb" -o -name "*.AppImage" \)); do
+          for f in $(find job_assistant/job_workbench/src-tauri/target -type f \( -name "*.dmg" -o -name "*.exe" -o -name "*.msi" -o -name "*.deb" -o -name "*.AppImage" \)); do
             echo "=== 上传: $f ==="
             scp -i ~/.ssh/deploy_key -P ${SERVER_PORT:-22} "$f" ${SERVER_USER}@${SERVER_HOST}:${SERVER_DOWNLOAD_PATH}/
           done
@@ -136,7 +136,7 @@ jobs:
           echo "$SSH_KEY" > ~/.ssh/deploy_key
           chmod 600 ~/.ssh/deploy_key
           ssh-keyscan -p ${SERVER_PORT:-22} -t ed25519,rsa $SERVER_HOST >> ~/.ssh/known_hosts 2>/dev/null || true
-          for f in $(find job_workbench/src-tauri/target -path "*/bundle/*" -type f \( -name "*.exe" -o -name "*.msi" \)); do
+          for f in $(find job_assistant/job_workbench/src-tauri/target -path "*/bundle/*" -type f \( -name "*.exe" -o -name "*.msi" \)); do
             echo "=== 上传: $f ==="
             scp -o BatchMode=yes -i ~/.ssh/deploy_key -P ${SERVER_PORT:-22} "$f" ${SERVER_USER}@${SERVER_HOST}:${SERVER_DOWNLOAD_PATH}/ || echo "::warning::上传失败 $f"
           done

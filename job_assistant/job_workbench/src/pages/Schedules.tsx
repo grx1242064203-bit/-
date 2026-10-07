@@ -445,10 +445,14 @@ function DaySchedulesModal({
 function ScheduleCard({ schedule, onEdit }: { schedule: Schedule; onEdit: (s: Schedule) => void }) {
   const removeSchedule = useScheduleStore((s) => s.removeSchedule);
   const [deleting, setDeleting] = useState(false);
+  const [confirming, setConfirming] = useState(false);
   const [deleteError, setDeleteError] = useState<string | null>(null);
 
   const handleDelete = async () => {
-    if (!confirm("确定删除此日程？删除后关联提醒也会清除。")) return;
+    if (!confirming) {
+      setConfirming(true);
+      return;
+    }
     setDeleting(true);
     setDeleteError(null);
     try {
@@ -457,6 +461,7 @@ function ScheduleCard({ schedule, onEdit }: { schedule: Schedule; onEdit: (s: Sc
       setDeleteError(extractErrorMessage(e));
     } finally {
       setDeleting(false);
+      setConfirming(false);
     }
   };
 
@@ -546,9 +551,14 @@ function ScheduleCard({ schedule, onEdit }: { schedule: Schedule; onEdit: (s: Sc
           <button
             onClick={handleDelete}
             disabled={deleting}
-            className="rounded-lg bg-red-50 px-2 py-1 text-xs text-red-600 hover:bg-red-100 disabled:opacity-50"
+            onMouseLeave={() => setConfirming(false)}
+            className={`rounded-lg px-2 py-1 text-xs disabled:opacity-50 ${
+              confirming
+                ? "bg-red-500 text-white hover:bg-red-600"
+                : "bg-red-50 text-red-600 hover:bg-red-100"
+            }`}
           >
-            {deleting ? "删除中..." : "删除"}
+            {deleting ? "删除中..." : confirming ? "确认删除？" : "删除"}
           </button>
         </div>
       </div>

@@ -5,6 +5,8 @@
 2. 不允许 AI 自动删除日程（只有显式 delete_schedule 接口）
 3. AI 提取仅返回结构化数据，不直接创建日程——用户确认后再提交
 """
+from __future__ import annotations
+
 import logging
 from datetime import datetime, timezone
 from typing import Optional
@@ -43,10 +45,19 @@ def _validate_event_time(event_time: str) -> str:
     """校验 event_time 是可解析的 ISO 字符串。失败抛 ValueError。
 
     兼容用户输入 "2025-01-15 14:30" 这种带空格的伪 ISO（自动转 T）。
+    兼容 JS Date.toISOString() 产生的 "2026-10-15T06:00:00.000Z" 格式
+    （Python 3.8 的 fromisoformat 不支持 Z 后缀和毫秒）。
     """
     if not event_time or not isinstance(event_time, str):
         raise ValueError("event_time 不能为空")
     normalized = event_time.strip().replace(" ", "T")
+    # Python 3.8 的 fromisoformat 不支持 Z 后缀，替换为 +00:00
+    if normalized.endswith("Z"):
+        normalized = normalized[:-1] + "+00:00"
+    # 去掉毫秒部分（Python 3.8 fromisoformat 对 3 位毫秒支持不稳定）
+    # "2026-10-15T06:00:00.000+00:00" → "2026-10-15T06:00:00+00:00"
+    import re
+    normalized = re.sub(r'\.\d+', '', normalized)
     try:
         dt = datetime.fromisoformat(normalized)
     except ValueError as e:

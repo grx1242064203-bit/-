@@ -13,6 +13,7 @@
 不直接暴露 DeepSeek API Key，由 LLMProxyService 在服务层注入。
 """
 import logging
+import os
 import tempfile
 from pathlib import Path
 
@@ -34,7 +35,9 @@ router = APIRouter(prefix="/llm", tags=["llm"])
 
 # 单例代理服务（API Key 在调用时从 settings 注入；不暴露给路由层以外的模块）
 _settings = get_settings()
-_proxy = LLMProxyService(api_key=_settings.DEEPSEEK_API_KEY)
+# 优先用 settings(.env); 兜底用环境变量(部分部署只设环境变量不写 .env)
+_api_key = _settings.DEEPSEEK_API_KEY or os.getenv("DEEPSEEK_API_KEY", "")
+_proxy = LLMProxyService(api_key=_api_key)
 
 
 class ParseResumeRequest(BaseModel):

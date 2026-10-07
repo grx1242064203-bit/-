@@ -137,7 +137,20 @@ export default {
         24: "repeat(24, minmax(0, 1fr))",
       },
       gridColumn: {
-        24: "span 24 / span 24",
+        // 默认只到 col-span-12, 这里补齐 13-24 供 24 列网格使用
+        // 注意: key 必须带 "span-" 前缀, 才能生成 col-span-16 这样的类名
+        "span-13": "span 13 / span 13",
+        "span-14": "span 14 / span 14",
+        "span-15": "span 15 / span 15",
+        "span-16": "span 16 / span 16",
+        "span-17": "span 17 / span 17",
+        "span-18": "span 18 / span 18",
+        "span-19": "span 19 / span 19",
+        "span-20": "span 20 / span 20",
+        "span-21": "span 21 / span 21",
+        "span-22": "span 22 / span 22",
+        "span-23": "span 23 / span 23",
+        "span-24": "span 24 / span 24",
       },
     },
   },

@@ -93,7 +93,10 @@ class LLMClient:
                 from config import settings
                 api_key = settings.DEEPSEEK_API_KEY
             except ImportError:
-                api_key = os.getenv("DEEPSEEK_API_KEY", "")
+                pass
+        # 兜底: 环境变量(部分部署只设环境变量不写 .env,或 config 加载到空值)
+        if not api_key:
+            api_key = os.getenv("DEEPSEEK_API_KEY", "")
         self.api_key = api_key or ""
         self.model = model or DEEPSEEK_MODEL
         if not self.api_key:

@@ -14,7 +14,8 @@ from pydantic_settings import BaseSettings, SettingsConfigDict
 
 class Settings(BaseSettings):
     model_config = SettingsConfigDict(
-        env_file=".env",
+        # 用模块所在目录的 .env(而非 CWD), 避免 uvicorn 启动目录不同导致 .env 找不到
+        env_file=str(Path(__file__).resolve().parent / ".env"),
         env_file_encoding="utf-8",
         extra="ignore",
     )

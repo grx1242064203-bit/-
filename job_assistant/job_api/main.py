@@ -187,6 +187,18 @@ app.include_router(jobs_router, prefix="/api/v1")
 app.include_router(admin_router, prefix="/api/v1")
 
 
+# ====== 网页版管理后台 ======
+# /admin 提供用户管理界面（登录、列表、建号、停用、删除等）。
+# 所有数据操作走 /api/v1/admin/* 接口，需要管理员 JWT。
+from admin_console import ADMIN_CONSOLE_HTML  # noqa: E402
+
+
+@app.get("/admin", response_class=HTMLResponse, include_in_schema=False)
+async def admin_console_page() -> str:
+    """网页版管理后台（HTML，前端自行调 /api/v1/auth/login 和 /api/v1/admin/*）。"""
+    return ADMIN_CONSOLE_HTML
+
+
 # ====== 桌面端安装包下载页 ======
 # 用户把 .dmg / .exe / .msi 上传到 data/downloads/ 目录后，
 # 访问 /download 即可看到下载页。

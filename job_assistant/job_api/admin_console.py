@@ -139,7 +139,7 @@ async function api(path, opts={}){
   const token = getToken();
   if(token) headers['Authorization'] = 'Bearer '+token;
   const res = await fetch(API+path, {...opts, headers});
-  if(res.status === 401 || res.status === 403){
+  if((res.status === 401 || res.status === 403) && !path.includes('/auth/login')){
     setToken(null); setAdminInfo(null);
     render();
     throw new Error(res.status === 403 ? '需要管理员权限' : '登录已过期，请重新登录');

@@ -1,6 +1,6 @@
 #!/bin/bash
-# 每日增量更新:只同步源表变更 → 抓新增公告正文 → 拆新增岗位
-# 建议每天 8:00 执行(cron)
+# 每日增量更新:同步源表变更 → LLM 拆岗（源表岗位名填字段）
+# 每天 15:00 执行(cron)
 # 用法: bash scripts/daily_update.sh
 
 set -e
@@ -13,10 +13,10 @@ export PYTHONUNBUFFERED=1
 echo "====== 每日增量更新 ======"
 echo "时间: $(date)"
 
-# 增量同步 → 抓正文(200条) → 拆岗(200条)
+# 增量同步 → LLM 拆岗(200条)
 python3 -c "
 from daily_runner import run_daily_pipeline
-r = run_daily_pipeline(sync_full=False, crawl_limit=200, enrich_limit=200, crawl_workers=2)
+r = run_daily_pipeline(sync_full=False, enrich_limit=200)
 print(f'管线结果: {r}')
 "
 

@@ -688,7 +688,7 @@ class PositionEnricher:
 
     def enrich_announcement(self, announcement: Dict) -> int:
         """
-        处理单条公告:抓正文 → LLM 拆岗 → 写 positions → 更新状态。
+        处理单条公告:用源表岗位名填字段 → LLM 拆岗 → 写 positions → 更新状态。
         返回插入的岗位数。
         """
         ann_id = announcement["id"]
@@ -696,114 +696,28 @@ class PositionEnricher:
         ann_title = announcement.get("announcement_title", "")
         ann_url = announcement.get("announcement_url", "")
 
-        # 1. 获取正文(优先 DB 已存储的 content,其次缓存,最后实时抓取)
-        content = announcement.get("content", "") or ""
-        images_json = announcement.get("content_images", "") or ""
-        if not content or len(content) < 30:
-            content = get_cached_content(ann_url) or ""
-        if not content or len(content) < 30:
-            fetch_result = fetch_content_full(ann_url)
-            content = fetch_result["text"]
-            img_urls = fetch_result["images"]
-            # 抓到正文后存 DB,避免重复爬取
-            if content and len(content) >= 30:
-                job_db.update_crawl_status(ann_id, "success", content=content)
-            if img_urls:
-                import json as _json
-                job_db.update_announcement_images(ann_id, _json.dumps(img_urls, ensure_ascii=False))
-                images_json = _json.dumps(img_urls, ensure_ascii=False)
+        # 1. 直接用源表岗位名填字段（源表「招聘岗位」字段已含岗位列表,无需抓正文）
+        content = ""
+        images_json = ""
 
-        # 1.5 获取本地所有缓存图片(可能比 DB 中存储的更全)
-        from content_fetcher import get_cached_images
-        local_images = get_cached_images(ann_url)
-        # 合并 DB 中的图片和本地图片(去重)
-        import json as _json
-        db_images = []
-        if images_json:
-            try:
-                db_images = _json.loads(images_json) if isinstance(images_json, str) else images_json
-            except Exception:
-                db_images = []
-        all_images = list(dict.fromkeys(db_images + local_images))  # 去重保序
+        # 1.5 图片不抓取（源表模式不需要）
+        local_images = []
+        all_images = []
 
-        # 1.6 垃圾内容检测:微信反爬返回"环境异常"等,不能作为拆岗依据
-        content_is_garbage = _is_garbage_content(content)
+        # 2. 源表模式:直接用「招聘岗位」字段填字段,不走正文/VL
+        job_db.update_vl_status(ann_id, "not_needed")
+        content_is_garbage = False
 
-        # 2. VL OCR:判断是否需要(重新)识别图片
-        # 触发条件:正文过短(<100字) 或 正文是低质量VL结果(含"没有包含具体岗位"等) 或 正文明显只有公司介绍
-        # 或 正文主要是微信UI元素(视频/小程序/赞/在看/分享等)
-        # 或 内容是反爬垃圾
-        _low_quality_vl = any(kw in content for kw in [
-            "没有包含具体的岗位", "均没有包含", "仅属于招聘宣传",
-            "公司介绍", "点击公众号下方菜单栏",
-        ])
-        # 检测微信文章底部UI噪声(大量"赞/在看/分享/留言/收藏/视频/小程序"等无意义文字)
-        _ui_noise_count = sum(content.count(kw) for kw in
-                              ["轻点两下", "取消赞", "在看", "分享", "留言", "收藏", "小程序", "听过", "视频号"])
-        _is_ui_noise = _ui_noise_count >= 3 and len(content) < 2000
-        need_vl = (len(content) < 100) or _low_quality_vl or _is_ui_noise or content_is_garbage
-
-        if need_vl and all_images:
-            try:
-                logger.info(f"公告 {ann_id} [{company_name}] 重新VL识别({len(all_images)}张图, "
-                            f"正文{len(content)}字, garbage={content_is_garbage})")
-                vl_prompt = (
-                    f"这是{company_name}的招聘公告图片。请逐张识别图片中的所有文字内容,"
-                    f"特别关注:岗位名称、专业要求、学历要求、工作地点、岗位职责、任职要求等。"
-                    f"如果图片是长图,请完整识别所有文字。按图片顺序输出全部文字。"
-                )
-                vl_text = self.llm.chat_with_images(vl_prompt, all_images, max_tokens=4000)
-                if vl_text and len(vl_text) > 50:
-                    content = vl_text
-                    content_is_garbage = _is_garbage_content(content)
-                    # 把 VL 识别结果和完整图片列表存到 DB
-                    job_db.update_crawl_status(ann_id, "success", content=content)
-                    job_db.update_announcement_images(ann_id, _json.dumps(all_images, ensure_ascii=False))
-                    job_db.update_vl_status(ann_id, "success")
-                    logger.info(f"公告 {ann_id} VL 识别成功: {len(vl_text)} 字")
-                else:
-                    # VL 所有策略(切片+放宽像素)均失败 → 标记 vl_status=failed
-                    # 不立即走兜底降级,先记录失败,便于后续排查与飞书表统计
-                    vl_error = self.llm.last_vl_error_msg or "VL识别返回空(已尝试多策略切片)"
-                    job_db.update_vl_status(ann_id, "failed", error=vl_error)
-                    logger.warning(
-                        f"公告 {ann_id} VL 识别失败(已尝试多策略): {vl_error[:120]}"
-                    )
-            except Exception as e:
-                vl_error = str(e)
-                job_db.update_vl_status(ann_id, "failed", error=vl_error)
-                logger.warning(f"公告 {ann_id} VL 识别异常: {e}")
-        elif need_vl and not all_images:
-            # 需要 VL 但没有图片 → 标记为 failed(无法识别图片公告)
-            job_db.update_vl_status(ann_id, "failed", error="需要VL识别但无可用图片")
-            logger.warning(f"公告 {ann_id} 需要VL但无图片,标记vl_status=failed")
-        else:
-            # 不需要 VL(正文足够)→ 标记 not_needed,与 success 区分
-            job_db.update_vl_status(ann_id, "not_needed")
-
-        # 对抗性优化:微信/小红书反爬严重,正文常是 UI 噪声或活动介绍,不含具体岗位。
-        # 但飞书源表的「招聘岗位」字段本身已包含岗位/类别列表,始终可作为兜底。
-        # 策略:先用正文拆岗;若正文拆不出岗位,fallback 到源表岗位名填字段。
-        if content and len(content) >= 30 and not content_is_garbage:
-            # 2a. 正文可用,先试正文拆岗
-            positions = self.extract_positions(
-                content, company=company_name, title=ann_title, meta=announcement
-            )
-            c_hash = _content_hash(content, company=company_name, title=ann_title)
-            # 2b. 正文拆不出岗位(正文是活动介绍/UI噪声等),fallback 到源表岗位名
-            if not positions and ann_title:
-                logger.info(f"公告 {ann_id} [{company_name}] 正文未拆出岗位,fallback 源表岗位名填字段")
-                positions = self.extract_positions_from_title(
-                    ann_title, company=company_name, title=ann_title, meta=announcement
-                )
-                c_hash = _content_hash(ann_title, company=company_name, title=ann_title)
-        else:
-            # 正文缺失/垃圾,直接用源表岗位名填字段
-            logger.info(f"公告 {ann_id} [{company_name}] 正文缺失/垃圾,用源表岗位名填字段")
+        # 直接用源表岗位名填字段
+        if ann_title:
+            logger.info(f"公告 {ann_id} [{company_name}] 源表岗位名填字段")
             positions = self.extract_positions_from_title(
-                ann_title or "", company=company_name, title=ann_title, meta=announcement
+                ann_title, company=company_name, title=ann_title, meta=announcement
             )
-            c_hash = _content_hash(ann_title or "", company=company_name, title=ann_title)
+            c_hash = _content_hash(ann_title, company=company_name, title=ann_title)
+        else:
+            positions = []
+            c_hash = ""
 
         if not positions:
             # LLM 失败,降级

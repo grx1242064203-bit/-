@@ -29,7 +29,7 @@ if os.path.exists(_root_models_path) and "jobseeker_models" not in sys.modules:
 
 from fastapi import FastAPI, Request
 from fastapi.middleware.cors import CORSMiddleware
-from fastapi.responses import JSONResponse
+from fastapi.responses import HTMLResponse, JSONResponse
 from slowapi import _rate_limit_exceeded_handler
 from slowapi.errors import RateLimitExceeded
 from slowapi.middleware import SlowAPIMiddleware
@@ -206,7 +206,7 @@ async def admin_console_page() -> str:
 
 from pathlib import Path  # noqa: E402
 
-from fastapi.responses import HTMLResponse, FileResponse  # noqa: E402
+from fastapi.responses import FileResponse  # noqa: E402
 
 DOWNLOADS_DIR = Path(settings.DATA_DIR) / "downloads"
 
@@ -387,3 +387,71 @@ async def download_file(filename: str) -> FileResponse:
         from fastapi import HTTPException, status as _st
         raise HTTPException(_st.HTTP_404_NOT_FOUND, "文件不存在")
     return FileResponse(file_path, filename=filename)
+
+
+# ====== 数据库同步端点（供客户端 pull-db） ======
+JOBS_DB_PATH = Path(settings.JOBS_DB_PATH)
+
+
+@app.get("/api/db/info", include_in_schema=False)
+async def db_info():
+    """返回 jobs.db 健康信息。"""
+    import hashlib as _hl, sqlite3 as _sql
+    if not JOBS_DB_PATH.exists():
+        return JSONResponse({"ok": False, "error": "jobs.db not found"})
+    size = JOBS_DB_PATH.stat().st_size
+    mtime = JOBS_DB_PATH.stat().st_mtime
+    # integrity check
+    try:
+        conn = _sql.connect(str(JOBS_DB_PATH))
+        row = conn.execute("PRAGMA integrity_check").fetchone()
+        conn.close()
+        integrity = row[0] if row else "unknown"
+    except Exception as e:
+        integrity = f"error: {e}"
+    # counts
+    counts = {}
+    try:
+        conn = _sql.connect(str(JOBS_DB_PATH))
+        for tbl in ("announcements", "companies", "positions"):
+            r = conn.execute(f"SELECT COUNT(*) FROM {tbl}").fetchone()
+            counts[tbl] = r[0]
+        conn.close()
+    except Exception:
+        pass
+    # md5
+    h = _hl.md5()
+    with open(JOBS_DB_PATH, "rb") as f:
+        for chunk in iter(lambda: f.read(1024 * 1024), b""):
+            h.update(chunk)
+    return JSONResponse({
+        "ok": integrity == "ok",
+        "integrity": integrity,
+        "size": size,
+        "mtime": mtime,
+        "db_path": str(JOBS_DB_PATH),
+        "counts": counts,
+        "md5": h.hexdigest(),
+    })
+
+
+@app.get("/api/db/download", include_in_schema=False)
+async def db_download():
+    """下载 jobs.db，附带 MD5 header 供客户端校验。"""
+    import hashlib as _hl
+    if not JOBS_DB_PATH.exists():
+        from fastapi import HTTPException, status as _st
+        raise HTTPException(_st.HTTP_404_NOT_FOUND, "jobs.db not found")
+    h = _hl.md5()
+    with open(JOBS_DB_PATH, "rb") as f:
+        for chunk in iter(lambda: f.read(1024 * 1024), b""):
+            h.update(chunk)
+    resp = FileResponse(
+        JOBS_DB_PATH,
+        media_type="application/x-sqlite3",
+        filename="jobs.db",
+    )
+    resp.headers["X-DB-MD5"] = h.hexdigest()
+    resp.headers["X-DB-Size"] = str(JOBS_DB_PATH.stat().st_size)
+    resp.headers["X-DB-Integrity"] = "ok"
+    return resp

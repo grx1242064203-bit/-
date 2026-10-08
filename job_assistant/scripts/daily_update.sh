@@ -4,10 +4,10 @@
 # 用法: bash scripts/daily_update.sh
 
 set -e
-cd /opt/job_assistant
-source venv/bin/activate
+cd /opt/job_assistant/job_assistant
+source /opt/job_assistant/job_assistant/job_api/venv/bin/activate
 
-export DATA_DIR=${DATA_DIR:-/opt/job_assistant/data}
+export DATA_DIR=${DATA_DIR:-/opt/job_assistant/job_assistant/data}
 export PYTHONUNBUFFERED=1
 
 echo "====== 每日增量更新 ======"

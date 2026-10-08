@@ -322,7 +322,7 @@ class PositionEnricher:
             try:
                 result_text = self.llm._chat(
                     [{"role": "user", "content": prompt}],
-                    temperature=0.1, max_tokens=16000,
+                    temperature=0.1, max_tokens=8000,
                 )
                 if not result_text:
                     raise ValueError("LLM 返回空")
@@ -455,7 +455,7 @@ class PositionEnricher:
                 )
                 result_text = self.llm._chat(
                     [{"role": "user", "content": prompt}],
-                    temperature=0.1, max_tokens=32000,
+                    temperature=0.1, max_tokens=4000,
                 )
                 if not result_text:
                     raise ValueError("LLM 返回空")

@@ -29,7 +29,7 @@ if os.path.exists(_root_models_path) and "jobseeker_models" not in sys.modules:
 
 from fastapi import FastAPI, Request
 from fastapi.middleware.cors import CORSMiddleware
-from fastapi.responses import JSONResponse
+from fastapi.responses import HTMLResponse, JSONResponse
 from slowapi import _rate_limit_exceeded_handler
 from slowapi.errors import RateLimitExceeded
 from slowapi.middleware import SlowAPIMiddleware
@@ -206,7 +206,7 @@ async def admin_console_page() -> str:
 
 from pathlib import Path  # noqa: E402
 
-from fastapi.responses import HTMLResponse, FileResponse  # noqa: E402
+from fastapi.responses import FileResponse  # noqa: E402
 
 DOWNLOADS_DIR = Path(settings.DATA_DIR) / "downloads"
 

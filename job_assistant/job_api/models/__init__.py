@@ -7,6 +7,7 @@ from . import (
     company_due_diligence,
     email,
     email_account,
+    payment,
     resume_profile,
     schedule,
     user,
@@ -21,4 +22,5 @@ async def init_all_db() -> None:
     await email_account.init_db()
     await email.init_db()
     await schedule.init_db()
+    await payment.init_db()
     resume_profile._ensure_schema()

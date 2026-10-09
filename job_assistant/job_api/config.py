@@ -66,6 +66,33 @@ class Settings(BaseSettings):
     # CORS 允许源（开发期默认允许所有来源）
     CORS_ORIGINS: List[str] = ["*"]
 
+    # ====================================================================
+    # Vibe Pay 基础收款能力（支付宝 alipay.trade.page.pay 网页支付）
+    # 个人开发者可用，有沙箱环境。
+    # 沙箱网关: https://openapi-sandbox.dl.alipaydev.com/gateway.do
+    # 生产网关: https://openapi.alipay.com/gateway.do
+    # ====================================================================
+    # 环境开关: "sandbox"（沙箱，默认）/ "production"（生产）
+    ALIPAY_ENV: str = "sandbox"
+    # 应用 ID（沙箱/生产不同，由开放平台分配）
+    ALIPAY_APP_ID: str = ""
+    # 应用私钥（PKCS1 格式，非 Java；用支付宝官方密钥工具生成）
+    ALIPAY_PRIVATE_KEY: str = ""
+    # 支付宝公钥（由开放平台分配，用于验签异步通知）
+    ALIPAY_PUBLIC_KEY: str = ""
+    # 异步通知 URL（公网 HTTPS，由支付宝服务端 POST 调用）
+    # 沙箱可先用 https://zhaopin-helper.xyz/api/v1/payments/notify
+    ALIPAY_NOTIFY_URL: str = "https://zhaopin-helper.xyz/api/v1/payments/notify"
+    # 同步回跳 URL（GET，不可信，仅用于 UX；前端路由接管）
+    ALIPAY_RETURN_URL: str = "https://zhaopin-helper.xyz/pay-verify"
+    # 签名算法：固定 RSA2（RSA-SHA256）
+    ALIPAY_SIGN_TYPE: str = "RSA2"
+    # 商品目录（可被 .env 覆盖；默认两种付费模式）
+    # 月度试用 ¥9.9 / 永久买断 ¥99（10× 月度，可在 .env 调整）
+    ALIPAY_PRODUCT_TRIAL_CENTS: int = 990
+    ALIPAY_PRODUCT_TRIAL_DAYS: int = 30
+    ALIPAY_PRODUCT_LIFETIME_CENTS: int = 9900
+
     @property
     def sqlite_url(self) -> str:
         return f"sqlite:///{self.JOBS_DB_PATH}"

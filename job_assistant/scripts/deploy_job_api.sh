@@ -58,6 +58,21 @@ rsync -avz --delete \
 
 echo "✅ 代码上传完成"
 
+# ============ 1.5 检查沙箱密钥 ============
+echo ""
+echo "[1.5/6] 检查支付宝沙箱密钥（.alipay-sandbox.json）..."
+if [ ! -f "$LOCAL_JOB_API_DIR/.alipay-sandbox.json" ]; then
+    echo "⚠️  .alipay-sandbox.json 不存在"
+    echo "   沙箱密钥未自动获取，支付能力将降级为 mock 模式"
+    echo "   获取方式："
+    echo "     1. 安装 alipay-cli: curl -fsSL https://opengw.alipay.com/alipaycli/install | ALIPAY_CLI_SKIP_VERIFY=true bash"
+    echo "     2. 获取沙箱密钥: bash .agents/skills/alipay-aipay/references/integration/modules/scripts/sandbox_config.sh ensure \$(pwd) Python"
+    echo "   或在沙箱环境中已生成，手动复制到 job_api/ 目录"
+    echo "   继续部署..."
+else
+    echo "✅ .alipay-sandbox.json 存在（已随代码上传到服务器）"
+fi
+
 # ============ 2. 上传 .env ============
 echo ""
 echo "[2/6] 上传 .env（权限 600）..."

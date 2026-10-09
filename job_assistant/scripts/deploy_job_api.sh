@@ -61,16 +61,10 @@ echo "✅ 代码上传完成"
 # ============ 1.5 检查沙箱密钥 ============
 echo ""
 echo "[1.5/6] 检查支付宝沙箱密钥（.alipay-sandbox.json）..."
-if [ ! -f "$LOCAL_JOB_API_DIR/.alipay-sandbox.json" ]; then
-    echo "⚠️  .alipay-sandbox.json 不存在"
-    echo "   沙箱密钥未自动获取，支付能力将降级为 mock 模式"
-    echo "   获取方式："
-    echo "     1. 安装 alipay-cli: curl -fsSL https://opengw.alipay.com/alipaycli/install | ALIPAY_CLI_SKIP_VERIFY=true bash"
-    echo "     2. 获取沙箱密钥: bash .agents/skills/alipay-aipay/references/integration/modules/scripts/sandbox_config.sh ensure \$(pwd) Python"
-    echo "   或在沙箱环境中已生成，手动复制到 job_api/ 目录"
-    echo "   继续部署..."
+if [ -f "$LOCAL_JOB_API_DIR/.alipay-sandbox.json" ]; then
+    echo "✅ 本地 .alipay-sandbox.json 存在，随代码上传到服务器"
 else
-    echo "✅ .alipay-sandbox.json 存在（已随代码上传到服务器）"
+    echo "ℹ️  本地无 .alipay-sandbox.json，将在服务器上自动获取"
 fi
 
 # ============ 2. 上传 .env ============
@@ -79,6 +73,42 @@ echo "[2/6] 上传 .env（权限 600）..."
 scp "$LOCAL_ENV_FILE" "$SSH_HOST:$REMOTE_APP_DIR/.env"
 ssh prod "chmod 600 $REMOTE_APP_DIR/.env"
 echo "✅ .env 上传完成"
+
+# ============ 2.5 服务器端获取沙箱密钥 ============
+echo ""
+echo "[2.5/6] 服务器端检查沙箱密钥..."
+ssh prod << 'SANDBOX_EOF'
+cd /opt/job_assistant/job_api
+if [ -f .alipay-sandbox.json ]; then
+    echo "✅ 服务器已有 .alipay-sandbox.json"
+else
+    echo "ℹ️  服务器无 .alipay-sandbox.json，尝试自动获取..."
+    # 安装 alipay-cli（如果没有）
+    if ! command -v alipay-cli &> /dev/null; then
+        echo "   安装 alipay-cli..."
+        mkdir -p ~/.local/bin
+        curl -fsSL https://opengw.alipay.com/alipaycli/install | ALIPAY_CLI_SKIP_VERIFY=true bash 2>/dev/null
+        export PATH="$HOME/.local/bin:$PATH"
+    fi
+    # 安装 alipay-aipay skill 并获取沙箱密钥（需要 npx/node）
+    if command -v npx &> /dev/null; then
+        echo "   安装 alipay-aipay skill..."
+        npx -y @alipay/alipay-aipay@latest install --skip-tools --target auto 2>/dev/null
+        SANDBOX_SCRIPT="$HOME/.agents/skills/alipay-aipay/references/integration/modules/scripts/sandbox_config.sh"
+        if [ -f "$SANDBOX_SCRIPT" ]; then
+            echo "   运行 sandbox_config.sh ensure..."
+            bash "$SANDBOX_SCRIPT" ensure /opt/job_assistant/job_api Python 2>&1 || true
+            [ -f .alipay-sandbox.json ] && echo "✅ 沙箱密钥自动获取成功" || echo "⚠️  沙箱密钥获取失败，支付降级为 mock 模式"
+        else
+            echo "⚠️  sandbox_config.sh 不存在，支付降级为 mock 模式"
+        fi
+    else
+        echo "⚠️  服务器无 npx/node，无法自动获取沙箱密钥"
+        echo "   支付将降级为 mock 模式（不阻断部署）"
+        echo "   后续可在服务器手动安装 node + alipay-cli 获取沙箱密钥"
+    fi
+fi
+SANDBOX_EOF
 
 # ============ 3. 创建虚拟环境 + 安装依赖 ============
 echo ""

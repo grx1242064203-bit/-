@@ -49,6 +49,7 @@ from routers.schedules import router as schedules_router
 from routers.sync import router as sync_router
 from routers.applications import router as applications_router
 from routers.jobs import router as jobs_router
+from routers.payments import router as payments_router
 from routers.resume_profiles import router as resume_profiles_router
 from services.sync_service import DatabaseCorruptedError
 
@@ -184,6 +185,7 @@ app.include_router(emails_router, prefix="/api/v1")
 app.include_router(schedules_router, prefix="/api/v1")
 app.include_router(resume_profiles_router, prefix="/api/v1")
 app.include_router(jobs_router, prefix="/api/v1")
+app.include_router(payments_router, prefix="/api/v1")
 app.include_router(admin_router, prefix="/api/v1")
 
 

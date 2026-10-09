@@ -13,6 +13,7 @@ import ForgotPassword from "./pages/ForgotPassword";
 import Welcome from "./pages/Welcome";
 import Settings from "./pages/Settings";
 import Admin from "./pages/Admin";
+import PayVerification from "./pages/PayVerification";
 import AuthGuard from "./components/AuthGuard";
 import OnboardingGuard from "./components/OnboardingGuard";
 import { useAuthStore } from "./stores/authStore";
@@ -37,6 +38,7 @@ const NAV_ITEMS: NavItem[] = [
   { to: "/email", label: "邮件同步", icon: "📧" },
   { to: "/schedules", label: "日程", icon: "📅" },
   { to: "/resume", label: "简历解析", icon: "📄" },
+  { to: "/pay-verify", label: "支付验证", icon: "💳" },
   { to: "/settings", label: "设置", icon: "⚙️" },
   { to: "/admin", label: "管理后台", icon: "🛡️", adminOnly: true },
 ];
@@ -140,6 +142,7 @@ function PageTitle() {
     "/resume": "简历解析",
     "/welcome": "欢迎",
     "/settings": "设置",
+    "/pay-verify": "支付验证",
     "/admin": "管理后台",
   };
   const title = titleMap[location.pathname] ?? "Offer搭子";
@@ -269,6 +272,16 @@ export default function App() {
           <AuthGuard>
             <Layout>
               <Settings />
+            </Layout>
+          </AuthGuard>
+        }
+      />
+      <Route
+        path="/pay-verify"
+        element={
+          <AuthGuard>
+            <Layout>
+              <PayVerification />
             </Layout>
           </AuthGuard>
         }

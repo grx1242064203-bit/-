@@ -134,6 +134,33 @@ app = FastAPI(
     lifespan=lifespan,
 )
 
+# ============================================================================
+# 开发模式鉴权绕过（仅沙箱/dev 环境用，绝不可进生产）
+# 设 DEV_BYPASS_AUTH=1 时，所有 Depends(get_current_user) 返回固定 mock user，
+# 跳过 JWT 校验。用于沙箱/CI 环境无 Resend 邮箱验证码时的端到端测试。
+# 生产部署只要不设此环境变量即完全不生效（dependency_overrides 为空 dict）。
+# ============================================================================
+import os as _os
+
+if _os.environ.get("DEV_BYPASS_AUTH") == "1":
+    from deps import get_current_user as _get_current_user
+
+    async def _mock_current_user() -> dict:
+        return {
+            "id": "dev-user-1",
+            "user_id": "dev-user-1",
+            "email": "dev@sandbox.local",
+            "is_verified": True,
+            "is_admin": True,
+        }
+
+    app.dependency_overrides[_get_current_user] = _mock_current_user
+    print("=" * 60)
+    print("[job_api] ⚠️ DEV_BYPASS_AUTH=1 已启用：所有请求跳过 JWT 校验")
+    print("         仅沙箱/CI 环境；生产部署切勿设置此环境变量")
+    print("=" * 60)
+
+
 # slowapi rate limit：注册 limiter 到 app.state + 挂全局中间件 + 异常处理
 app.state.limiter = auth_limiter
 app.add_exception_handler(RateLimitExceeded, _rate_limit_exceeded_handler)

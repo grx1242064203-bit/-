@@ -1,8 +1,29 @@
 import { useEffect, useRef, useState } from "react";
-import { open as openShell } from "@tauri-apps/plugin-shell";
 import { paymentsApi, PRODUCTS, type OrderStatusResponse, type EntitlementResponse } from "../api/payments";
 
 const POLL_INTERVAL_MS = 2000;
+
+// 检测当前是否在 Tauri 运行时内（非 Tauri 环境降级为 window.open）。
+// 这让本页既能在 Tauri 桌面端跑（shell.open 调系统浏览器），
+// 也能在纯浏览器 dev server 跑（window.open 新开标签页）。
+function isTauri(): boolean {
+  return typeof window !== "undefined" && "__TAURI_INTERNALS__" in window;
+}
+
+async function openExternalUrl(url: string): Promise<void> {
+  if (isTauri()) {
+    // 桌面端：用 Tauri shell 插件调系统默认浏览器
+    const { open: openShell } = await import("@tauri-apps/plugin-shell");
+    await openShell(url);
+  } else {
+    // 浏览器：新标签页打开（受浏览器弹窗策略影响）
+    const ok = window.open(url, "_blank", "noopener,noreferrer");
+    if (!ok) {
+      // 被浏览器拦截时给出可点击链接
+      console.warn("window.open 被拦截，请允许弹窗或手动打开：", url);
+    }
+  }
+}
 
 function formatPrice(cents: number): string {
   return `¥${(cents / 100).toFixed(2)}`;
@@ -93,12 +114,12 @@ export default function PayVerification() {
   const handleOpenPayUrl = async () => {
     if (!payUrl) return;
     try {
-      addLog(`通过 shell.open 在系统浏览器打开支付页`);
-      await openShell(payUrl);
-      addLog(`系统浏览器已打开（用户在此完成支付）`);
+      addLog(`当前环境：${isTauri() ? "Tauri 桌面端" : "浏览器 dev"}，${isTauri() ? "shell.open" : "window.open"} 打开支付页`);
+      await openExternalUrl(payUrl);
+      addLog(`已打开支付页：${payUrl}`);
     } catch (e) {
       const err = e as { error?: string };
-      addLog(`shell.open 失败：${err?.error || "unknown"}`);
+      addLog(`打开失败：${err?.error || "unknown"}`);
     }
   };
 

@@ -1,0 +1,13 @@
+sc_head_xasset	渣打银行Head,Cross-AssetDerivativeStrategy香港
+sc_ad_digwealth	渣打银行AssociateDirector,DigitalWealth上海
+sc_analyst_pb	渣打银行Analyst,ClientServices,PrivateBanking香港
+brk_2027analyst	贝莱德(BlackRock)2027Full-TimeAnalystProgram亚太(香港/东京)
+ubs_2027grad	瑞银(UBS)2027GraduateTalentProgram(GlobalBanking)香港
+db_2027mt	德意志银行德银中国2027管培生项目上海
+jpm_offcycle	摩根大通(JPMorgan)MarketsOff-CycleAnalystProgram香港
+cicc_fof	中金基金(中金公司)FOF研究员北京
+htsc_ratebond	华泰证券利率债投资经理上海
+htsc_strat	华泰证券战略研究与业务伙伴岗南京/上海
+htsc_product	华泰证券产品管理岗(投顾)北京/南京/上海
+htsc_deriv_sales	华泰证券线性衍生品销售岗上海
+csc_am_im	中信建投证券资管业务-投资经理岗北京

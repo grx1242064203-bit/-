@@ -16,18 +16,8 @@
       "hallucinated_positions": [],
       "category_errors": [],
       "field_errors": [
-        {
-          "position_title": "产品工程师",
-          "field": "min_education",
-          "wrong": "本科",
-          "correct": "硕士"
-        },
-        {
-          "position_title": "产品工程师",
-          "field": "city",
-          "wrong": "上海",
-          "correct": "昆山,西安,南京"
-        }
+        "{\"position_title\":\"产品工程师\",\"field\":\"min_education\",\"wrong\":\"本科\",\"correct\":\"硕士\"}",
+        "{\"position_title\":\"产品工程师\",\"field\":\"city\",\"wrong\":\"上海\",\"correct\":\"昆山,西安,南京\"}"
       ],
       "overall_score": 1,
       "bad_case_type": "missed",

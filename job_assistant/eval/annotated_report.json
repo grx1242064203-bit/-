@@ -1,45 +1,50 @@
 {
   "dimension_1_split": {
-    "annotated_count": 1,
-    "split_correct": 0,
-    "split_under": 1,
-    "split_over": 0,
-    "split_accuracy": "0.0%",
-    "under_split_rate": "100.0%",
-    "total_correct_positions": 4,
-    "total_llm_positions": 1,
-    "total_missed": 3,
-    "total_hallucinated": 0,
-    "miss_rate": "75.0%",
-    "hallucination_rate": "0.0%"
+    "annotated_count": 25,
+    "split_correct": 19,
+    "split_under": 4,
+    "split_over": 2,
+    "split_accuracy": "76.0%",
+    "under_split_rate": "16.0%",
+    "total_correct_positions": 229,
+    "total_llm_positions": 216,
+    "total_missed": 27,
+    "total_hallucinated": 3,
+    "miss_rate": "11.8%",
+    "hallucination_rate": "1.4%"
   },
   "dimension_2_category": {
-    "total_positions": 1,
-    "category_errors": 0,
-    "category_correct": 1,
-    "category_accuracy": "100.0%"
+    "total_positions": 216,
+    "category_errors": 7,
+    "category_correct": 209,
+    "category_accuracy": "96.8%"
   },
   "dimension_3_field": {
-    "total_field_errors": 1,
+    "total_field_errors": 22,
     "error_by_field": {
-      "min_education": 1
+      "city": 17,
+      "min_education": 5
     }
   },
   "dimension_4_score": {
-    "total_scored": 1,
-    "avg_score": "2.00",
-    "score_5": 0,
-    "score_4": 0,
-    "score_3": 0,
-    "score_2": 1,
-    "score_1": 0,
-    "pass_rate_ge4": "0.0%"
+    "total_scored": 25,
+    "avg_score": "3.48",
+    "score_5": 6,
+    "score_4": 7,
+    "score_3": 6,
+    "score_2": 5,
+    "score_1": 1,
+    "pass_rate_ge4": "52.0%"
   },
   "dimension_5_badcase": {
-    "total_annotated": 1,
+    "total_annotated": 25,
     "bad_case_distribution": {
-      "missed": 1
+      "none": 9,
+      "wrong_field": 8,
+      "missed": 4,
+      "hallucinated": 2,
+      "wrong_category": 2
     },
-    "clean_rate": "100.0%"
+    "clean_rate": "64.0%"
   }
 }

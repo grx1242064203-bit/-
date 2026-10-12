@@ -92,18 +92,35 @@ def fetch_jobs():
         AND hard_skills != '[]' LIMIT 3
     """)
 
-    # 10 技能有交集但方向不对口: 后端开发(5) + 数据分析(3) + 大模型应用(2)
+    # 15 边界样本(技能有3+交集但方向不对口): 后端(4) + 数据分析(3) + 测试开发(3) + FPGA(2) + IC验证(2) + 大模型(1)
+    # 这些是 F3 泛技能刷分的高发场景
     jobs += select("""
         SELECT * FROM positions WHERE job_subcategory='后端开发'
-        AND hard_skills LIKE '%Python%' LIMIT 5
+        AND (hard_skills LIKE '%Python%' OR hard_skills LIKE '%C++%' OR hard_skills LIKE '%Linux%')
+        AND hard_skills != '[]' LIMIT 4
     """)
     jobs += select("""
         SELECT * FROM positions WHERE job_subcategory='数据分析'
-        AND hard_skills LIKE '%Python%' LIMIT 3
+        AND (hard_skills LIKE '%Python%' OR hard_skills LIKE '%SQL%')
+        AND hard_skills != '[]' LIMIT 3
+    """)
+    jobs += select("""
+        SELECT * FROM positions WHERE job_subcategory='测试开发'
+        AND (hard_skills LIKE '%Python%' OR hard_skills LIKE '%C++%' OR hard_skills LIKE '%Linux%')
+        AND hard_skills != '[]' LIMIT 3
+    """)
+    jobs += select("""
+        SELECT * FROM positions WHERE job_subcategory='FPGA开发'
+        AND hard_skills != '[]' LIMIT 2
+    """)
+    jobs += select("""
+        SELECT * FROM positions WHERE job_subcategory='IC验证'
+        AND hard_skills != '[]' LIMIT 2
     """)
     jobs += select("""
         SELECT * FROM positions WHERE job_subcategory='大模型应用开发'
-        AND hard_skills LIKE '%Python%' LIMIT 2
+        AND (hard_skills LIKE '%Python%' OR hard_skills LIKE '%PyTorch%')
+        AND hard_skills != '[]' LIMIT 1
     """)
 
     # 10 完全不对口: 财务(3) + 市场营销(3) + 人力资源(2) + 销售(2)
@@ -156,7 +173,7 @@ def build_evalset():
     # - partial(1): 技能有交集(Python/C++/机器学习等) 但方向不在 fit_directions
     # - irrelevant(0): 方向不对口且技能无交集
     fit_subs = {"边缘AI/嵌入式AI", "嵌入式软件", "机器学习算法", "CV算法", "通信算法"}
-    partial_subs = {"后端开发", "数据分析", "大模型应用开发"}
+    partial_subs = {"后端开发", "数据分析", "大模型应用开发", "测试开发", "FPGA开发", "IC验证"}
 
     for i, job in enumerate(jobs):
         sub = job.get("job_subcategory", "")
@@ -167,14 +184,14 @@ def build_evalset():
             relevance = 2  # relevant
             label = "强相关"
         elif sub in partial_subs:
-            # 技能交集判断
+            # 技能交集判断: 有 ≥1 个技能交集即为 partial(边界样本)
             overlap = hard & user_hard
-            if len(overlap) >= 2:
+            if len(overlap) >= 1:
                 relevance = 1  # partial
-                label = "部分相关(技能交集)"
+                label = f"边界(技能交集{len(overlap)}个)"
             else:
                 relevance = 0
-                label = "部分相关但技能无交集"
+                label = "方向不对且技能无交集"
         else:
             relevance = 0  # irrelevant
             label = "完全不对口"

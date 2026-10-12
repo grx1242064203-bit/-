@@ -775,6 +775,50 @@
     },
     {
       "eval_id": "MX-031",
+      "job_id": 1646,
+      "company_name": "兆易创新",
+      "position_title": "嵌入式软件工程师",
+      "job_category": "研发",
+      "job_subcategory": "后端开发",
+      "hard_skills": [
+        "嵌入式软件",
+        "C语言",
+        "C++",
+        "RTOS",
+        "驱动开发"
+      ],
+      "min_education": "本科",
+      "city": "北京,上海,深圳,西安,成都,合肥,苏州,珠海横琴,武汉",
+      "company_tier": "中",
+      "major_required": "微电子、集成电路、电子信息、电子工程、材料、物理等理工科相关专业",
+      "major_category": "工科",
+      "ground_truth_relevance": 1,
+      "ground_truth_label": "边界(技能交集2个)"
+    },
+    {
+      "eval_id": "MX-032",
+      "job_id": 1648,
+      "company_name": "兆易创新",
+      "position_title": "嵌入式软件开发工程师",
+      "job_category": "研发",
+      "job_subcategory": "后端开发",
+      "hard_skills": [
+        "嵌入式软件",
+        "C语言",
+        "C++",
+        "RTOS",
+        "驱动开发"
+      ],
+      "min_education": "本科",
+      "city": "北京,上海,深圳,西安,成都,合肥,苏州,珠海横琴,武汉",
+      "company_tier": "中",
+      "major_required": "微电子、集成电路、电子信息、电子工程、材料、物理等理工科相关专业",
+      "major_category": "工科",
+      "ground_truth_relevance": 1,
+      "ground_truth_label": "边界(技能交集2个)"
+    },
+    {
+      "eval_id": "MX-033",
       "job_id": 2131,
       "company_name": "中国兵器工业集团第二〇二研究所",
       "position_title": "软件开发",
@@ -793,10 +837,10 @@
       "major_required": "软件工程/计算机科学与技术",
       "major_category": "工科",
       "ground_truth_relevance": 1,
-      "ground_truth_label": "部分相关(技能交集)"
+      "ground_truth_label": "边界(技能交集2个)"
     },
     {
-      "eval_id": "MX-032",
+      "eval_id": "MX-034",
       "job_id": 2137,
       "company_name": "中国兵器工业集团第二〇二研究所",
       "position_title": "系统动力学与软件开发",
@@ -815,71 +859,10 @@
       "major_required": "力学/计算机科学与技术",
       "major_category": "工科",
       "ground_truth_relevance": 1,
-      "ground_truth_label": "部分相关(技能交集)"
-    },
-    {
-      "eval_id": "MX-033",
-      "job_id": 2273,
-      "company_name": "歌尔丹拿",
-      "position_title": "软件研发实习生",
-      "job_category": "研发",
-      "job_subcategory": "后端开发",
-      "hard_skills": [
-        "Java",
-        "Python",
-        "C++"
-      ],
-      "min_education": "本科",
-      "city": "北京,上海,深圳,南京,苏州,青岛,潍坊",
-      "company_tier": "保底",
-      "major_required": "计算机相关",
-      "major_category": "工科",
-      "ground_truth_relevance": 1,
-      "ground_truth_label": "部分相关(技能交集)"
-    },
-    {
-      "eval_id": "MX-034",
-      "job_id": 2399,
-      "company_name": "瑞泊",
-      "position_title": "后端开发实习生",
-      "job_category": "研发",
-      "job_subcategory": "后端开发",
-      "hard_skills": [
-        "后端开发",
-        "Java",
-        "Python",
-        "数据库"
-      ],
-      "min_education": "本科",
-      "city": "北京",
-      "company_tier": "保底",
-      "major_required": "计算机相关",
-      "major_category": "工科",
-      "ground_truth_relevance": 0,
-      "ground_truth_label": "部分相关但技能无交集"
+      "ground_truth_label": "边界(技能交集2个)"
     },
     {
       "eval_id": "MX-035",
-      "job_id": 2415,
-      "company_name": "宇树科技",
-      "position_title": "AI infra工程师",
-      "job_category": "研发",
-      "job_subcategory": "后端开发",
-      "hard_skills": [
-        "AI基础设施",
-        "分布式系统",
-        "Python"
-      ],
-      "min_education": "本科",
-      "city": "杭州",
-      "company_tier": "顶",
-      "major_required": "计算机相关",
-      "major_category": "工科",
-      "ground_truth_relevance": 0,
-      "ground_truth_label": "部分相关但技能无交集"
-    },
-    {
-      "eval_id": "MX-036",
       "job_id": 2009,
       "company_name": "拼多多集团-PDD",
       "position_title": "数据分析师",
@@ -896,11 +879,11 @@
       "company_tier": "顶",
       "major_required": "计算机相关",
       "major_category": "工科",
-      "ground_truth_relevance": 0,
-      "ground_truth_label": "部分相关但技能无交集"
+      "ground_truth_relevance": 1,
+      "ground_truth_label": "边界(技能交集1个)"
     },
     {
-      "eval_id": "MX-037",
+      "eval_id": "MX-036",
       "job_id": 2262,
       "company_name": "海尔消费金融",
       "position_title": "数据分析",
@@ -916,11 +899,11 @@
       "company_tier": "中",
       "major_required": "数学/统计/计算机相关",
       "major_category": "理科",
-      "ground_truth_relevance": 0,
-      "ground_truth_label": "部分相关但技能无交集"
+      "ground_truth_relevance": 1,
+      "ground_truth_label": "边界(技能交集1个)"
     },
     {
-      "eval_id": "MX-038",
+      "eval_id": "MX-037",
       "job_id": 2401,
       "company_name": "瑞泊",
       "position_title": "数据工程师/数据分析师实习生",
@@ -937,11 +920,154 @@
       "company_tier": "保底",
       "major_required": "计算机相关",
       "major_category": "工科",
+      "ground_truth_relevance": 1,
+      "ground_truth_label": "边界(技能交集1个)"
+    },
+    {
+      "eval_id": "MX-038",
+      "job_id": 2103,
+      "company_name": "南芯科技",
+      "position_title": "ATE测试开发工程师",
+      "job_category": "运营",
+      "job_subcategory": "测试开发",
+      "hard_skills": [
+        "ATE测试",
+        "测试程序开发",
+        "C/C++"
+      ],
+      "min_education": "本科",
+      "city": "上海,成都,深圳,北京,西安,南京,珠海,杭州,苏州",
+      "company_tier": "中",
+      "major_required": "电子工程/自动化相关",
+      "major_category": "工科",
       "ground_truth_relevance": 0,
-      "ground_truth_label": "部分相关但技能无交集"
+      "ground_truth_label": "方向不对且技能无交集"
     },
     {
       "eval_id": "MX-039",
+      "job_id": 2277,
+      "company_name": "歌尔丹拿",
+      "position_title": "测试开发实习生",
+      "job_category": "研发",
+      "job_subcategory": "测试开发",
+      "hard_skills": [
+        "Python",
+        "自动化测试",
+        "测试框架"
+      ],
+      "min_education": "本科",
+      "city": "北京,上海,深圳,南京,苏州,青岛,潍坊",
+      "company_tier": "保底",
+      "major_required": "计算机相关",
+      "major_category": "工科",
+      "ground_truth_relevance": 1,
+      "ground_truth_label": "边界(技能交集1个)"
+    },
+    {
+      "eval_id": "MX-040",
+      "job_id": 2347,
+      "company_name": "科大讯飞-补录",
+      "position_title": "测试开发工程师",
+      "job_category": "研发",
+      "job_subcategory": "测试开发",
+      "hard_skills": [
+        "测试开发",
+        "自动化测试",
+        "Python"
+      ],
+      "min_education": "本科",
+      "city": "合肥",
+      "company_tier": "顶",
+      "major_required": "计算机相关",
+      "major_category": "工科",
+      "ground_truth_relevance": 1,
+      "ground_truth_label": "边界(技能交集1个)"
+    },
+    {
+      "eval_id": "MX-041",
+      "job_id": 2888,
+      "company_name": "中科光电",
+      "position_title": "FPGA类",
+      "job_category": "研发",
+      "job_subcategory": "FPGA开发",
+      "hard_skills": [
+        "FPGA",
+        "Verilog",
+        "VHDL",
+        "数字电路设计"
+      ],
+      "min_education": "硕士",
+      "city": "合肥",
+      "company_tier": "中",
+      "major_required": "电子工程、微电子、集成电路等相关专业",
+      "major_category": "工科",
+      "ground_truth_relevance": 0,
+      "ground_truth_label": "方向不对且技能无交集"
+    },
+    {
+      "eval_id": "MX-042",
+      "job_id": 2901,
+      "company_name": "华芯天微",
+      "position_title": "FPGA工程师",
+      "job_category": "研发",
+      "job_subcategory": "FPGA开发",
+      "hard_skills": [
+        "Verilog",
+        "VHDL",
+        "FPGA开发",
+        "时序分析"
+      ],
+      "min_education": "硕士",
+      "city": "成都",
+      "company_tier": "保底",
+      "major_required": "无线电物理/电磁场与微波技术/微电子/电路/通信/机械工程/天线/自动化/计算机等相关专业",
+      "major_category": "工科",
+      "ground_truth_relevance": 0,
+      "ground_truth_label": "方向不对且技能无交集"
+    },
+    {
+      "eval_id": "MX-043",
+      "job_id": 2086,
+      "company_name": "南芯科技",
+      "position_title": "数字验证工程师",
+      "job_category": "研发",
+      "job_subcategory": "IC验证",
+      "hard_skills": [
+        "数字验证",
+        "SystemVerilog",
+        "UVM"
+      ],
+      "min_education": "本科",
+      "city": "上海,成都,深圳,北京,西安,南京,珠海,杭州,苏州",
+      "company_tier": "中",
+      "major_required": "微电子/集成电路/电子工程相关",
+      "major_category": "工科",
+      "ground_truth_relevance": 0,
+      "ground_truth_label": "方向不对且技能无交集"
+    },
+    {
+      "eval_id": "MX-044",
+      "job_id": 2748,
+      "company_name": "DJI 大疆",
+      "position_title": "芯片验证工程师",
+      "job_category": "研发",
+      "job_subcategory": "IC验证",
+      "hard_skills": [
+        "芯片验证",
+        "SystemVerilog",
+        "UVM",
+        "EDA"
+      ],
+      "min_education": "本科",
+      "city": "深圳,上海,北京",
+      "company_tier": "顶",
+      "major_required": "微电子/电子工程相关",
+      "major_category": "工科",
+      "ground_truth_relevance": 0,
+      "ground_truth_label": "方向不对且技能无交集"
+    },
+    {
+      "eval_id": "MX-045",
       "job_id": 2120,
       "company_name": "南芯科技",
       "position_title": "AI应用工程师",
@@ -958,32 +1084,10 @@
       "major_required": "计算机/人工智能相关",
       "major_category": "工科",
       "ground_truth_relevance": 1,
-      "ground_truth_label": "部分相关(技能交集)"
+      "ground_truth_label": "边界(技能交集3个)"
     },
     {
-      "eval_id": "MX-040",
-      "job_id": 2140,
-      "company_name": "点点互动",
-      "position_title": "AI算法工程师",
-      "job_category": "研发",
-      "job_subcategory": "大模型应用开发",
-      "hard_skills": [
-        "机器学习",
-        "深度学习",
-        "Python",
-        "PyTorch",
-        "TensorFlow"
-      ],
-      "min_education": "本科",
-      "city": "北京,上海,深圳,广州",
-      "company_tier": "中",
-      "major_required": "计算机相关",
-      "major_category": "工科",
-      "ground_truth_relevance": 1,
-      "ground_truth_label": "部分相关(技能交集)"
-    },
-    {
-      "eval_id": "MX-041",
+      "eval_id": "MX-046",
       "job_id": 2054,
       "company_name": "圆通-管培生",
       "position_title": "财务",
@@ -1002,7 +1106,7 @@
       "ground_truth_label": "完全不对口"
     },
     {
-      "eval_id": "MX-042",
+      "eval_id": "MX-047",
       "job_id": 2066,
       "company_name": "圆通-管培生",
       "position_title": "管理财务",
@@ -1021,7 +1125,7 @@
       "ground_truth_label": "完全不对口"
     },
     {
-      "eval_id": "MX-043",
+      "eval_id": "MX-048",
       "job_id": 2067,
       "company_name": "圆通-管培生",
       "position_title": "业财分析",
@@ -1040,7 +1144,7 @@
       "ground_truth_label": "完全不对口"
     },
     {
-      "eval_id": "MX-044",
+      "eval_id": "MX-049",
       "job_id": 2037,
       "company_name": "百度",
       "position_title": "整合营销",
@@ -1060,7 +1164,7 @@
       "ground_truth_label": "完全不对口"
     },
     {
-      "eval_id": "MX-045",
+      "eval_id": "MX-050",
       "job_id": 2043,
       "company_name": "百度",
       "position_title": "市场营销",
@@ -1080,7 +1184,7 @@
       "ground_truth_label": "完全不对口"
     },
     {
-      "eval_id": "MX-046",
+      "eval_id": "MX-051",
       "job_id": 2051,
       "company_name": "圆通-管培生",
       "position_title": "营销",
@@ -1099,7 +1203,7 @@
       "ground_truth_label": "完全不对口"
     },
     {
-      "eval_id": "MX-047",
+      "eval_id": "MX-052",
       "job_id": 2022,
       "company_name": "拼多多集团-PDD",
       "position_title": "HR管培生",
@@ -1119,7 +1223,7 @@
       "ground_truth_label": "完全不对口"
     },
     {
-      "eval_id": "MX-048",
+      "eval_id": "MX-053",
       "job_id": 2040,
       "company_name": "百度",
       "position_title": "人力资源",

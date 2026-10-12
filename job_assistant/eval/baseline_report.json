@@ -1,0 +1,214 @@
+{
+  "dimension_1_json_validity": {
+    "total_files": 4754,
+    "valid_json": 4754,
+    "parse_errors": 0,
+    "json_validity_rate": "100.0%"
+  },
+  "dimension_2_field_fill_rate": {
+    "position_title": {
+      "filled": 4754,
+      "total": 4754,
+      "fill_rate": "100.0%"
+    },
+    "job_category": {
+      "filled": 4754,
+      "total": 4754,
+      "fill_rate": "100.0%"
+    },
+    "job_subcategory": {
+      "filled": 4735,
+      "total": 4754,
+      "fill_rate": "99.6%"
+    },
+    "hard_skills": {
+      "filled": 4318,
+      "total": 4754,
+      "fill_rate": "90.8%"
+    },
+    "soft_skills": {
+      "filled": 4421,
+      "total": 4754,
+      "fill_rate": "93.0%"
+    },
+    "major_required": {
+      "filled": 4754,
+      "total": 4754,
+      "fill_rate": "100.0%"
+    },
+    "major_category": {
+      "filled": 4754,
+      "total": 4754,
+      "fill_rate": "100.0%"
+    },
+    "min_education": {
+      "filled": 4754,
+      "total": 4754,
+      "fill_rate": "100.0%"
+    },
+    "city": {
+      "filled": 3993,
+      "total": 4754,
+      "fill_rate": "84.0%"
+    },
+    "responsibilities": {
+      "filled": 4751,
+      "total": 4754,
+      "fill_rate": "99.9%"
+    },
+    "requirements": {
+      "filled": 4435,
+      "total": 4754,
+      "fill_rate": "93.3%"
+    },
+    "keywords": {
+      "filled": 4754,
+      "total": 4754,
+      "fill_rate": "100.0%"
+    },
+    "jd_summary": {
+      "filled": 4754,
+      "total": 4754,
+      "fill_rate": "100.0%"
+    },
+    "difficulty": {
+      "filled": 4754,
+      "total": 4754,
+      "fill_rate": "100.0%"
+    },
+    "company_tier": {
+      "filled": 2919,
+      "total": 4754,
+      "fill_rate": "61.4%"
+    },
+    "is_management_trainee": {
+      "filled": 4754,
+      "total": 4754,
+      "fill_rate": "100.0%"
+    },
+    "apply_url": {
+      "filled": 1749,
+      "total": 4754,
+      "fill_rate": "36.8%"
+    }
+  },
+  "dimension_3_tree_hit_rate": {
+    "total": 4754,
+    "category_hit": 3247,
+    "category_miss_self_coined": 1507,
+    "category_empty": 0,
+    "category_hit_rate": "68.3%",
+    "subcategory_hit": 3179,
+    "subcategory_is_category": 248,
+    "subcategory_miss_self_coined": 1308,
+    "subcategory_empty": 19,
+    "subcategory_valid_rate": "72.1%",
+    "self_coined_examples": [
+      "策略运营",
+      "研发管培",
+      "外贸业务",
+      "生产运行维护",
+      "编译工具链",
+      "授信审批",
+      "大宗商品业务",
+      "应用支持",
+      "包装工程",
+      "学科运营",
+      "软件架构",
+      "PCS开发",
+      "工艺技术",
+      "营销推广",
+      "硬件"
+    ]
+  },
+  "dimension_4_split_count": {
+    "total_announcements": 498,
+    "total_positions": 4754,
+    "avg_positions_per_announcement": "9.55",
+    "max_positions": 52,
+    "min_positions": 1,
+    "distribution": {
+      "1": 78,
+      "2": 45,
+      "3": 32,
+      "4": 42,
+      "5": 28,
+      "6": 25,
+      "7": 21,
+      "8": 19,
+      "9": 21,
+      "10": 21,
+      "11": 16,
+      "12": 16,
+      "13": 13,
+      "14": 14,
+      "15": 7,
+      "16": 8,
+      "17": 7,
+      "18": 6,
+      "19": 13,
+      "20": 6,
+      "21": 8,
+      "22": 5,
+      "23": 3,
+      "24": 5,
+      "25": 2,
+      "26": 3,
+      "27": 3,
+      "28": 3,
+      "30": 4,
+      "31": 4,
+      "32": 2,
+      "33": 3,
+      "34": 1,
+      "35": 1,
+      "37": 3,
+      "39": 5,
+      "42": 1,
+      "44": 1,
+      "45": 1,
+      "49": 1,
+      "52": 1
+    },
+    "single_position_announcements": 78,
+    "single_position_rate": "15.7%"
+  },
+  "dimension_5_enum_distribution": {
+    "difficulty": {
+      "较为激烈": 2066,
+      "中等难度": 1827,
+      "最激烈": 798,
+      "较低难度": 63
+    },
+    "company_tier": {
+      "中": 2160,
+      "顶": 682,
+      "保底": 77
+    },
+    "min_education": {
+      "本科": 4113,
+      "硕士": 499,
+      "博士": 86,
+      "大专": 41,
+      "不限": 15
+    },
+    "major_category": {
+      "工科": 3070,
+      "不限": 958,
+      "商科": 431,
+      "艺术": 123,
+      "文科": 85,
+      "理科": 71,
+      "农学": 9,
+      "医科": 7
+    }
+  },
+  "dimension_6_hallusion_proxy": {
+    "total": 4754,
+    "empty_position_title": 0,
+    "empty_title_rate": "0.0%",
+    "ultra_short_title_2char": 91,
+    "management_trainee_count": 289,
+    "mt_rate": "6.1%"
+  }
+}

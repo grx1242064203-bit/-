@@ -1,0 +1,45 @@
+{
+  "dimension_1_split": {
+    "annotated_count": 1,
+    "split_correct": 0,
+    "split_under": 1,
+    "split_over": 0,
+    "split_accuracy": "0.0%",
+    "under_split_rate": "100.0%",
+    "total_correct_positions": 4,
+    "total_llm_positions": 1,
+    "total_missed": 3,
+    "total_hallucinated": 0,
+    "miss_rate": "75.0%",
+    "hallucination_rate": "0.0%"
+  },
+  "dimension_2_category": {
+    "total_positions": 1,
+    "category_errors": 0,
+    "category_correct": 1,
+    "category_accuracy": "100.0%"
+  },
+  "dimension_3_field": {
+    "total_field_errors": 1,
+    "error_by_field": {
+      "min_education": 1
+    }
+  },
+  "dimension_4_score": {
+    "total_scored": 1,
+    "avg_score": "2.00",
+    "score_5": 0,
+    "score_4": 0,
+    "score_3": 0,
+    "score_2": 1,
+    "score_1": 0,
+    "pass_rate_ge4": "0.0%"
+  },
+  "dimension_5_badcase": {
+    "total_annotated": 1,
+    "bad_case_distribution": {
+      "missed": 1
+    },
+    "clean_rate": "100.0%"
+  }
+}

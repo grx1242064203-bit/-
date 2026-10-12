@@ -1,0 +1,1142 @@
+{
+  "user": {
+    "user_id": "linxuyan",
+    "name": "林叙言",
+    "degree": "硕士",
+    "major": "电子信息(嵌入式AI方向)",
+    "school": "西安交通大学",
+    "structured_keywords": [
+      {
+        "keyword": "Python",
+        "category": "hard_skill"
+      },
+      {
+        "keyword": "C++",
+        "category": "hard_skill"
+      },
+      {
+        "keyword": "C",
+        "category": "hard_skill"
+      },
+      {
+        "keyword": "TensorFlow Lite Micro",
+        "category": "hard_skill"
+      },
+      {
+        "keyword": "ARM",
+        "category": "hard_skill"
+      },
+      {
+        "keyword": "模型量化",
+        "category": "hard_skill"
+      },
+      {
+        "keyword": "PyTorch",
+        "category": "hard_skill"
+      },
+      {
+        "keyword": "OpenCV",
+        "category": "hard_skill"
+      },
+      {
+        "keyword": "ResNet",
+        "category": "hard_skill"
+      },
+      {
+        "keyword": "Scikit-learn",
+        "category": "hard_skill"
+      },
+      {
+        "keyword": "XGBoost",
+        "category": "hard_skill"
+      },
+      {
+        "keyword": "信号处理",
+        "category": "hard_skill"
+      },
+      {
+        "keyword": "MATLAB",
+        "category": "hard_skill"
+      },
+      {
+        "keyword": "强化学习",
+        "category": "hard_skill"
+      },
+      {
+        "keyword": "深度学习",
+        "category": "hard_skill"
+      },
+      {
+        "keyword": "机器学习",
+        "category": "hard_skill"
+      },
+      {
+        "keyword": "计算机视觉",
+        "category": "hard_skill"
+      },
+      {
+        "keyword": "嵌入式",
+        "category": "hard_skill"
+      },
+      {
+        "keyword": "Linux",
+        "category": "hard_skill"
+      },
+      {
+        "keyword": "RTOS",
+        "category": "hard_skill"
+      }
+    ],
+    "fit_directions": [
+      {
+        "direction": "边缘AI/嵌入式AI",
+        "cat_key": "robotics",
+        "sub_key": "edge_ai",
+        "category_name": "机器人与智能体",
+        "weight": 0.95
+      },
+      {
+        "direction": "嵌入式软件",
+        "cat_key": "development",
+        "sub_key": "embedded_sw",
+        "category_name": "开发",
+        "weight": 0.9
+      },
+      {
+        "direction": "机器学习算法",
+        "cat_key": "algorithm",
+        "sub_key": "ml",
+        "category_name": "算法",
+        "weight": 0.7
+      },
+      {
+        "direction": "CV算法",
+        "cat_key": "algorithm",
+        "sub_key": "cv",
+        "category_name": "算法",
+        "weight": 0.6
+      },
+      {
+        "direction": "通信算法",
+        "cat_key": "algorithm",
+        "sub_key": "communication",
+        "category_name": "算法",
+        "weight": 0.4
+      }
+    ],
+    "target_cities": [
+      "深圳",
+      "上海",
+      "北京",
+      "杭州",
+      "西安",
+      "成都"
+    ],
+    "target_companies": [
+      "DJI 大疆",
+      "宇树科技",
+      "拓竹科技",
+      "百度"
+    ],
+    "target_industries": [
+      "机器人",
+      "自动驾驶",
+      "芯片",
+      "AI"
+    ]
+  },
+  "fit_directions_subkeys": [
+    "edge_ai",
+    "embedded_sw",
+    "ml",
+    "cv",
+    "communication"
+  ],
+  "jobs": [
+    {
+      "eval_id": "MX-001",
+      "job_id": 9493,
+      "company_name": "中国科学院长春光学精密机械与物理研究所",
+      "position_title": "智能集成",
+      "job_category": "机器人与智能体",
+      "job_subcategory": "边缘AI/嵌入式AI",
+      "hard_skills": [
+        "智能集成"
+      ],
+      "min_education": "硕士",
+      "city": "长春",
+      "company_tier": "中",
+      "major_required": "电子相关专业",
+      "major_category": "工科",
+      "ground_truth_relevance": 2,
+      "ground_truth_label": "强相关"
+    },
+    {
+      "eval_id": "MX-002",
+      "job_id": 10950,
+      "company_name": "零次方机器人",
+      "position_title": "具身智能端侧加速工程师",
+      "job_category": "机器人与智能体",
+      "job_subcategory": "边缘AI/嵌入式AI",
+      "hard_skills": [
+        "模型量化",
+        "模型剪枝",
+        "TensorRT",
+        "ONNX",
+        "C++",
+        "Python",
+        "嵌入式AI"
+      ],
+      "min_education": "本科",
+      "city": "合肥",
+      "company_tier": "中",
+      "major_required": "计算机相关",
+      "major_category": "工科",
+      "ground_truth_relevance": 2,
+      "ground_truth_label": "强相关"
+    },
+    {
+      "eval_id": "MX-003",
+      "job_id": 12080,
+      "company_name": "曦诺未来",
+      "position_title": "端侧算法工程师",
+      "job_category": "AI工程",
+      "job_subcategory": "边缘AI/嵌入式AI",
+      "hard_skills": [
+        "端侧部署",
+        "模型优化",
+        "C++",
+        "Python"
+      ],
+      "min_education": "本科",
+      "city": "杭州,深圳",
+      "company_tier": "保底",
+      "major_required": "计算机、电子工程相关",
+      "major_category": "工科",
+      "ground_truth_relevance": 2,
+      "ground_truth_label": "强相关"
+    },
+    {
+      "eval_id": "MX-004",
+      "job_id": 12561,
+      "company_name": "阶梯科技",
+      "position_title": "边缘算法工程师",
+      "job_category": "机器人与智能体",
+      "job_subcategory": "边缘AI/嵌入式AI",
+      "hard_skills": [
+        "边缘计算",
+        "模型部署",
+        "C++",
+        "Python"
+      ],
+      "min_education": "本科",
+      "city": "上海",
+      "company_tier": "保底",
+      "major_required": "计算机相关",
+      "major_category": "工科",
+      "ground_truth_relevance": 2,
+      "ground_truth_label": "强相关"
+    },
+    {
+      "eval_id": "MX-005",
+      "job_id": 13415,
+      "company_name": "中国电科33所",
+      "position_title": "嵌入式AI软件设计",
+      "job_category": "机器人与智能体",
+      "job_subcategory": "边缘AI/嵌入式AI",
+      "hard_skills": [
+        "嵌入式",
+        "AI",
+        "C/C++",
+        "人工智能"
+      ],
+      "min_education": "硕士",
+      "city": "太原",
+      "company_tier": "中",
+      "major_required": "人工智能/计算机科学与技术/软件工程",
+      "major_category": "工科",
+      "ground_truth_relevance": 2,
+      "ground_truth_label": "强相关"
+    },
+    {
+      "eval_id": "MX-006",
+      "job_id": 2161,
+      "company_name": "舞肌科技",
+      "position_title": "嵌入式软件测试工程师",
+      "job_category": "研发",
+      "job_subcategory": "嵌入式软件",
+      "hard_skills": [
+        "嵌入式测试",
+        "C语言",
+        "硬件调试"
+      ],
+      "min_education": "本科",
+      "city": "深圳,北京",
+      "company_tier": "保底",
+      "major_required": "电子/计算机/自动化相关",
+      "major_category": "工科",
+      "ground_truth_relevance": 2,
+      "ground_truth_label": "强相关"
+    },
+    {
+      "eval_id": "MX-007",
+      "job_id": 2249,
+      "company_name": "天孚通信",
+      "position_title": "光模块固件工程师",
+      "job_category": "研发",
+      "job_subcategory": "嵌入式软件",
+      "hard_skills": [
+        "固件开发",
+        "嵌入式",
+        "光模块"
+      ],
+      "min_education": "本科",
+      "city": "苏州",
+      "company_tier": "中",
+      "major_required": "电子信息专业",
+      "major_category": "工科",
+      "ground_truth_relevance": 2,
+      "ground_truth_label": "强相关"
+    },
+    {
+      "eval_id": "MX-008",
+      "job_id": 2281,
+      "company_name": "歌尔丹拿",
+      "position_title": "嵌入式软件实习生",
+      "job_category": "研发",
+      "job_subcategory": "嵌入式软件",
+      "hard_skills": [
+        "C",
+        "C++",
+        "嵌入式系统"
+      ],
+      "min_education": "本科",
+      "city": "北京,上海,深圳,南京,苏州,青岛,潍坊",
+      "company_tier": "保底",
+      "major_required": "计算机/电子相关",
+      "major_category": "工科",
+      "ground_truth_relevance": 2,
+      "ground_truth_label": "强相关"
+    },
+    {
+      "eval_id": "MX-009",
+      "job_id": 2423,
+      "company_name": "宇树科技",
+      "position_title": "嵌入式LINUX工程师",
+      "job_category": "研发",
+      "job_subcategory": "嵌入式软件",
+      "hard_skills": [
+        "Linux",
+        "嵌入式",
+        "C"
+      ],
+      "min_education": "本科",
+      "city": "杭州",
+      "company_tier": "顶",
+      "major_required": "计算机相关",
+      "major_category": "工科",
+      "ground_truth_relevance": 2,
+      "ground_truth_label": "强相关"
+    },
+    {
+      "eval_id": "MX-010",
+      "job_id": 2476,
+      "company_name": "隆基绿能",
+      "position_title": "储能嵌入式研发工程师",
+      "job_category": "研发",
+      "job_subcategory": "嵌入式软件",
+      "hard_skills": [
+        "嵌入式开发",
+        "C语言",
+        "储能系统"
+      ],
+      "min_education": "本科",
+      "city": "苏州",
+      "company_tier": "顶",
+      "major_required": "电子信息/自动化/计算机相关",
+      "major_category": "工科",
+      "ground_truth_relevance": 2,
+      "ground_truth_label": "强相关"
+    },
+    {
+      "eval_id": "MX-011",
+      "job_id": 2670,
+      "company_name": "拓竹科技",
+      "position_title": "嵌入式",
+      "job_category": "研发",
+      "job_subcategory": "嵌入式软件",
+      "hard_skills": [
+        "嵌入式",
+        "C",
+        "C++",
+        "单片机",
+        "RTOS"
+      ],
+      "min_education": "本科",
+      "city": "深圳,上海",
+      "company_tier": "中",
+      "major_required": "电子/计算机相关",
+      "major_category": "工科",
+      "ground_truth_relevance": 2,
+      "ground_truth_label": "强相关"
+    },
+    {
+      "eval_id": "MX-012",
+      "job_id": 2744,
+      "company_name": "DJI 大疆",
+      "position_title": "嵌入式工程师",
+      "job_category": "研发",
+      "job_subcategory": "嵌入式软件",
+      "hard_skills": [
+        "嵌入式",
+        "C",
+        "C++",
+        "Linux",
+        "单片机"
+      ],
+      "min_education": "本科",
+      "city": "深圳,上海,北京",
+      "company_tier": "顶",
+      "major_required": "电子工程/计算机/自动化相关",
+      "major_category": "工科",
+      "ground_truth_relevance": 2,
+      "ground_truth_label": "强相关"
+    },
+    {
+      "eval_id": "MX-013",
+      "job_id": 3090,
+      "company_name": "泰凌微电子",
+      "position_title": "嵌入式软件类岗位",
+      "job_category": "研发",
+      "job_subcategory": "嵌入式软件",
+      "hard_skills": [
+        "平台/驱动",
+        "蓝牙音频",
+        "应用开发",
+        "WiFi",
+        "低功耗蓝牙",
+        "2.4G私有协议",
+        "Matter",
+        "Thread",
+        "Zigbee"
+      ],
+      "min_education": "本科",
+      "city": "上海,南京,深圳",
+      "company_tier": "中",
+      "major_required": "集成电路/微电子/计算机/通信/软件等专业",
+      "major_category": "工科",
+      "ground_truth_relevance": 2,
+      "ground_truth_label": "强相关"
+    },
+    {
+      "eval_id": "MX-014",
+      "job_id": 3192,
+      "company_name": "库犸科技",
+      "position_title": "嵌入式工程师",
+      "job_category": "研发",
+      "job_subcategory": "嵌入式软件",
+      "hard_skills": [
+        "嵌入式开发",
+        "C",
+        "C++",
+        "单片机",
+        "RTOS"
+      ],
+      "min_education": "本科",
+      "city": "深圳,成都,东莞",
+      "company_tier": "中",
+      "major_required": "计算机相关",
+      "major_category": "工科",
+      "ground_truth_relevance": 2,
+      "ground_truth_label": "强相关"
+    },
+    {
+      "eval_id": "MX-015",
+      "job_id": 3423,
+      "company_name": "知存科技",
+      "position_title": "AI存储固件开发工程师",
+      "job_category": "研发",
+      "job_subcategory": "嵌入式软件",
+      "hard_skills": [
+        "固件开发",
+        "C语言",
+        "存储"
+      ],
+      "min_education": "本科",
+      "city": "上海 北京 杭州 西安",
+      "company_tier": "中",
+      "major_required": "计算机/电子工程相关",
+      "major_category": "工科",
+      "ground_truth_relevance": 2,
+      "ground_truth_label": "强相关"
+    },
+    {
+      "eval_id": "MX-016",
+      "job_id": 1527,
+      "company_name": "伽利略",
+      "position_title": "运控算法工程师",
+      "job_category": "研发",
+      "job_subcategory": "机器学习算法",
+      "hard_skills": [
+        "强化学习",
+        "运动控制"
+      ],
+      "min_education": "",
+      "city": "杭州",
+      "company_tier": "中",
+      "major_required": "",
+      "major_category": "不限",
+      "ground_truth_relevance": 2,
+      "ground_truth_label": "强相关"
+    },
+    {
+      "eval_id": "MX-017",
+      "job_id": 1529,
+      "company_name": "伽利略",
+      "position_title": "导航算法工程师",
+      "job_category": "研发",
+      "job_subcategory": "机器学习算法",
+      "hard_skills": [
+        "定位",
+        "建图",
+        "路径规划",
+        "自主导航"
+      ],
+      "min_education": "",
+      "city": "杭州",
+      "company_tier": "中",
+      "major_required": "",
+      "major_category": "不限",
+      "ground_truth_relevance": 2,
+      "ground_truth_label": "强相关"
+    },
+    {
+      "eval_id": "MX-018",
+      "job_id": 1593,
+      "company_name": "睿励科学",
+      "position_title": "算法工程师",
+      "job_category": "研发",
+      "job_subcategory": "机器学习算法",
+      "hard_skills": [
+        "算法",
+        "机器学习"
+      ],
+      "min_education": "本科",
+      "city": "",
+      "company_tier": "中",
+      "major_required": "计算机相关",
+      "major_category": "工科",
+      "ground_truth_relevance": 2,
+      "ground_truth_label": "强相关"
+    },
+    {
+      "eval_id": "MX-019",
+      "job_id": 1997,
+      "company_name": "航天科工集团航天智能院",
+      "position_title": "端侧人工智能设计岗",
+      "job_category": "研发",
+      "job_subcategory": "机器学习算法",
+      "hard_skills": [
+        "端侧AI",
+        "嵌入式",
+        "人工智能",
+        "模型部署"
+      ],
+      "min_education": "硕士",
+      "city": "北京",
+      "company_tier": "中",
+      "major_required": "人工智能类/计算机科学与技术类/航空宇航科学与技术类/电子科学与技术类/军事学类/仪器科学与技术类/电子信息类/控制科学与工程类/物理学类/自动化类/机械类",
+      "major_category": "工科",
+      "ground_truth_relevance": 2,
+      "ground_truth_label": "强相关"
+    },
+    {
+      "eval_id": "MX-020",
+      "job_id": 2008,
+      "company_name": "拼多多集团-PDD",
+      "position_title": "算法工程师",
+      "job_category": "研发",
+      "job_subcategory": "机器学习算法",
+      "hard_skills": [
+        "机器学习",
+        "深度学习",
+        "Python",
+        "算法"
+      ],
+      "min_education": "本科",
+      "city": "上海",
+      "company_tier": "顶",
+      "major_required": "计算机相关",
+      "major_category": "工科",
+      "ground_truth_relevance": 2,
+      "ground_truth_label": "强相关"
+    },
+    {
+      "eval_id": "MX-021",
+      "job_id": 2046,
+      "company_name": "圆通-管培生",
+      "position_title": "AI算法",
+      "job_category": "研发",
+      "job_subcategory": "机器学习算法",
+      "hard_skills": [
+        "机器学习",
+        "深度学习",
+        "Python"
+      ],
+      "min_education": "本科",
+      "city": "全国各地",
+      "company_tier": "中",
+      "major_required": "计算机相关",
+      "major_category": "工科",
+      "ground_truth_relevance": 2,
+      "ground_truth_label": "强相关"
+    },
+    {
+      "eval_id": "MX-022",
+      "job_id": 2088,
+      "company_name": "南芯科技",
+      "position_title": "硬件算法工程师",
+      "job_category": "研发",
+      "job_subcategory": "机器学习算法",
+      "hard_skills": [
+        "硬件算法",
+        "FPGA",
+        "数字信号处理"
+      ],
+      "min_education": "本科",
+      "city": "上海,成都,深圳,北京,西安,南京,珠海,杭州,苏州",
+      "company_tier": "中",
+      "major_required": "电子工程/计算机相关",
+      "major_category": "工科",
+      "ground_truth_relevance": 2,
+      "ground_truth_label": "强相关"
+    },
+    {
+      "eval_id": "MX-023",
+      "job_id": 2097,
+      "company_name": "南芯科技",
+      "position_title": "算法工程师",
+      "job_category": "研发",
+      "job_subcategory": "机器学习算法",
+      "hard_skills": [
+        "算法设计",
+        "C/C++",
+        "MATLAB"
+      ],
+      "min_education": "本科",
+      "city": "上海,成都,深圳,北京,西安,南京,珠海,杭州,苏州",
+      "company_tier": "中",
+      "major_required": "计算机/数学/电子工程相关",
+      "major_category": "工科",
+      "ground_truth_relevance": 2,
+      "ground_truth_label": "强相关"
+    },
+    {
+      "eval_id": "MX-024",
+      "job_id": 2268,
+      "company_name": "歌尔丹拿",
+      "position_title": "视觉设计实习生",
+      "job_category": "设计",
+      "job_subcategory": "CV算法",
+      "hard_skills": [
+        "Photoshop",
+        "Illustrator",
+        "平面设计"
+      ],
+      "min_education": "本科",
+      "city": "北京,上海,深圳,南京,苏州,青岛,潍坊",
+      "company_tier": "保底",
+      "major_required": "视觉传达/设计相关",
+      "major_category": "艺术",
+      "ground_truth_relevance": 2,
+      "ground_truth_label": "强相关"
+    },
+    {
+      "eval_id": "MX-025",
+      "job_id": 2459,
+      "company_name": "百度Apollo",
+      "position_title": "2027AIDU - 视觉-语言模型架构师",
+      "job_category": "研发",
+      "job_subcategory": "CV算法",
+      "hard_skills": [
+        "C++",
+        "Python",
+        "视觉-语言模型",
+        "多模态",
+        "深度学习"
+      ],
+      "min_education": "硕士",
+      "city": "北京",
+      "company_tier": "顶",
+      "major_required": "计算机相关",
+      "major_category": "工科",
+      "ground_truth_relevance": 2,
+      "ground_truth_label": "强相关"
+    },
+    {
+      "eval_id": "MX-026",
+      "job_id": 2491,
+      "company_name": "禾赛科技",
+      "position_title": "计算机视觉算法工程师（三维重建方向）",
+      "job_category": "研发",
+      "job_subcategory": "CV算法",
+      "hard_skills": [
+        "计算机视觉",
+        "三维重建"
+      ],
+      "min_education": "本科",
+      "city": "上海",
+      "company_tier": "中",
+      "major_required": "计算机相关",
+      "major_category": "工科",
+      "ground_truth_relevance": 2,
+      "ground_truth_label": "强相关"
+    },
+    {
+      "eval_id": "MX-027",
+      "job_id": 2665,
+      "company_name": "拓竹科技",
+      "position_title": "视觉算法",
+      "job_category": "研发",
+      "job_subcategory": "CV算法",
+      "hard_skills": [
+        "计算机视觉",
+        "深度学习",
+        "Python",
+        "C++"
+      ],
+      "min_education": "本科",
+      "city": "深圳",
+      "company_tier": "中",
+      "major_required": "计算机相关",
+      "major_category": "工科",
+      "ground_truth_relevance": 2,
+      "ground_truth_label": "强相关"
+    },
+    {
+      "eval_id": "MX-028",
+      "job_id": 3386,
+      "company_name": "中国电科-网通院",
+      "position_title": "信号处理算法工程师",
+      "job_category": "研发",
+      "job_subcategory": "通信算法",
+      "hard_skills": [
+        "信号处理",
+        "算法设计",
+        "MATLAB"
+      ],
+      "min_education": "硕士",
+      "city": "石家庄",
+      "company_tier": "中",
+      "major_required": "雷达与信号处理类、通信技术类等相关专业",
+      "major_category": "工科",
+      "ground_truth_relevance": 2,
+      "ground_truth_label": "强相关"
+    },
+    {
+      "eval_id": "MX-029",
+      "job_id": 4941,
+      "company_name": "理工雷科",
+      "position_title": "雷达算法工程师",
+      "job_category": "算法",
+      "job_subcategory": "通信算法",
+      "hard_skills": [
+        "雷达",
+        "信号处理",
+        "算法"
+      ],
+      "min_education": "本科",
+      "city": "北京",
+      "company_tier": "中",
+      "major_required": "雷达工程/信号处理/信息与通信工程",
+      "major_category": "工科",
+      "ground_truth_relevance": 2,
+      "ground_truth_label": "强相关"
+    },
+    {
+      "eval_id": "MX-030",
+      "job_id": 4957,
+      "company_name": "传音控股",
+      "position_title": "算法工程师-信号处理",
+      "job_category": "算法",
+      "job_subcategory": "通信算法",
+      "hard_skills": [
+        "信号处理",
+        "算法",
+        "数学"
+      ],
+      "min_education": "本科",
+      "city": "深圳,上海,重庆",
+      "company_tier": "中",
+      "major_required": "电子工程相关",
+      "major_category": "工科",
+      "ground_truth_relevance": 2,
+      "ground_truth_label": "强相关"
+    },
+    {
+      "eval_id": "MX-031",
+      "job_id": 2131,
+      "company_name": "中国兵器工业集团第二〇二研究所",
+      "position_title": "软件开发",
+      "job_category": "研发",
+      "job_subcategory": "后端开发",
+      "hard_skills": [
+        "Java",
+        "C++",
+        "Python",
+        "软件开发",
+        "数据库"
+      ],
+      "min_education": "硕士",
+      "city": "咸阳",
+      "company_tier": "中",
+      "major_required": "软件工程/计算机科学与技术",
+      "major_category": "工科",
+      "ground_truth_relevance": 1,
+      "ground_truth_label": "部分相关(技能交集)"
+    },
+    {
+      "eval_id": "MX-032",
+      "job_id": 2137,
+      "company_name": "中国兵器工业集团第二〇二研究所",
+      "position_title": "系统动力学与软件开发",
+      "job_category": "研发",
+      "job_subcategory": "后端开发",
+      "hard_skills": [
+        "系统动力学",
+        "仿真",
+        "C++",
+        "Python",
+        "软件开发"
+      ],
+      "min_education": "硕士",
+      "city": "咸阳",
+      "company_tier": "中",
+      "major_required": "力学/计算机科学与技术",
+      "major_category": "工科",
+      "ground_truth_relevance": 1,
+      "ground_truth_label": "部分相关(技能交集)"
+    },
+    {
+      "eval_id": "MX-033",
+      "job_id": 2273,
+      "company_name": "歌尔丹拿",
+      "position_title": "软件研发实习生",
+      "job_category": "研发",
+      "job_subcategory": "后端开发",
+      "hard_skills": [
+        "Java",
+        "Python",
+        "C++"
+      ],
+      "min_education": "本科",
+      "city": "北京,上海,深圳,南京,苏州,青岛,潍坊",
+      "company_tier": "保底",
+      "major_required": "计算机相关",
+      "major_category": "工科",
+      "ground_truth_relevance": 1,
+      "ground_truth_label": "部分相关(技能交集)"
+    },
+    {
+      "eval_id": "MX-034",
+      "job_id": 2399,
+      "company_name": "瑞泊",
+      "position_title": "后端开发实习生",
+      "job_category": "研发",
+      "job_subcategory": "后端开发",
+      "hard_skills": [
+        "后端开发",
+        "Java",
+        "Python",
+        "数据库"
+      ],
+      "min_education": "本科",
+      "city": "北京",
+      "company_tier": "保底",
+      "major_required": "计算机相关",
+      "major_category": "工科",
+      "ground_truth_relevance": 0,
+      "ground_truth_label": "部分相关但技能无交集"
+    },
+    {
+      "eval_id": "MX-035",
+      "job_id": 2415,
+      "company_name": "宇树科技",
+      "position_title": "AI infra工程师",
+      "job_category": "研发",
+      "job_subcategory": "后端开发",
+      "hard_skills": [
+        "AI基础设施",
+        "分布式系统",
+        "Python"
+      ],
+      "min_education": "本科",
+      "city": "杭州",
+      "company_tier": "顶",
+      "major_required": "计算机相关",
+      "major_category": "工科",
+      "ground_truth_relevance": 0,
+      "ground_truth_label": "部分相关但技能无交集"
+    },
+    {
+      "eval_id": "MX-036",
+      "job_id": 2009,
+      "company_name": "拼多多集团-PDD",
+      "position_title": "数据分析师",
+      "job_category": "研发",
+      "job_subcategory": "数据分析",
+      "hard_skills": [
+        "SQL",
+        "数据分析",
+        "Python",
+        "统计学"
+      ],
+      "min_education": "本科",
+      "city": "上海",
+      "company_tier": "顶",
+      "major_required": "计算机相关",
+      "major_category": "工科",
+      "ground_truth_relevance": 0,
+      "ground_truth_label": "部分相关但技能无交集"
+    },
+    {
+      "eval_id": "MX-037",
+      "job_id": 2262,
+      "company_name": "海尔消费金融",
+      "position_title": "数据分析",
+      "job_category": "研发",
+      "job_subcategory": "数据分析",
+      "hard_skills": [
+        "SQL",
+        "Python",
+        "数据分析"
+      ],
+      "min_education": "本科",
+      "city": "上海,青岛",
+      "company_tier": "中",
+      "major_required": "数学/统计/计算机相关",
+      "major_category": "理科",
+      "ground_truth_relevance": 0,
+      "ground_truth_label": "部分相关但技能无交集"
+    },
+    {
+      "eval_id": "MX-038",
+      "job_id": 2401,
+      "company_name": "瑞泊",
+      "position_title": "数据工程师/数据分析师实习生",
+      "job_category": "研发",
+      "job_subcategory": "数据分析",
+      "hard_skills": [
+        "SQL",
+        "Python",
+        "数据分析",
+        "数据工程"
+      ],
+      "min_education": "本科",
+      "city": "北京",
+      "company_tier": "保底",
+      "major_required": "计算机相关",
+      "major_category": "工科",
+      "ground_truth_relevance": 0,
+      "ground_truth_label": "部分相关但技能无交集"
+    },
+    {
+      "eval_id": "MX-039",
+      "job_id": 2120,
+      "company_name": "南芯科技",
+      "position_title": "AI应用工程师",
+      "job_category": "研发",
+      "job_subcategory": "大模型应用开发",
+      "hard_skills": [
+        "机器学习",
+        "Python",
+        "深度学习"
+      ],
+      "min_education": "本科",
+      "city": "上海,成都,深圳,北京,西安,南京,珠海,杭州,苏州",
+      "company_tier": "中",
+      "major_required": "计算机/人工智能相关",
+      "major_category": "工科",
+      "ground_truth_relevance": 1,
+      "ground_truth_label": "部分相关(技能交集)"
+    },
+    {
+      "eval_id": "MX-040",
+      "job_id": 2140,
+      "company_name": "点点互动",
+      "position_title": "AI算法工程师",
+      "job_category": "研发",
+      "job_subcategory": "大模型应用开发",
+      "hard_skills": [
+        "机器学习",
+        "深度学习",
+        "Python",
+        "PyTorch",
+        "TensorFlow"
+      ],
+      "min_education": "本科",
+      "city": "北京,上海,深圳,广州",
+      "company_tier": "中",
+      "major_required": "计算机相关",
+      "major_category": "工科",
+      "ground_truth_relevance": 1,
+      "ground_truth_label": "部分相关(技能交集)"
+    },
+    {
+      "eval_id": "MX-041",
+      "job_id": 2054,
+      "company_name": "圆通-管培生",
+      "position_title": "财务",
+      "job_category": "职能",
+      "job_subcategory": "财务",
+      "hard_skills": [
+        "财务核算",
+        "财务分析"
+      ],
+      "min_education": "本科",
+      "city": "全国各地",
+      "company_tier": "中",
+      "major_required": "不限",
+      "major_category": "不限",
+      "ground_truth_relevance": 0,
+      "ground_truth_label": "完全不对口"
+    },
+    {
+      "eval_id": "MX-042",
+      "job_id": 2066,
+      "company_name": "圆通-管培生",
+      "position_title": "管理财务",
+      "job_category": "职能",
+      "job_subcategory": "财务",
+      "hard_skills": [
+        "财务管理",
+        "财务分析"
+      ],
+      "min_education": "本科",
+      "city": "全国各地",
+      "company_tier": "中",
+      "major_required": "不限",
+      "major_category": "不限",
+      "ground_truth_relevance": 0,
+      "ground_truth_label": "完全不对口"
+    },
+    {
+      "eval_id": "MX-043",
+      "job_id": 2067,
+      "company_name": "圆通-管培生",
+      "position_title": "业财分析",
+      "job_category": "职能",
+      "job_subcategory": "财务",
+      "hard_skills": [
+        "业财分析",
+        "财务分析"
+      ],
+      "min_education": "本科",
+      "city": "全国各地",
+      "company_tier": "中",
+      "major_required": "不限",
+      "major_category": "不限",
+      "ground_truth_relevance": 0,
+      "ground_truth_label": "完全不对口"
+    },
+    {
+      "eval_id": "MX-044",
+      "job_id": 2037,
+      "company_name": "百度",
+      "position_title": "整合营销",
+      "job_category": "市场",
+      "job_subcategory": "市场营销",
+      "hard_skills": [
+        "营销策划",
+        "数据分析",
+        "沟通"
+      ],
+      "min_education": "本科",
+      "city": "北京,上海,深圳,广州,杭州,成都,南京,苏州,郑州,大连,保定",
+      "company_tier": "顶",
+      "major_required": "不限",
+      "major_category": "不限",
+      "ground_truth_relevance": 0,
+      "ground_truth_label": "完全不对口"
+    },
+    {
+      "eval_id": "MX-045",
+      "job_id": 2043,
+      "company_name": "百度",
+      "position_title": "市场营销",
+      "job_category": "市场",
+      "job_subcategory": "市场营销",
+      "hard_skills": [
+        "市场策划",
+        "品牌推广",
+        "数据分析"
+      ],
+      "min_education": "本科",
+      "city": "北京,上海,深圳,广州,杭州,成都,南京,苏州,郑州,大连,保定",
+      "company_tier": "顶",
+      "major_required": "不限",
+      "major_category": "不限",
+      "ground_truth_relevance": 0,
+      "ground_truth_label": "完全不对口"
+    },
+    {
+      "eval_id": "MX-046",
+      "job_id": 2051,
+      "company_name": "圆通-管培生",
+      "position_title": "营销",
+      "job_category": "市场",
+      "job_subcategory": "市场营销",
+      "hard_skills": [
+        "市场营销",
+        "客户开发"
+      ],
+      "min_education": "本科",
+      "city": "全国各地",
+      "company_tier": "中",
+      "major_required": "不限",
+      "major_category": "不限",
+      "ground_truth_relevance": 0,
+      "ground_truth_label": "完全不对口"
+    },
+    {
+      "eval_id": "MX-047",
+      "job_id": 2022,
+      "company_name": "拼多多集团-PDD",
+      "position_title": "HR管培生",
+      "job_category": "职能",
+      "job_subcategory": "人力资源",
+      "hard_skills": [
+        "人力资源",
+        "招聘",
+        "数据分析"
+      ],
+      "min_education": "本科",
+      "city": "上海",
+      "company_tier": "顶",
+      "major_required": "不限",
+      "major_category": "不限",
+      "ground_truth_relevance": 0,
+      "ground_truth_label": "完全不对口"
+    },
+    {
+      "eval_id": "MX-048",
+      "job_id": 2040,
+      "company_name": "百度",
+      "position_title": "人力资源",
+      "job_category": "职能",
+      "job_subcategory": "人力资源",
+      "hard_skills": [
+        "招聘",
+        "员工关系",
+        "数据分析"
+      ],
+      "min_education": "本科",
+      "city": "北京,上海,深圳,广州,杭州,成都,南京,苏州,郑州,大连,保定",
+      "company_tier": "顶",
+      "major_required": "不限",
+      "major_category": "不限",
+      "ground_truth_relevance": 0,
+      "ground_truth_label": "完全不对口"
+    }
+  ]
+}

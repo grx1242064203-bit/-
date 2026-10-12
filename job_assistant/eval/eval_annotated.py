@@ -22,7 +22,7 @@ from collections import Counter
 from pathlib import Path
 
 ROOT = Path(__file__).resolve().parent.parent
-EVALSET_PATH = ROOT / "eval" / "evalset_positions_slim.json"
+EVALSET_PATH = ROOT / "eval" / "evalset_positions.json"
 
 
 def load_evalset():
@@ -42,12 +42,23 @@ def is_annotated(item):
     return ann.get("correct_position_count") is not None
 
 
+def get_llm_count(item):
+    """兼容完整版和精简版获取 LLM 拆岗数量。"""
+    if "llm_position_count" in item:
+        return item["llm_position_count"]
+    if "llm_positions" in item:
+        return len(item["llm_positions"])
+    if "llm_position_titles" in item:
+        return len(item["llm_position_titles"])
+    return 0
+
+
 def eval_split_accuracy(evalset):
     """维度1: 拆岗数量准确率 + 漏拆/误拆。"""
     annotated = [item for item in evalset if is_annotated(item)]
     total = len(annotated)
     if total == 0:
-        return {"error": "没有已完成标注的样本，请先标注 evalset_positions_slim.json"}
+        return {"error": "没有已完成标注的样本，请先标注 evalset_positions.json"}
 
     correct_count = 0
     under_split = 0
@@ -59,7 +70,7 @@ def eval_split_accuracy(evalset):
 
     for item in annotated:
         ann = item["annotation"]
-        llm_count = item["llm_position_count"]
+        llm_count = get_llm_count(item)
         correct_c = ann.get("correct_position_count", 0)
         verdict = ann.get("split_verdict")
         missed = ann.get("missed_positions", [])
@@ -103,7 +114,7 @@ def eval_category_accuracy(evalset):
         ann = item["annotation"]
         errors = ann.get("category_errors", [])
         total_errors += len(errors)
-        total_positions += item["llm_position_count"]
+        total_positions += get_llm_count(item)
 
     correct = total_positions - total_errors
     return {
@@ -125,7 +136,15 @@ def eval_field_accuracy(evalset):
         errors = ann.get("field_errors", [])
         total_errors += len(errors)
         for e in errors:
-            error_fields[e.get("field", "unknown")] += 1
+            if isinstance(e, dict):
+                error_fields[e.get("field", "unknown")] += 1
+            elif isinstance(e, str):
+                # 尝试解析 "岗位名|字段|正确值|错误值" 格式
+                parts = e.split("|")
+                if len(parts) >= 2:
+                    error_fields[parts[1].strip() if "|" in e else "mixed"] += 1
+                else:
+                    error_fields["unknown"] += 1
 
     return {
         "total_field_errors": total_errors,

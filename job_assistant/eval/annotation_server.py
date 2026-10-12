@@ -21,7 +21,7 @@ from pathlib import Path
 from urllib.parse import parse_qs
 
 ROOT = Path(__file__).resolve().parent.parent
-EVALSET_PATH = ROOT / "eval" / "evalset_positions_slim.json"
+EVALSET_PATH = ROOT / "eval" / "evalset_positions.json"
 
 PORT = 8765
 
@@ -101,6 +101,16 @@ body { font-family: -apple-system, "PingFang SC", "Microsoft YaHei", sans-serif;
 .add-tag { display: flex; gap: 6px; margin-top: 6px; }
 .add-tag input { flex: 1; }
 .add-tag button { padding: 4px 10px; background: #334155; border: 1px solid #475569; border-radius: 4px; color: #e2e8f0; cursor: pointer; font-size: 12px; }
+.position-item-full { background: #1e293b; border: 1px solid #334155; border-radius: 6px; padding: 12px; margin-bottom: 12px; }
+.pos-header { display: flex; align-items: center; gap: 8px; margin-bottom: 10px; padding-bottom: 8px; border-bottom: 1px solid #334155; }
+.pos-num { background: #f97316; color: #fff; border-radius: 50%; width: 20px; height: 20px; display: flex; align-items: center; justify-content: center; font-size: 11px; font-weight: 700; }
+.pos-title { color: #f97316; font-weight: 600; font-size: 14px; }
+.pos-tag { background: #1e3f2e; color: #4ade80; padding: 1px 6px; border-radius: 3px; font-size: 11px; }
+.pos-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 6px 12px; margin-bottom: 8px; }
+.pos-field { display: flex; flex-direction: column; gap: 1px; }
+.pos-field-full { display: flex; gap: 8px; margin-top: 4px; }
+.pf-label { font-size: 11px; color: #64748b; min-width: 60px; }
+.pf-val { font-size: 13px; color: #e2e8f0; line-height: 1.4; }
 .empty-state { text-align: center; padding: 60px 20px; color: #64748b; }
 </style>
 </head>
@@ -146,19 +156,45 @@ function render() {
     const item = evalData[currentIndex];
     if (!item) return;
 
-    // 左侧：公告信息 + LLM结果
+    // 左侧：公告信息 + LLM完整输出
     const bucketClass = 'badge-' + item.bucket.charAt(0);
     let positionsHtml = '';
-    if (item.llm_position_titles && item.llm_position_titles.length > 0) {
-        positionsHtml = '<ul class="position-list">';
-        item.llm_position_titles.forEach((title, i) => {
-            const cats = item.llm_categories[i] || ['', ''];
-            positionsHtml += `<li class="position-item">
-                <span class="title">${escapeHtml(title)}</span>
-                <span class="cat">[${escapeHtml(cats[0])} / ${escapeHtml(cats[1])}]</span>
-            </li>`;
+    if (item.llm_positions && item.llm_positions.length > 0) {
+        positionsHtml = '<div class="position-list">';
+        item.llm_positions.forEach((pos, i) => {
+            const hardSkills = (pos.hard_skills || []).join(', ');
+            const softSkills = (pos.soft_skills || []).join(', ');
+            const keywords = (pos.keywords || []).join(', ');
+            const certs = (pos.certifications || []).join(', ');
+            const langs = (pos.languages || []).join(', ');
+            positionsHtml += `<div class="position-item-full">
+                <div class="pos-header">
+                    <span class="pos-num">${i + 1}</span>
+                    <span class="pos-title">${escapeHtml(pos.position_title || '')}</span>
+                    ${pos.is_management_trainee ? '<span class="pos-tag">管培</span>' : ''}
+                </div>
+                <div class="pos-grid">
+                    <div class="pos-field"><span class="pf-label">大类</span><span class="pf-val">${escapeHtml(pos.job_category || '')}</span></div>
+                    <div class="pos-field"><span class="pf-label">子类</span><span class="pf-val">${escapeHtml(pos.job_subcategory || '')}</span></div>
+                    <div class="pos-field"><span class="pf-label">学历</span><span class="pf-val">${escapeHtml(pos.min_education || '')}</span></div>
+                    <div class="pos-field"><span class="pf-label">城市</span><span class="pf-val">${escapeHtml(pos.city || '')}</span></div>
+                    <div class="pos-field"><span class="pf-label">专业要求</span><span class="pf-val">${escapeHtml(pos.major_required || '')}</span></div>
+                    <div class="pos-field"><span class="pf-label">专业大类</span><span class="pf-val">${escapeHtml(pos.major_category || '')}</span></div>
+                    <div class="pos-field"><span class="pf-label">硬技能</span><span class="pf-val">${escapeHtml(hardSkills)}</span></div>
+                    <div class="pos-field"><span class="pf-label">软技能</span><span class="pf-val">${escapeHtml(softSkills)}</span></div>
+                    <div class="pos-field"><span class="pf-label">证书</span><span class="pf-val">${escapeHtml(certs)}</span></div>
+                    <div class="pos-field"><span class="pf-label">语言</span><span class="pf-val">${escapeHtml(langs)}</span></div>
+                    <div class="pos-field"><span class="pf-label">难度</span><span class="pf-val">${escapeHtml(pos.difficulty || '')}</span></div>
+                    <div class="pos-field"><span class="pf-label">公司档位</span><span class="pf-val">${escapeHtml(pos.company_tier || '')}</span></div>
+                    <div class="pos-field"><span class="pf-label">关键词</span><span class="pf-val">${escapeHtml(keywords)}</span></div>
+                </div>
+                <div class="pos-field-full"><span class="pf-label">职责</span><span class="pf-val">${escapeHtml(pos.responsibilities || '')}</span></div>
+                <div class="pos-field-full"><span class="pf-label">要求</span><span class="pf-val">${escapeHtml(pos.requirements || '')}</span></div>
+                <div class="pos-field-full"><span class="pf-label">加分项</span><span class="pf-val">${escapeHtml(pos.bonus_points || '')}</span></div>
+                <div class="pos-field-full"><span class="pf-label">摘要</span><span class="pf-val">${escapeHtml(pos.jd_summary || '')}</span></div>
+            </div>`;
         });
-        positionsHtml += '</ul>';
+        positionsHtml += '</div>';
     }
 
     document.getElementById('leftContent').innerHTML = `
@@ -173,7 +209,7 @@ function render() {
         </div>
         <div class="panel-title" style="margin-top:16px">公告原文</div>
         <div class="content-box">${escapeHtml(item.crawl_content_excerpt || '[无正文]')}</div>
-        <div class="panel-title">LLM 拆岗结果 (${item.llm_position_count}个)</div>
+        <div class="panel-title">LLM 拆岗结果 (${item.llm_position_count}个 · 完整字段)</div>
         ${positionsHtml}
     `;
 

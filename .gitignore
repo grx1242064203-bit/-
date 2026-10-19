@@ -1,52 +1,7 @@
-# Logs
-logs
-*.log
-npm-debug.log*
-yarn-debug.log*
-yarn-error.log*
-pnpm-debug.log*
-lerna-debug.log*
-
-node_modules
-dist
-dist-ssr
-*.local
-
-# Editor directories and files
-.vscode/*
-!.vscode/extensions.json
-.idea
-.DS_Store
-*.suo
-*.ntvs*
-*.njsproj
-*.sln
-*.sw?
-
-# Python
+node_modules/
+target/
 __pycache__/
-*.pyc
-*.pyo
-
-# 运行时缓存(可重新生成,不入库)
-job_assistant/data/crawl_cache/
-job_assistant/data/llm_cache/
-job_assistant/data/*.bak
-job_assistant/data/*.tmp
-# SQLite WAL 临时文件
-job_assistant/data/*.db-shm
-job_assistant/data/*.db-wal
-
-# 敏感配置(用 .env.example 代替)
-job_assistant/.env
-
-# 用户上传的截图/文件(沙箱只读区,绝不入库,这是仓库膨胀到 4.6 GiB 的根因)
-.uploads/
-*.uploads/
-.uploads/**
-
-# 数据库文件(本地状态,不入库)
-*.db
-*.db-journal
-*.sqlite
-*.sqlite3
+.env
+dist/
+*.log
+.DS_Store

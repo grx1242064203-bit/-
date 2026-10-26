@@ -1,0 +1,269 @@
+{
+  "manifest_version": "v1",
+  "format": "ndjson",
+  "base_token": "ZmIhbOTlaaGrgpscQyCcT2eunLP",
+  "table_id": "tblfvWkJtMDUmJjM",
+  "rev": 44,
+  "timezone": "Asia/Shanghai",
+  "query_context": {
+    "record_scope": "selected_record_ids",
+    "requested_record_count": 2
+  },
+  "records_count": 2,
+  "page_count": 1,
+  "has_more": false,
+  "record_file": "/workspace/.run/to_archive.ndjson",
+  "record_file_size_bytes": 3101,
+  "manifest_file": "/workspace/.run/to_archive.manifest.json",
+  "columns": {
+    "JD摘要": {
+      "field_id": "fld6uTg4Tq",
+      "field_type": "text",
+      "physical_type": "string|null",
+      "stats": {
+        "null_count": 0,
+        "max_length": 196
+      },
+      "example": "国泰海通证券上海分公司2026管培生,聚焦零售/高净值/机构/企业客群,围绕投顾/产品/配置/交易场景,专业精进+管理晋升双轨;1.5年保护期+跨部门轮岗+资深导师2v1。要求2026应届本科+,金融/经济/管理/计算机优先(2025.7-2026.6毕业",
+      "example_truncated": true
+    },
+    "JD链接": {
+      "field_id": "fldV2WnnFf",
+      "field_type": "text",
+      "physical_type": "string|null",
+      "stats": {
+        "null_count": 0,
+        "max_length": 144
+      },
+      "example": "[https://career.shiep.edu.cn/campus/view/id/667247](https://career.shiep.edu.cn/campus/view/id/667247)"
+    },
+    "record_id": {
+      "physical_type": "string",
+      "stats": {
+        "max_length": 14
+      },
+      "example": "recvqcanSl6RB6"
+    },
+    "公司": {
+      "field_id": "fldk9wplF3",
+      "field_type": "text",
+      "physical_type": "string|null",
+      "stats": {
+        "null_count": 0,
+        "max_length": 14
+      },
+      "example": "国泰海通证券"
+    },
+    "去重hash": {
+      "field_id": "fldtzmIXiO",
+      "field_type": "text",
+      "physical_type": "string|null",
+      "stats": {
+        "null_count": 0,
+        "max_length": 23
+      },
+      "example": "BlackRock量化研究员Analyst上海"
+    },
+    "发布时间": {
+      "field_id": "fldc20pMGP",
+      "field_type": "text",
+      "physical_type": "string|null",
+      "stats": {
+        "null_count": 2,
+        "max_length": 0
+      },
+      "hint": "All values are empty; type inference may be ambiguous. Avoid analyzing this column unless required."
+    },
+    "地点": {
+      "field_id": "fld2csXirw",
+      "field_type": "text",
+      "physical_type": "string|null",
+      "stats": {
+        "null_count": 0,
+        "max_length": 2
+      },
+      "example": "上海"
+    },
+    "学历要求": {
+      "field_id": "fldYYrEiyQ",
+      "field_type": "text",
+      "physical_type": "string|null",
+      "stats": {
+        "null_count": 0,
+        "max_length": 13
+      },
+      "example": "本科及以上"
+    },
+    "岗位标题": {
+      "field_id": "flduV4fE8G",
+      "field_type": "text",
+      "physical_type": "string|null",
+      "stats": {
+        "null_count": 0,
+        "max_length": 32
+      },
+      "example": "2026管培生(上海分公司)"
+    },
+    "岗位类别": {
+      "field_id": "fldZz8ugS8",
+      "field_type": "select",
+      "physical_type": "array<string>",
+      "stats": {
+        "empty_count": 0,
+        "max_length": 1,
+        "avg_length": 1
+      },
+      "example": [
+        "L3-其他前台"
+      ]
+    },
+    "平台层级": {
+      "field_id": "flda59e0go",
+      "field_type": "select",
+      "physical_type": "array<string>",
+      "stats": {
+        "empty_count": 0,
+        "max_length": 1,
+        "avg_length": 1
+      },
+      "example": [
+        "外资头部"
+      ]
+    },
+    "应届窗口": {
+      "field_id": "fldHYjcFEl",
+      "field_type": "select",
+      "physical_type": "array<string>",
+      "stats": {
+        "empty_count": 0,
+        "max_length": 1,
+        "avg_length": 1
+      },
+      "example": [
+        "否"
+      ]
+    },
+    "抓取日期": {
+      "field_id": "fld2Mf8n7I",
+      "field_type": "datetime",
+      "physical_type": "string|null",
+      "stats": {
+        "null_count": 0,
+        "min": "2026-07-23T09:00:00.000+08:00",
+        "max": "2026-07-24T09:00:00.000+08:00"
+      },
+      "example": "2026-07-23T09:00:00.000+08:00"
+    },
+    "是否在招": {
+      "field_id": "fld0fB5nPd",
+      "field_type": "select",
+      "physical_type": "array<string>",
+      "stats": {
+        "empty_count": 2,
+        "max_length": 0,
+        "avg_length": 0
+      },
+      "hint": "All values are empty; type inference may be ambiguous. Avoid analyzing this column unless required."
+    },
+    "申请建议": {
+      "field_id": "fldsWTQTVQ",
+      "field_type": "text",
+      "physical_type": "string|null",
+      "stats": {
+        "null_count": 0,
+        "max_length": 85
+      },
+      "example": "网申已截止,建议关注补录/2027届动态;用户毕业时间边缘符合,若有补录可尝试。"
+    },
+    "申请状态": {
+      "field_id": "fld9BaLN3g",
+      "field_type": "select",
+      "physical_type": "array<string>",
+      "stats": {
+        "empty_count": 0,
+        "max_length": 1,
+        "avg_length": 1
+      },
+      "example": [
+        "未投递"
+      ]
+    },
+    "相关性评分": {
+      "field_id": "fldNN2B3ua",
+      "field_type": "number",
+      "physical_type": "number|null",
+      "stats": {
+        "null_count": 0,
+        "min": 60,
+        "max": 70,
+        "avg": 65
+      },
+      "example": 70
+    },
+    "简评": {
+      "field_id": "fldvR32JDO",
+      "field_type": "text",
+      "physical_type": "string|null",
+      "stats": {
+        "null_count": 0,
+        "max_length": 100
+      },
+      "example": "国泰海通上海分公司2026管培生,1.5年保护期+轮岗培养优质;用户毕业时间(2025年中)处于窗口边缘,但网申已于3-4月截止。"
+    },
+    "经验要求": {
+      "field_id": "fldhDwNAi2",
+      "field_type": "text",
+      "physical_type": "string|null",
+      "stats": {
+        "null_count": 0,
+        "max_length": 23
+      },
+      "example": "2年以上量化研究/投资"
+    },
+    "综合推荐度": {
+      "field_id": "fldPUOXo8O",
+      "field_type": "select",
+      "physical_type": "array<string>",
+      "stats": {
+        "empty_count": 0,
+        "max_length": 1,
+        "avg_length": 1
+      },
+      "example": [
+        "可申请"
+      ]
+    },
+    "薪资范围": {
+      "field_id": "flds2JxYhq",
+      "field_type": "text",
+      "physical_type": "string|null",
+      "stats": {
+        "null_count": 0,
+        "max_length": 17
+      },
+      "example": "面议(具竞争力)"
+    },
+    "部门": {
+      "field_id": "flddiN65bn",
+      "field_type": "text",
+      "physical_type": "string|null",
+      "stats": {
+        "null_count": 0,
+        "max_length": 27
+      },
+      "example": "上海分公司"
+    },
+    "难度评分": {
+      "field_id": "fldaaK9nsc",
+      "field_type": "number",
+      "physical_type": "number|null",
+      "stats": {
+        "null_count": 0,
+        "min": 40,
+        "max": 70,
+        "avg": 55
+      },
+      "example": 70
+    }
+  }
+}

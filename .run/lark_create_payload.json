@@ -1,0 +1,1012 @@
+{
+  "create_records": [
+    {
+      "岗位标题": "FOF投资经理(J19153)",
+      "公司": "中金公司",
+      "部门": "资产管理部",
+      "地点": "北京市,上海市",
+      "薪资范围": "面议",
+      "经验要求": "2-3年",
+      "学历要求": "硕士及以上",
+      "JD摘要": "资产管理部社招。要求硕士+金融工程/理工+经济金融复合背景优先;2年以上量化FOF投资经验、3年以上基金研究经验,对FOF投资逻辑有较深刻认知,具市场竞争力的公开可验证投资业绩;扎实数理统计基础,Python,机器学习/深度学习优先。 | 发布:未知",
+      "JD链接": "[查看JD](https://cicc.zhiye.com/custom/socialxq?jobAdId=807f99ac-3faa-4580-a266-ad30403128cc)",
+      "抓取日期": "2026-10-26 09:10:00",
+      "发布时间": "未知",
+      "岗位类别": [
+        "L1-私募研究FOF自营"
+      ],
+      "平台层级": [
+        "三中一华"
+      ],
+      "相关性评分": 95,
+      "难度评分": 60,
+      "综合推荐度": [
+        "可申请"
+      ],
+      "简评": "JD明确要求硕士+量化FOF 2年/基金研究3年,核心要求FOF投资逻辑、Python、机器学习。用户FOF基金经理助理1年经验,尽调60+私募,匹配FOF投资逻辑核心要求;机器学习、Python具备。硬性3年基金研究经验略有不足,但用户已具FOF实操经验且为复旦国际金融硕士,值得尝试。",
+      "申请建议": "突出FOF基金经理助理经历,强调私募尽调60余家+组合构建管理20+专户经验;展示Python/Vibecoding搭建私募基金信息平台的AI项目;展示硕士+985复合背景。",
+      "申请状态": [
+        "未投递"
+      ],
+      "去重hash": "中金公司FOF投资经理J19153北京市上海市",
+      "应届窗口": [
+        "否"
+      ],
+      "是否在招": [
+        "是"
+      ]
+    },
+    {
+      "岗位标题": "投资岗(公募FOF方向)",
+      "公司": "招商证券",
+      "部门": "公募投资部(招商资管)",
+      "地点": "深圳福田区",
+      "薪资范围": "30000元以下/月",
+      "经验要求": "3年以上",
+      "学历要求": "硕士及以上",
+      "JD摘要": "公募投资部(招商资管)投资岗公募FOF方向。职责含组合管理(债券/股票/大宗商品/外汇/衍生品,ETF复制指数、量化多资产配置)、基金研究筛选(全市场基金深度画像、绩效归因、风格校验、Alpha/Beta挖掘)、量化模型开发(资产配置/绩效评价/风险预算模型,Python回测)、宏观策略研判(SAA+TAA)、ETF折溢价研究。要求硕士+,金融工程/数学/统计/物理/计算机数理背景,3年+公募FOF/基金研究/多资产投资经验,精通Python/R/Matlab,熟悉Brinson/Barra绩效归因。CFA/FRM优先。 | 发布:未知",
+      "JD链接": "[查看JD](http://www.szbarc.com/job2813798833.shtml)",
+      "抓取日期": "2026-10-26 09:10:00",
+      "发布时间": "未知",
+      "岗位类别": [
+        "L1-私募研究FOF自营"
+      ],
+      "平台层级": [
+        "头部券商基金"
+      ],
+      "相关性评分": 95,
+      "难度评分": 65,
+      "综合推荐度": [
+        "可申请"
+      ],
+      "简评": "JD要求公募FOF组合管理、ETF配置、量化模型开发、Brinson/Barra绩效归因、SAA/TAA。用户FOF基金经理助理1年经验+组合管理20+专户+私募尽调60+,与JD核心职责高度匹配;量化+Python+AI项目经验加分。硬性3年经验不足,但作为头部券商资管岗+用户复合背景值得投递。",
+      "申请建议": "重点展示FOF组合管理20+专户经验、私募尽调60+方法论;强调Python量化模型开发能力(AI项目Vibecoding);突出SAA/TAA配置思路;CFA备考/通过加分。",
+      "申请状态": [
+        "未投递"
+      ],
+      "去重hash": "招商证券投资岗公募FOF方向深圳福田区",
+      "应届窗口": [
+        "否"
+      ],
+      "是否在招": [
+        "是"
+      ]
+    },
+    {
+      "岗位标题": "FOF研究员(J19758)",
+      "公司": "中金公司",
+      "部门": "资产管理部",
+      "地点": "北京朝阳区",
+      "薪资范围": "面议",
+      "经验要求": "1-3年",
+      "学历要求": "硕士及以上",
+      "JD摘要": "资产管理部FOF研究员岗。要求硕士+,金融/经济/理工复合背景,1-3年FOF/基金研究经验,扎实的数理统计基础,Python,熟悉绩效归因模型;具备市场沟通能力。 | 发布:未知",
+      "JD链接": "[查看JD](https://www.liepin.com/job/1985789235.shtml)",
+      "抓取日期": "2026-10-26 09:10:00",
+      "发布时间": "未知",
+      "岗位类别": [
+        "L1-私募研究FOF自营"
+      ],
+      "平台层级": [
+        "三中一华"
+      ],
+      "相关性评分": 93,
+      "难度评分": 50,
+      "综合推荐度": [
+        "优先申请"
+      ],
+      "简评": "1-3年FOF研究经验要求与用户1年FOF基金经理助理经验窗口契合;中金资管部FOF研究员为前台研究岗,工资上限高,平台头部。用户私募尽调60+、组合管理20+经验核心匹配;复旦国际金融硕士+985本科符合学历要求。",
+      "申请建议": "突出FOF基金经理助理经验,重点说明私募尽调60+家(量化多头/主观多头/CTA/套利/海外策略覆盖)、组合管理20+专户经验;展示Python+AI项目(Vibecoding私募基金信息平台);强调硕士+985复合背景。",
+      "申请状态": [
+        "未投递"
+      ],
+      "去重hash": "中金公司FOF研究员J19758北京朝阳区",
+      "应届窗口": [
+        "否"
+      ],
+      "是否在招": [
+        "是"
+      ]
+    },
+    {
+      "岗位标题": "FOF研究及投资岗",
+      "公司": "申万宏源证券",
+      "部门": "资管/FOF业务条线",
+      "地点": "北京",
+      "薪资范围": "面议",
+      "经验要求": "2年以上",
+      "学历要求": "硕士及以上",
+      "JD摘要": "FOF研究及投资岗。职责含建立量化模型、基金公司调研和基金经理访谈、私募及公募FOF产品研究、组合构建。要求硕士+,2年+FOF/基金研究经验,熟悉量化模型,具备基金公司调研能力。 | 发布:未知",
+      "JD链接": "[查看JD](https://vita.51jrq.com/vita/jobinfo/1284577)",
+      "抓取日期": "2026-10-26 09:10:00",
+      "发布时间": "未知",
+      "岗位类别": [
+        "L1-私募研究FOF自营"
+      ],
+      "平台层级": [
+        "头部券商基金"
+      ],
+      "相关性评分": 93,
+      "难度评分": 50,
+      "综合推荐度": [
+        "优先申请"
+      ],
+      "简评": "JD核心职责为建立量化模型、基金公司调研、基金经理访谈、私募公募FOF研究、组合构建。用户现FOF基金经理助理已尽调60+私募、组合构建管理20+专户,与JD职责高度匹配;申万宏源为头部券商,前台研究投资岗。",
+      "申请建议": "突出60+家私募尽调经验(覆盖量化多头/主观多头/CTA/套利/海外策略);展示组合构建+调仓+20+专户管理经验;强调AI项目搭建私募基金信息平台,展示对量化模型+数据系统的双能力。",
+      "申请状态": [
+        "未投递"
+      ],
+      "去重hash": "申万宏源证券FOF研究及投资岗北京",
+      "应届窗口": [
+        "否"
+      ],
+      "是否在招": [
+        "是"
+      ]
+    },
+    {
+      "岗位标题": "FOF投资经理(J10404)",
+      "公司": "中信建投(期货)",
+      "部门": "资管业务部",
+      "地点": "重庆渝中区",
+      "薪资范围": "面议",
+      "经验要求": "1-3年",
+      "学历要求": "硕士及以上",
+      "JD摘要": "FOF投资经理岗。职责含管理人尽调、评价筛选体系、FOF产品组合管理。要求硕士+,1-3年FOF研究经验,熟悉私募管理人评价体系。 | 发布:未知",
+      "JD链接": "[查看JD](http://www.shbsrc.com/job785696003.shtml)",
+      "抓取日期": "2026-10-26 09:10:00",
+      "发布时间": "未知",
+      "岗位类别": [
+        "L1-私募研究FOF自营"
+      ],
+      "平台层级": [
+        "头部券商基金"
+      ],
+      "相关性评分": 90,
+      "难度评分": 40,
+      "综合推荐度": [
+        "可申请"
+      ],
+      "简评": "JD核心职责为管理人尽调、评价筛选、FOF组合管理,与用户经验高度匹配;但工作地重庆,需评估个人意愿。中信建投期货为头部券商期货子公司,FOF业务条线明确。",
+      "申请建议": "突出私募尽调60+家经验+评价筛选体系;组合管理20+专户经验;量化/CTA/套利策略理解。建议确认是否接受重庆工作地点,如接受则投递。",
+      "申请状态": [
+        "未投递"
+      ],
+      "去重hash": "中信建投期货FOF投资经理J10404重庆渝中区",
+      "应届窗口": [
+        "否"
+      ],
+      "是否在招": [
+        "是"
+      ]
+    },
+    {
+      "岗位标题": "资管业务-投资经理岗(固收/权益/多资产方向)",
+      "公司": "中信建投证券",
+      "部门": "资管业务部",
+      "地点": "北京东城区",
+      "薪资范围": "面议",
+      "经验要求": "2-3年",
+      "学历要求": "硕士及以上",
+      "JD摘要": "资管业务部投资经理岗,覆盖固收/权益/多资产方向。要求硕士+,2-3年投资管理经验,具备组合构建与多资产配置能力。 | 发布:未知",
+      "JD链接": "[查看JD](https://m.liepin.com/company-jobs/8029798/jc-N10/)",
+      "抓取日期": "2026-10-26 09:10:00",
+      "发布时间": "未知",
+      "岗位类别": [
+        "L1-私募研究FOF自营"
+      ],
+      "平台层级": [
+        "头部券商基金"
+      ],
+      "相关性评分": 85,
+      "难度评分": 55,
+      "综合推荐度": [
+        "可申请"
+      ],
+      "简评": "JD覆盖多资产方向投资经理,与用户FOF组合管理经验部分匹配;多资产方向经验可扩展。中信建投资管部头部平台。",
+      "申请建议": "突出FOF组合管理经验,说明组合构建覆盖股票/债券/CTA/衍生品多资产;强调20+专户管理+组合调仓经验。",
+      "申请状态": [
+        "未投递"
+      ],
+      "去重hash": "中信建投证券资管业务投资经理岗固收权益多资产方向北京东城区",
+      "应届窗口": [
+        "否"
+      ],
+      "是否在招": [
+        "是"
+      ]
+    },
+    {
+      "岗位标题": "资产配置专员岗",
+      "公司": "国泰海通证券",
+      "部门": "资管/资产配置团队",
+      "地点": "上海黄浦区",
+      "薪资范围": "面议",
+      "经验要求": "2年以上",
+      "学历要求": "硕士及以上",
+      "JD摘要": "资产配置专员岗。职责含大类资产配置研究、组合构建、宏观策略研判。要求硕士+,2年+资产配置/FOF/宏观研究经验,熟悉SAA/TAA框架。 | 发布:未知",
+      "JD链接": "[查看JD](https://m.liepin.com/company-jobs/8376413/jc-N10/)",
+      "抓取日期": "2026-10-26 09:10:00",
+      "发布时间": "未知",
+      "岗位类别": [
+        "L2-大类资产配置"
+      ],
+      "平台层级": [
+        "头部券商基金"
+      ],
+      "相关性评分": 80,
+      "难度评分": 50,
+      "综合推荐度": [
+        "可申请"
+      ],
+      "简评": "JD职责大类资产配置研究+组合构建+宏观策略,与用户FOF组合经验+多策略私募覆盖可转化为配置视角;国泰海通(原国泰君安+海通合并)为头部券商。",
+      "申请建议": "突出FOF基金经理助理+20+专户组合管理经验;说明覆盖量化/CTA/套利/海外策略的多资产视角;展示对SAA/TAA配置框架的理解。",
+      "申请状态": [
+        "未投递"
+      ],
+      "去重hash": "国泰海通证券资产配置专员岗上海黄浦区",
+      "应届窗口": [
+        "否"
+      ],
+      "是否在招": [
+        "是"
+      ]
+    },
+    {
+      "岗位标题": "多资产投资岗",
+      "公司": "华泰证券",
+      "部门": "资管/多资产团队",
+      "地点": "上海",
+      "薪资范围": "面议",
+      "经验要求": "1-3年",
+      "学历要求": "硕士及以上",
+      "JD摘要": "华泰证券多资产投资岗。职责含多资产组合管理、资产配置、量化策略。要求硕士+,1-3年投资管理经验,具备多资产配置能力。 | 发布:未知",
+      "JD链接": "[查看JD](https://www.hotjob.cn/wt/HTSC/mobweb/v8/position/subscriptionPositionList)",
+      "抓取日期": "2026-10-26 09:10:00",
+      "发布时间": "未知",
+      "岗位类别": [
+        "L2-大类资产配置"
+      ],
+      "平台层级": [
+        "头部券商基金"
+      ],
+      "相关性评分": 78,
+      "难度评分": 45,
+      "综合推荐度": [
+        "可申请"
+      ],
+      "简评": "多资产投资岗1-3年窗口符合用户;华泰证券头部券商,工资上限高。JD职责多资产组合管理与用户FOF组合管理经验匹配。",
+      "申请建议": "突出FOF组合管理20+专户经验,说明组合覆盖量化/主观多头/CTA/套利/海外策略等多资产;展示AI项目+Python能力。",
+      "申请状态": [
+        "未投递"
+      ],
+      "去重hash": "华泰证券多资产投资岗上海",
+      "应届窗口": [
+        "否"
+      ],
+      "是否在招": [
+        "是"
+      ]
+    },
+    {
+      "岗位标题": "量化策略研究员",
+      "公司": "九坤投资",
+      "部门": "研究部",
+      "地点": "北京",
+      "薪资范围": "面议(高薪+落户)",
+      "经验要求": "1-3年",
+      "学历要求": "硕士及以上",
+      "JD摘要": "九坤投资量化策略研究员岗。要求硕士+,数理/计算机背景,熟悉量化策略研究,Python。提供北京落户。 | 发布:未知",
+      "JD链接": "[查看JD](https://www.ubiquant.com/website/career)",
+      "抓取日期": "2026-10-26 09:10:00",
+      "发布时间": "未知",
+      "岗位类别": [
+        "L1-私募研究FOF自营"
+      ],
+      "平台层级": [
+        "头部券商基金"
+      ],
+      "相关性评分": 75,
+      "难度评分": 55,
+      "综合推荐度": [
+        "可申请"
+      ],
+      "简评": "九坤为头部量化私募,量化策略研究员岗位工资上限高;用户具备量化私募尽调经验+Python+AI能力。但岗位偏向量化策略研发而非FOF投资,经验略偏离主线。",
+      "申请建议": "突出量化策略理解(指数增强/CTA/套利尽调);展示Python+机器学习/深度学习能力;强调数理统计基础+985本科+复旦硕士复合背景。",
+      "申请状态": [
+        "未投递"
+      ],
+      "去重hash": "九坤投资量化策略研究员北京",
+      "应届窗口": [
+        "否"
+      ],
+      "是否在招": [
+        "是"
+      ]
+    },
+    {
+      "岗位标题": "Investment Advisor",
+      "公司": "渣打银行",
+      "部门": "Wealth and Retail Banking",
+      "地点": "杭州",
+      "薪资范围": "面议",
+      "经验要求": "1-3年",
+      "学历要求": "本科及以上",
+      "JD摘要": "Investment Advisor,杭州。职责:为客户提供投资建议、组合配置、产品推荐;要求投资产品知识、组合管理能力;英文+Mandarin。 | 来源:jobs.standardchartered.com官网直采 | 发布:未知",
+      "JD链接": "[查看JD](https://jobs.standardchartered.com/job/Hangzhou-Investment-Advisor/1369711557/)",
+      "抓取日期": "2026-10-26 09:10:00",
+      "发布时间": "未知",
+      "岗位类别": [
+        "L3-其他前台"
+      ],
+      "平台层级": [
+        "外资头部"
+      ],
+      "相关性评分": 75,
+      "难度评分": 40,
+      "综合推荐度": [
+        "可申请"
+      ],
+      "简评": "Investment Advisor职责包含组合配置和投资建议,与用户FOF组合管理经验匹配;1-3年窗口符合用户;杭州外资行前台岗。来源:渣打官网直采。",
+      "申请建议": "突出FOF组合管理20+专户经验;展示投资建议和组合配置能力;强调外资行前台工作适应性+英文能力。",
+      "申请状态": [
+        "未投递"
+      ],
+      "去重hash": "渣打银行InvestmentAdvisor杭州",
+      "应届窗口": [
+        "否"
+      ],
+      "是否在招": [
+        "是"
+      ]
+    },
+    {
+      "岗位标题": "Associate Director, FX Advisory & Solution, Wealth Management",
+      "公司": "渣打银行",
+      "部门": "Wealth Management / FX Advisory",
+      "地点": "香港(Causeway Bay)",
+      "薪资范围": "面议",
+      "经验要求": "3-5年",
+      "学历要求": "本科及以上",
+      "JD摘要": "Associate Director, FX Advisory & Solution, Wealth Management, 香港铜锣湾。职责:为财富管理客户提供外汇咨询与解决方案;要求FX产品知识+客户咨询能力。 | 来源:jobs.standardchartered.com官网直采 | 发布:未知",
+      "JD链接": "[查看JD](https://jobs.standardchartered.com/job/Causeway-Bay-Associate-Director%2C-FX-Advisory-&-Solution%2C-Wealth-Management/1369119057/)",
+      "抓取日期": "2026-10-26 09:10:00",
+      "发布时间": "未知",
+      "岗位类别": [
+        "L3-其他前台"
+      ],
+      "平台层级": [
+        "外资头部"
+      ],
+      "相关性评分": 65,
+      "难度评分": 55,
+      "综合推荐度": [
+        "观望"
+      ],
+      "简评": "FX Advisory&Solution为财富管理前台岗,与用户外汇/海外策略经验部分匹配;工作地香港;渣打财富管理为优势业务。来源:渣打官网直采。",
+      "申请建议": "突出FOF中海外策略+外汇资产配置经验;展示对FX产品的理解;强调香港工作适应性+英文能力。",
+      "申请状态": [
+        "未投递"
+      ],
+      "去重hash": "渣打银行AssociateDirectorFXAdvisorySolutionWealthManagement香港CausewayBay",
+      "应届窗口": [
+        "否"
+      ],
+      "是否在招": [
+        "是"
+      ]
+    },
+    {
+      "岗位标题": "Wealth & Protection Manager",
+      "公司": "渣打银行",
+      "部门": "Wealth and Retail Banking",
+      "地点": "香港(Kwun Tong)",
+      "薪资范围": "面议",
+      "经验要求": "1-3年",
+      "学历要求": "本科及以上",
+      "JD摘要": "Wealth & Protection Manager, 香港观塘。职责:为客户提供财富管理与保障方案;要求投资产品知识+客户管理能力。 | 来源:jobs.standardchartered.com官网直采 | 发布:未知",
+      "JD链接": "[查看JD](https://jobs.standardchartered.com/job/Kwun-Tong-Wealth-&-Protection-Manager/1351658257/)",
+      "抓取日期": "2026-10-26 09:10:00",
+      "发布时间": "未知",
+      "岗位类别": [
+        "L3-其他前台"
+      ],
+      "平台层级": [
+        "外资头部"
+      ],
+      "相关性评分": 65,
+      "难度评分": 40,
+      "综合推荐度": [
+        "可申请"
+      ],
+      "简评": "Wealth & Protection Manager为财富管理前台岗,1-3年窗口符合用户;工作地香港。来源:渣打官网直采。",
+      "申请建议": "突出FOF组合管理+财富管理经验;展示对保险/保障产品的理解;强调香港工作适应性+英文能力。",
+      "申请状态": [
+        "未投递"
+      ],
+      "去重hash": "渣打银行WealthProtectionManager香港KwunTong",
+      "应届窗口": [
+        "否"
+      ],
+      "是否在招": [
+        "是"
+      ]
+    },
+    {
+      "岗位标题": "Associate, Structured Credit Trading",
+      "公司": "渣打银行",
+      "部门": "Financial Markets / Credit Trading",
+      "地点": "上海",
+      "薪资范围": "面议",
+      "经验要求": "1-3年",
+      "学历要求": "硕士及以上",
+      "JD摘要": "Associate, Structured Credit Trading, 上海。职责:结构化信用交易,含CLO/ABS/合成CDO等产品定价与做市;要求数理背景+衍生品理解+Python。 | 来源:jobs.standardchartered.com官网直采 | 发布:未知",
+      "JD链接": "[查看JD](https://jobs.standardchartered.com/job/Shanghai-Associate%2C-Structured-Credit-Trading/1361521957/)",
+      "抓取日期": "2026-10-26 09:10:00",
+      "发布时间": "未知",
+      "岗位类别": [
+        "L1-私募研究FOF自营"
+      ],
+      "平台层级": [
+        "外资头部"
+      ],
+      "相关性评分": 75,
+      "难度评分": 55,
+      "综合推荐度": [
+        "可申请"
+      ],
+      "简评": "Structured Credit Trading为自营交易前台岗(L1),1-3年窗口符合用户;涉及衍生品定价与做市,与用户对衍生品(CTA/套利)理解部分匹配;Python+AI能力加分。来源:渣打官网直采。",
+      "申请建议": "突出对衍生品/结构化产品的理解(CTA/套利尽调);展示Python+建模能力;强调硕士+985+数理基础。",
+      "申请状态": [
+        "未投递"
+      ],
+      "去重hash": "渣打银行AssociateStructuredCreditTrading上海",
+      "应届窗口": [
+        "否"
+      ],
+      "是否在招": [
+        "是"
+      ]
+    },
+    {
+      "岗位标题": "Coverage Banking Graduate Programme Shenzhen 2027",
+      "公司": "渣打银行",
+      "部门": "Coverage Banking / Corporate & Investment Banking (CIB)",
+      "地点": "深圳",
+      "薪资范围": "面议(Band 7,Graduates)",
+      "经验要求": "应届/毕业2年内",
+      "学历要求": "本科及以上",
+      "JD摘要": "Coverage Banking Graduate Programme 2027,深圳Band 7,Graduates。Requisition 60419, Posting Start 23/10/2026, Posting End 31/12/2026。职责:加入Coverage Banking团队,作为Corporate & Investment Banking (CIB)前台臂,与领先企业/金融机构/投资者/公共部门客户建立关系。 | 来源:jobs.standardchartered.com官网直采(sitemap穷举) | 发布:2026-10-23",
+      "JD链接": "[查看JD](https://jobs.standardchartered.com/job/ShenZhen-Coverage-Banking-Graduate-Programme-Shenzhen-2027/1375656257/)",
+      "抓取日期": "2026-10-26 09:10:00",
+      "发布时间": "2026-10-23",
+      "岗位类别": [
+        "L3-其他前台"
+      ],
+      "平台层级": [
+        "外资头部"
+      ],
+      "相关性评分": 75,
+      "难度评分": 35,
+      "综合推荐度": [
+        "优先申请"
+      ],
+      "简评": "Coverage Banking Graduate Programme为渣打CIB前台管培项目,Band 7级,2027届。发布2026-10-23,窗口至2026-12-31。渣打IGP/Coverage Banking管培倾向接受毕业1-2年candidate,用户2025年硕士毕业符合窗口。来源:渣打官网sitemap穷举直采。",
+      "申请建议": "突出外资管培求职动机+前台CIB兴趣;展示FOF/CIB客户理解(私募尽调覆盖企业客户);强调硕士+985+毕业1年窗口符合;准备英文面试+Case Study。",
+      "申请状态": [
+        "未投递"
+      ],
+      "去重hash": "渣打银行CoverageBankingGraduateProgrammeShenzhen2027深圳",
+      "应届窗口": [
+        "是"
+      ],
+      "是否在招": [
+        "是"
+      ]
+    },
+    {
+      "岗位标题": "Coverage Banking Graduate Programme Beijing 2027",
+      "公司": "渣打银行",
+      "部门": "Coverage Banking / CIB",
+      "地点": "北京",
+      "薪资范围": "面议(Band 7)",
+      "经验要求": "应届/毕业2年内",
+      "学历要求": "本科及以上",
+      "JD摘要": "Coverage Banking Graduate Programme 2027,北京Band 7,Graduates。Requisition 60420, Posting Start 23/10/2026, Posting End 31/12/2026。 | 来源:jobs.standardchartered.com官网直采 | 发布:2026-10-23",
+      "JD链接": "[查看JD](https://jobs.standardchartered.com/job/Beijing-Coverage-Banking-Graduate-Programme-Beijing-2027/1374272157/)",
+      "抓取日期": "2026-10-26 09:10:00",
+      "发布时间": "2026-10-23",
+      "岗位类别": [
+        "L3-其他前台"
+      ],
+      "平台层级": [
+        "外资头部"
+      ],
+      "相关性评分": 75,
+      "难度评分": 35,
+      "综合推荐度": [
+        "优先申请"
+      ],
+      "简评": "北京Band 7 Coverage Banking Graduate Programme,与深圳项目同类,用户北京在职可优先投递。来源:渣打官网直采。",
+      "申请建议": "突出北京在职优势+外资管培动机;展示CIB前台兴趣+FOF客户理解;硕士+985+毕业1年符合窗口。",
+      "申请状态": [
+        "未投递"
+      ],
+      "去重hash": "渣打银行CoverageBankingGraduateProgrammeBeijing2027北京",
+      "应届窗口": [
+        "是"
+      ],
+      "是否在招": [
+        "是"
+      ]
+    },
+    {
+      "岗位标题": "Coverage Banking Graduate Programme Shanghai 2027",
+      "公司": "渣打银行",
+      "部门": "Coverage Banking / CIB",
+      "地点": "上海",
+      "薪资范围": "面议(Band 7)",
+      "经验要求": "应届/毕业2年内",
+      "学历要求": "本科及以上",
+      "JD摘要": "Coverage Banking Graduate Programme 2027,上海Band 7,Graduates。Requisition 60418, Posting Start 23/10/2026, Posting End 31/12/2026。 | 来源:jobs.standardchartered.com官网直采 | 发布:2026-10-23",
+      "JD链接": "[查看JD](https://jobs.standardchartered.com/job/Shanghai-Coverage-Banking-Graduate-Programme-Shanghai-2027/1374272057/)",
+      "抓取日期": "2026-10-26 09:10:00",
+      "发布时间": "2026-10-23",
+      "岗位类别": [
+        "L3-其他前台"
+      ],
+      "平台层级": [
+        "外资头部"
+      ],
+      "相关性评分": 75,
+      "难度评分": 35,
+      "综合推荐度": [
+        "优先申请"
+      ],
+      "简评": "上海Band 7 Coverage Banking Graduate Programme,与北京/深圳同类。来源:渣打官网直采。",
+      "申请建议": "突出FOF前台动机+外资管培兴趣;硕士+985+毕业1年符合窗口。",
+      "申请状态": [
+        "未投递"
+      ],
+      "去重hash": "渣打银行CoverageBankingGraduateProgrammeShanghai2027上海",
+      "应届窗口": [
+        "是"
+      ],
+      "是否在招": [
+        "是"
+      ]
+    },
+    {
+      "岗位标题": "Deutsche Bank Graduate Programme (HK eligible)",
+      "公司": "Deutsche Bank",
+      "部门": "Graduate Programme",
+      "地点": "香港(覆盖多业务条线)",
+      "薪资范围": "面议",
+      "经验要求": "应届/毕业12个月内",
+      "学历要求": "本科及以上",
+      "JD摘要": "Year-long Graduate Programme提供多业务条线轮岗+持续培训+导师网络。Eligibility: final year of study OR graduated in previous 12 months。DB Academy pipeline open to pre-penultimate students in Singapore, Hong Kong and China。 | 来源:db.com官网直采 | 发布:未知",
+      "JD链接": "[查看JD](https://careers.db.com/students-graduates/graduate-programme/index)",
+      "抓取日期": "2026-10-26 09:10:00",
+      "发布时间": "未知",
+      "岗位类别": [
+        "L3-其他前台"
+      ],
+      "平台层级": [
+        "外资头部"
+      ],
+      "相关性评分": 60,
+      "难度评分": 35,
+      "综合推荐度": [
+        "观望"
+      ],
+      "简评": "Deutsche Bank Graduate Programme为多业务条线轮岗管培,eligibility明确限final year或毕业后12个月内。用户2025年硕士毕业约16个月,**已超出DB管培窗口**(关键发现);如坚持投递可联系HR确认。来源:db.com官网直采。",
+      "申请建议": "注意eligibility限毕业后12个月内,用户已超出;建议联系DB HR确认窗口弹性或寻找其他接受1-2年的外资管培;若仍投递需在cover letter说明1年FOF实战经验。",
+      "申请状态": [
+        "未投递"
+      ],
+      "去重hash": "DeutscheBankGraduateProgrammeHKeligible香港",
+      "应届窗口": [
+        "否"
+      ],
+      "是否在招": [
+        "是"
+      ]
+    },
+    {
+      "岗位标题": "2026 Quantitative Research Early Mentorship Program – APAC",
+      "公司": "JPMorgan",
+      "部门": "Quantitative Research",
+      "地点": "香港/新加坡",
+      "薪资范围": "面议",
+      "经验要求": "应届/在读",
+      "学历要求": "硕士及以上",
+      "JD摘要": "Quantitative Finance mission: develop sophisticated mathematical models, cutting-edge methodologies, infrastructure for trading, risk management, research。Early Mentorship Program面向pre-penultimate students, APAC (Hong Kong / Singapore)。 | 来源:careers.jpmorgan.com官网直采 | 发布:未知",
+      "JD链接": "[查看JD](https://careers.jpmorgan.com/us/en/students/programs/quant-fin-programs)",
+      "抓取日期": "2026-10-26 09:10:00",
+      "发布时间": "未知",
+      "岗位类别": [
+        "L1-私募研究FOF自营"
+      ],
+      "平台层级": [
+        "外资头部"
+      ],
+      "相关性评分": 70,
+      "难度评分": 45,
+      "综合推荐度": [
+        "可申请"
+      ],
+      "简评": "JPMorgan Quantitative Research Early Mentorship Program面向量化金融人才,与用户量化私募尽调+Python+机器学习经验匹配。Early Mentorship为pre-penultimate项目,用户已毕业1年需确认是否仍可申。来源:JPMorgan官网直采。",
+      "申请建议": "突出量化私募尽调(CTA/套利/指数增强)+Python建模+机器学习项目;硕士+985数理基础;联系JPM HR确认已毕业1年candidate的可申窗口。",
+      "申请状态": [
+        "未投递"
+      ],
+      "去重hash": "JPMorgan2026QuantitativeResearchEarlyMentorshipProgramAPAC香港新加坡",
+      "应届窗口": [
+        "是"
+      ],
+      "是否在招": [
+        "是"
+      ]
+    },
+    {
+      "岗位标题": "2027 Global Private Bank Program – Full Time Analyst – Hong Kong",
+      "公司": "JPMorgan",
+      "部门": "Global Private Bank",
+      "地点": "香港",
+      "薪资范围": "面议",
+      "经验要求": "应届/毕业1-2年",
+      "学历要求": "本科及以上",
+      "JD摘要": "JPMorgan Global Private Bank 2027 HK Full Time Analyst Program,GPB前台投顾/Investment Solutions双轨。 | 来源:careers.jpmorgan.com官网直采(部分JD从subagent snippet) | 发布:未知",
+      "JD链接": "[查看JD](https://jpmc.fa.oraclecloud.com/hcmUI/CandidateExperience/en/sites/CX/job/210795)",
+      "抓取日期": "2026-10-26 09:10:00",
+      "发布时间": "未知",
+      "岗位类别": [
+        "L3-其他前台"
+      ],
+      "平台层级": [
+        "外资头部"
+      ],
+      "相关性评分": 78,
+      "难度评分": 45,
+      "综合推荐度": [
+        "优先申请"
+      ],
+      "简评": "JPMorgan GPB Full Time Analyst Program为私人银行前台管培,双轨Advisor/Investment Solutions,工资上限高;2027届窗口符合用户(2025硕士毕业1年)。来源:JPMorgan官网直采。",
+      "申请建议": "突出FOF组合管理20+专户经验(对应GPB投顾能力);展示对高净值客户财富管理+资产配置理解;硕士+985+毕业1年符合窗口;英文+普通话。",
+      "申请状态": [
+        "未投递"
+      ],
+      "去重hash": "JPMorgan2027GlobalPrivateBankProgramFullTimeAnalystHongKong香港",
+      "应届窗口": [
+        "是"
+      ],
+      "是否在招": [
+        "是"
+      ]
+    },
+    {
+      "岗位标题": "2027 Full-Time Analyst Program - APAC (Hong Kong)",
+      "公司": "BlackRock",
+      "部门": "Analyst Program",
+      "地点": "香港",
+      "薪资范围": "面议",
+      "经验要求": "应届/毕业1-2年",
+      "学历要求": "本科及以上",
+      "JD摘要": "BlackRock 2027 Full-Time Analyst Program APAC, Hong Kong, 两年轮岗项目,覆盖多业务条线(Investments/Advisory/BGFS)。 | 来源:careers.blackrock.com官网直采 | 发布:未知(2026 Sep截止)",
+      "JD链接": "[查看JD](https://careers.blackrock.com/en/job/sydney/2027-full-time-analyst-program-apac/6946-14188)",
+      "抓取日期": "2026-10-26 09:10:00",
+      "发布时间": "未知",
+      "岗位类别": [
+        "L3-其他前台"
+      ],
+      "平台层级": [
+        "外资头部"
+      ],
+      "相关性评分": 78,
+      "难度评分": 45,
+      "综合推荐度": [
+        "优先申请"
+      ],
+      "简评": "BlackRock Full-Time Analyst Program为全球最大资管公司的管培项目,两年轮岗,覆盖Investments/Advisory/BGFS等多业务条线,与用户FOF+资产配置+组合管理经验高度匹配;2027届窗口符合用户。来源:BlackRock官网直采。",
+      "申请建议": "突出FOF组合管理20+专户+私募尽调60+经验(对应Investments条线);展示资产配置+SAA/TAA理解;硕士+985+毕业1年符合窗口;英文必备。",
+      "申请状态": [
+        "未投递"
+      ],
+      "去重hash": "BlackRock2027FullTimeAnalystProgramAPACHongKong香港",
+      "应届窗口": [
+        "是"
+      ],
+      "是否在招": [
+        "是"
+      ]
+    },
+    {
+      "岗位标题": "APAC Graduate Two-Year Programme (Hong Kong)",
+      "公司": "BNP Paribas",
+      "部门": "APAC Graduate Programme",
+      "地点": "香港",
+      "薪资范围": "面议",
+      "经验要求": "应届/毕业1-2年",
+      "学历要求": "本科及以上",
+      "JD摘要": "BNP Paribas APAC两年Graduate Programme,区域项目+多业务条线轮岗,北京/上海/香港招聘。 | 来源:bnpparibas.com.hk官网直采 | 发布:未知",
+      "JD链接": "[查看JD](https://www.bnpparibas.com.hk/en/careers/early-careers/)",
+      "抓取日期": "2026-10-26 09:10:00",
+      "发布时间": "未知",
+      "岗位类别": [
+        "L3-其他前台"
+      ],
+      "平台层级": [
+        "外资头部"
+      ],
+      "相关性评分": 72,
+      "难度评分": 40,
+      "综合推荐度": [
+        "优先申请"
+      ],
+      "简评": "BNP Paribas APAC两年Graduate Programme,覆盖多业务条线轮岗,北京/上海/香港招聘,与用户复合背景+多资产经验匹配;管培窗口倾向接受1-2年candidate。来源:BNP官网直采。",
+      "申请建议": "突出FOF组合+私募尽调经验;展示对欧洲银行/全球资管理解;硕士+985+毕业1年符合窗口;英文必备。",
+      "申请状态": [
+        "未投递"
+      ],
+      "去重hash": "BNPParibasAPACGraduateTwoYearProgrammeHongKong香港",
+      "应届窗口": [
+        "是"
+      ],
+      "是否在招": [
+        "是"
+      ]
+    },
+    {
+      "岗位标题": "Graduate programmes - Investment Banking (Two-Year Expert Programme)",
+      "公司": "Barclays",
+      "部门": "Investment Banking Graduate Programme",
+      "地点": "香港",
+      "薪资范围": "面议",
+      "经验要求": "应届/毕业1-2年",
+      "学历要求": "本科及以上",
+      "JD摘要": "Barclays投资银行两年Expert Programme,Coverage/M&A多团队轮岗,香港招聘。 | 来源:search.jobs.barclays官网直采 | 发布:未知",
+      "JD链接": "[查看JD](https://search.jobs.barclays/en/graduates-investment-banking)",
+      "抓取日期": "2026-10-26 09:10:00",
+      "发布时间": "未知",
+      "岗位类别": [
+        "L3-其他前台"
+      ],
+      "平台层级": [
+        "外资头部"
+      ],
+      "相关性评分": 70,
+      "难度评分": 50,
+      "综合推荐度": [
+        "可申请"
+      ],
+      "简评": "Barclays投行两年Expert Programme,Coverage/M&A多团队轮岗;工资上限高;2027届窗口符合用户。来源:Barclays官网直采。",
+      "申请建议": "突出FOF/CIB前台动机;展示对企业客户/并购理解(私募尽调覆盖企业客户经验);硕士+985+毕业1年符合窗口;英文必备。",
+      "申请状态": [
+        "未投递"
+      ],
+      "去重hash": "BarclaysGraduateprogrammesInvestmentBankingTwoYearExpertProgramme香港",
+      "应届窗口": [
+        "是"
+      ],
+      "是否在招": [
+        "是"
+      ]
+    },
+    {
+      "岗位标题": "Graduate Programs - Analyst role (Hong Kong eligible)",
+      "公司": "Nomura",
+      "部门": "Graduate Programs",
+      "地点": "香港",
+      "薪资范围": "面议",
+      "经验要求": "应届/毕业1-2年",
+      "学历要求": "本科及以上",
+      "JD摘要": "Nomura Graduate Programs覆盖Analyst role,业务含Global Markets/IB/Tech/Corporate。 | 来源:nomura.com官网直采 | 发布:未知",
+      "JD链接": "[查看JD](https://www.nomura.com/careers/early-careers/graduate-programs/)",
+      "抓取日期": "2026-10-26 09:10:00",
+      "发布时间": "未知",
+      "岗位类别": [
+        "L3-其他前台"
+      ],
+      "平台层级": [
+        "外资头部"
+      ],
+      "相关性评分": 65,
+      "难度评分": 40,
+      "综合推荐度": [
+        "可申请"
+      ],
+      "简评": "Nomura Graduate Programs覆盖Global Markets/IB等前台业务;日本头部投行;管培窗口符合用户。来源:Nomura官网直采。",
+      "申请建议": "突出FOF前台动机+多业务理解;硕士+985+毕业1年符合窗口;英文必备。",
+      "申请状态": [
+        "未投递"
+      ],
+      "去重hash": "NomuraGraduateProgramsAnalystroleHongKongeligible香港",
+      "应届窗口": [
+        "是"
+      ],
+      "是否在招": [
+        "是"
+      ]
+    },
+    {
+      "岗位标题": "Graduates - Multi Asset (Two-Year Rotational Scheme)",
+      "公司": "Fidelity",
+      "部门": "Multi Asset Graduate Programme",
+      "地点": "香港(Asia Pacific)",
+      "薪资范围": "面议",
+      "经验要求": "应届/毕业1-2年",
+      "学历要求": "本科及以上",
+      "JD摘要": "Fidelity Multi Asset两年Rotational Scheme, Asia Pacific,覆盖多资产投资研究+组合管理轮岗。 | 来源:careers.fidelityinternational.com官网直采 | 发布:未知",
+      "JD链接": "[查看JD](https://careers.fidelityinternational.com/early-careers-overview/graduates-and-placement/)",
+      "抓取日期": "2026-10-26 09:10:00",
+      "发布时间": "未知",
+      "岗位类别": [
+        "L2-大类资产配置"
+      ],
+      "平台层级": [
+        "外资头部"
+      ],
+      "相关性评分": 80,
+      "难度评分": 45,
+      "综合推荐度": [
+        "优先申请"
+      ],
+      "简评": "Fidelity Multi Asset两年Rotational Scheme覆盖多资产投资研究+组合管理轮岗,与用户FOF+多策略私募尽调经验高度匹配;L2资产配置方向;管培窗口符合用户。来源:Fidelity官网直采。",
+      "申请建议": "突出FOF组合管理20+专户+私募尽调60+经验(对应Multi Asset研究);展示对多资产(股/债/CTA/套利/海外)配置理解;硕士+985+毕业1年符合窗口;英文必备。",
+      "申请状态": [
+        "未投递"
+      ],
+      "去重hash": "FidelityGraduatesMultiAssetTwoYearRotationalScheme香港AsiaPacific",
+      "应届窗口": [
+        "是"
+      ],
+      "是否在招": [
+        "是"
+      ]
+    },
+    {
+      "岗位标题": "Full-Time Opportunities for Early Careers - Hong Kong",
+      "公司": "PIMCO",
+      "部门": "Early Careers",
+      "地点": "香港",
+      "薪资范围": "面议",
+      "经验要求": "应届/毕业1-2年",
+      "学历要求": "本科及以上",
+      "JD摘要": "PIMCO Full-Time Opportunities for Early Careers, Hong Kong。全球债券管理巨头,Summer Analyst转正+Full-time Analyst。 | 来源:pimco.com官网直采 | 发布:未知",
+      "JD链接": "[查看JD](https://www.pimco.com/hk/zh/about-us/careers/students/full-time-opportunities)",
+      "抓取日期": "2026-10-26 09:10:00",
+      "发布时间": "未知",
+      "岗位类别": [
+        "L3-其他前台"
+      ],
+      "平台层级": [
+        "外资头部"
+      ],
+      "相关性评分": 70,
+      "难度评分": 45,
+      "综合推荐度": [
+        "可申请"
+      ],
+      "简评": "PIMCO为全球债券管理巨头,Full-time Analyst Program覆盖投资研究/客户管理。用户多资产(债券)经验匹配。来源:PIMCO官网直采。",
+      "申请建议": "突出FOF组合中固收配置+宏观策略理解;硕士+985+毕业1年符合窗口;英文必备。",
+      "申请状态": [
+        "未投递"
+      ],
+      "去重hash": "PIMCOFullTimeOpportunitiesforEarlyCareersHongKong香港",
+      "应届窗口": [
+        "是"
+      ],
+      "是否在招": [
+        "是"
+      ]
+    },
+    {
+      "岗位标题": "Investment Banking - Graduate Programme (Central, Hong Kong)",
+      "公司": "HSBC",
+      "部门": "Investment Banking Graduate Programme",
+      "地点": "香港(Central)",
+      "薪资范围": "面议(起薪Jul 2027)",
+      "经验要求": "应届/<2年经验",
+      "学历要求": "本科及以上(GPA 3.2+)",
+      "JD摘要": "HSBC Investment Banking Graduate Programme, Central Hong Kong, 2年项目,起薪Jul 2027。Eligibility: <2年经验,GPA 3.2+,签证可sponsor。 | 来源:apply.careers.hsbc.com官网直采 | 发布:未知",
+      "JD链接": "[查看JD](https://apply.careers.hsbc.com/emergingtalent/job/Central-Investment-Banking-Graduate-Programme-Hong-Kong/665677)",
+      "抓取日期": "2026-10-26 09:10:00",
+      "发布时间": "未知",
+      "岗位类别": [
+        "L3-其他前台"
+      ],
+      "平台层级": [
+        "外资头部"
+      ],
+      "相关性评分": 78,
+      "难度评分": 50,
+      "综合推荐度": [
+        "优先申请"
+      ],
+      "简评": "HSBC Investment Banking Graduate Programme明确eligibility为<2年经验,GPA 3.2+,用户2025硕士毕业1年经验符合窗口。香港前台管培,工资上限高,签证sponsor。来源:HSBC官网直采。",
+      "申请建议": "突出FOF前台动机+对企业客户理解;硕士+985+GPA;英文必备;签证需sponsor但HSBC可提供。",
+      "申请状态": [
+        "未投递"
+      ],
+      "去重hash": "HSBCInvestmentBankingGraduateProgrammeCentralHongKong香港Central",
+      "应届窗口": [
+        "是"
+      ],
+      "是否在招": [
+        "是"
+      ]
+    },
+    {
+      "岗位标题": "管理培训生(管培生)",
+      "公司": "国泰海通证券",
+      "部门": "管培生项目",
+      "地点": "全国各主要城市",
+      "薪资范围": "面议",
+      "经验要求": "应届/2027届",
+      "学历要求": "硕士及以上",
+      "JD摘要": "国泰海通证券管培生项目,全国招聘。 | 来源:scc.pku.edu.cn北大就业网 | 发布:未知",
+      "JD链接": "[查看JD](https://scc.pku.edu.cn/frontpage/pku/html/recruitmentinfoForm.html)",
+      "抓取日期": "2026-10-26 09:10:00",
+      "发布时间": "未知",
+      "岗位类别": [
+        "L3-其他前台"
+      ],
+      "平台层级": [
+        "头部券商基金"
+      ],
+      "相关性评分": 60,
+      "难度评分": 40,
+      "综合推荐度": [
+        "观望"
+      ],
+      "简评": "国泰海通管培生项目,2027应届定位,用户2025届需HR确认窗口弹性;头部券商管培岗工资上限高。",
+      "申请建议": "联系国泰海通HR确认2025届candidate可申窗口;若可申则突出FOF+多资产经验。",
+      "申请状态": [
+        "未投递"
+      ],
+      "去重hash": "国泰海通证券管理培训生管培生全国各主要城市",
+      "应届窗口": [
+        "否"
+      ],
+      "是否在招": [
+        "是"
+      ]
+    },
+    {
+      "岗位标题": "2027届校园招聘(Kingsman星训营)",
+      "公司": "华泰证券",
+      "部门": "Kingsman星训营",
+      "地点": "全国",
+      "薪资范围": "面议",
+      "经验要求": "应届/2027届",
+      "学历要求": "硕士及以上",
+      "JD摘要": "华泰证券Kingsman星训营2027届校招项目。 | 来源:job.htsc.com.cn华泰官方招聘 | 发布:未知",
+      "JD链接": "[查看JD](http://job.htsc.com.cn/index.html?organize=2&jobtype=2)",
+      "抓取日期": "2026-10-26 09:10:00",
+      "发布时间": "未知",
+      "岗位类别": [
+        "L3-其他前台"
+      ],
+      "平台层级": [
+        "头部券商基金"
+      ],
+      "相关性评分": 60,
+      "难度评分": 40,
+      "综合推荐度": [
+        "观望"
+      ],
+      "简评": "华泰Kingsman星训营2027届校招项目,用户2025届需HR确认窗口弹性;头部券商校招项目工资上限高。",
+      "申请建议": "联系华泰HR确认2025届candidate可申窗口;若可申则突出FOF+多资产+AI经验。",
+      "申请状态": [
+        "未投递"
+      ],
+      "去重hash": "华泰证券2027届校园招聘Kingsman星训营全国",
+      "应届窗口": [
+        "否"
+      ],
+      "是否在招": [
+        "是"
+      ]
+    }
+  ]
+}

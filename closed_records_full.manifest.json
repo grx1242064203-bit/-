@@ -1,0 +1,271 @@
+{
+  "manifest_version": "v1",
+  "format": "ndjson",
+  "base_token": "ZmIhbOTlaaGrgpscQyCcT2eunLP",
+  "table_id": "tblfvWkJtMDUmJjM",
+  "rev": 45,
+  "timezone": "Asia/Shanghai",
+  "query_context": {
+    "record_scope": "selected_record_ids",
+    "requested_record_count": 3
+  },
+  "records_count": 3,
+  "page_count": 1,
+  "has_more": false,
+  "record_file": "/workspace/closed_records_full.ndjson",
+  "record_file_size_bytes": 4148,
+  "manifest_file": "/workspace/closed_records_full.manifest.json",
+  "columns": {
+    "JD摘要": {
+      "field_id": "fld6uTg4Tq",
+      "field_type": "text",
+      "physical_type": "string|null",
+      "stats": {
+        "null_count": 0,
+        "max_length": 158
+      },
+      "example": "JPMorgan Global Private Bank 2027 HK Full Time Analyst Program,GPB前台投顾/Investment Solutions双轨。 | 来源:careers.jpmorgan.com官网直采(部分J",
+      "example_truncated": true
+    },
+    "JD链接": {
+      "field_id": "fldV2WnnFf",
+      "field_type": "text",
+      "physical_type": "string|null",
+      "stats": {
+        "null_count": 0,
+        "max_length": 120
+      },
+      "example": "[查看JD](https://jpmc.fa.oraclecloud.com/hcmUI/CandidateExperience/en/sites/CX/job/210795)"
+    },
+    "record_id": {
+      "physical_type": "string",
+      "stats": {
+        "max_length": 16
+      },
+      "example": "reczz28RrD2blqbz"
+    },
+    "公司": {
+      "field_id": "fldk9wplF3",
+      "field_type": "text",
+      "physical_type": "string|null",
+      "stats": {
+        "null_count": 0,
+        "max_length": 9
+      },
+      "example": "HSBC"
+    },
+    "去重hash": {
+      "field_id": "fldtzmIXiO",
+      "field_type": "text",
+      "physical_type": "string|null",
+      "stats": {
+        "null_count": 0,
+        "max_length": 62
+      },
+      "example": "BlackRock2027FullTimeAnalystProgramAPACHongKong香港"
+    },
+    "发布时间": {
+      "field_id": "fldc20pMGP",
+      "field_type": "text",
+      "physical_type": "string|null",
+      "stats": {
+        "null_count": 0,
+        "max_length": 2
+      },
+      "example": "未知"
+    },
+    "地点": {
+      "field_id": "fld2csXirw",
+      "field_type": "text",
+      "physical_type": "string|null",
+      "stats": {
+        "null_count": 0,
+        "max_length": 11
+      },
+      "example": "香港"
+    },
+    "学历要求": {
+      "field_id": "fldYYrEiyQ",
+      "field_type": "text",
+      "physical_type": "string|null",
+      "stats": {
+        "null_count": 0,
+        "max_length": 15
+      },
+      "example": "本科及以上"
+    },
+    "岗位标题": {
+      "field_id": "flduV4fE8G",
+      "field_type": "text",
+      "physical_type": "string|null",
+      "stats": {
+        "null_count": 0,
+        "max_length": 64
+      },
+      "example": "2027 Full-Time Analyst Program - APAC (Hong Kong)"
+    },
+    "岗位类别": {
+      "field_id": "fldZz8ugS8",
+      "field_type": "select",
+      "physical_type": "array<string>",
+      "stats": {
+        "empty_count": 0,
+        "max_length": 1,
+        "avg_length": 1
+      },
+      "example": [
+        "L3-其他前台"
+      ]
+    },
+    "平台层级": {
+      "field_id": "flda59e0go",
+      "field_type": "select",
+      "physical_type": "array<string>",
+      "stats": {
+        "empty_count": 0,
+        "max_length": 1,
+        "avg_length": 1
+      },
+      "example": [
+        "外资头部"
+      ]
+    },
+    "应届窗口": {
+      "field_id": "fldHYjcFEl",
+      "field_type": "select",
+      "physical_type": "array<string>",
+      "stats": {
+        "empty_count": 0,
+        "max_length": 1,
+        "avg_length": 1
+      },
+      "example": [
+        "是"
+      ]
+    },
+    "抓取日期": {
+      "field_id": "fld2Mf8n7I",
+      "field_type": "datetime",
+      "physical_type": "string|null",
+      "stats": {
+        "null_count": 0,
+        "min": "2026-10-26T09:10:00.000+08:00",
+        "max": "2026-10-26T09:10:00.000+08:00"
+      },
+      "example": "2026-10-26T09:10:00.000+08:00"
+    },
+    "是否在招": {
+      "field_id": "fld0fB5nPd",
+      "field_type": "select",
+      "physical_type": "array<string>",
+      "stats": {
+        "empty_count": 0,
+        "max_length": 1,
+        "avg_length": 1
+      },
+      "example": [
+        "是"
+      ]
+    },
+    "申请建议": {
+      "field_id": "fldsWTQTVQ",
+      "field_type": "text",
+      "physical_type": "string|null",
+      "stats": {
+        "null_count": 0,
+        "max_length": 80
+      },
+      "example": "突出FOF前台动机+对企业客户理解;硕士+985+GPA;英文必备;签证需sponsor但HSBC可提供。"
+    },
+    "申请状态": {
+      "field_id": "fld9BaLN3g",
+      "field_type": "select",
+      "physical_type": "array<string>",
+      "stats": {
+        "empty_count": 0,
+        "max_length": 1,
+        "avg_length": 1
+      },
+      "example": [
+        "未投递"
+      ]
+    },
+    "相关性评分": {
+      "field_id": "fldNN2B3ua",
+      "field_type": "number",
+      "physical_type": "number|null",
+      "stats": {
+        "null_count": 0,
+        "min": 78,
+        "max": 78,
+        "avg": 78
+      },
+      "example": 78
+    },
+    "简评": {
+      "field_id": "fldvR32JDO",
+      "field_type": "text",
+      "physical_type": "string|null",
+      "stats": {
+        "null_count": 0,
+        "max_length": 141
+      },
+      "example": "JPMorgan GPB Full Time Analyst Program为私人银行前台管培,双轨Advisor/Investment Solutions,工资上限高;2027届窗口符合用户(2025硕士毕业1年)。来源:JPMorgan官网直采。"
+    },
+    "经验要求": {
+      "field_id": "fldhDwNAi2",
+      "field_type": "text",
+      "physical_type": "string|null",
+      "stats": {
+        "null_count": 0,
+        "max_length": 9
+      },
+      "example": "应届/毕业1-2年"
+    },
+    "综合推荐度": {
+      "field_id": "fldPUOXo8O",
+      "field_type": "select",
+      "physical_type": "array<string>",
+      "stats": {
+        "empty_count": 0,
+        "max_length": 1,
+        "avg_length": 1
+      },
+      "example": [
+        "优先申请"
+      ]
+    },
+    "薪资范围": {
+      "field_id": "flds2JxYhq",
+      "field_type": "text",
+      "physical_type": "string|null",
+      "stats": {
+        "null_count": 0,
+        "max_length": 14
+      },
+      "example": "面议"
+    },
+    "部门": {
+      "field_id": "flddiN65bn",
+      "field_type": "text",
+      "physical_type": "string|null",
+      "stats": {
+        "null_count": 0,
+        "max_length": 37
+      },
+      "example": "Analyst Program"
+    },
+    "难度评分": {
+      "field_id": "fldaaK9nsc",
+      "field_type": "number",
+      "physical_type": "number|null",
+      "stats": {
+        "null_count": 0,
+        "min": 45,
+        "max": 50,
+        "avg": 46.666666666666664
+      },
+      "example": 45
+    }
+  }
+}

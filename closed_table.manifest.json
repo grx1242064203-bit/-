@@ -1,0 +1,38 @@
+{
+  "manifest_version": "v1",
+  "format": "ndjson",
+  "base_token": "ZmIhbOTlaaGrgpscQyCcT2eunLP",
+  "table_id": "tbl0Rdg9ZANtRY3F",
+  "rev": 7,
+  "timezone": "Asia/Shanghai",
+  "query_context": {
+    "field_scope": "selected_fields",
+    "record_scope": "all_records"
+  },
+  "requested_limit": 2000,
+  "records_count": 38,
+  "page_count": 1,
+  "has_more": false,
+  "record_file": "/workspace/closed_table.ndjson",
+  "record_file_size_bytes": 3600,
+  "manifest_file": "/workspace/closed_table.manifest.json",
+  "columns": {
+    "record_id": {
+      "physical_type": "string",
+      "stats": {
+        "max_length": 16
+      },
+      "example": "recvrQTfaFjCeD"
+    },
+    "去重hash": {
+      "field_id": "fldZh5cOcu",
+      "field_type": "text",
+      "physical_type": "string|null",
+      "stats": {
+        "null_count": 0,
+        "max_length": 53
+      },
+      "example": "渣打银行ProductOwner广州"
+    }
+  }
+}

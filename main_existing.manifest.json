@@ -1,0 +1,79 @@
+{
+  "manifest_version": "v1",
+  "format": "ndjson",
+  "base_token": "ZmIhbOTlaaGrgpscQyCcT2eunLP",
+  "table_id": "tblfvWkJtMDUmJjM",
+  "rev": 46,
+  "timezone": "Asia/Shanghai",
+  "query_context": {
+    "field_scope": "selected_fields",
+    "record_scope": "filtered_records"
+  },
+  "requested_limit": 2000,
+  "records_count": 241,
+  "page_count": 1,
+  "has_more": false,
+  "record_file": "/workspace/main_existing.ndjson",
+  "record_file_size_bytes": 86469,
+  "manifest_file": "/workspace/main_existing.manifest.json",
+  "columns": {
+    "JD链接": {
+      "field_id": "fldV2WnnFf",
+      "field_type": "text",
+      "physical_type": "string|null",
+      "stats": {
+        "null_count": 0,
+        "max_length": 278
+      },
+      "example": "[查看JD](http://www.swhysc.com)"
+    },
+    "record_id": {
+      "physical_type": "string",
+      "stats": {
+        "max_length": 16
+      },
+      "example": "recvrijq1HZdwW"
+    },
+    "公司": {
+      "field_id": "fldk9wplF3",
+      "field_type": "text",
+      "physical_type": "string|null",
+      "stats": {
+        "null_count": 0,
+        "max_length": 22
+      },
+      "example": "UBS"
+    },
+    "去重hash": {
+      "field_id": "fldtzmIXiO",
+      "field_type": "text",
+      "physical_type": "string|null",
+      "stats": {
+        "null_count": 0,
+        "max_length": 106
+      },
+      "example": "招银理财研究岗FOF上海"
+    },
+    "岗位标题": {
+      "field_id": "flduV4fE8G",
+      "field_type": "text",
+      "physical_type": "string|null",
+      "stats": {
+        "null_count": 0,
+        "max_length": 86
+      },
+      "example": "配置岗"
+    },
+    "抓取日期": {
+      "field_id": "fld2Mf8n7I",
+      "field_type": "datetime",
+      "physical_type": "string|null",
+      "stats": {
+        "null_count": 0,
+        "min": "2026-08-04T02:55:00.000+08:00",
+        "max": "2026-10-26T09:10:00.000+08:00"
+      },
+      "example": "2026-08-04T02:55:00.000+08:00"
+    }
+  }
+}
